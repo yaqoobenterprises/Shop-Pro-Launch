@@ -1,0 +1,42 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Verify file size ratchet",
+			"type": "shell",
+			"command": "npm run check:size",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify configured Git remote",
+			"type": "shell",
+			"command": "git remote -v",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify size ratchet after fix",
+			"type": "shell",
+			"command": "npm run check:size",
+			"isBackground": false,
+			"problemMatcher": []
+		},
+		{
+			"label": "Verify final production build",
+			"type": "shell",
+			"command": "npm run build",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			]
+		},
+		{
+			"label": "Focused ledger service tests",
+			"type": "shell",
+			"command": "npx vitest run tests/ledger_service.test.ts",
+			"isBackground": false,
+			"problemMatcher": []
+		}
+	]
+}

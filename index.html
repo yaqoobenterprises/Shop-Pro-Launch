@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-language-ur="false" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shop Pro</title>
+    <meta
+      name="description"
+      content="A ledger workspace for recording shop income and expenses, tracking accounts, and reviewing daily business activity."
+    />
+    <meta property="og:title" content="Shop Pro" />
+    <meta
+      property="og:description"
+      content="A ledger workspace for recording shop income and expenses, tracking accounts, and reviewing daily business activity."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#176b54" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Shop Pro" />
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+    <link rel="apple-touch-icon" href="/assets/icon-192.png" />
+    <style>
+      html {
+        background-color: #f5f6f3;
+      }
+      html.dark, html[data-theme="dark"] {
+        background-color: #0d1b17;
+      }
+    </style>
+    <script>
+      try {
+        const saved = localStorage.getItem("yaqoob-theme");
+        if (saved === "dark") {
+          document.documentElement.classList.add("dark");
+          document.documentElement.setAttribute("data-theme", "dark");
+        } else {
+          document.documentElement.setAttribute("data-theme", "light");
+        }
+      } catch {
+        // Default to the light theme when browser storage is unavailable.
+      }
+    </script>
+    <script>
+      try {
+        if (
+          document.documentElement.dataset.languageUr === "true" &&
+          localStorage.getItem("shop-pro:ui-lang") === "ur"
+        ) {
+          document.documentElement.lang = "ur";
+          document.documentElement.dir = "rtl";
+        }
+      } catch {
+        // English remains the default when browser storage is unavailable.
+      }
+    </script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(console.error);
+        });
+      }
+    </script>
+  </head>
+  <body
+    class="h-full antialiased font-sans"
+  >
+    <div id="root" class="h-full"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

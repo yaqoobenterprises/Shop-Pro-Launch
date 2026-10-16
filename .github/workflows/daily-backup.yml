@@ -1,0 +1,107 @@
+name: Daily Database Backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_live_backup:
+        description: "Confirm that this run will read live Supabase data and upload a backup to the configured private backup repository."
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shop-pro-daily-database-backup
+  cancel-in-progress: false
+
+jobs:
+  daily_backup:
+    name: Export, validate, and store database backup
+    if: inputs.confirm_live_backup == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Check required secrets are present
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BACKUP_REPO_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPO_NAME: ${{ secrets.BACKUP_REPO_NAME }}
+        run: |
+          set -euo pipefail
+          [ -n "$SUPABASE_URL" ] || { echo "::error::Missing repository secret SUPABASE_URL."; exit 1; }
+          [ -n "$SUPABASE_SERVICE_ROLE_KEY" ] || { echo "::error::Missing repository secret SUPABASE_SERVICE_ROLE_KEY."; exit 1; }
+          [ -n "$BACKUP_REPO_TOKEN" ] || { echo "::error::Missing repository secret BACKUP_REPO_TOKEN."; exit 1; }
+          [ -n "$BACKUP_REPO_NAME" ] || { echo "::error::Missing repository secret BACKUP_REPO_NAME."; exit 1; }
+          [[ "$BACKUP_REPO_NAME" =~ ^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$ ]] || { echo "::error::BACKUP_REPO_NAME must be in owner/repository format."; exit 1; }
+
+      - name: Export public application tables and verify row integrity
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: ./node_modules/.bin/tsx scripts/backup_database.ts
+
+      - name: Validate backup archive offline
+        run: |
+          set -euo pipefail
+          BACKUP_FILE="$(find backups -maxdepth 1 -type f -name 'shop_pro_backup_*.json' -print -quit)"
+          [ -n "$BACKUP_FILE" ] || { echo "::error::Backup script did not create a Shop Pro archive."; exit 1; }
+          ./node_modules/.bin/tsx scripts/restore_database.ts --validate-only "$BACKUP_FILE"
+
+      - name: Confirm backup repository is private
+        env:
+          GH_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPO_NAME: ${{ secrets.BACKUP_REPO_NAME }}
+        run: |
+          set -euo pipefail
+          is_private="$(gh api "repos/$BACKUP_REPO_NAME" --jq '.private')"
+          [ "$is_private" = "true" ] || { echo "::error::Backup target repository is not private. Refusing to upload business data."; exit 1; }
+
+      - name: Upload backup to private repository and enforce 90-day retention
+        env:
+          GH_TOKEN: ${{ secrets.BACKUP_REPO_TOKEN }}
+          BACKUP_REPO_NAME: ${{ secrets.BACKUP_REPO_NAME }}
+        run: |
+          set -euo pipefail
+          BACKUP_FILE="$(find backups -maxdepth 1 -type f -name 'shop_pro_backup_*.json' -print -quit)"
+          [ -n "$BACKUP_FILE" ] || { echo "::error::No validated backup archive is available."; exit 1; }
+
+          backup_name="$(basename "$BACKUP_FILE")"
+          tag="shop-pro-backup-${backup_name#shop_pro_backup_}"
+
+          gh release create "$tag" "$BACKUP_FILE" \
+            --repo "$BACKUP_REPO_NAME" \
+            --title "Shop Pro backup $backup_name" \
+            --notes "Automated checksummed application-table export. Validate offline before recovery."
+
+          gh release view "$tag" --repo "$BACKUP_REPO_NAME" --json assets \
+            --jq ".assets | any(.name == \"$backup_name\")" | grep -qx true
+
+          retention_cutoff="$(date -u -d '90 days ago' +%s)"
+          while IFS=$'\t' read -r old_tag created_at; do
+            [ -n "$old_tag" ] || continue
+            created_epoch="$(date -u -d "$created_at" +%s)"
+            if [ "$created_epoch" -lt "$retention_cutoff" ]; then
+              gh release delete "$old_tag" --repo "$BACKUP_REPO_NAME" --cleanup-tag --yes
+              echo "Deleted expired backup release $old_tag."
+            fi
+          done < <(gh api --paginate "repos/$BACKUP_REPO_NAME/releases" \
+            --jq '.[] | select(.tag_name | startswith("shop-pro-backup-")) | [.tag_name, .created_at] | @tsv')
+
+          echo "Uploaded and verified $backup_name in private repository $BACKUP_REPO_NAME; backup retention is 90 days."

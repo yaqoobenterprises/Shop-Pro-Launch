@@ -1,0 +1,34 @@
+node_modules/
+build/
+dist/
+coverage/
+src-tauri/target/
+src-tauri/gen/
+.DS_Store
+*.log
+.env*
+!.env.example
+backups/
+*.backup.json
+*.backup.json.gz
+*.backup.csv
+export_*.json
+export_*.csv
+supabase/.temp/
+
+# Local platform state and credentials
+.vercel/
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local databases and data exports
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.sql.gz
+*.csv
+*.xlsx
+*.xls

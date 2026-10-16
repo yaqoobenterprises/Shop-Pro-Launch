@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noEmit": true
+  },
+  "include": [
+    "src/config/**/*",
+    "src/regional/**/*",
+    "src/i18n/**/*",
+    "src/services/userPreferencesService.ts"
+  ]
+}

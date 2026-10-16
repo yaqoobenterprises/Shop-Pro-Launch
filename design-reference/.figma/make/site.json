@@ -1,0 +1,10 @@
+{
+  "description": "This web application offers a visually appealing and user-friendly interface for large-scale websites, enhancing user experience across all devices.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
