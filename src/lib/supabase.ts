@@ -10,8 +10,8 @@ export function normalizeSupabaseUrl(rawUrl?: string): string {
   return url;
 }
 
-const DEFAULT_SUPABASE_URL = 'https://ukyeghjdvydclgllhrpu.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_Qt9wU3CYzPdCWcNsJ40Idw_VKPolEnm';
+const DEFAULT_SUPABASE_URL = 'https://xarbzazjzcaezcpstiga.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_O4i_ZeslX9794mtRJfYd8A_f9cjN576';
 
 export function getSupabaseConfig(): { url: string; anonKey: string } {
   const rawUrl =
