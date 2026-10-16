@@ -7,8 +7,8 @@ import { FEATURES } from './src/config/features';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   if (!env.VITE_SUPABASE_URL || !env.VITE_SUPABASE_ANON_KEY) {
-    console.warn(
-      'Notice: Supabase configuration (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) not provided. Running in local offline storage mode.'
+    console.info(
+      'Using the launch Supabase project defaults. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to override them.'
     );
   }
 
