@@ -4,14 +4,13 @@ import { Globe, Lock, Clock, AlertTriangle, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRegion } from '../../regional/region';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../../regional/currencies';
-import { getSupabaseClient } from '../../lib/supabase';
-import { isSupabaseConfigured } from '../../lib/supabase';
+import { getSupabaseClient, hasConfiguredCloudSession, isSupabaseConfigured } from '../../lib/supabase';
 import { getRegionLocale, isValidTimeZone } from '../../regional/format';
 import { ALL_TIMEZONES, COUNTRY_OPTIONS } from '../../regional/timezoneOptions';
 import { useI18n } from '../../i18n';
 
 export const RegionSettingsSection: React.FC = () => {
-  const { user, organization, updateOrganization } = useAuth();
+  const { user, organization, updateOrganization, isCloudAccount } = useAuth();
   const { region, setRegion } = useRegion();
   const { t, language } = useI18n();
 
@@ -37,7 +36,14 @@ export const RegionSettingsSection: React.FC = () => {
         setIsCheckingEntries(false);
         return;
       }
-      if (!isSupabaseConfigured()) {
+      if (!isSupabaseConfigured() || !isCloudAccount || !user?.id) {
+        if (isMounted) {
+          setHasEntries(true);
+          setIsCheckingEntries(false);
+        }
+        return;
+      }
+      if (!(await hasConfiguredCloudSession(user.id))) {
         if (isMounted) {
           setHasEntries(true);
           setIsCheckingEntries(false);
@@ -69,7 +75,7 @@ export const RegionSettingsSection: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [organization?.id]);
+  }, [organization?.id, user?.id, isCloudAccount]);
 
   // Live clock preview for selected timezone
   useEffect(() => {
@@ -118,7 +124,13 @@ export const RegionSettingsSection: React.FC = () => {
         region_configured: true,
         updated_at: new Date().toISOString(),
       };
-      if (isSupabaseConfigured()) {
+      const hasCloudSession = Boolean(
+        isCloudAccount && user?.id && await hasConfiguredCloudSession(user.id),
+      );
+      if (isCloudAccount && !hasCloudSession) {
+        throw new Error('Your cloud session is missing or has expired. Sign in again to save shop settings.');
+      }
+      if (hasCloudSession) {
         const { error } = await getSupabaseClient()
           .from('organizations')
           .update(updates)

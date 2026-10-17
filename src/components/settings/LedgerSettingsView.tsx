@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Select } from "../common/Select";
-import { getSupabaseClient } from "../../lib/supabase";
+import {
+  getSupabaseClient,
+  hasConfiguredCloudSession,
+  SupabaseSessionRequiredError,
+} from "../../lib/supabase";
 import { Category } from "../../types/ledger";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { getSecurityPrincipal } from "../../lib/security";
+import { isPermissionOrAuthError } from "../../services/ledgerService";
 import { canRestoreDatabase } from "../../lib/permissions";
 import {
   enqueueOfflineTransaction,
@@ -43,6 +48,12 @@ import { ProfileSettingsSection } from "./ProfileSettingsSection";
 import { SecuritySettingsSection } from "./SecuritySettingsSection";
 import { useI18n } from "../../i18n";
 
+async function requireSettingsCloudSession(userId: string): Promise<void> {
+  if (!(await hasConfiguredCloudSession(userId))) {
+    throw new SupabaseSessionRequiredError();
+  }
+}
+
 export const LedgerSettingsView: React.FC = () => {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -51,6 +62,7 @@ export const LedgerSettingsView: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categoriesLoadError, setCategoriesLoadError] = useState(false);
+  const [categoriesLoadMessage, setCategoriesLoadMessage] = useState("");
   const [categoriesReadOnly, setCategoriesReadOnly] = useState(false);
   const [showPaperImport, setShowPaperImport] = useState(false);
   const [isExportingLocalData, setIsExportingLocalData] = useState(false);
@@ -71,11 +83,13 @@ export const LedgerSettingsView: React.FC = () => {
   const loadData = async () => {
     setIsLoading(true);
     setCategoriesLoadError(false);
+    setCategoriesLoadMessage("");
     setCategoriesReadOnly(false);
     const principal = getSecurityPrincipal();
     if (!principal) {
       setCategoriesReadOnly(true);
       setCategoriesLoadError(true);
+      setCategoriesLoadMessage("Sign in to this shop to view or edit categories.");
       setIsLoading(false);
       return;
     }
@@ -96,6 +110,7 @@ export const LedgerSettingsView: React.FC = () => {
 
     const cacheKey = `shop-pro:categories:${principal.organizationId}`;
     try {
+      await requireSettingsCloudSession(principal.id);
       const supabase = getSupabaseClient();
       const { data: cats, error: categoriesError } = await supabase
         .from("categories")
@@ -113,6 +128,13 @@ export const LedgerSettingsView: React.FC = () => {
       console.error("Error fetching settings data:", err);
       setCategoriesReadOnly(true);
       setCategoriesLoadError(true);
+      setCategoriesLoadMessage(
+        err instanceof SupabaseSessionRequiredError
+          ? "Your cloud session is missing or has expired. Sign in again to view or edit categories."
+          : isPermissionOrAuthError(err)
+            ? "This account cannot access this shop's categories. Check its shop membership or sign in with the correct account."
+            : "Categories could not be refreshed. The rest of Settings is available; reconnect and retry to view or edit them.",
+      );
       try {
         const cached = JSON.parse(
           localStorage.getItem(cacheKey) || "[]",
@@ -148,6 +170,7 @@ export const LedgerSettingsView: React.FC = () => {
         showToast("error", "Check category details", "Enter a category name.");
         return;
       }
+      await requireSettingsCloudSession(principal.id);
       const { error } = await supabase
         .from("categories")
         .update({
@@ -182,6 +205,7 @@ export const LedgerSettingsView: React.FC = () => {
 
     const supabase = getSupabaseClient();
     try {
+      await requireSettingsCloudSession(principal.id);
       const { error } = await supabase.from("categories").insert({
         id: crypto.randomUUID(),
         organization_id: principal.organizationId,
@@ -220,6 +244,7 @@ export const LedgerSettingsView: React.FC = () => {
     if (!principal) return;
 
     try {
+      await requireSettingsCloudSession(principal.id);
       const [transactions, drafts] = await Promise.all([
         supabase
           .from("transactions")
@@ -270,6 +295,7 @@ export const LedgerSettingsView: React.FC = () => {
     if (!principal) return;
 
     try {
+      await requireSettingsCloudSession(principal.id);
       const { error } = await supabase
         .from("categories")
         .update({ is_active: true })
@@ -308,6 +334,7 @@ export const LedgerSettingsView: React.FC = () => {
     try {
       const principal = getSecurityPrincipal();
       if (!principal) throw new Error("Sign in to this shop before exporting transactions.");
+      await requireSettingsCloudSession(principal.id);
       let { data: txs, error } = await supabase
         .from("transactions")
         .select("*, categories(name)")
@@ -651,7 +678,7 @@ export const LedgerSettingsView: React.FC = () => {
         {categoriesLoadError && (
           <div role="alert" className="flex flex-col gap-2 rounded-xl border border-warning-border bg-warning-bg px-3.5 py-3 text-xs text-warning sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Categories could not be refreshed. The rest of Settings is available; reconnect and retry to view or edit them.
+              {categoriesLoadMessage}
             </span>
             <button
               type="button"

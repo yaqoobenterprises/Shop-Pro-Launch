@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Organization, UserProfile } from "../types";
-import { getSupabaseClient, isSupabaseConfigured } from "../lib/supabase";
+import { getSupabaseClient, hasActiveSupabaseSession, isSupabaseConfigured } from "../lib/supabase";
+import { activateProfileAfterPinUnlock } from "../lib/authSession";
 import { sqliteRepository } from "../services/sqliteRepository";
 import { StorageEngine } from "../services/storageEngine";
 import { syncEngine } from "../services/syncEngine";
@@ -564,8 +565,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       sqliteRepository.getSessionProfile(localAccount.profile_id),
     ]);
     if (!org || !profile || !profile.is_active) return false;
-    activate(profile, org);
-    return true;
+    return activateProfileAfterPinUnlock(profile, org, hasActiveSupabaseSession, activateSupabaseSession, activate);
   };
 
   const lock = () => {

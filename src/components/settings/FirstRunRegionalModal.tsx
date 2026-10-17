@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useRegion } from '../../regional/region';
 import { detectDeviceRegion } from '../../regional/detect';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, isSupportedCurrency } from '../../regional/currencies';
-import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
+import { getSupabaseClient, hasConfiguredCloudSession } from '../../lib/supabase';
 import { saveUserPreferences } from '../../services/userPreferencesService';
 import { isValidTimeZone } from '../../regional/format';
 import { useI18n } from '../../i18n';
@@ -20,7 +20,7 @@ export const FirstRunRegionalModal: React.FC<FirstRunRegionalModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { user, organization, updateOrganization } = useAuth();
+  const { user, organization, updateOrganization, isCloudAccount } = useAuth();
   const { setRegion } = useRegion();
   const { setLanguage: setI18nLanguage, t } = useI18n();
   const languageUrEnabled = isFeatureEnabled('languageUr');
@@ -50,7 +50,10 @@ export const FirstRunRegionalModal: React.FC<FirstRunRegionalModalProps> = ({
     const currencySymbol = cfg?.symbol || currency;
 
     try {
-      if (isSupabaseConfigured()) {
+      if (isCloudAccount) {
+        if (!(await hasConfiguredCloudSession(user.id))) {
+          throw new Error('Your cloud session is missing or has expired. Sign in again to save shop settings.');
+        }
         const supabase = getSupabaseClient();
         const { error: orgError } = await supabase
           .from('organizations')
