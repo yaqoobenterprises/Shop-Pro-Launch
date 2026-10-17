@@ -60,7 +60,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               type="button"
               onClick={toggleTheme}
               aria-label={t("landing.switchTheme")}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright text-secondary transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright text-secondary transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)]"
             >
               {theme === "dark" ? (
                 <Sun aria-hidden="true" className="h-4 w-4" />
@@ -71,7 +71,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenAuth("signIn")}
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright px-3 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-4"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright px-3 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] sm:px-4"
             >
               {t("landing.signIn")}
             </button>
@@ -79,7 +79,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               type="button"
               disabled={isDemoLoading}
               onClick={handleLaunchDemo}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60 sm:px-4"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60 sm:px-4"
             >
               <Play aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
               <span className="hidden sm:inline">{t("landing.openDemo")}</span>
@@ -102,7 +102,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   type="button"
                   disabled={isDemoLoading}
                   onClick={handleLaunchDemo}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60"
                 >
                   <Play aria-hidden="true" className="h-4 w-4 fill-current" />
                   {isDemoLoading ? t("landing.openingDemo") : t("landing.openDemo")}
@@ -110,7 +110,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenAuth("signUp")}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)]"
                 >
                   {t("landing.createShop")}
                   <ArrowRight aria-hidden="true" className="h-4 w-4 text-secondary" />
@@ -250,7 +250,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenAuth("signIn")}
-              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)]"
             >
               {t("landing.signIn")}
             </button>
@@ -258,7 +258,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               type="button"
               disabled={isDemoLoading}
               onClick={handleLaunchDemo}
-              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
+              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60"
             >
               {t("landing.openDemo")}
             </button>

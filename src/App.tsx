@@ -134,7 +134,7 @@ const MainShell: React.FC = () => {
           className="z-40 grid min-h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-standard bg-surface-bright px-4 py-2 text-xs sm:flex sm:justify-between sm:px-6"
         >
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="inline-flex min-h-7 shrink-0 items-center rounded-md bg-primary/10 px-2 font-semibold text-primary">
+            <span className="inline-flex min-h-7 shrink-0 items-center rounded-md border border-border-standard bg-surface-container-low px-2 font-semibold text-on-surface">
               {t("app.interactiveGuestSandbox")}
             </span>
             <span className="min-w-0 break-words text-secondary">
