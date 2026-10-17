@@ -14,6 +14,7 @@ This launch-preparation pass removed only files that had no current app or tooli
 
 ## Removed direct dependencies
 
+- `dotenv` was unused; Vite loads browser configuration and server-side backup/restore tools read environment variables supplied by their runner.
 - `recharts` and its unused vendor chunk were removed after confirming that no application code imports the chart library. Dashboard tests cover the active HTML based summaries and month trend.
 - The direct `@tauri-apps/api` entry was removed because the app does not import it; the installed `@tauri-apps/plugin-sql` package declares its own API dependency.
 
