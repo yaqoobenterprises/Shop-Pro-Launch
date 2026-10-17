@@ -19,7 +19,7 @@ concurrency:
 jobs:
   daily_backup:
     name: Export, validate, and store database backup
-    if: inputs.confirm_live_backup == true
+    if: github.ref == 'refs/heads/main' && inputs.confirm_live_backup == true
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:

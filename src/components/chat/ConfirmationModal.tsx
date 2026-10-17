@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Select } from "../common/Select";
 import {
   AlertCircle,
   AlertTriangle,
@@ -12,6 +13,7 @@ import { formatPaisa, parseInputToPaisa } from "../../lib/money";
 import { getKarachiBusinessDate, getYesterdayKarachiDate } from "../../lib/dates";
 import { LedgerAccount, TransactionType } from "../../types/ledger";
 import { useI18n } from "../../i18n";
+import { DatePicker } from "../common/DatePicker";
 
 interface EntryDraft {
   entry: ParseResult;
@@ -288,7 +290,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="settings-field">
             Transaction type
-            <select
+            <Select
               value={draft.type}
               onChange={(event) =>
                 onChange(
@@ -305,7 +307,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                   {type.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="settings-field">
             Amount
@@ -322,7 +324,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           {(draft.type === "income" || draft.type === "expense") && (
             <label className="settings-field">
               Category
-              <select
+              <Select
                 value={draft.categoryId}
                 onChange={(event) =>
                   onChange(
@@ -337,7 +339,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     {category.name}
                   </option>
                 ))}
-              </select>
+              </Select>
               {!eligibleCategories.length && (
                 <span className="text-xs text-danger">
                   Set up an active {draft.type} category before posting.
@@ -347,22 +349,19 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           )}
           <label className="settings-field">
             Business date
-            <input
-              type="date"
+            <DatePicker
               value={draft.businessDate}
+              ariaLabel="Business date"
               max={getKarachiBusinessDate()}
-              onChange={(event) =>
-                onChange(
-                  updateDraft(draft, { businessDate: event.target.value }),
-                )
+              onChange={(businessDate) =>
+                onChange(updateDraft(draft, { businessDate }))
               }
-              className="workspace-control px-3 text-sm"
             />
           </label>
           {draft.type === "adjustment" && (
             <label className="settings-field">
               Adjustment direction
-              <select
+              <Select
                 value={draft.adjustmentDir}
                 onChange={(event) =>
                   onChange(
@@ -376,7 +375,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 <option value="">{t("entry.chooseDirection")}</option>
                 <option value="in">{t("entry.increaseBalance")}</option>
                 <option value="out">{t("entry.decreaseBalance")}</option>
-              </select>
+              </Select>
             </label>
           )}
           <label className="settings-field sm:col-span-2">
@@ -391,7 +390,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </label>
           <label className="settings-field sm:col-span-2">
             Payment account
-            <select
+            <Select
               value={draft.accountId}
               onChange={(event) =>
                 onChange(updateDraft(draft, { accountId: event.target.value }))
@@ -407,7 +406,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     {account.name} · {account.type.replace("_", " ")}
                   </option>
                 ))}
-            </select>
+            </Select>
           </label>
         </div>
         {needsClassification && (

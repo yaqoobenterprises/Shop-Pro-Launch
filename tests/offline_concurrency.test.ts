@@ -42,7 +42,7 @@ describe('Phase 5: Offline, Multi-Device Concurrency & Backup Restore Suite', ()
       EXCEPTION WHEN duplicate_object THEN null; END $$;
     `);
 
-    const migrationPath = path.resolve(__dirname, '../supabase/migrations/20261004000000_shop_ledger_foundation.sql');
+    const migrationPath = path.resolve(__dirname, '../supabase/migration-history/20261004000000_shop_ledger_foundation.sql');
     const sql = fs.readFileSync(migrationPath, 'utf8');
     await db.exec(sql);
 
@@ -174,7 +174,7 @@ describe('Phase 5: Offline, Multi-Device Concurrency & Backup Restore Suite', ()
       `);
 
       // Run fresh migration
-      const migrationPath = path.resolve(__dirname, '../supabase/migrations/20261004000000_shop_ledger_foundation.sql');
+      const migrationPath = path.resolve(__dirname, '../supabase/migration-history/20261004000000_shop_ledger_foundation.sql');
       const sql = fs.readFileSync(migrationPath, 'utf8');
       await emptyDb.exec(sql);
 

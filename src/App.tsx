@@ -10,6 +10,7 @@ import { CommandPalette } from "./components/layout/CommandPalette";
 import { ShortcutsHelpModal } from "./components/layout/ShortcutsHelpModal";
 import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
+import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
 
 // Modern Shop Ledger Views
@@ -20,7 +21,7 @@ import {
 
 import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
-import { useFeature } from "./config/features";
+import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
 
 const ChatView = lazy(() =>
@@ -45,7 +46,7 @@ const AccountsView = lazy(() =>
 const I18nPreferenceSync: React.FC = () => {
   const { user } = useAuth();
   const { setLanguage } = useI18n();
-  const languageEnabled = useFeature("languageUr");
+  const languageEnabled = isFeatureEnabled("languageUr");
 
   useEffect(() => {
     if (!languageEnabled || !user?.id) return;
@@ -65,7 +66,7 @@ const MainShell: React.FC = () => {
   const { currentView } = useApp();
   const { isDemoMode, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
-  const regionSettingsEnabled = useFeature("regionSettings");
+  const regionSettingsEnabled = isFeatureEnabled("regionSettings");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
 
   useEffect(() => {
@@ -201,8 +202,8 @@ const WorkspaceGate: React.FC = () => {
     isLoading,
     isLocked,
     user,
-    hasLocalAccount,
     isPasswordRecovery,
+    mfaChallengeRequired,
     isDemoMode,
     enterDemoMode,
   } = useAuth();
@@ -219,17 +220,16 @@ const WorkspaceGate: React.FC = () => {
 
   // If password recovery is active, show password reset form
   if (isPasswordRecovery) {
-    return <AuthScreen onBackToHome={() => setAuthMode(null)} />;
+    return <AuthScreen />;
   }
+
+  if (mfaChallengeRequired) return <MfaChallengeScreen />;
 
   // If no active user session and not in demo mode
   if (!user && !isDemoMode) {
     if (authMode) {
       return (
-        <AuthScreen
-          initialMode={authMode}
-          onBackToHome={() => setAuthMode(null)}
-        />
+        <AuthScreen initialMode={authMode} />
       );
     }
     return (

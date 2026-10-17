@@ -17,7 +17,10 @@ export function readAndValidateBackup(filePath: string): ReturnType<typeof valid
   try {
     parsed = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
   } catch (error) {
-    throw new Error(`Unable to read backup JSON: ${error instanceof Error ? error.message : String(error)}`);
+    throw new Error(
+      `Unable to read backup JSON: ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
+    );
   }
   return validateBackupArchive(parsed);
 }

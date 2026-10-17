@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { Select } from "../common/Select";
 import {
   ArrowLeftRight,
   Plus,
@@ -10,22 +11,13 @@ import {
   OFFLINE_SYNC_COMPLETE_EVENT,
 } from "../../services/ledgerService";
 import { formatPaisa, parseInputToPaisa } from "../../lib/money";
-import { AccountLedgerEntry, LedgerAccount } from "../../types/ledger";
-import { useRegion } from "../../regional/region";
-import { useI18n } from "../../i18n";
+import { LedgerAccount } from "../../types/ledger";
 
 type AccountKind = LedgerAccount["type"];
 
 export const AccountsView: React.FC = () => {
-  const { region } = useRegion();
-  const { t } = useI18n();
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
-  const [entries, setEntries] = useState<AccountLedgerEntry[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [selectedAccountId, setSelectedAccountId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [isTransferring, setIsTransferring] = useState(false);
   const [editingAccountId, setEditingAccountId] = useState("");
   const [editingName, setEditingName] = useState("");
 
@@ -42,14 +34,21 @@ export const AccountsView: React.FC = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     setIsLoading(true);
     setError("");
     try {
       const result = await ledgerService.getPaymentAccounts();
       setAccounts(result);
-      setSelectedAccountId((current) =>
-        result.some((account) => account.id === current) ? current : result[0]?.id || "",
+      const activeResult = result.filter((account) => account.is_active);
+      const nextSourceId = activeResult.some((account) => account.id === sourceAccountId)
+        ? sourceAccountId
+        : activeResult[0]?.id || "";
+      setSourceAccountId(nextSourceId);
+      setDestinationAccountId((current) =>
+        activeResult.some((account) => account.id === current && account.id !== nextSourceId)
+          ? current
+          : activeResult.find((account) => account.id !== nextSourceId)?.id || "",
       );
       return true;
     } catch (loadError) {
@@ -59,7 +58,7 @@ export const AccountsView: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sourceAccountId]);
 
   useEffect(() => {
     void loadAccounts();
@@ -85,32 +84,7 @@ export const AccountsView: React.FC = () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener(OFFLINE_SYNC_COMPLETE_EVENT, handleOfflineSyncComplete);
     };
-  }, []);
-
-  const selectedAccount = accounts.find((a) => a.id === selectedAccountId);
-
-  useEffect(() => {
-    if (!selectedAccountId) {
-      setEntries([]);
-      return;
-    }
-    let isCancelled = false;
-    setIsLoadingHistory(true);
-    ledgerService
-      .getAccountLedger(selectedAccountId)
-      .then((history) => {
-        if (!isCancelled) setEntries(history);
-      })
-      .catch((err) => {
-        console.error("Could not load account ledger history:", err);
-      })
-      .finally(() => {
-        if (!isCancelled) setIsLoadingHistory(false);
-      });
-    return () => {
-      isCancelled = true;
-    };
-  }, [selectedAccountId]);
+  }, [loadAccounts]);
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +107,6 @@ export const AccountsView: React.FC = () => {
       });
       setAccountName("");
       setOpeningAmount("");
-      setIsCreating(false);
       setMessage("Account created successfully.");
       await loadAccounts();
     } catch (createErr) {
@@ -167,7 +140,6 @@ export const AccountsView: React.FC = () => {
         notes: "Treasury transfer",
       });
       setTransferAmount("");
-      setIsTransferring(false);
       setMessage("Funds transferred successfully.");
       await loadAccounts();
     } catch (transferErr) {
@@ -218,9 +190,7 @@ export const AccountsView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div>
-          <span className="kicker">TREASURY & BALANCES</span>
           <h1>Accounts</h1>
-          <p>Manage payment methods, cash drawers, and bank liquidity.</p>
         </div>
 
         <div className="title-actions">
@@ -228,29 +198,6 @@ export const AccountsView: React.FC = () => {
             <small>TOTAL LIQUIDITY</small>
             <strong>{formatPaisa(totalBalancePaisa)}</strong>
           </div>
-
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => {
-              setSourceAccountId(activeAccounts[0]?.id || "");
-              setDestinationAccountId(activeAccounts[1]?.id || "");
-              setIsTransferring(true);
-            }}
-            disabled={activeAccounts.length < 2}
-          >
-            <ArrowLeftRight className="h-4 w-4" />
-            Transfer
-          </button>
-
-          <button
-            type="button"
-            className="button button-primary"
-            onClick={() => setIsCreating(true)}
-          >
-            <Plus className="h-4 w-4" />
-            Add Account
-          </button>
 
           <button
             type="button"
@@ -293,24 +240,17 @@ export const AccountsView: React.FC = () => {
         )}
         {accounts.map((acc) => {
           const initials = acc.type === "CASH" ? "CA" : acc.type === "BANK" ? "BA" : "DW";
-          const isSelected = acc.id === selectedAccountId;
-
           return (
             <div
-              className={`account-card ${isSelected ? "selected" : ""}`}
+              className="account-card"
               key={acc.id}
-              onClick={() => setSelectedAccountId(acc.id)}
-              style={{ cursor: "pointer" }}
             >
               <div className="account-top">
                 <span>{initials}</span>
                 {editingAccountId === acc.id ? (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleSaveName(acc.id);
-                    }}
+                    onClick={() => void handleSaveName(acc.id)}
                     style={{ fontSize: 10, fontWeight: 700, color: "var(--green)" }}
                   >
                     Save
@@ -318,8 +258,7 @@ export const AccountsView: React.FC = () => {
                 ) : (
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       setEditingAccountId(acc.id);
                       setEditingName(acc.name);
                     }}
@@ -337,7 +276,6 @@ export const AccountsView: React.FC = () => {
                   type="text"
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
                   style={{
                     fontSize: 13,
                     fontWeight: 700,
@@ -369,11 +307,8 @@ export const AccountsView: React.FC = () => {
               </p>
               <button
                 type="button"
-                className="button button-ghost"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleDeactivate(acc);
-                }}
+                className="button button-ghost account-status-action"
+                onClick={() => void handleDeactivate(acc)}
                 disabled={acc.is_active && !canDeactivate(acc)}
                 title={
                   acc.is_active && !canDeactivate(acc)
@@ -388,201 +323,136 @@ export const AccountsView: React.FC = () => {
         })}
       </div>
 
-      {/* Selected Account History Table */}
-      {selectedAccount && (
-        <section className="panel transaction-table">
-          <div className="panel-heading" style={{ padding: "16px 20px 0" }}>
-            <div>
-              <h2>{selectedAccount.name} Activity History</h2>
-              <p>Chronological postings and balance tracking</p>
-            </div>
+      <div className="account-tools">
+        <section className="panel account-tool-panel">
+          <div className="panel-heading account-tool-heading">
+            <span className="account-tool-icon" aria-hidden="true">
+              <Plus className="h-4 w-4" />
+            </span>
+            <h2>Add an account</h2>
           </div>
 
-          <div className="table-head">
-            <span>Date & Time</span>
-            <span>Posting Type</span>
-            <span>Direction</span>
-            <span style={{ textAlign: "right" }}>Amount</span>
-            <span style={{ textAlign: "right" }}>Balance After</span>
-          </div>
+          <form onSubmit={handleCreateAccount}>
+            <div className="form-grid">
+              <label className="full">
+                Account name
+                <input
+                  type="text"
+                  required
+                  value={accountName}
+                  onChange={(e) => setAccountName(e.target.value)}
+                  placeholder="e.g. Counter Cash, Meezan Bank"
+                />
+              </label>
 
-          {entries.map((entry) => {
-            const isCredit = entry.entry_type === "credit";
-            return (
-              <div className="table-row" key={entry.id}>
-                <span>{entry.business_date || entry.created_at.slice(0, 10)}</span>
-                <strong>{entry.entry_type.toUpperCase()}</strong>
-                <span>
-                  <span className={`status-badge ${isCredit ? "" : "voided"}`}>
-                    {isCredit ? "Inflow" : "Outflow"}
-                  </span>
-                </span>
-                <strong className={isCredit ? "positive" : ""}>
-                  {isCredit ? "+" : "−"}
-                  {formatPaisa(entry.amount_paisa)}
-                </strong>
-                <span style={{ fontFamily: "DM Mono", textAlign: "right" }}>
-                  {formatPaisa(entry.balance_after_paisa)}
-                </span>
-              </div>
-            );
-          })}
+              <label>
+                Account type
+                <Select
+                  value={accountType}
+                  onChange={(e) => setAccountType(e.target.value as AccountKind)}
+                >
+                  <option value="CASH">Cash in Drawer</option>
+                  <option value="BANK">Bank Account</option>
+                  <option value="DIGITAL_WALLET">Digital Wallet (JazzCash / EasyPaisa)</option>
+                </Select>
+              </label>
 
-          {entries.length === 0 && !isLoadingHistory && (
-            <div className="empty-state">
-              <strong>No postings recorded</strong>
-              <p>This account does not have recorded transactions yet.</p>
+              <label>
+                Opening balance
+                <input
+                  type="text"
+                  value={openingAmount}
+                  onChange={(e) => setOpeningAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </label>
             </div>
-          )}
 
-          {isLoadingHistory && (
-            <div className="empty-state">
-              <RefreshCw className="h-6 w-6 animate-spin" />
-              <p>Loading account history...</p>
+            <div className="modal-actions">
+              <button type="submit" className="button button-primary account-tool-submit" disabled={isLoading}>
+                Add account
+              </button>
             </div>
-          )}
+          </form>
         </section>
-      )}
 
-      {/* Create Account Modal */}
-      {isCreating && (
-        <div className="modal-backdrop" onClick={() => setIsCreating(false)}>
-          <div className="expense-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-heading">
-              <div>
-                <h2>Add Account</h2>
-                <p>Create a new cash drawer, digital wallet, or bank account.</p>
-              </div>
-              <button type="button" onClick={() => setIsCreating(false)}>
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateAccount}>
-              <div className="form-grid">
-                <label className="full">
-                  Account Name
-                  <input
-                    type="text"
-                    required
-                    value={accountName}
-                    onChange={(e) => setAccountName(e.target.value)}
-                    placeholder="e.g. Counter Cash, Meezan Bank"
-                  />
-                </label>
-
-                <label>
-                  Account Type
-                  <select
-                    value={accountType}
-                    onChange={(e) => setAccountType(e.target.value as AccountKind)}
-                  >
-                    <option value="CASH">Cash in Drawer</option>
-                    <option value="BANK">Bank Account</option>
-                    <option value="DIGITAL_WALLET">Digital Wallet (JazzCash / EasyPaisa)</option>
-                  </select>
-                </label>
-
-                <label>
-                  Opening Balance
-                  <input
-                    type="text"
-                    value={openingAmount}
-                    onChange={(e) => setOpeningAmount(e.target.value)}
-                    placeholder="0.00"
-                  />
-                </label>
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="button button-ghost"
-                  onClick={() => setIsCreating(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="button button-primary">
-                  Save Account
-                </button>
-              </div>
-            </form>
+        <section className="panel account-tool-panel">
+          <div className="panel-heading account-tool-heading">
+            <span className="account-tool-icon" aria-hidden="true">
+              <ArrowLeftRight className="h-4 w-4" />
+            </span>
+            <h2>Transfer funds</h2>
           </div>
-        </div>
-      )}
 
-      {/* Transfer Funds Modal */}
-      {isTransferring && (
-        <div className="modal-backdrop" onClick={() => setIsTransferring(false)}>
-          <div className="expense-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-heading">
-              <div>
-                <h2>Transfer Funds</h2>
-                <p>Move money between drawers and bank accounts.</p>
-              </div>
-              <button type="button" onClick={() => setIsTransferring(false)}>
-                ×
-              </button>
-            </div>
+          <form onSubmit={handleTransfer}>
+            <div className="form-grid">
+              <label>
+                From
+                <Select
+                  required
+                  value={sourceAccountId}
+                  onChange={(e) => {
+                    const nextSourceId = e.target.value;
+                    setSourceAccountId(nextSourceId);
+                    setDestinationAccountId((current) =>
+                      current === nextSourceId
+                        ? activeAccounts.find((account) => account.id !== nextSourceId)?.id || ""
+                        : current,
+                    );
+                  }}
+                >
+                  <option value="">Select account</option>
+                  {activeAccounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name} · {formatPaisa(account.balance_paisa)}
+                    </option>
+                  ))}
+                </Select>
+              </label>
 
-            <form onSubmit={handleTransfer}>
-              <div className="form-grid">
-                <label>
-                  From Account
-                  <select
-                    value={sourceAccountId}
-                    onChange={(e) => setSourceAccountId(e.target.value)}
-                  >
-                    {activeAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name} ({formatPaisa(a.balance_paisa)})
+              <label>
+                To
+                <Select
+                  required
+                  value={destinationAccountId}
+                  onChange={(e) => setDestinationAccountId(e.target.value)}
+                >
+                  <option value="">Select account</option>
+                  {activeAccounts
+                    .filter((account) => account.id !== sourceAccountId)
+                    .map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} · {formatPaisa(account.balance_paisa)}
                       </option>
                     ))}
-                  </select>
-                </label>
+                </Select>
+              </label>
 
-                <label>
-                  To Account
-                  <select
-                    value={destinationAccountId}
-                    onChange={(e) => setDestinationAccountId(e.target.value)}
-                  >
-                    {activeAccounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name} ({formatPaisa(a.balance_paisa)})
-                      </option>
-                    ))}
-                  </select>
-                </label>
+              <label className="full">
+                Amount
+                <input
+                  type="text"
+                  required
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </label>
+            </div>
 
-                <label className="full">
-                  Transfer Amount
-                  <input
-                    type="text"
-                    required
-                    value={transferAmount}
-                    onChange={(e) => setTransferAmount(e.target.value)}
-                    placeholder="Amount to move (e.g. 5000)"
-                  />
-                </label>
-              </div>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="button button-ghost"
-                  onClick={() => setIsTransferring(false)}
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="button button-primary">
-                  Transfer Funds
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="modal-actions">
+              <button
+                type="submit"
+                className="button button-primary account-tool-submit"
+                disabled={isLoading || activeAccounts.length < 2}
+              >
+                <ArrowLeftRight className="h-4 w-4" />
+                Transfer funds
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
     </main>
   );
 };

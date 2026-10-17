@@ -25,6 +25,7 @@ import { useApp } from "../../context/AppContext";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { hasPermission } from "../../lib/permissions";
 import { useI18n } from "../../i18n";
+import { getProfileDisplayName } from "../../lib/profileDisplay";
 
 interface UndoState {
   transactionId: string;
@@ -38,10 +39,7 @@ export const ChatView: React.FC = () => {
   const { showToast, setCurrentView, entryMode, newEntryRequestId } = useApp();
   const { t } = useI18n();
   const currentUserId = user?.id || "offline-user";
-  const currentUserName =
-    user?.full_name && !user.full_name.includes("@")
-      ? user.full_name
-      : user?.full_name?.split("@")[0]?.replace(/[._+-]/g, " ") || "Shop Brother";
+  const currentUserName = getProfileDisplayName(user, "Shop Brother");
   const canManageTransactions = hasPermission(user?.role, "VOID_EXPENSE");
 
   // State
@@ -62,10 +60,6 @@ export const ChatView: React.FC = () => {
     transaction_count: 0,
   });
 
-  const [isOnline, setIsOnline] = useState(
-    typeof navigator !== "undefined" ? navigator.onLine : true,
-  );
-  const [queuedCount, setQueuedCount] = useState(0);
   const [dayLoadError, setDayLoadError] = useState<string | null>(null);
   const loadRequestId = useRef(0);
 
@@ -109,9 +103,6 @@ export const ChatView: React.FC = () => {
       setSuggestedCategories(categorySuggestions);
       setSummary(sum);
 
-      const currentQueuedCount = await ledgerService.getPendingTransactionCount();
-      if (requestId !== loadRequestId.current) return;
-      setQueuedCount(currentQueuedCount);
       setDayLoadError(null);
     } catch (err) {
       console.error("Error loading ledger data:", err);
@@ -129,17 +120,10 @@ export const ChatView: React.FC = () => {
   useEffect(() => {
     loadDayData();
 
-    const handleOnline = async () => {
-      setIsOnline(true);
-      loadDayData();
-    };
+    const handleOnline = () => loadDayData();
 
     const handleOfflineSyncComplete = () => {
       loadDayData();
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
     };
 
     const handleVisibilityChange = () => {
@@ -149,7 +133,6 @@ export const ChatView: React.FC = () => {
     };
 
     window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
     window.addEventListener(OFFLINE_SYNC_COMPLETE_EVENT, handleOfflineSyncComplete);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
@@ -160,7 +143,6 @@ export const ChatView: React.FC = () => {
 
     return () => {
       window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
       window.removeEventListener(OFFLINE_SYNC_COMPLETE_EVENT, handleOfflineSyncComplete);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       unsubscribe();
@@ -405,8 +387,6 @@ export const ChatView: React.FC = () => {
       {/* 1. Today Strip with Income, Expense, Net */}
       <TodayStrip
         summary={summary}
-        isOnline={isOnline}
-        queuedCount={queuedCount}
         onOpenInstallHelp={() => setShowInstallHelp(true)}
       />
 
@@ -424,24 +404,6 @@ export const ChatView: React.FC = () => {
             className="min-h-9 shrink-0 rounded-md border border-danger-border bg-surface-bright px-3 font-semibold text-danger hover:bg-danger-bg"
           >
             Retry
-          </button>
-        </div>
-      )}
-
-      {accounts.length === 0 && !dayLoadError && (
-        <div
-          role="status"
-          className="mx-3 my-2 flex items-center justify-between gap-3 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-on-surface sm:mx-5"
-        >
-          <span>
-            Set up your shop's cash drawer or bank account to begin posting transactions directly to accounts.
-          </span>
-          <button
-            type="button"
-            onClick={() => setCurrentView("settings")}
-            className="min-h-8 shrink-0 rounded-md border border-primary/30 bg-surface-bright px-2.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
-          >
-            Configure Accounts
           </button>
         </div>
       )}
@@ -482,7 +444,6 @@ export const ChatView: React.FC = () => {
         <ChatComposer
           onSend={handleSendMessage}
           categories={suggestedCategories}
-          onAddCategory={() => setCurrentView("settings")}
           disabled={isSavingBatch}
           focusRequestId={newEntryRequestId}
         />

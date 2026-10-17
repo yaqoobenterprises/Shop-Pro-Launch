@@ -6,7 +6,6 @@ import { useI18n } from "../../i18n";
 interface ChatComposerProps {
   onSend: (text: string) => void | Promise<void>;
   categories: SeedCategory[];
-  onAddCategory: () => void;
   disabled?: boolean;
   placeholder?: string;
   autoFocus?: boolean;
@@ -16,7 +15,6 @@ interface ChatComposerProps {
 export const ChatComposer: React.FC<ChatComposerProps> = ({
   onSend,
   categories,
-  onAddCategory,
   disabled = false,
   placeholder,
   autoFocus = true,
@@ -104,18 +102,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
             )}
             {category.name}
           </button>
-        )) : (
-          <div className="flex min-h-9 min-w-0 items-center gap-2 text-xs text-text-muted">
-            <span>{t("chat.noSuggestions")}</span>
-            <button
-              type="button"
-              onClick={onAddCategory}
-              className="shrink-0 font-semibold text-primary underline-offset-2 hover:underline"
-            >
-              {t("chat.setupCategories")}
-            </button>
-          </div>
-        )}
+        )) : null}
         <button
           type="button"
           onClick={() => insertChip("yesterday")}
@@ -171,9 +158,6 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
         id="ledger-entry-hint"
         className="mx-auto mt-2 flex w-full max-w-4xl flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-text-muted"
       >
-        <span>
-          {t("chat.reviewHint")}
-        </span>
         <span className="hidden sm:inline">{t("chat.enterHint")}</span>
       </div>
     </div>

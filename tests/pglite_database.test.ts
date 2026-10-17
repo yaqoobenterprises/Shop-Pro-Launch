@@ -52,7 +52,7 @@ describe('Real PostgreSQL Engine & RLS Security Tests (PGlite)', () => {
     `);
 
     // 2. Read and execute the real migration
-    const migrationPath = path.resolve(__dirname, '../supabase/migrations/20261004000000_shop_ledger_foundation.sql');
+    const migrationPath = path.resolve(__dirname, '../supabase/migration-history/20261004000000_shop_ledger_foundation.sql');
     const sql = fs.readFileSync(migrationPath, 'utf8');
     await pg.exec(sql);
 
@@ -64,7 +64,7 @@ describe('Real PostgreSQL Engine & RLS Security Tests (PGlite)', () => {
     `);
     const saleItemMigrationPath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261004001000_sale_items_created_at.sql'
+      '../supabase/migration-history/20261004001000_sale_items_created_at.sql'
     );
     await pg.exec(fs.readFileSync(saleItemMigrationPath, 'utf8'));
 
@@ -139,40 +139,48 @@ describe('Real PostgreSQL Engine & RLS Security Tests (PGlite)', () => {
 
     const membershipMigrationPath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261004002000_repair_shop_member_provisioning.sql'
+      '../supabase/migration-history/20261004002000_repair_shop_member_provisioning.sql'
     );
     await pg.exec(fs.readFileSync(membershipMigrationPath, 'utf8'));
 
     await pg.exec('CREATE SCHEMA IF NOT EXISTS private;');
     const accountMigrationPath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261004003000_account_balances_and_postings.sql'
+      '../supabase/migration-history/20261004003000_account_balances_and_postings.sql'
     );
     await pg.exec(fs.readFileSync(accountMigrationPath, 'utf8'));
     const draftMigrationPath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261004004000_transaction_drafts.sql'
+      '../supabase/migration-history/20261004004000_transaction_drafts.sql'
     );
     await pg.exec(fs.readFileSync(draftMigrationPath, 'utf8'));
     const aliasMigrationPath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261004005000_tenant_scoped_category_aliases.sql'
+      '../supabase/migration-history/20261004005000_tenant_scoped_category_aliases.sql'
     );
     await pg.exec(fs.readFileSync(aliasMigrationPath, 'utf8'));
     const provisioningMigrationPath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261004006000_repair_shop_provisioning.sql'
+      '../supabase/migration-history/20261004006000_repair_shop_provisioning.sql'
     );
     await pg.exec(fs.readFileSync(provisioningMigrationPath, 'utf8'));
     const integrityMigrationPath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261004007000_transaction_integrity_and_authorization.sql'
+      '../supabase/migration-history/20261004007000_transaction_integrity_and_authorization.sql'
     );
     await pg.exec(fs.readFileSync(integrityMigrationPath, 'utf8'));
     await pg.exec(`
       INSERT INTO public.shop_members (user_id, organization_id, full_name, email, role)
       VALUES ('${cashierId}', '00000000-0000-0000-0000-000000000001', 'Cashier', 'cashier@example.com', 'CASHIER');
+      INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
+      VALUES ('00000000-0000-0000-0000-000000000001', '${cashierId}', 'CASHIER', TRUE);
     `);
+
+    const authorizationMigrationPath = path.resolve(
+      __dirname,
+      '../supabase/migrations/20261017062800_launch_authorization_hardening.sql'
+    );
+    await pg.exec(fs.readFileSync(authorizationMigrationPath, 'utf8'));
 
     const accountRows = await pg.query<{ id: string; organization_id: string }>(
       'SELECT id, organization_id FROM public.payment_accounts WHERE is_default = TRUE;'
@@ -277,6 +285,34 @@ describe('Real PostgreSQL Engine & RLS Security Tests (PGlite)', () => {
     expect(secondMembership.rows[0].organization_id).toBe(firstMembership.rows[0].organization_id);
     expect(Number(account.rows[0].current_balance)).toBe(0);
     expect(categories.rows[0].count).toBe(6);
+  });
+
+  it('allows organization updates only for active owners', async () => {
+    await setAuthContext(brother1Id, 'authenticated');
+    const ownerUpdate = await pg.query<{ id: string }>(
+      `UPDATE public.organizations SET name = name WHERE id = '00000000-0000-0000-0000-000000000001' RETURNING id;`,
+    );
+    expect(ownerUpdate.rows).toHaveLength(1);
+
+    await pg.exec(`
+      RESET ROLE;
+      UPDATE public.organization_members SET role = 'MANAGER' WHERE user_id = '${brother2Id}';
+    `);
+    await setAuthContext(brother2Id, 'authenticated');
+    const managerUpdate = await pg.query<{ id: string }>(
+      `UPDATE public.organizations SET name = name WHERE id = '00000000-0000-0000-0000-000000000001' RETURNING id;`,
+    );
+    expect(managerUpdate.rows).toHaveLength(0);
+
+    await pg.exec(`
+      RESET ROLE;
+      UPDATE public.organization_members SET role = 'STAFF' WHERE user_id = '${brother2Id}';
+    `);
+    await setAuthContext(cashierId, 'authenticated');
+    const cashierUpdate = await pg.query<{ id: string }>(
+      `UPDATE public.organizations SET name = name WHERE id = '00000000-0000-0000-0000-000000000001' RETURNING id;`,
+    );
+    expect(cashierUpdate.rows).toHaveLength(0);
   });
 
   it('anon blocked on all tables, views and functions', async () => {
@@ -781,5 +817,52 @@ describe('Real PostgreSQL Engine & RLS Security Tests (PGlite)', () => {
       `SELECT COUNT(*)::int AS count FROM public.transaction_drafts WHERE id = '${draftId}';`,
     );
     expect(remainingDrafts.rows[0].count).toBe(0);
+
+    await pg.exec(`
+      RESET ROLE;
+      SET "request.jwt.claim.sub" = '';
+      INSERT INTO public.transactions (
+        organization_id, account_id, type, amount_paisa, business_date,
+        raw_text, idempotency_key, created_by, created_by_name
+      ) VALUES (
+        '${strangerOrgId}', '${strangerAccountId}', 'income', 9876,
+        '2026-10-04', 'OTHER SHOP RETRY',
+        'draft-55000000-0000-0000-0000-000000000099',
+        '${strangerId}', 'Stranger'
+      );
+    `);
+    await setAuthContext(brother1Id, 'authenticated');
+    await expect(
+      pg.query(
+        `SELECT * FROM public.post_transaction_draft('55000000-0000-0000-0000-000000000099', '${defaultAccountId}');`,
+      ),
+    ).rejects.toThrow(/Transaction draft was not found/);
+  });
+
+  it('does not restore an explicitly inactive member during profile repair', async () => {
+    await pg.exec(`
+      RESET ROLE;
+      UPDATE public.organization_members
+      SET is_active = FALSE
+      WHERE organization_id = '00000000-0000-0000-0000-000000000001'
+        AND user_id = '${brother2Id}';
+    `);
+    await setAuthContext(brother2Id, 'authenticated');
+
+    const activeMembership = await pg.query<{ is_active: boolean }>(
+      'SELECT public.is_active_shop_member() AS is_active;',
+    );
+    const visibleCategories = await pg.query<{ count: number }>(
+      'SELECT COUNT(*)::int AS count FROM public.categories;',
+    );
+    expect(activeMembership.rows[0].is_active).toBe(false);
+    expect(visibleCategories.rows[0].count).toBe(0);
+
+    await pg.query('SELECT public.ensure_my_profile();');
+    await pg.exec('RESET ROLE;');
+    const preservedMembership = await pg.query<{ is_active: boolean }>(
+      `SELECT is_active FROM public.organization_members WHERE organization_id = '00000000-0000-0000-0000-000000000001' AND user_id = '${brother2Id}';`,
+    );
+    expect(preservedMembership.rows[0].is_active).toBe(false);
   });
 });

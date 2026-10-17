@@ -30,9 +30,9 @@ describe("New User & Unseeded Shop Ledger Refresh Resilience", () => {
     expect(Array.isArray(accounts)).toBe(true);
   });
 
-  it("ChatView source handles 0 accounts with a clear onboarding guidance banner", async () => {
+  it("ChatView does not show a setup banner while the ledger opens with no accounts", async () => {
     const chatViewSource = await import("../src/components/chat/ChatView?raw");
-    expect(chatViewSource.default).toContain("accounts.length === 0");
-    expect(chatViewSource.default).toContain("Set up your shop's cash drawer or bank account");
+    expect(chatViewSource.default).not.toContain("Set up your shop's cash drawer or bank account");
+    expect(chatViewSource.default).not.toContain("Configure Accounts");
   });
 });

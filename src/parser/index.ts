@@ -3,7 +3,7 @@
  * Pure TypeScript, zero external AI APIs, 100% deterministic local parser.
  */
 
-import { splitLines, normalizeLine, NormalizedLine } from './normalizer';
+import { splitLines, normalizeLine } from './normalizer';
 import {
   classifyNormalizedLine,
   ParseResult,

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { User, MessageSquare, FormInput, Sliders, Check } from 'lucide-react';
+import { Select } from "../common/Select";
+import { Languages, MessageSquare, FormInput, Sliders, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRegion } from '../../regional/region';
 import { useI18n } from '../../i18n';
 import { useApp } from '../../context/AppContext';
-import { useFeature } from '../../config/features';
+import { isFeatureEnabled } from '../../config/features';
 import {
   getUserPreferences,
   saveUserPreferences,
@@ -14,11 +15,11 @@ import {
 
 export const UserPreferencesSection: React.FC = () => {
   const { user, organization } = useAuth();
-  const { region, setRegion } = useRegion();
+  const { setRegion } = useRegion();
   const { setEntryMode: setAppEntryMode } = useApp();
   const { t, setLanguage: setI18nLanguage } = useI18n();
-  const languageUrEnabled = useFeature('languageUr');
-  const entryModesEnabled = useFeature('entryModes');
+  const languageUrEnabled = isFeatureEnabled('languageUr');
+  const entryModesEnabled = isFeatureEnabled('entryModes');
 
   const [entryMode, setEntryMode] = useState<EntryMode>('chat');
   const [language, setSelectedLanguage] = useState<AppLanguage>('en');
@@ -73,7 +74,7 @@ export const UserPreferencesSection: React.FC = () => {
     <section id="user-preferences" className="workspace-panel settings-section p-5">
       <div className="mb-4 flex items-start gap-3">
         <div className="settings-icon">
-          <User className="h-4 w-4" />
+          <Languages className="h-4 w-4" />
         </div>
         <div>
           <h2 className="text-sm font-semibold text-on-surface">
@@ -84,7 +85,9 @@ export const UserPreferencesSection: React.FC = () => {
                 : t('settings.entryMode')}
           </h2>
           <p className="mt-0.5 text-xs text-text-muted">
-            {t('settings.preferenceDescription')}
+            {languageUrEnabled && !entryModesEnabled
+              ? 'Choose the language used across the app.'
+              : t('settings.preferenceDescription')}
           </p>
         </div>
       </div>
@@ -102,7 +105,7 @@ export const UserPreferencesSection: React.FC = () => {
           <label htmlFor="user-pref-lang" className="block font-semibold text-secondary mb-1">
             {t('settings.language')}
           </label>
-          <select
+          <Select
             id="user-pref-lang"
             value={language}
             onChange={(e) => {
@@ -115,7 +118,7 @@ export const UserPreferencesSection: React.FC = () => {
           >
             <option value="en">{t('settings.languageEnglish')}</option>
             <option value="ur">{t('settings.languageUrdu')}</option>
-          </select>
+          </Select>
         </div>}
 
         {/* Entry Mode Selection */}

@@ -11,6 +11,7 @@ import {
   Moon,
 } from "lucide-react";
 import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
+import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 
 export const Header: React.FC = () => {
@@ -20,6 +21,11 @@ export const Header: React.FC = () => {
 
   const [theme, setTheme] = useState<ThemePreference>(() => getSavedTheme());
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  const displayName = getProfileDisplayName(user, organization.owner_name, t("header.owner"));
+  const email = user?.email || organization.email || "";
   const menuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -49,12 +55,25 @@ export const Header: React.FC = () => {
     };
   }, [isMenuOpen]);
 
+  useEffect(() => {
+    const updateConnection = () => setIsOnline(navigator.onLine);
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+    return () => {
+      window.removeEventListener("online", updateConnection);
+      window.removeEventListener("offline", updateConnection);
+    };
+  }, []);
+
   return (
     <header className="app-header" dir={dir}>
       <div className="workspace-name">
-        <span className="status-dot" />
-        <span>{organization.name || "Shop Pro"}</span>
-        <small>{isDemoMode ? "DEMO" : "REGISTER"}</small>
+        <span
+          className={`network-status-dot ${isOnline ? "network-status-dot--online" : "network-status-dot--offline"}`}
+          role="status"
+          aria-label={isOnline ? "Online" : "Offline"}
+          title={isOnline ? "Online" : "Offline"}
+        />
       </div>
 
       <div className="header-actions">
@@ -96,11 +115,12 @@ export const Header: React.FC = () => {
           >
             <UserAvatar
               src={user?.avatar_url}
-              name={user?.full_name || organization.owner_name || t("header.owner")}
+              name={displayName}
               size="sm"
             />
-            <span className="hidden sm:inline text-xs font-semibold text-ink">
-              {user?.full_name || organization.owner_name || t("header.owner")}
+            <span className="hidden md:flex min-w-0 flex-col items-start text-start leading-tight">
+              <strong className="max-w-40 truncate text-xs font-semibold text-ink">{displayName}</strong>
+              {email && <small className="max-w-40 truncate text-[10px] font-normal text-muted">{email}</small>}
             </span>
             <ChevronDown className="hidden sm:inline h-3.5 w-3.5 text-muted" />
           </button>
@@ -112,10 +132,10 @@ export const Header: React.FC = () => {
             >
               <div className="border-b border-line px-3 py-2">
                 <p className="truncate text-xs font-bold text-ink">
-                  {user?.full_name || organization.owner_name || t("header.owner")}
+                  {displayName}
                 </p>
                 <p className="truncate text-[11px] text-muted">
-                  {user?.email || organization.email || ""}
+                  {email}
                 </p>
               </div>
 

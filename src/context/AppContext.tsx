@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useAuth } from "./AuthContext";
 import { EntryMode, getUserPreferences } from "../services/userPreferencesService";
-import { useFeature } from "../config/features";
+import { isFeatureEnabled } from "../config/features";
 
 export type AppView =
   | "chat"
@@ -53,7 +53,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user } = useAuth();
-  const entryModesEnabled = useFeature("entryModes");
+  const entryModesEnabled = isFeatureEnabled("entryModes");
   const [currentView, setCurrentView] = useState<AppView>("chat"); // Default to Modern Shop Ledger Chat
   const [entryMode, setEntryMode] = useState<EntryMode>("chat");
   const [dataVersion, setDataVersion] = useState<number>(1);

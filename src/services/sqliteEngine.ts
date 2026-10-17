@@ -1,12 +1,3 @@
-import {
-  DEFAULT_ORGANIZATION,
-  STARTER_CATEGORIES,
-  STARTER_PRODUCTS,
-  STARTER_SERVICES,
-  STARTER_PAYMENT_ACCOUNTS,
-  STARTER_EXPENSE_CATEGORIES,
-  STARTER_CUSTOMERS,
-} from '../lib/mockData';
 
 export interface SqlDatabase {
   execute(query: string, bindValues?: unknown[]): Promise<{ rowsAffected: number; lastInsertId?: number }>;

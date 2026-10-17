@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DailySummary } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
@@ -6,66 +6,72 @@ import { useI18n } from "../../i18n";
 import {
   ArrowDownLeft,
   ArrowUpRight,
-  CloudUpload,
   Download,
   TrendingUp,
-  WifiOff,
 } from "lucide-react";
+
+const isRunningAsInstalledApp = () => {
+  if (typeof window === "undefined") return false;
+  const iosNavigator = window.navigator as Navigator & { standalone?: boolean };
+  const displayModeMatches =
+    typeof window.matchMedia === "function" &&
+    window.matchMedia("(display-mode: standalone)").matches;
+  return iosNavigator.standalone === true || displayModeMatches;
+};
 
 interface TodayStripProps {
   summary: DailySummary;
-  isOnline: boolean;
-  queuedCount: number;
   onOpenInstallHelp: () => void;
 }
 
 export const TodayStrip: React.FC<TodayStripProps> = ({
   summary,
-  isOnline,
-  queuedCount,
   onOpenInstallHelp,
 }) => {
   const { t } = useI18n();
+  const [isInstalled, setIsInstalled] = useState(isRunningAsInstalledApp);
+
+  useEffect(() => {
+    const displayMode =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(display-mode: standalone)")
+        : null;
+    const updateInstalledState = () =>
+      setIsInstalled(isRunningAsInstalledApp());
+    const handleAppInstalled = () => setIsInstalled(true);
+
+    displayMode?.addEventListener("change", updateInstalledState);
+    window.addEventListener("appinstalled", handleAppInstalled);
+    updateInstalledState();
+
+    return () => {
+      displayMode?.removeEventListener("change", updateInstalledState);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+    };
+  }, []);
+
   const todayStr = getKarachiBusinessDate();
   const displayDate = formatDisplayDate(todayStr);
 
   return (
-    <div className="border-b border-border-standard bg-surface-bright px-3 py-3 sm:px-5">
-      {/* Top Meta Bar */}
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-text-muted">
-        <div className="flex min-w-0 flex-wrap items-center gap-2">
-          <span className="text-[13px] font-semibold text-on-surface">
-            Today ({displayDate})
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-surface-container-low px-2.5 py-1 text-[10px] font-semibold text-secondary">
-            {isOnline ?
-              queuedCount > 0 ?
-                <>
-                  <CloudUpload className="h-3 w-3 text-warning" />
-                  Sync pending ({queuedCount})
-                </>
-              : <>
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  Online
-                </>
-
-            : <>
-                <WifiOff className="h-3 w-3 text-warning" />
-                Offline ({queuedCount} queued)
-              </>
-            }
-          </span>
+    <div className="cashbook-summary border-b border-border-standard bg-surface-bright px-3 py-4 sm:px-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="m-0 text-lg font-bold tracking-tight text-on-surface sm:text-xl">{t("nav.ledger")}</h1>
+          <p className="mt-0.5 text-xs font-medium text-text-muted">Today · {displayDate}</p>
         </div>
 
         <div className="flex items-center gap-2">
-
-          <button
-            onClick={onOpenInstallHelp}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border-standard bg-surface-bright px-2 text-[11px] font-medium text-secondary transition-colors hover:bg-surface-container-low"
-            title="Install App as PWA"
-          >
-            <Download className="h-3.5 w-3.5" aria-hidden="true" /> Install
-          </button>
+          {!isInstalled && (
+            <button
+              type="button"
+              onClick={onOpenInstallHelp}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary transition-colors hover:bg-surface-container-low"
+              title="Install App as PWA"
+            >
+              <Download className="h-3.5 w-3.5" aria-hidden="true" /> Install
+            </button>
+          )}
         </div>
       </div>
 

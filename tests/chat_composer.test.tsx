@@ -27,7 +27,6 @@ describe('shop-specific chat composer', () => {
       <ChatComposer
         onSend={vi.fn()}
         categories={shopCategories}
-        onAddCategory={vi.fn()}
       />,
     );
 
@@ -36,24 +35,19 @@ describe('shop-specific chat composer', () => {
     expect(screen.queryByRole('button', { name: /Print|Stamp|Paper/ })).toBeNull();
   });
 
-  it('shows an empty-shop setup state without disabling the main input', () => {
-    const onAddCategory = vi.fn();
-    render(
-      <ChatComposer onSend={vi.fn()} categories={[]} onAddCategory={onAddCategory} />,
-    );
+  it('keeps the composer clean when no categories are available', () => {
+    render(<ChatComposer onSend={vi.fn()} categories={[]} />);
 
-    expect(screen.getByText(/No shop category suggestions are available/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Set up categories' })).toBeTruthy();
+    expect(screen.queryByText(/No shop category suggestions are available/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Set up categories' })).toBeNull();
     expect((screen.getByRole('textbox', { name: 'Ledger entry' }) as HTMLTextAreaElement).disabled)
       .toBe(false);
-    fireEvent.click(screen.getByRole('button', { name: 'Set up categories' }));
-    expect(onAddCategory).toHaveBeenCalledOnce();
   });
 
   it('retains the typed text when review fails and blocks duplicate submissions', async () => {
     const onSend = vi.fn().mockRejectedValue(new Error('Network unavailable'));
     render(
-      <ChatComposer onSend={onSend} categories={shopCategories} onAddCategory={vi.fn()} />,
+      <ChatComposer onSend={onSend} categories={shopCategories} />,
     );
 
     const input = screen.getByRole('textbox', { name: 'Ledger entry' }) as HTMLTextAreaElement;

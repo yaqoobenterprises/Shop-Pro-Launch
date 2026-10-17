@@ -70,6 +70,10 @@
     border-color: var(--border-standard);
   }
 
+  button {
+    color: inherit;
+  }
+
   body {
     font-family: var(--font-sans);
     color-scheme: light;
@@ -260,7 +264,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button,
 textarea,
 select,
 input {
@@ -271,10 +274,6 @@ input {
 ::placeholder {
   color: var(--muted);
   opacity: 0.8;
-}
-
-button {
-  color: inherit;
 }
 
 button:focus-visible,
@@ -679,18 +678,6 @@ input:focus-visible {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-.title-actions select,
-.title-actions input[type="date"],
-.title-actions input[type="month"] {
-  border: 1px solid var(--line);
-  background: var(--surface);
-  border-radius: 9px;
-  padding: 8px 12px;
-  font-size: 11px;
-  color: var(--ink);
-  outline: none;
 }
 
 /* ==========================================================================
@@ -2514,8 +2501,7 @@ html.dark .dashboard-metric {
 
 .workspace-control,
 .entries-filter-control,
-.settings-field input,
-.settings-field select,
+  .settings-field input,
 .settings-field textarea {
   border: 1px solid var(--line);
   border-radius: 0.75rem;
@@ -3882,8 +3868,7 @@ html.dark .app-shell .accounts-total {
   flex-shrink: 0;
 }
 
-.app-shell .page-title button,
-.app-shell .page-title select {
+.app-shell .page-title button {
   border-radius: 0.75rem;
 }
 
@@ -3893,7 +3878,10 @@ html.dark .app-shell .accounts-total {
   gap: 1rem;
 }
 
-.app-shell .overview-page .metrics,
+.app-shell .overview-page .metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .app-shell .reports-page .report-cards {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -4028,6 +4016,53 @@ html.dark .app-shell .accounts-total {
   gap: 1rem;
 }
 
+.app-shell .accounts-page .account-tools {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.app-shell .accounts-page .account-tool-panel {
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: var(--surface-card);
+}
+
+.app-shell .accounts-page .account-tool-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.app-shell .accounts-page .account-tool-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.app-shell .accounts-page .account-tool-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--good-line);
+  border-radius: 0.75rem;
+  background: var(--good-bg);
+  color: var(--accent-ink);
+}
+
+.app-shell .accounts-page .account-status-action {
+  margin-top: 0.75rem;
+}
+
+.app-shell .accounts-page .account-tool-submit {
+  width: 100%;
+}
+
 .app-shell .accounts-page .account-card {
   border-radius: 1rem;
   background: linear-gradient(150deg, var(--surface-card) 68%, var(--glass-soft));
@@ -4106,6 +4141,21 @@ html.dark .app-shell .reports-page .reports-table tbody tr:hover {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .app-shell .accounts-page .account-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell .accounts-page .title-actions {
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+  }
+
+  .app-shell .accounts-page .balance-total {
+    display: grid;
+    text-align: left;
+  }
+
   .app-shell .overview-page .cash-panel {
     padding: 1rem;
   }
@@ -4135,7 +4185,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-button,
 textarea,
 select,
 input {
@@ -4146,10 +4195,6 @@ input {
 ::placeholder {
   color: var(--muted);
   opacity: 0.8;
-}
-
-button {
-  color: inherit;
 }
 
 button:focus-visible,
@@ -4480,6 +4525,54 @@ input:focus-visible {
   background: var(--dot);
   display: inline-block;
   flex-shrink: 0;
+}
+
+.network-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+}
+
+.network-status-dot--online {
+  background: var(--green);
+  animation: network-status-pulse 2.4s ease-in-out infinite;
+}
+
+.network-status-dot--offline {
+  background: #d7a521;
+}
+
+@keyframes network-status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--green) 14%, transparent);
+  }
+
+  50% {
+    opacity: 0.72;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 7%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .network-status-dot--online {
+    animation: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-shell .overview-page .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 460px) {
+  .app-shell .overview-page .metrics {
+    grid-template-columns: 1fr;
+  }
 }
 
 .header-actions {
@@ -5700,4 +5793,149 @@ html[dir="rtl"] .text-right {
 html[lang="ur"] body,
 html[lang="ur"] .font-sans {
   font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Segoe UI", serif;
+}
+
+/* Branded, keyboard-friendly form controls shared by every workspace view. */
+.app-shell select,
+.auth-screen select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-inline-end: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7b73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-position: right 0.8rem center;
+  background-repeat: no-repeat;
+  background-size: 1rem;
+  cursor: pointer;
+}
+
+html[dir="rtl"] .app-shell select,
+.user-card {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid transparent;
+  color: var(--ink);
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.user-card:hover {
+  border-color: var(--good-line);
+  background: var(--good-bg);
+}
+
+.user-card:active {
+  transform: translateY(1px);
+}
+
+.user-card:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.user-card-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.user-card-copy small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-picker-nav {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  color: var(--muted);
+  transition: color 140ms ease, background-color 140ms ease, border-color 140ms ease;
+}
+
+.custom-select-popover {
+  overscroll-behavior: contain;
+  animation: select-menu-enter 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.cashbook-summary {
+  border-color: var(--line);
+  background: linear-gradient(180deg, var(--header-bg), var(--paper));
+}
+
+.cashbook-summary h1 {
+  letter-spacing: -0.035em;
+}
+
+@keyframes select-menu-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.date-picker-nav:hover {
+  border-color: var(--good-line);
+  background: var(--good-bg);
+  color: var(--forest);
+}
+
+.date-picker-day {
+  display: grid;
+  min-width: 2rem;
+  min-height: 2rem;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 0.55rem;
+  color: var(--ink);
+  font-size: 0.75rem;
+  transition: background-color 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.date-picker-day:not(:disabled):hover {
+  border-color: var(--good-line);
+  background: var(--good-bg);
+  color: var(--forest);
+}
+
+.date-picker-day--today {
+  border-color: var(--good-line);
+  color: var(--forest);
+  font-weight: 700;
+}
+
+.date-picker-day--selected,
+.date-picker-day--selected:hover {
+  border-color: var(--forest);
+  background: var(--forest);
+  color: white;
+  font-weight: 700;
+}
+
+.date-picker-day:disabled {
+  cursor: not-allowed;
+  color: var(--muted);
+  opacity: 0.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-card,
+  .custom-select-popover,
+  .date-picker-nav,
+  .date-picker-day {
+    transition: none;
+  }
+  .custom-select-popover {
+    animation: none;
+  }
 }

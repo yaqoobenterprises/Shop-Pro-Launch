@@ -1,6 +1,6 @@
 /**
  * Feature flag definitions and accessors for Shop Pro.
- * All new user-visible features sit behind flags that default to false.
+ * Feature flags control availability of staged Shop Pro features.
  */
 
 export interface FeatureFlags {
@@ -21,6 +21,6 @@ export const FEATURES: FeatureFlags = {
  * Accessor hook/helper for feature flags.
  * Returns boolean status of the requested feature flag.
  */
-export function useFeature(name: keyof FeatureFlags): boolean {
+export function isFeatureEnabled(name: keyof FeatureFlags): boolean {
   return FEATURES[name] ?? false;
 }

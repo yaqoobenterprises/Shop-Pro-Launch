@@ -61,7 +61,7 @@ describe('Regional Settings Database & Trigger Tests (PGlite)', () => {
     `);
 
     // 2. Load foundation migrations
-    const foundationPath = path.resolve(__dirname, '../supabase/migrations/20261004000000_shop_ledger_foundation.sql');
+    const foundationPath = path.resolve(__dirname, '../supabase/migration-history/20261004000000_shop_ledger_foundation.sql');
     await pg.exec(fs.readFileSync(foundationPath, 'utf8'));
 
     await pg.exec(`
@@ -92,7 +92,7 @@ describe('Regional Settings Database & Trigger Tests (PGlite)', () => {
       GRANT SELECT, INSERT, UPDATE ON public.account_transfers TO authenticated;
     `);
 
-    const accountPostingPath = path.resolve(__dirname, '../supabase/migrations/20261004003000_account_balances_and_postings.sql');
+    const accountPostingPath = path.resolve(__dirname, '../supabase/migration-history/20261004003000_account_balances_and_postings.sql');
     await pg.exec(fs.readFileSync(accountPostingPath, 'utf8'));
 
     // Create the baseline policy so the proposal replaces it in this local test.
@@ -106,13 +106,13 @@ describe('Regional Settings Database & Trigger Tests (PGlite)', () => {
     `);
 
     // 3. Load regional settings migration
-    const regionalPath = path.resolve(__dirname, '../supabase/migrations/20261014000000_regional_settings.sql');
+    const regionalPath = path.resolve(__dirname, '../supabase/migration-history/20261014000000_regional_settings.sql');
     await pg.exec(fs.readFileSync(regionalPath, 'utf8'));
 
     // Apply the proposal locally to verify the owner-only organization policy.
     const ownerUpdatePath = path.resolve(
       __dirname,
-      '../supabase/migrations/20261016074319_owner_only_organization_updates.sql',
+      '../supabase/migration-history/proposals/20261016074319_owner_only_organization_updates.sql',
     );
     await pg.exec(fs.readFileSync(ownerUpdatePath, 'utf8'));
 

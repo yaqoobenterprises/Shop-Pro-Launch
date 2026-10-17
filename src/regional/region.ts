@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState, useMemo } from 'react';
 
 export interface ShopRegion {
   currency: string;
@@ -108,9 +108,9 @@ export const RegionProvider: React.FC<RegionProviderProps> = ({
     if (organizationId) {
       setCachedRegion(organizationId, updated);
     }
-  }, [organizationId, currency, currencySymbol, timeZone, country, uiLanguage]);
+  }, [organizationId, currency, currencySymbol, timeZone, country, uiLanguage, region.country, region.currency, region.currencySymbol, region.timeZone, region.uiLanguage]);
 
-  const setRegion = (patch: Partial<ShopRegion>) => {
+  const setRegion = useCallback((patch: Partial<ShopRegion>) => {
     setLocalRegion((prev) => {
       const next = { ...prev, ...patch };
       setModuleRegion(next);
@@ -119,9 +119,9 @@ export const RegionProvider: React.FC<RegionProviderProps> = ({
       }
       return next;
     });
-  };
+  }, [organizationId]);
 
-  const contextValue = useMemo(() => ({ region, setRegion }), [region]);
+  const contextValue = useMemo(() => ({ region, setRegion }), [region, setRegion]);
 
   return React.createElement(RegionContext.Provider, { value: contextValue }, children);
 };

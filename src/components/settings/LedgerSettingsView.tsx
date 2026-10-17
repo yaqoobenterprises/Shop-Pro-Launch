@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Select } from "../common/Select";
 import { getSupabaseClient } from "../../lib/supabase";
-import { Category, CategoryAlias } from "../../types/ledger";
-import { formatPaisa, parseInputToPaisa } from "../../lib/money";
+import { Category } from "../../types/ledger";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { getSecurityPrincipal } from "../../lib/security";
 import { canRestoreDatabase } from "../../lib/permissions";
@@ -21,10 +21,8 @@ import {
 } from "../../services/localRecoveryBundle";
 import {
   Layers,
-  Tag,
   Sun,
   Moon,
-  ShieldCheck,
   Download,
   Upload,
   Plus,
@@ -32,7 +30,6 @@ import {
   Check,
   X,
   Trash2,
-  KeyRound,
 } from "lucide-react";
 import { PaperRegisterImportModal } from "./PaperRegisterImportModal";
 import { useAuth } from "../../context/AuthContext";
@@ -40,20 +37,21 @@ import { useApp } from "../../context/AppContext";
 import { applyTheme } from "../../lib/theme";
 import { DEMO_ORGANIZATION_ID } from "../../services/demoModeService";
 import { SEED_CATEGORIES } from "../../parser/matcher";
-import { RegionSettingsGate } from "./RegionSettingsGate";
+import { RegionSettingsSection } from "./RegionSettingsSection";
 import { UserPreferencesSection } from "./UserPreferencesSection";
-import { useRegion } from "../../regional/region";
+import { ProfileSettingsSection } from "./ProfileSettingsSection";
+import { SecuritySettingsSection } from "./SecuritySettingsSection";
 import { useI18n } from "../../i18n";
 
 export const LedgerSettingsView: React.FC = () => {
-  const { region } = useRegion();
   const { t } = useI18n();
-  const { user, changePassword } = useAuth();
+  const { user } = useAuth();
   const { showToast } = useApp();
   const isDemo = getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID;
   const [categories, setCategories] = useState<Category[]>([]);
-  const [aliases, setAliases] = useState<CategoryAlias[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [categoriesLoadError, setCategoriesLoadError] = useState(false);
+  const [categoriesReadOnly, setCategoriesReadOnly] = useState(false);
   const [showPaperImport, setShowPaperImport] = useState(false);
   const [isExportingLocalData, setIsExportingLocalData] = useState(false);
   const [isRestoringLocalData, setIsRestoringLocalData] = useState(false);
@@ -65,25 +63,19 @@ export const LedgerSettingsView: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryKind, setNewCategoryKind] =
     useState<Category["kind"]>("income");
-  const [newCategoryLimit, setNewCategoryLimit] = useState("50000");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // Category Edit State
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
-  const [editLimit, setEditLimit] = useState("");
-
-  // Add Alias State
-  const [newAliasText, setNewAliasText] = useState("");
-  const [newAliasCatId, setNewAliasCatId] = useState("");
 
   const loadData = async () => {
     setIsLoading(true);
+    setCategoriesLoadError(false);
+    setCategoriesReadOnly(false);
     const principal = getSecurityPrincipal();
     if (!principal) {
+      setCategoriesReadOnly(true);
+      setCategoriesLoadError(true);
       setIsLoading(false);
       return;
     }
@@ -98,11 +90,11 @@ export const LedgerSettingsView: React.FC = () => {
         display_order: index + 1,
         created_at: new Date(0).toISOString(),
       })));
-      setAliases([]);
       setIsLoading(false);
       return;
     }
 
+    const cacheKey = `shop-pro:categories:${principal.organizationId}`;
     try {
       const supabase = getSupabaseClient();
       const { data: cats, error: categoriesError } = await supabase
@@ -112,17 +104,26 @@ export const LedgerSettingsView: React.FC = () => {
         .order("display_order", { ascending: true });
       if (categoriesError) throw categoriesError;
       setCategories(cats || []);
-
-      const { data: aliasData, error: aliasesError } = await supabase
-        .from("category_aliases")
-        .select("*")
-        .eq("organization_id", principal.organizationId)
-        .order("match_count", { ascending: false });
-      if (aliasesError) throw aliasesError;
-      setAliases(aliasData || []);
+      try {
+        localStorage.setItem(cacheKey, JSON.stringify(cats || []));
+      } catch {
+        // Settings still work when browser storage is unavailable.
+      }
     } catch (err) {
       console.error("Error fetching settings data:", err);
-      showToast("error", "Settings could not be loaded", "Refresh and try again.");
+      setCategoriesReadOnly(true);
+      setCategoriesLoadError(true);
+      try {
+        const cached = JSON.parse(
+          localStorage.getItem(cacheKey) || "[]",
+        ) as Category[];
+        setCategories(Array.isArray(cached) ? cached.filter((category) =>
+          category && typeof category.id === "string" && typeof category.name === "string" &&
+          (category.kind === "income" || category.kind === "expense"),
+        ) : []);
+      } catch {
+        setCategories([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -133,6 +134,7 @@ export const LedgerSettingsView: React.FC = () => {
   }, []);
 
   const handleSaveCategory = async (id: string) => {
+    if (categoriesReadOnly) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo settings are read-only");
       return;
@@ -142,16 +144,14 @@ export const LedgerSettingsView: React.FC = () => {
     if (!principal) return;
 
     try {
-      const parsed = parseInputToPaisa(editLimit);
-      if (!editName.trim() || !parsed.isValid || parsed.paisa <= 0) {
-        showToast("error", "Check category details", "Enter a name and a valid amount limit.");
+      if (!editName.trim()) {
+        showToast("error", "Check category details", "Enter a category name.");
         return;
       }
       const { error } = await supabase
         .from("categories")
         .update({
           name: editName.trim(),
-          unusual_amount_limit_paisa: parsed.paisa,
         })
         .eq("id", id)
         .eq("organization_id", principal.organizationId);
@@ -168,15 +168,15 @@ export const LedgerSettingsView: React.FC = () => {
 
   const handleAddCategory = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (categoriesReadOnly) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo settings are read-only");
       return;
     }
     const name = newCategoryName.trim();
-    const limit = parseInputToPaisa(newCategoryLimit);
     const principal = getSecurityPrincipal();
-    if (!name || !limit.isValid || limit.paisa <= 0 || !principal) {
-      showToast("error", "Check category details", "Enter a name and a valid amount limit.");
+    if (!name || !principal) {
+      showToast("error", "Check category details", "Enter a category name.");
       return;
     }
 
@@ -187,14 +187,12 @@ export const LedgerSettingsView: React.FC = () => {
         organization_id: principal.organizationId,
         name,
         kind: newCategoryKind,
-        unusual_amount_limit_paisa: limit.paisa,
         is_default: false,
         is_active: true,
         display_order: categories.length + 1,
       });
       if (error) throw error;
       setNewCategoryName("");
-      setNewCategoryLimit("50000");
       setIsAddingCategory(false);
       await loadData();
       showToast("success", "Category added");
@@ -205,6 +203,7 @@ export const LedgerSettingsView: React.FC = () => {
   };
 
   const handleRemoveCategory = async (category: Category) => {
+    if (categoriesReadOnly) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo settings are read-only");
       return;
@@ -297,61 +296,6 @@ export const LedgerSettingsView: React.FC = () => {
         "Theme changed for this session",
         "Browser storage is unavailable, so this choice may not survive a reload.",
       );
-    }
-  };
-
-  const handleChangePassword = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (newPassword.length < 8) {
-      showToast("error", "Password is too short", "Use at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      showToast("error", "Passwords do not match");
-      return;
-    }
-
-    setIsChangingPassword(true);
-    try {
-      const result = await changePassword(currentPassword, newPassword);
-      if (!result.success) {
-        showToast("error", "Password not changed", result.error);
-        return;
-      }
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      showToast("success", "Password changed");
-    } finally {
-      setIsChangingPassword(false);
-    }
-  };
-
-  const handleAddAlias = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
-      showToast("info", "Demo settings are read-only");
-      return;
-    }
-    if (!newAliasText.trim() || !newAliasCatId) return;
-
-    const supabase = getSupabaseClient();
-    const principal = getSecurityPrincipal();
-    if (!principal) return;
-    try {
-      await supabase.from("category_aliases").insert({
-        id: crypto.randomUUID(),
-        organization_id: principal.organizationId,
-        category_id: newAliasCatId,
-        alias: newAliasText.trim().toUpperCase(),
-        match_count: 0,
-      });
-
-      setNewAliasText("");
-      setNewAliasCatId("");
-      await loadData();
-    } catch (err) {
-      console.error("Error adding alias:", err);
     }
   };
 
@@ -587,18 +531,16 @@ export const LedgerSettingsView: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight text-on-surface">
             Settings
           </h1>
-          <p className="mt-1 text-sm text-text-muted">
-            Manage your preferences, security, and categories.
-          </p>
         </div>
       </div>
 
       <nav aria-label="Settings sections" className="settings-nav no-scrollbar flex gap-1 overflow-x-auto border-b border-border-standard pb-2">
         {[
-          ["#appearance", t("settings.appearance")],
-          ["#region", "Region"],
-          ["#user-preferences", "Preferences"],
+          ["#profile", "Profile"],
           ["#security", "Security"],
+          ["#region", "Currency & region"],
+          ["#user-preferences", "Language"],
+          ["#appearance", t("settings.appearance")],
           ["#categories", "Categories"],
           ["#data-tools", t("settings.dataTools")],
         ].map(([href, label]) => (
@@ -622,7 +564,9 @@ export const LedgerSettingsView: React.FC = () => {
         />
       )}
 
-      <RegionSettingsGate />
+      <ProfileSettingsSection />
+      <SecuritySettingsSection />
+      <RegionSettingsSection />
       <UserPreferencesSection />
 
       <section id="appearance" className="workspace-panel settings-section p-5">
@@ -657,65 +601,6 @@ export const LedgerSettingsView: React.FC = () => {
         </div>
       </section>
 
-      <section id="security" className="workspace-panel settings-section p-5">
-        <div className="mb-4 flex items-start gap-3">
-          <div className="settings-icon"><ShieldCheck className="h-4 w-4" /></div>
-          <div>
-            <h2 className="text-sm font-semibold text-on-surface">{t("settings.security")}</h2>
-            <p className="mt-0.5 text-xs text-text-muted">
-              Change the password for {user?.email || "your account"}.
-            </p>
-          </div>
-        </div>
-        <form onSubmit={handleChangePassword} className="grid gap-3 sm:max-w-xl sm:grid-cols-2">
-          <label className="settings-field sm:col-span-2">
-            <span>{t("settings.currentPassword")}</span>
-            <input
-              required
-              autoComplete="current-password"
-              type="password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
-              placeholder="Enter current password"
-            />
-          </label>
-          <label className="settings-field">
-            <span>{t("settings.newPassword")}</span>
-            <input
-              required
-              minLength={8}
-              autoComplete="new-password"
-              type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="At least 8 characters"
-            />
-          </label>
-          <label className="settings-field">
-            <span>{t("settings.confirmPassword")}</span>
-            <input
-              required
-              minLength={8}
-              autoComplete="new-password"
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
-              placeholder="Re-enter new password"
-            />
-          </label>
-          <div className="sm:col-span-2">
-            <button
-              type="submit"
-              disabled={isChangingPassword}
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-3.5 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover disabled:opacity-60"
-            >
-              <KeyRound className="h-3.5 w-3.5" />
-              {isChangingPassword ? "Updating…" : "Update password"}
-            </button>
-          </div>
-        </form>
-      </section>
-
       <section id="categories" className="workspace-panel settings-section space-y-4 p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -730,7 +615,7 @@ export const LedgerSettingsView: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsAddingCategory((open) => !open)}
-            disabled={isDemo}
+            disabled={isDemo || categoriesReadOnly}
             className="inline-flex min-h-9 self-start items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hover sm:self-auto"
           >
             <Plus className="h-3.5 w-3.5" /> Add category
@@ -738,7 +623,7 @@ export const LedgerSettingsView: React.FC = () => {
         </div>
 
         {isAddingCategory && (
-          <form onSubmit={handleAddCategory} className="settings-create-category grid gap-2 rounded-xl border border-border-standard p-3 sm:grid-cols-[minmax(0,1fr)_9rem_12rem_auto_auto]">
+          <form onSubmit={handleAddCategory} className="settings-create-category grid gap-2 rounded-xl border border-border-standard p-3 sm:grid-cols-[minmax(0,1fr)_9rem_auto_auto]">
             <input
               required
               value={newCategoryName}
@@ -746,22 +631,14 @@ export const LedgerSettingsView: React.FC = () => {
               placeholder="Category name"
               aria-label="New category name"
             />
-            <select
+            <Select
               value={newCategoryKind}
               onChange={(event) => setNewCategoryKind(event.target.value as Category["kind"])}
               aria-label="Category type"
             >
               <option value="income">{t("settings.income")}</option>
               <option value="expense">{t("settings.expense")}</option>
-            </select>
-            <input
-              required
-              inputMode="decimal"
-              value={newCategoryLimit}
-              onChange={(event) => setNewCategoryLimit(event.target.value)}
-              placeholder="Unusual amount limit"
-              aria-label="Unusual amount limit in rupees"
-            />
+            </Select>
             <button type="submit" className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary-hover">
               <Check className="h-3.5 w-3.5" /> Save
             </button>
@@ -769,6 +646,21 @@ export const LedgerSettingsView: React.FC = () => {
               <X className="h-3.5 w-3.5" /> Cancel
             </button>
           </form>
+        )}
+
+        {categoriesLoadError && (
+          <div role="alert" className="flex flex-col gap-2 rounded-xl border border-warning-border bg-warning-bg px-3.5 py-3 text-xs text-warning sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Categories could not be refreshed. The rest of Settings is available; reconnect and retry to view or edit them.
+            </span>
+            <button
+              type="button"
+              onClick={() => void loadData()}
+              className="min-h-8 shrink-0 rounded-lg border border-warning-border bg-surface-bright px-3 font-semibold text-on-surface transition hover:bg-surface-container-low"
+            >
+              Retry
+            </button>
+          </div>
         )}
 
         <div className="settings-category-list divide-y divide-border-standard overflow-hidden rounded-xl border border-border-standard">
@@ -783,19 +675,12 @@ export const LedgerSettingsView: React.FC = () => {
                 className="flex flex-col justify-between gap-3 p-3.5 text-xs sm:flex-row sm:items-center"
               >
                 {isEditing ?
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="flex-1">
                     <input
                       type="text"
                       value={editName}
                       onChange={(e) => setEditName(e.target.value)}
                       placeholder="Category name"
-                      className="workspace-control px-2.5 py-1.5 text-xs"
-                    />
-                    <input
-                      type="text"
-                      value={editLimit}
-                      onChange={(e) => setEditLimit(e.target.value)}
-                      placeholder={t("currency.unusualLimit", { currency: region.currency })}
                       className="workspace-control px-2.5 py-1.5 text-xs"
                     />
                   </div>
@@ -822,12 +707,6 @@ export const LedgerSettingsView: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <div className="mt-0.5 text-[11px] text-text-muted">
-                      Alert limit:{" "}
-                      <span className="font-mono font-semibold">
-                        {formatPaisa(cat.unusual_amount_limit_paisa)}
-                      </span>
-                    </div>
                   </div>
                 }
 
@@ -836,7 +715,7 @@ export const LedgerSettingsView: React.FC = () => {
                     <>
                       <button
                         onClick={() => handleSaveCategory(cat.id)}
-                        disabled={isDemo}
+                        disabled={isDemo || categoriesReadOnly}
                         className="flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-semibold text-white hover:bg-primary-hover"
                         title="Save"
                       >
@@ -855,20 +734,17 @@ export const LedgerSettingsView: React.FC = () => {
                         onClick={() => {
                           setEditingCatId(cat.id);
                           setEditName(cat.name);
-                          setEditLimit(
-                            (cat.unusual_amount_limit_paisa / 100).toString(),
-                          );
                         }}
-                        disabled={isDemo}
+                        disabled={isDemo || categoriesReadOnly}
                         className="flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-2.5 text-xs font-semibold text-secondary hover:bg-surface-container-low"
-                        title="Edit name & limit"
+                        title="Edit name"
                       >
                         <Edit2 className="h-3.5 w-3.5" /> Edit
                       </button>
                       {cat.is_active ?
                         <button
                           onClick={() => handleRemoveCategory(cat)}
-                          disabled={isDemo}
+                          disabled={isDemo || categoriesReadOnly}
                           className="flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border px-2.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-bg"
                           title="Remove category"
                         >
@@ -876,7 +752,7 @@ export const LedgerSettingsView: React.FC = () => {
                         </button>
                       : <button
                           onClick={() => handleRestoreCategory(cat)}
-                          disabled={isDemo}
+                          disabled={isDemo || categoriesReadOnly}
                           className="flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-2.5 text-xs font-semibold text-secondary hover:bg-surface-container-low"
                         >
                           Restore
@@ -950,70 +826,6 @@ export const LedgerSettingsView: React.FC = () => {
               <Download className="h-3.5 w-3.5" /> Transactions JSON
             </button>
           </div>
-        </div>
-        <div className="space-y-4 border-t border-border-standard pt-5">
-        <div className="flex items-center gap-2">
-          <div className="settings-icon"><Tag className="h-4 w-4" /></div>
-          <h3 className="text-sm font-semibold text-on-surface">{t("settings.aliasesKeywords")}</h3>
-        </div>
-
-        {/* Add Manual Alias */}
-        <form
-          onSubmit={handleAddAlias}
-          className="flex flex-col gap-2 sm:flex-row"
-        >
-          <input
-            type="text"
-            disabled={isDemo}
-            value={newAliasText}
-            onChange={(e) => setNewAliasText(e.target.value)}
-            placeholder="Add alias keyword e.g. XEROX"
-            className="min-h-10 w-full min-w-0 flex-1 rounded-md border border-border-standard px-3 py-2 text-xs uppercase focus:border-primary focus:outline-none sm:w-auto"
-          />
-          <select
-            disabled={isDemo}
-            value={newAliasCatId}
-            onChange={(e) => setNewAliasCatId(e.target.value)}
-            className="min-h-10 w-full min-w-0 rounded-md border border-border-standard px-2 py-2 text-xs focus:border-primary focus:outline-none sm:w-auto"
-          >
-            <option value="">{t("settings.mapCategory")}</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            disabled={isDemo || !newAliasText.trim() || !newAliasCatId}
-            className="inline-flex min-h-10 w-full items-center justify-center gap-1 rounded-md bg-primary px-3.5 text-xs font-semibold text-white transition-colors hover:bg-primary-hover disabled:opacity-40 sm:w-auto"
-          >
-            <Plus className="w-3.5 h-3.5" /> Add
-          </button>
-        </form>
-
-        {/* Alias Cloud */}
-        <div className="flex flex-wrap gap-1.5 pt-2">
-          {aliases.map((a) => {
-            const cat = categories.find((c) => c.id === a.category_id);
-            return (
-              <span
-                key={a.id}
-                className="flex items-center gap-1.5 rounded-lg border border-border-standard bg-surface-container-low px-2.5 py-1 font-mono text-xs font-medium text-on-surface"
-              >
-                <span>{a.alias}</span>
-                <span className="font-sans text-[10px] text-text-muted">
-                  → {cat?.name || "Unknown"}
-                </span>
-                {a.match_count > 0 && (
-                  <span className="rounded-full bg-surface-container-high px-1 text-[9px] text-secondary">
-                    {a.match_count}
-                  </span>
-                )}
-              </span>
-            );
-          })}
-        </div>
         </div>
       </section>
     </div>

@@ -3,6 +3,8 @@ import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { APP_NAME } from "../../config/app";
+import { getProfileDisplayName } from "../../lib/profileDisplay";
+import { UserAvatar } from "../common/UserAvatar";
 import {
   MessageSquare,
   LayoutDashboard,
@@ -26,12 +28,7 @@ export const Sidebar: React.FC = () => {
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
   ];
 
-  const initials = (user?.full_name || organization.owner_name || "Admin")
-    .split(" ")
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+  const displayName = getProfileDisplayName(user, organization.owner_name);
 
   return (
     <aside className="sidebar hidden md:flex">
@@ -43,8 +40,7 @@ export const Sidebar: React.FC = () => {
             <span />
           </div>
           <div className="brand-copy min-w-0">
-            <strong className="truncate">{organization.name || organization.owner_name || t("app.store")}</strong>
-            <span>{APP_NAME}</span>
+            <strong className="truncate">{APP_NAME}</strong>
           </div>
         </div>
       </div>
@@ -85,13 +81,19 @@ export const Sidebar: React.FC = () => {
           </button>
         )}
 
-        <div className="user-card">
-          <div className="avatar">{initials}</div>
-          <div>
-            <strong>{user?.full_name || organization.owner_name || "Store Owner"}</strong>
-            <span>{organization.name || "Shop Pro"}</span>
-          </div>
-        </div>
+        <button
+          type="button"
+          className="user-card"
+          onClick={() => setCurrentView("settings")}
+          aria-label={`Open profile and settings for ${displayName}`}
+          title="Open profile and settings"
+        >
+          <UserAvatar src={user?.avatar_url} name={displayName} size="sm" />
+          <span className="user-card-copy">
+            <strong>{displayName}</strong>
+            {user?.email && <small>{user.email}</small>}
+          </span>
+        </button>
       </div>
     </aside>
   );

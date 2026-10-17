@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 import { setModuleRegion } from "../regional/region";
-import { useFeature } from "../config/features";
+import { isFeatureEnabled } from "../config/features";
 import { en } from "./en";
 
 export type AppLanguage = "en" | "ur";
@@ -56,7 +56,7 @@ const I18nContext = createContext<I18nContextValue>({
 });
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const urduEnabled = useFeature("languageUr");
+  const urduEnabled = isFeatureEnabled("languageUr");
   const [language, setLanguageState] = useState<AppLanguage>(() =>
     getInitialLanguage(urduEnabled),
   );

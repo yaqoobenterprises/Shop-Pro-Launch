@@ -72,8 +72,6 @@ export const english = {
   "settings.noCategories": "No categories yet.",
   "settings.dataTools": "Data & tools",
   "settings.dataToolsDescription": "Export transactions and preserve recoverable work stored on this device.",
-  "settings.aliasesKeywords": "Aliases & keywords",
-  "settings.mapCategory": "Map to Category...",
   "settings.income": "Income",
   "settings.expense": "Expense",
   "settings.loading": "Loading categories…",

@@ -1,6 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const zlib = require('zlib');
+import fs from 'node:fs';
+import path from 'node:path';
+import { deflateSync } from 'node:zlib';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // CRC32 table
 const crcTable = new Uint32Array(256);
@@ -96,7 +99,7 @@ function generatePng(size) {
   }
 
   // Compress IDAT
-  const compressed = zlib.deflateSync(rawData, { level: 9 });
+  const compressed = deflateSync(rawData, { level: 9 });
 
   // PNG Signature
   const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);

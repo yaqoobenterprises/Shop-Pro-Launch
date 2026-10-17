@@ -65,6 +65,11 @@ afterEach(() => {
 });
 
 describe("shop-configured quick expense form", () => {
+  const chooseOption = (label: string, optionName: string) => {
+    fireEvent.click(screen.getByRole("combobox", { name: label }));
+    fireEvent.click(screen.getByRole("option", { name: optionName }));
+  };
+
   it("lets the user choose the shop's category and payment account", async () => {
     vi.mocked(expenseRepo.getCategories).mockResolvedValue(expenseCategories as never);
     vi.mocked(accountRepo.getAccounts).mockResolvedValue(accounts as never);
@@ -78,10 +83,10 @@ describe("shop-configured quick expense form", () => {
     const category = await screen.findByRole("combobox", { name: "Expense category" });
     const paymentAccount = screen.getByRole("combobox", { name: "Paid from" });
     expect(category.textContent).toContain("Rent");
-    expect(paymentAccount.textContent).toContain("Bank");
+    expect(paymentAccount.textContent).toContain("Cash");
 
-    fireEvent.change(category, { target: { value: "transport" } });
-    fireEvent.change(paymentAccount, { target: { value: "bank" } });
+    chooseOption("Expense category", "Transport");
+    chooseOption("Paid from", "Bank");
     fireEvent.change(screen.getByRole("spinbutton", { name: /Amount/ }), {
       target: { value: "125" },
     });

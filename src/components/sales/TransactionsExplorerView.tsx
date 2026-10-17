@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
+import { Select } from "../common/Select";
 import { ledgerService } from "../../services/ledgerService";
 import { Transaction, Category } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
@@ -59,16 +60,16 @@ export const TransactionsExplorerView: React.FC = () => {
   const [voidingTx, setVoidingTx] = useState<Transaction | null>(null);
   const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
 
-  const getCurrentFilter = () => ({
+  const getCurrentFilter = useCallback(() => ({
     searchQuery: searchQuery.trim() || undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     type: selectedType,
     categoryId: selectedCategory,
     status: selectedStatus,
-  });
+  }), [searchQuery, startDate, endDate, selectedType, selectedCategory, selectedStatus]);
 
-  const loadData = async (requestedPage = page) => {
+  const loadData = useCallback(async (requestedPage = page) => {
     setIsLoading(true);
     setLoadError("");
     try {
@@ -91,11 +92,11 @@ export const TransactionsExplorerView: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [page, getCurrentFilter]);
 
   useEffect(() => {
     void loadData();
-  }, [page, selectedType, selectedCategory, selectedStatus, startDate, endDate]);
+  }, [loadData]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -156,9 +157,7 @@ export const TransactionsExplorerView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div>
-          <span className="kicker">LEDGER ACTIVITY & AUDIT</span>
           <h1>Entries</h1>
-          <p>Search, review, filter, and inspect financial transactions across all accounts.</p>
         </div>
 
         <div className="title-actions">
@@ -207,7 +206,7 @@ export const TransactionsExplorerView: React.FC = () => {
           />
         </form>
 
-        <select
+        <Select
           value={selectedType}
           onChange={(e) => {
             setSelectedType(e.target.value);
@@ -221,9 +220,9 @@ export const TransactionsExplorerView: React.FC = () => {
           <option value="capital_in">Capital Introduced</option>
           <option value="withdrawal">Owner Drawings</option>
           <option value="adjustment">Cash Adjustments</option>
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={selectedCategory}
           onChange={(e) => {
             setSelectedCategory(e.target.value);
@@ -237,9 +236,9 @@ export const TransactionsExplorerView: React.FC = () => {
               {c.name} ({c.kind})
             </option>
           ))}
-        </select>
+        </Select>
 
-        <select
+        <Select
           value={selectedStatus}
           onChange={(e) => {
             setSelectedStatus(e.target.value as "active" | "voided" | "all");
@@ -250,7 +249,7 @@ export const TransactionsExplorerView: React.FC = () => {
           <option value="all">All Status</option>
           <option value="active">Active Only</option>
           <option value="voided">Voided Only</option>
-        </select>
+        </Select>
 
         <button
           type="button"

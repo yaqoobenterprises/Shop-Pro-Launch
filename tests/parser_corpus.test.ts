@@ -1,10 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { parseMessage, normalizeLine, matchCategoryOrAction, SEED_CATEGORIES } from '../src/parser';
-import { getKarachiBusinessDate, getYesterdayKarachiDate } from '../src/lib/dates';
+import { parseMessage } from '../src/parser';
+import { getYesterdayKarachiDate } from '../src/lib/dates';
 
 describe('Phase 2: Local Deterministic Parser Suite', () => {
   const refDate = new Date('2026-10-04T12:00:00Z');
-  const todayDate = getKarachiBusinessDate(refDate);
   const yesterdayDate = getYesterdayKarachiDate(refDate);
 
   describe('1. Exact Match Auto-Save (Income & Expense with correct sign)', () => {
@@ -121,10 +120,7 @@ describe('Phase 2: Local Deterministic Parser Suite', () => {
   });
 
   describe('3. Fuzzy & Phonetic Matching Rules', () => {
-    it('prompts "Did you mean?" for phonetic match LMNYON and does not auto-save', () => {
-      const res = parseMessage('LMNYON 200', [], refDate);
-      const entry = res.entries[0];
-      // Note: LMNYON is an alias in seed categories, but let's test a true fuzzy/phonetic like LMNATION or LMNTION
+    it('prompts clarification for a true phonetic match and does not auto-save', () => {
       const resFuzzy = parseMessage('LMNESHUN 200', [], refDate);
       expect(resFuzzy.entries[0].action).toBe('ask_clarification');
       expect(resFuzzy.entries[0].canAutoSave).toBe(false);

@@ -2,32 +2,28 @@
 
 ## Source of truth
 
-The Supabase PostgreSQL migrations in supabase/migrations define the cloud schema. They are applied in filename order. PGlite tests exercise selected migrations and database rules locally; they do not prove that a live project has the same schema.
+Supabase PostgreSQL owns cloud ledger data. RLS and database functions enforce tenant authorization and financial posting rules. The PGlite suite exercises selected migrations locally; it does not prove production schema parity.
 
-The application uses organization_id to scope shop data. Row-Level Security policies check shop membership. Financial posting, audit attribution, optimistic concurrency, voids, and account balance changes are enforced in database functions and triggers.
+The connected project's migration ledger records a squashed launch baseline followed by the MFA policy migration. The matching baseline file was reconstructed by combining the earlier checked-in migration sequence; its contents have not been compared byte-for-byte with the original baseline that was applied remotely. Original incremental SQL is retained under `supabase/migration-history/` for audit and local test fixtures. The active directory also contains a pending authorization migration. Do not apply archived SQL files to the connected project, and do not push the reconstructed baseline to the existing project without first verifying the schema on an isolated project.
 
 ## Main ledger tables
 
-- organizations holds shop identity and regional settings.
-- shop_members and profiles associate authenticated users with a shop and role.
-- categories and category_aliases drive entry classification.
-- transactions stores posted ledger entries in integer paisa.
-- transaction_drafts stores entries awaiting account posting.
-- payment_accounts and account_ledger_entries hold account balances and their posting history.
-- user_preferences stores per-user language and entry mode.
+- `organizations` stores shop identity and regional settings.
+- `profiles`, `shop_members`, and `organization_members` associate authenticated users with shops and roles.
+- `categories` and `category_aliases` support entry classification.
+- `transactions` stores posted ledger entries in integer paisa.
+- `transaction_drafts` stores entries awaiting account posting.
+- `payment_accounts` and `account_ledger_entries` hold balances and posting history.
+- `user_preferences` stores per-user language and entry-mode preferences.
 
-Older product, sales, inventory, expense, customer, and closing tables remain in the schema for compatibility. Their presence does not mean those screens are part of the current Shop Pro web navigation.
+Older inventory, sales, expense, customer, and closing tables remain for compatibility. Their presence does not mean those screens are part of the current web navigation.
 
 ## Posting rules
 
-The parser creates a proposal; it does not write financial data. The user reviews the proposal and selects an active account. The ledger service saves a draft and calls the account posting RPC. The database validates tenant membership, category and account references, amount and date rules, and idempotency. Voids and restores create reversals through the database path.
+The parser creates a proposal, then the user reviews it and selects an active account. Online posting uses the draft table and a database RPC. The database validates shop membership, category and account references, posting idempotency, and ledger balance effects. Offline entries remain queued until a connection returns.
 
-Amounts in the ledger use integer minor units: 100 paisa equals 1 PKR. PKR presentation currently rounds to whole rupees unless a caller explicitly requests paisa. Do not change that display behavior without matching every screen and export to the existing golden tests.
+Ledger amounts use integer minor units: 100 paisa equals 1 PKR. Preserve existing formatting and business-date behavior when changing shared money or date code.
 
-## Regional migration
+## Safe migration workflow
 
-20261014000000_regional_settings.sql adds shop currency, country, timezone, region setup state, and per-user preferences, and changes business-date derivation to use the shop timezone. Currency changes are locked after ledger entries exist. The database trigger restricts changes to regional fields for non-owners.
-
-For the complete migration list and staging procedure, see docs/ROLLOUT.md. Do not apply a migration to production from this code review.
-
-`20261016074319_owner_only_organization_updates.sql` is a proposal only. It adds a private owner check using `shop_members` for organization updates. Review it in staging and approve it before applying it to any shared project.
+Compare the local migration list with the Supabase project's recorded migrations before any schema change. Test on staging first. The pending migration's SQL requires owner approval before application; this repository review did not change the live database or read business rows.

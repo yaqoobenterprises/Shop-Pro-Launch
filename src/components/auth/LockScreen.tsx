@@ -6,7 +6,6 @@ import {
   LockKeyhole,
   Mail,
   ArrowRight,
-  ShieldCheck,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
@@ -15,6 +14,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { UserAvatar } from "../common/UserAvatar";
+import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { useI18n } from "../../i18n";
 
 const fieldClass =
@@ -29,12 +29,10 @@ const fieldClass =
  */
 export interface AuthScreenProps {
   initialMode?: "signIn" | "signUp" | "forgotPassword";
-  onBackToHome?: () => void;
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({
   initialMode = "signIn",
-  onBackToHome,
 }) => {
   const {
     signIn,
@@ -490,7 +488,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             className="mb-2 h-10 w-10 rounded-lg shadow-xs"
           />
           <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
-            Shop Pro Ledger
+            Shop Pro Cashbook
           </p>
           <h1 className="mt-1 text-xl font-bold tracking-tight text-on-surface">
             {mode === "signIn" ?
@@ -853,7 +851,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
  * Establishes the quick-unlock PIN used for the register lock screen.
  */
 export const PinSetupScreen: React.FC = () => {
-  const { user, organization, setupPin, signOut } = useAuth();
+  const { setupPin, signOut } = useAuth();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [showPin, setShowPin] = useState(false);
@@ -1013,6 +1011,7 @@ export const LockScreen: React.FC = () => {
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const displayName = getProfileDisplayName(user, organization.owner_name);
 
   useEffect(() => {
     document.getElementById("unlock-pin")?.focus();
@@ -1046,16 +1045,14 @@ export const LockScreen: React.FC = () => {
           <div className="mb-3 rounded-full ring-4 ring-primary/10">
             <UserAvatar
               src={user?.avatar_url}
-              name={user?.full_name || organization.owner_name || "Owner"}
+              name={displayName}
               size="lg"
             />
           </div>
           <h1 className="text-base font-bold text-on-surface">
-            {user?.full_name || organization.owner_name || "Register Terminal"}
+            {displayName}
           </h1>
-          <p className="mt-0.5 text-xs font-medium text-text-muted">
-            {organization.name || "Shop Pro"}
-          </p>
+          {user?.email && <p className="mt-0.5 text-xs text-text-muted">{user.email}</p>}
         </div>
 
         {/* PIN Input Form */}

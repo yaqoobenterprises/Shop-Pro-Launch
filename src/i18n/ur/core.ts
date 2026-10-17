@@ -1,5 +1,5 @@
 export const urdu = {
-  "nav.ledger": "لجر",
+  "nav.ledger": "روزنامچہ",
   "nav.overview": "خلاصہ",
   "nav.entries": "اندراجات",
   "nav.reports": "رپورٹس",
@@ -49,7 +49,6 @@ export const urdu = {
   "entry.amountRequired": "درست رقم درج کریں جو صفر سے زیادہ ہو۔",
   "currency.amountLabel": "رقم ({currency})",
   "currency.openingBalance": "ابتدائی بیلنس ({currency})",
-  "currency.unusualLimit": "غیر معمولی حد ({currency})",
   "settings.preferenceDescription": "آپ کے آلے اور صارف اکاؤنٹ کی ذاتی ترجیحات۔",
   "region.title": "علاقہ اور کرنسی",
   "region.description": "اس دکان کے لیے کرنسی، اکاؤنٹنگ ٹائم زون اور ملک منتخب کریں۔",
@@ -72,13 +71,10 @@ export const urdu = {
   "region.invalidSettings": "درست کرنسی، ملک اور IANA ٹائم زون منتخب کریں۔",
   "region.saveFailed": "علاقائی ترتیبات محفوظ نہیں ہو سکیں۔",
   "settings.offlineCurrencyLocked": "آف لائن لیجر کی تاریخ کی تصدیق ممکن نہیں، اس لیے کرنسی تبدیل نہیں ہو سکتی۔",
-  "chat.noSuggestions": "دکان کے زمرے دستیاب نہیں۔ فوری اندراج کے لیے فعال زمرہ ترتیب دیں۔",
-  "chat.setupCategories": "زمرے ترتیب دیں",
   "chat.yesterday": "گزشتہ روز",
   "chat.ledgerEntry": "لیجر اندراج",
   "chat.sendEntry": "اندراج بھیجیں",
   "chat.sendHotkey": "بھیجیں (Enter)",
-  "chat.reviewHint": "اگلے مرحلے میں اندراج کا جائزہ لیں اور پوسٹ کرنے سے پہلے اکاؤنٹ منتخب کریں۔",
   "chat.enterHint": "جائزے کے لیے Enter · نئی سطر کے لیے Shift + Enter",
   "chat.placeholder": "رقم اور تفصیل",
 } as const;

@@ -2,6 +2,7 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import './motion.css';
 import { applyTheme, getSavedTheme } from './lib/theme';
 
 // Handle OAuth popup window callback: notify parent window and auto-close
@@ -27,7 +28,11 @@ if (typeof window !== 'undefined' && window.opener && window.opener !== window) 
       // Ignored if cross-origin opener restriction
     }
     setTimeout(() => {
-      try { window.close(); } catch {}
+      try {
+        window.close();
+      } catch {
+        // The browser can block closing a window it did not open.
+      }
     }, 2500);
   } else if (hash.includes('access_token') || search.includes('code=')) {
     const accessToken = params.get('access_token');
@@ -45,7 +50,11 @@ if (typeof window !== 'undefined' && window.opener && window.opener !== window) 
       // Ignored if cross-origin opener restriction
     }
     setTimeout(() => {
-      try { window.close(); } catch {}
+      try {
+        window.close();
+      } catch {
+        // The browser can block closing a window it did not open.
+      }
     }, 600);
   }
 }

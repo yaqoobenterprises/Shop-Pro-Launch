@@ -119,7 +119,6 @@ export function normalizeLine(rawLine: string, referenceDate: Date = new Date())
   // Find candidate numbers (possibly with decimals: 50.50, 100, 2000)
   // Look for numbers preceded optionally by a sign
   const numberRegex = /[+-]?\s*(\d+(?:\.\d{1,2})?)/g;
-  let matches: RegExpExecArray[] | null = null;
   const numbers: { val: number; raw: string; index: number }[] = [];
 
   let match: RegExpExecArray | null;

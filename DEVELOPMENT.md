@@ -1,57 +1,33 @@
-# Development Guide
+# Development
 
 ## Prerequisites
 
-- Node.js 18+ or 20+
-- npm or bun
+- Node.js 22 or newer
+- npm
 
----
+## Start locally
 
-## Getting Started
+1. Install the lockfile dependencies with `npm ci`.
+2. Copy `.env.example` to `.env` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` for cloud sign-in and sync.
+3. Run `npm run dev` and open `http://localhost:3000`.
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+The browser client also accepts `VITE_SUPABASE_ANON_KEY` for compatibility. Only public publishable/anon keys may be used in browser variables.
 
-2. **Configure environment variables (Optional for cloud backend):**
-   ```bash
-   cp .env.example .env
-   ```
-   Add your Supabase configuration:
-   ```env
-   VITE_SUPABASE_URL=https://your-project.supabase.co
-   VITE_SUPABASE_ANON_KEY=your-anon-key
-   ```
-   *Note:* If left blank, the application automatically operates using the built-in LocalStorage Engine.
+## Verification commands
 
-3. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-   The application runs on `http://localhost:3000`.
+- `npm run lint` — ESLint checks
+- `npm run typecheck` — TypeScript project check
+- `npm run check:strict` — additional strict TypeScript check
+- `npm test -- --reporter=dot` — test suite
+- `npm run check:size` — file-size ratchet
+- `npm run build` — production bundle
+- `npm audit` — dependency advisory check
 
-4. **Verify TypeScript & Linting:**
-   ```bash
-   npm run lint
-   npm run check:strict
-   ```
+## Working conventions
 
-5. **Build for Production:**
-   ```bash
-   npm run build
-   ```
-
----
-
-## Code Organization & Guidelines
-
-- **New Views:** Add new views to `src/components/<domain>/` and register them inside `App.tsx` and `types/index.ts` under `AppView`.
-- **Database Access:** Always route mutations and queries through the repository contracts in `src/services/contracts.ts` rather than querying drivers directly.
-- **Financial Calculations:** Never perform raw arithmetic on financial amounts without wrapping results in `roundMoney(...)` from `src/lib/utils.ts`.
-- **Ledger Entry:** Text entries use the shared review modal. Confirm amount, type, category/date, and an active account there; submit through `ledgerService` and its draft-posting RPC. Retain the Review Queue path for uncertain input and old drafts for recovery.
-- **Theme & Styles:** `src/index.css` is authoritative. Use semantic surface, text, border, and state tokens so light and dark appearances remain coherent; the persisted preference key is `yaqoob-theme`.
-- **Ledger Mutations:** Voids/restores/edits are online-only and use optimistic timestamps. Voids require a reason and derive actor attribution from the authenticated database context; database ledger triggers own account reversals.
-- **Validation:** Run `npm run lint`, `npm run test`, and `npm run build` for changes to the application or its database contracts.
-- **Regional behavior:** Use `getKarachiBusinessDate` (legacy name; it follows the configured shop timezone), `formatDisplayDate`, and `formatPaisa` for shop-aware dates and amounts. Keep the Postgres and SQLite region-setup state migrations aligned.
-- **Localization:** Add user-facing translations to the matching modules under `src/i18n/en/` and `src/i18n/ur/`. `src/i18n/en.ts` and `src/i18n/ur.ts` aggregate the dictionaries; `src/i18n/provider.tsx` loads Urdu and its font only when the `languageUr` feature is enabled. `tests/i18n.test.ts` checks key and placeholder parity.
+- Put React components under `src/components/<area>/` and shared behavior in the existing `src/lib/`, `src/services/`, `src/regional/`, or `src/i18n/` modules.
+- Keep financial amounts in integer paisa in ledger and database paths. Use the shared amount and date helpers for display and business-date rules.
+- Route online ledger writes through `ledgerService` and the database draft/posting path. Preserve its offline queue and retry behavior.
+- Keep tenant and role checks in PostgreSQL RLS and database functions. Client-side checks improve the experience but do not replace backend authorization.
+- Database tests use PGlite. They validate selected local schema behavior and do not prove live-project parity.
+- Keep incomplete feature flags disabled until their checks in `docs/ROLLOUT.md` are complete.

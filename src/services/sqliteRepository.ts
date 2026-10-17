@@ -27,11 +27,8 @@ import { roundMoney, calculateWeightedAverageCost } from '../lib/utils';
 import { LocalAuthAccount, Organization, UserProfile } from '../types';
 import type {
   IAccountRepository,
-  IAuditRepository,
   IClosingRepository,
-  ICustomerRepository,
   IExpenseRepository,
-  IInventoryRepository,
   ISalesRepository,
 } from './contracts';
 
@@ -659,7 +656,7 @@ export class SQLiteRepository {
   async saveAccount(organizationId: string, account: Partial<PaymentAccount> & { name: string; type: PaymentAccount['type'] }): Promise<PaymentAccount> { requirePermission(organizationId, 'MANAGE_BUSINESS_CONFIG'); const record: PaymentAccount = { id: account.id || id(), organization_id: organizationId, name: account.name, type: account.type, account_number: account.account_number, current_balance: account.current_balance ?? account.opening_balance ?? 0, opening_balance: account.opening_balance ?? 0, is_active: account.is_active ?? true, is_default: account.is_default ?? false, created_at: account.created_at || now() }; await this.transaction(async (db) => { await this.insert(db, 'payment_accounts', { ...record, is_active: record.is_active ? 1 : 0, is_default: record.is_default ? 1 : 0, updated_at: now() }); await this.queue(db, organizationId, 'payment_accounts', record.id, account.id ? 'UPDATE' : 'INSERT', record as unknown as Record<string, unknown>); }); return record; }
   async transferFunds(organizationId: string, payload: Parameters<IAccountRepository['transferFunds']>[1]): Promise<AccountTransfer> { const principal = requirePermission(organizationId, 'ACCOUNT_TRANSFER'); if (!Number.isFinite(payload.amount) || payload.amount <= 0 || payload.from_account_id === payload.to_account_id) throw new Error('Invalid transfer'); return this.transaction(async (db) => { const accounts = await db.select<any>('SELECT * FROM payment_accounts WHERE organization_id = ? AND id IN (?, ?)', [organizationId, payload.from_account_id, payload.to_account_id]); const from = accounts.find((account) => account.id === payload.from_account_id); const to = accounts.find((account) => account.id === payload.to_account_id); if (!from || !to || Number(from.current_balance) < payload.amount) throw new Error('Invalid accounts or insufficient funds'); const transfer: AccountTransfer = { id: id(), organization_id: organizationId, from_account_id: from.id, from_account_name: from.name, to_account_id: to.id, to_account_name: to.name, amount: payload.amount, date: payload.date, notes: payload.notes, created_by: principal.id, created_at: now() }; await db.execute('UPDATE payment_accounts SET current_balance = current_balance - ?, updated_at = ? WHERE organization_id = ? AND id = ?', [payload.amount, now(), organizationId, from.id]); await db.execute('UPDATE payment_accounts SET current_balance = current_balance + ?, updated_at = ? WHERE organization_id = ? AND id = ?', [payload.amount, now(), organizationId, to.id]); await this.insert(db, 'account_transfers', transfer as unknown as Record<string, unknown>); await this.audit(db, organizationId, 'ACCOUNT_TRANSFER', 'PAYMENT_ACCOUNT', transfer.id, `Transferred ${payload.amount}`); await this.queue(db, organizationId, 'account_transfers', transfer.id, 'INSERT', transfer as unknown as Record<string, unknown>); return transfer; }); }
   async recordCapital(organizationId: string, payload: Parameters<IAccountRepository['recordCapital']>[1]): Promise<AccountTransaction> {
-    const principal = requirePermission(organizationId, 'ACCOUNT_TRANSFER');
+    requirePermission(organizationId, 'ACCOUNT_TRANSFER');
     if (!Number.isFinite(payload.amount) || payload.amount <= 0) throw new Error('Capital amount must be greater than zero');
     return this.transaction(async (db) => {
       const accounts = await db.select<PaymentAccount>('SELECT * FROM payment_accounts WHERE organization_id = ?', [organizationId]);
@@ -688,7 +685,7 @@ export class SQLiteRepository {
     });
   }
   async recordWithdrawal(organizationId: string, payload: Parameters<IAccountRepository['recordWithdrawal']>[1]): Promise<AccountTransaction> {
-    const principal = requirePermission(organizationId, 'ACCOUNT_TRANSFER');
+    requirePermission(organizationId, 'ACCOUNT_TRANSFER');
     if (!Number.isFinite(payload.amount) || payload.amount <= 0) throw new Error('Withdrawal amount must be greater than zero');
     return this.transaction(async (db) => {
       const accounts = await db.select<PaymentAccount>('SELECT * FROM payment_accounts WHERE organization_id = ?', [organizationId]);

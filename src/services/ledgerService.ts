@@ -22,7 +22,6 @@ import { SeedCategory, SEED_CATEGORIES } from '../parser/matcher';
 import {
   DEMO_ORGANIZATION_ID,
   isDemoSessionActive,
-  DEMO_ACCOUNTS,
 } from './demoModeService';
 import {
   enqueueOfflineTransaction,
@@ -565,7 +564,7 @@ export class LedgerService {
       const accounts = await getCachedAccounts(principal.organizationId);
       if (!accounts.some((account) => account.id === payload.accountId && account.is_active)) {
         console.warn('Network or auth error recording transaction; refusing to queue without a cached active account:', err);
-        throw new Error('Choose an active account loaded for this shop before saving offline.');
+        throw new Error('Choose an active account loaded for this shop before saving offline.', { cause: err });
       }
       console.warn('Error recording transaction, falling back to offline queue:', err);
       await enqueueOfflineTransaction({
@@ -1121,7 +1120,7 @@ export class LedgerService {
       if (!isUnavailableOrUnauthorized(error)) throw error;
       const accounts = await getCachedAccounts(principal.organizationId);
       const account = accounts.find((item) => item.id === accountId);
-      if (!account) throw new Error('Load this shop account before changing it offline.');
+      if (!account) throw new Error('Load this shop account before changing it offline.', { cause: error });
       await enqueueOfflineAccountOperation(operation, { ...account, ...normalizedChanges });
       return true;
     }
@@ -1177,7 +1176,7 @@ export class LedgerService {
         .filter((account) => account.is_active)
         .map((account) => account.id));
       if (!activeAccountIds.has(input.fromAccountId) || !activeAccountIds.has(input.toAccountId)) {
-        throw new Error('Load both active shop accounts before queuing an offline transfer.');
+        throw new Error('Load both active shop accounts before queuing an offline transfer.', { cause: error });
       }
       await enqueueOfflineAccountOperation(operation);
       return true;
@@ -1582,7 +1581,7 @@ export class LedgerService {
     const pageSize = 1000;
     const transactions: Transaction[] = [];
     let offset = 0;
-    let count = 0;
+    let count: number;
 
     do {
       const page = await this.getFilteredTransactions({ ...filter, limit: pageSize, offset });

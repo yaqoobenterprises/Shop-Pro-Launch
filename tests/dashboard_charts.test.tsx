@@ -4,24 +4,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { LedgerDashboardView } from '../src/components/dashboard/LedgerDashboardView';
 import { ledgerService } from '../src/services/ledgerService';
 
-vi.mock('recharts', () => {
-  const ChartFrame = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
-  const Shape = () => null;
-  return {
-    Bar: Shape,
-    BarChart: ChartFrame,
-    CartesianGrid: Shape,
-    Cell: Shape,
-    Legend: Shape,
-    Pie: ChartFrame,
-    PieChart: ChartFrame,
-    ResponsiveContainer: ChartFrame,
-    Tooltip: Shape,
-    XAxis: Shape,
-    YAxis: Shape,
-  };
-});
-
 afterEach(() => vi.restoreAllMocks());
 
 describe('real-data dashboard charts', () => {

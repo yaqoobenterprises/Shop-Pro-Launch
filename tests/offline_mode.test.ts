@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { StorageEngine } from '@/services/storageEngine';
 import { syncEngine } from '@/services/syncEngine';
 import { getSqliteDatabase } from '@/services/sqliteEngine';
@@ -87,7 +87,7 @@ describe('Offline Mode & Bidirectional Sync Verification', () => {
     expect(sale.change_due).toBe(50.0);
 
     // 5. Create an expense offline
-    const expense = StorageEngine.recordExpense({
+    StorageEngine.recordExpense({
       id: `exp-off-${Date.now()}`,
       organization_id: orgId,
       category_id: 'exp-cat-tea',

@@ -1,5 +1,5 @@
 export const english = {
-  "nav.ledger": "Ledger",
+  "nav.ledger": "Cashbook",
   "nav.overview": "Overview",
   "nav.entries": "Entries",
   "nav.reports": "Reports",
@@ -49,7 +49,6 @@ export const english = {
   "entry.amountRequired": "Enter a valid amount greater than zero.",
   "currency.amountLabel": "Amount ({currency})",
   "currency.openingBalance": "Opening balance ({currency})",
-  "currency.unusualLimit": "Unusual limit ({currency})",
   "settings.preferenceDescription": "Personal preferences for your device and user account.",
   "region.title": "Region & Currency",
   "region.description": "Configure currency, accounting timezone, and country for this shop.",
@@ -72,13 +71,10 @@ export const english = {
   "region.invalidSettings": "Choose a supported currency, enter a country, and select a valid IANA timezone.",
   "region.saveFailed": "Failed to save regional settings.",
   "settings.offlineCurrencyLocked": "Currency cannot be changed offline because the ledger history cannot be verified.",
-  "chat.noSuggestions": "No shop category suggestions are available. Set up an active category to add quick-entry suggestions.",
-  "chat.setupCategories": "Set up categories",
   "chat.yesterday": "Yesterday",
   "chat.ledgerEntry": "Ledger entry",
   "chat.sendEntry": "Send entry",
   "chat.sendHotkey": "Send (Enter)",
-  "chat.reviewHint": "The next panel lets you review the category and choose an account before posting.",
   "chat.enterHint": "Enter to review · Shift + Enter for a new line",
   "chat.placeholder": "Amount and item",
 } as const;

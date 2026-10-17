@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { Select } from "../common/Select";
 import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
+import { DatePicker } from "../common/DatePicker";
+import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { Button } from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
@@ -9,7 +12,7 @@ import { ExpenseCategory, PaymentAccount } from "../../types";
 import { formatCurrency } from "../../lib/utils";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { useI18n } from "../../i18n";
-import { Receipt, Check, AlertCircle } from "lucide-react";
+import { Check, AlertCircle } from "lucide-react";
 
 export const QuickExpenseModal: React.FC = () => {
   const { t } = useI18n();
@@ -127,7 +130,7 @@ export const QuickExpenseModal: React.FC = () => {
         reference_number: referenceNumber.trim() || undefined,
         date,
         notes: notes.trim() || undefined,
-        entered_by: user?.full_name || "Muhammad Yaqoob",
+        entered_by: getProfileDisplayName(user),
       });
 
       showToast(
@@ -178,7 +181,7 @@ export const QuickExpenseModal: React.FC = () => {
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <label className="block space-y-1 text-xs font-semibold text-secondary">
           <span>{t("expenses.category")}</span>
-          <select
+          <Select
             required
             value={categoryId}
             onChange={(event) => setCategoryId(event.target.value)}
@@ -193,11 +196,11 @@ export const QuickExpenseModal: React.FC = () => {
                 {category.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
         <label className="block space-y-1 text-xs font-semibold text-secondary">
           <span>{t("expenses.paidFrom")}</span>
-          <select
+          <Select
             required
             value={accountId}
             onChange={(event) => setAccountId(event.target.value)}
@@ -212,10 +215,9 @@ export const QuickExpenseModal: React.FC = () => {
                 {account.name}
               </option>
             ))}
-          </select>
+          </Select>
         </label>
       </div>
-
         {/* Amount & Date */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <div>
@@ -233,16 +235,17 @@ export const QuickExpenseModal: React.FC = () => {
           </div>
 
           <div>
-            <Input
-              label="Expense Date"
-              type="date"
-              required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <label className="block w-full space-y-1.5 text-left">
+              <span className="block text-xs font-semibold text-on-surface">Expense Date</span>
+              <DatePicker
+                value={date}
+                onChange={setDate}
+                ariaLabel="Expense date"
+                required
+              />
+            </label>
           </div>
         </div>
-
         {/* Description */}
         <Input
           label="Description / Purpose"
@@ -251,7 +254,6 @@ export const QuickExpenseModal: React.FC = () => {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-
         <details className="rounded-lg border border-border-standard px-3 py-2">
           <summary className="cursor-pointer text-xs font-semibold text-secondary">
             Add receipt reference or notes
@@ -272,7 +274,6 @@ export const QuickExpenseModal: React.FC = () => {
           />
           </div>
         </details>
-
         {/* Impact Notice */}
         <div className="flex items-start gap-2 rounded-lg border border-border-standard bg-surface p-3 text-xs text-text-muted">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -284,7 +285,6 @@ export const QuickExpenseModal: React.FC = () => {
             and update the shop&rsquo;s financial records.
           </span>
         </div>
-
         <div className="flex items-center justify-end gap-2 border-t border-border-standard pt-3">
           <Button
             type="button"

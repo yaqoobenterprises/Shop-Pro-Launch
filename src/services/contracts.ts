@@ -1,6 +1,4 @@
 import {
-  Organization,
-  UserProfile,
   Category,
   Product,
   Service,
@@ -9,7 +7,6 @@ import {
   AccountTransfer,
   AccountTransaction,
   Sale,
-  SaleItem,
   Expense,
   ExpenseCategory,
   DailyClosing,

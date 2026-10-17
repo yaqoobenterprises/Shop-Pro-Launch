@@ -35,6 +35,9 @@ jobs:
         run: npm audit
 
       - name: Check TypeScript
+        run: npm run typecheck
+
+      - name: Lint source
         run: npm run lint
 
       - name: Check strict TypeScript

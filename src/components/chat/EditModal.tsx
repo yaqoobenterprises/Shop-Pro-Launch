@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Transaction } from '../../types/ledger';
-import { parseInputToPaisa, formatPaisa } from '../../lib/money';
+import { parseInputToPaisa } from '../../lib/money';
 import { Edit3, AlertCircle, X, Check } from 'lucide-react';
 import { useRegion } from '../../regional/region';
 import { useI18n } from '../../i18n';

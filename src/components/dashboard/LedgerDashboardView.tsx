@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { ledgerService } from "../../services/ledgerService";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { formatPaisa } from "../../lib/money";
 import { useI18n } from "../../i18n";
+import { DatePicker } from "../common/DatePicker";
+import { MonthPicker } from "../common/MonthPicker";
 import {
   DailySummary,
   MonthlySummary,
@@ -15,7 +17,6 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownLeft,
-  Calendar,
 } from "lucide-react";
 
 export const LedgerDashboardView: React.FC = () => {
@@ -32,7 +33,7 @@ export const LedgerDashboardView: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const requestId = useRef(0);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const currentRequestId = ++requestId.current;
     setIsLoading(true);
     setLoadError(null);
@@ -77,11 +78,11 @@ export const LedgerDashboardView: React.FC = () => {
     } finally {
       if (currentRequestId === requestId.current) setIsLoading(false);
     }
-  };
+  }, [period, currentDate]);
 
   useEffect(() => {
     void loadData();
-  }, [period, currentDate]);
+  }, [loadData]);
 
   const activeIncome =
     period === "day"
@@ -151,11 +152,7 @@ export const LedgerDashboardView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div>
-          <span className="kicker">
-            {period === "day" ? "DAILY BUSINESS SNAPSHOT" : "MONTHLY BUSINESS SNAPSHOT"} · {currentDate}
-          </span>
           <h1>Overview</h1>
-          <p>A clear view of business performance, cash reserves, and flow.</p>
         </div>
 
         <div className="title-actions">
@@ -178,18 +175,21 @@ export const LedgerDashboardView: React.FC = () => {
             </button>
           </div>
 
-          <input
-            type={period === "day" ? "date" : "month"}
-            value={period === "day" ? currentDate : currentDate.slice(0, 7)}
-            onChange={(e) => {
-              if (e.target.value) {
-                setCurrentDate(
-                  period === "day" ? e.target.value : `${e.target.value}-01`,
-                );
-              }
-            }}
-            aria-label="Filter date"
-          />
+          {period === "day" ? (
+            <DatePicker
+              value={currentDate}
+              onChange={setCurrentDate}
+              ariaLabel="Filter date"
+              className="min-w-[170px]"
+            />
+          ) : (
+            <MonthPicker
+              value={currentDate.slice(0, 7)}
+              onChange={(value) => setCurrentDate(value)}
+              ariaLabel="Filter month"
+              className="min-w-[170px]"
+            />
+          )}
 
           <button
             type="button"

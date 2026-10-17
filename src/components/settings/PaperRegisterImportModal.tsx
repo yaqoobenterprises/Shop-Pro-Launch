@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { Select } from "../common/Select";
 import { parseInputToPaisa, formatPaisa } from "../../lib/money";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { ledgerService } from "../../services/ledgerService";
 import { useAuth } from "../../context/AuthContext";
 import { LedgerAccount } from "../../types/ledger";
 import { useI18n } from "../../i18n";
-import { Upload, FileText, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { Upload, X } from "lucide-react";
+import { getProfileDisplayName } from "../../lib/profileDisplay";
 
 interface ParsedRegisterRow {
   date: string;
@@ -28,7 +30,7 @@ export const PaperRegisterImportModal: React.FC<
   const { t } = useI18n();
   const { user } = useAuth();
   const currentUserId = user?.id || "offline-user";
-  const currentUserName = user?.full_name || "Shop Brother";
+  const currentUserName = getProfileDisplayName(user, "Shop Brother");
 
   const [csvText, setCsvText] = useState("");
   const [previewRows, setPreviewRows] = useState<ParsedRegisterRow[]>([]);
@@ -159,7 +161,7 @@ export const PaperRegisterImportModal: React.FC<
 
           <label className="block space-y-1.5 text-xs font-semibold text-secondary">
             <span>{t("import.account")}</span>
-            <select
+            <Select
               value={selectedAccountId}
               onChange={(event) => setSelectedAccountId(event.target.value)}
               className="workspace-control min-h-10 w-full px-2.5 text-xs font-normal focus:border-primary focus:outline-none"
@@ -170,7 +172,7 @@ export const PaperRegisterImportModal: React.FC<
                   {account.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
 
           <textarea

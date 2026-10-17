@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Select } from "../common/Select";
 import { Globe, Lock, Clock, AlertTriangle, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRegion } from '../../regional/region';
@@ -21,7 +22,6 @@ export const RegionSettingsSection: React.FC = () => {
   const [country, setCountry] = useState(organization.country || region.country || 'Pakistan');
   const [hasEntries, setHasEntries] = useState(false);
   const [isCheckingEntries, setIsCheckingEntries] = useState(true);
-  const [tzSearch, setTzSearch] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -115,6 +115,7 @@ export const RegionSettingsSection: React.FC = () => {
         currency_symbol: currencySymbol,
         timezone: timeZone,
         country: country.trim(),
+        region_configured: true,
         updated_at: new Date().toISOString(),
       };
       if (isSupabaseConfigured()) {
@@ -185,7 +186,7 @@ export const RegionSettingsSection: React.FC = () => {
             {t('region.currency')}
           </label>
           <div className="relative">
-            <select
+            <Select
               id="settings-currency"
               disabled={!isOwner || hasEntries || isCheckingEntries || !isSupabaseConfigured()}
               value={currency}
@@ -197,7 +198,7 @@ export const RegionSettingsSection: React.FC = () => {
                   {c.code} ({c.symbol}) — {c.name}
                 </option>
               ))}
-            </select>
+            </Select>
             {hasEntries && (
               <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-text-muted">
                 <Lock className="h-3 w-3 shrink-0" />
@@ -216,53 +217,41 @@ export const RegionSettingsSection: React.FC = () => {
           <label htmlFor="settings-country" className="block font-semibold text-secondary mb-1">
             {t('region.country')}
           </label>
-          <input
+          <Select
             id="settings-country"
-            type="text"
             disabled={!isOwner}
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            list="settings-country-options"
-            className="workspace-control w-full min-h-10 px-3 py-2 text-xs disabled:opacity-60"
-          />
-          <datalist id="settings-country-options">
+            searchable
+            searchPlaceholder={t('region.country')}
+            className="w-full min-h-10 px-3 py-2 text-xs disabled:opacity-60"
+          >
             {COUNTRY_OPTIONS.map((name) => (
-              <option key={name} value={name} />
+              <option key={name} value={name}>{name}</option>
             ))}
-          </datalist>
+          </Select>
         </div>
 
         <div>
           <label htmlFor="settings-timezone" className="block font-semibold text-secondary mb-1">
             {t('region.timezone')}
           </label>
-          <div className="space-y-2">
-            {isOwner && (
-              <input
-                type="text"
-                placeholder={t('region.searchTimezone')}
-                value={tzSearch}
-                onChange={(e) => setTzSearch(e.target.value)}
-                className="workspace-control w-full min-h-9 px-2.5 py-1 text-xs"
-              />
+          <Select
+            id="settings-timezone"
+            disabled={!isOwner}
+            value={timeZone}
+            onChange={(e) => setTimeZone(e.target.value)}
+            searchable
+            searchPlaceholder={t('region.searchTimezone')}
+            className="w-full min-h-10 px-3 py-2 text-xs font-mono disabled:opacity-60"
+          >
+            {!ALL_TIMEZONES.includes(timeZone) && (
+              <option value={timeZone}>{timeZone} (Current)</option>
             )}
-            <select
-              id="settings-timezone"
-              disabled={!isOwner}
-              value={timeZone}
-              onChange={(e) => setTimeZone(e.target.value)}
-              className="workspace-control w-full min-h-10 px-3 py-2 text-xs font-mono disabled:opacity-60"
-            >
-              {!ALL_TIMEZONES.includes(timeZone) && (
-                <option value={timeZone}>{timeZone} (Current)</option>
-              )}
-              {ALL_TIMEZONES.filter((tz) => tz.toLowerCase().includes(tzSearch.toLowerCase())).map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
-          </div>
+            {ALL_TIMEZONES.map((tz) => (
+              <option key={tz} value={tz}>{tz}</option>
+            ))}
+          </Select>
           {timeZoneError && <p role="alert" className="mt-1 text-danger">{timeZoneError}</p>}
 
           <div className="mt-2 flex items-center justify-between rounded-lg bg-surface-container-low px-3 py-2 text-[11px]">

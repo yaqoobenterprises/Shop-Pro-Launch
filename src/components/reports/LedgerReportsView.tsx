@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
+import { Select } from "../common/Select";
 import { ledgerService } from "../../services/ledgerService";
 import { formatPaisa } from "../../lib/money";
 import { getKarachiBusinessDate } from "../../lib/dates";
-import { useI18n } from "../../i18n";
 import { RefreshCw } from "lucide-react";
 
 interface MonthlyReportRow {
@@ -19,7 +19,6 @@ interface MonthlyReportRow {
 }
 
 export const LedgerReportsView: React.FC = () => {
-  const { t } = useI18n();
   const currentYear = Number(getKarachiBusinessDate().slice(0, 4));
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [monthlyData, setMonthlyData] = useState<MonthlyReportRow[]>([]);
@@ -27,7 +26,7 @@ export const LedgerReportsView: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const requestId = useRef(0);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     const currentRequestId = ++requestId.current;
     setIsLoading(true);
     setLoadError(null);
@@ -61,11 +60,11 @@ export const LedgerReportsView: React.FC = () => {
     } finally {
       if (currentRequestId === requestId.current) setIsLoading(false);
     }
-  };
+  }, [selectedYear]);
 
   useEffect(() => {
     void loadData();
-  }, [selectedYear]);
+  }, [loadData]);
 
   const monthNames = [
     "January",
@@ -114,13 +113,11 @@ export const LedgerReportsView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div>
-          <span className="kicker">{selectedYear} FISCAL PERFORMANCE</span>
           <h1>Reports</h1>
-          <p>Understand profitability, annual revenue trends, and operational expense ratios.</p>
         </div>
 
         <div className="title-actions">
-          <select
+          <Select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
             aria-label="Select report year"
@@ -128,7 +125,7 @@ export const LedgerReportsView: React.FC = () => {
             <option value={currentYear}>{currentYear}</option>
             <option value={currentYear - 1}>{currentYear - 1}</option>
             <option value={currentYear - 2}>{currentYear - 2}</option>
-          </select>
+          </Select>
 
           <button
             type="button"

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Select } from "../common/Select";
 import { LedgerAccount, Transaction, TransactionDraft } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
 import { formatKarachiTime } from "../../lib/dates";
@@ -101,7 +102,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                 return (
                   <article
                     key={draft.id}
-                    className="rounded-xl border border-warning-border bg-warning-bg/50 p-3 sm:p-4"
+                    className="ledger-entry-row rounded-xl border border-warning-border bg-warning-bg/50 p-3 sm:p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -128,7 +129,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                       </p>
                     </div>
                     <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                      <select
+                      <Select
                         aria-label={`Account for ${draft.category_name || draft.type} entry`}
                         value={selectedAccountId}
                         onChange={(event) => setSelectedAccounts((current) => ({
@@ -144,7 +145,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                             {account.name} · {account.type.replace("_", " ")}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                       <button
                         type="button"
                         onClick={() => void assignDraft(draft)}
@@ -169,7 +170,6 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
           const isExpense = tx.type === "expense";
           const isCapital = tx.type === "capital_in";
           const isWithdrawal = tx.type === "withdrawal";
-          const isAdjustment = tx.type === "adjustment";
 
           const timeStr = formatKarachiTime(tx.device_entry_time);
 
@@ -179,11 +179,10 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
             : isWithdrawal ? "text-warning"
             : isCapital ? "text-primary"
             : "text-secondary";
-
           return (
             <article
               key={tx.id}
-              className={`py-3.5 ${isVoided ? "opacity-60" : ""}`}
+              className={`ledger-entry-row py-3.5 ${isVoided ? "opacity-60" : ""}`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">

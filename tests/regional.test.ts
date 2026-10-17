@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   SUPPORTED_CURRENCIES,
-  CURRENCY_MAP,
   getCurrencyConfig,
   isSupportedCurrency,
   detectDeviceRegion,
@@ -9,14 +8,12 @@ import {
   parseLocalizedMoneyInput,
   parseMoneyInput,
   getBusinessDate,
-  formatBusinessTime,
   formatBusinessDate,
   getPreviousBusinessDate,
   isValidTimeZone,
   sanitizeTimeZone,
   setModuleRegion,
   resetModuleRegion,
-  getModuleRegion,
 } from '../src/regional';
 import { getKarachiBusinessDate } from '../src/lib/dates';
 import { formatPaisa } from '../src/lib/money';

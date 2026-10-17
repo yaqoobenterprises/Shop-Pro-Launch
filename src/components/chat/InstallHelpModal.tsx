@@ -1,5 +1,5 @@
 import React from "react";
-import { Smartphone, Monitor, Apple, Check, X } from "lucide-react";
+import { Smartphone, Monitor, Apple, X } from "lucide-react";
 import { useI18n } from "../../i18n";
 
 interface InstallHelpModalProps {

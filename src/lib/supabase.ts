@@ -1,4 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { isServerSupabaseKey } from './supabaseSecurity';
 
 export function normalizeSupabaseUrl(rawUrl?: string): string {
   if (!rawUrl) return '';
@@ -10,14 +11,13 @@ export function normalizeSupabaseUrl(rawUrl?: string): string {
   return url;
 }
 
-const DEFAULT_SUPABASE_URL = 'https://xarbzazjzcaezcpstiga.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_O4i_ZeslX9794mtRJfYd8A_f9cjN576';
-
 export function getSupabaseConfig(): { url: string; anonKey: string } {
-  const rawUrl =
-    (import.meta.env.VITE_SUPABASE_URL as string) || DEFAULT_SUPABASE_URL;
-  const rawKey =
-    (import.meta.env.VITE_SUPABASE_ANON_KEY as string) || DEFAULT_SUPABASE_ANON_KEY;
+  const rawUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  const candidateKey =
+    (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
+    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ||
+    '';
+  const rawKey = isServerSupabaseKey(candidateKey) ? '' : candidateKey;
   return {
     url: normalizeSupabaseUrl(rawUrl),
     anonKey: rawKey.trim(),
@@ -32,9 +32,10 @@ export function isSupabaseConfigured(): boolean {
       url.startsWith('https://') &&
       !url.includes('your-project.supabase.co') &&
       !url.includes('your-tenant-id.supabase.co') &&
-      !anonKey.includes('sb_secret_') &&
-      !anonKey.includes('service_role') &&
-      !anonKey.includes('your-anon-key')
+      !anonKey.toLowerCase().includes('sb_secret_') &&
+      !anonKey.toLowerCase().includes('service_role') &&
+      !anonKey.includes('your-anon-key') &&
+      !anonKey.includes('your-publishable-key')
   );
 }
 
@@ -57,6 +58,9 @@ export function getSupabaseClient(): SupabaseClient {
 
 export function formatSupabaseError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error || '');
+  if (!supabaseUrl) {
+    return 'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.';
+  }
   if (message.toLowerCase().includes('failed to fetch')) {
     return `Cannot reach Supabase at ${supabaseUrl}. Check internet access and project status.`;
   }

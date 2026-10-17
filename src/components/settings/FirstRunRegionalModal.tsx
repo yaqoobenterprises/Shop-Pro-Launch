@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Select } from "../common/Select";
 import { Globe, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useRegion } from '../../regional/region';
@@ -8,7 +9,7 @@ import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase';
 import { saveUserPreferences } from '../../services/userPreferencesService';
 import { isValidTimeZone } from '../../regional/format';
 import { useI18n } from '../../i18n';
-import { useFeature } from '../../config/features';
+import { isFeatureEnabled } from '../../config/features';
 
 interface FirstRunRegionalModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export const FirstRunRegionalModal: React.FC<FirstRunRegionalModalProps> = ({
   const { user, organization, updateOrganization } = useAuth();
   const { setRegion } = useRegion();
   const { setLanguage: setI18nLanguage, t } = useI18n();
-  const languageUrEnabled = useFeature('languageUr');
+  const languageUrEnabled = isFeatureEnabled('languageUr');
 
   const [detected] = useState(() => detectDeviceRegion());
   const [currency, setCurrency] = useState(detected.currency || organization.currency || 'PKR');
@@ -139,7 +140,7 @@ export const FirstRunRegionalModal: React.FC<FirstRunRegionalModalProps> = ({
             <label htmlFor="region-currency" className="block font-semibold text-secondary mb-1">
               {t('region.currency')}
             </label>
-            <select
+            <Select
               id="region-currency"
               value={currency}
               onChange={(e) => {
@@ -157,7 +158,7 @@ export const FirstRunRegionalModal: React.FC<FirstRunRegionalModalProps> = ({
                   {c.code} ({c.symbol}) — {c.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
 
           <div>
@@ -192,7 +193,7 @@ export const FirstRunRegionalModal: React.FC<FirstRunRegionalModalProps> = ({
             <label htmlFor="region-language" className="block font-semibold text-secondary mb-1">
               {t('region.preferredLanguage')}
             </label>
-            <select
+            <Select
               id="region-language"
               value={language}
               onChange={(e) => setLanguage(e.target.value as 'en' | 'ur')}
@@ -200,7 +201,7 @@ export const FirstRunRegionalModal: React.FC<FirstRunRegionalModalProps> = ({
             >
               <option value="en">{t('settings.languageEnglish')}</option>
               <option value="ur">{t('settings.languageUrdu')}</option>
-            </select>
+            </Select>
           </div>}
         </div>
 

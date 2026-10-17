@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Organization, UserProfile } from "../types";
 import { getSupabaseClient, isSupabaseConfigured } from "../lib/supabase";
 import { sqliteRepository } from "../services/sqliteRepository";
@@ -6,8 +6,11 @@ import { StorageEngine } from "../services/storageEngine";
 import { syncEngine } from "../services/syncEngine";
 import { setSecurityPrincipal } from "../lib/security";
 import { setupDemoWorkspace, cleanupDemoWorkspace } from "../services/demoModeService";
+import { isPlaceholderProfileName } from "../lib/profileDisplay";
+import { hashPassword, hashPin, MIN_PIN_LENGTH, verifyPassword, verifyPin } from "../lib/authCredentials";
+import { getErrorMessage } from "../lib/authErrors";
+import { saveProfileUpdates } from "../services/profileService";
 
-const MIN_PIN_LENGTH = 4;
 const ACTIVE_PROFILE_KEY = "yaqoob_active_profile";
 
 const EMPTY_ORGANIZATION: Organization = {
@@ -27,84 +30,12 @@ const EMPTY_ORGANIZATION: Organization = {
   created_at: "",
 };
 
-async function derivePin(pin: string, salt: Uint8Array): Promise<string> {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(pin),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const bits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: salt as unknown as BufferSource,
-      iterations: 120000,
-      hash: "SHA-256",
-    },
-    key,
-    256,
-  );
-  return Array.from(new Uint8Array(bits))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function encodeBytes(bytes: Uint8Array): string {
-  return Array.from(bytes)
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-function decodeBytes(value: string): Uint8Array {
-  return new Uint8Array(
-    value.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) || [],
-  );
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === "string" && error) return error;
-  if (error && typeof error === "object") {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message) return message;
-    try {
-      return JSON.stringify(error);
-    } catch {
-      return fallback;
-    }
-  }
-  return fallback;
-}
-
-async function hashPin(pin: string): Promise<{ hash: string; salt: string }> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  return { hash: await derivePin(pin, salt), salt: encodeBytes(salt) };
-}
-
-async function hashPassword(
-  password: string,
-  salt = encodeBytes(crypto.getRandomValues(new Uint8Array(16))),
-): Promise<string> {
-  return `${salt}:${await derivePin(password, decodeBytes(salt))}`;
-}
-
-async function verifyPassword(
-  password: string,
-  stored: string,
-): Promise<boolean> {
-  const [salt, expected] = stored.split(":");
-  return (
-    Boolean(salt && expected) &&
-    (await derivePin(password, decodeBytes(salt))) === expected
-  );
-}
-
 interface AuthContextType {
   user: UserProfile | null;
   organization: Organization;
   role: UserProfile["role"] | null;
   isSupabaseReady: boolean;
+  isCloudAccount: boolean;
   isLoading: boolean;
   isLocked: boolean;
   hasLocalAccount: boolean;
@@ -120,6 +51,7 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; error?: string }>;
   updatePassword: (
     newPassword: string,
+    currentPassword?: string,
   ) => Promise<{ success: boolean; error?: string }>;
   changePassword: (
     currentPassword: string,
@@ -128,6 +60,13 @@ interface AuthContextType {
   updateProfilePhoto: (
     avatarUrl: string,
   ) => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (updates: {
+    full_name?: string;
+    avatar_url?: string | null;
+  }) => Promise<{ success: boolean; error?: string }>;
+  mfaChallengeRequired: boolean;
+  verifyMfaChallenge: (code: string) => Promise<{ success: boolean; error?: string }>;
+  cancelMfaChallenge: () => Promise<void>;
   createAccount: (details: {
     shopName: string;
     ownerName: string;
@@ -172,6 +111,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLocked, setIsLocked] = useState(true);
   const [hasLocalAccount, setHasLocalAccount] = useState(false);
   const [hasPasswordAccount, setHasPasswordAccount] = useState(false);
+  const [isCloudAccount, setIsCloudAccount] = useState(false);
+  const [mfaChallengeRequired, setMfaChallengeRequired] = useState(false);
+  const [pendingMfaProfileId, setPendingMfaProfileId] = useState<string | null>(null);
   const [hasPinSetup, setHasPinSetup] = useState(false);
   const [localAccount, setLocalAccount] =
     useState<Awaited<ReturnType<typeof sqliteRepository.getLocalAuthAccount>>>(
@@ -184,9 +126,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return typeof window !== "undefined" && localStorage.getItem("yaqoob_demo_mode") === "true";
   });
   const isSupabaseReady = isSupabaseConfigured();
+  const activateSupabaseSessionRef = useRef<
+    ((profileId: string) => Promise<"ready" | "mfa_required" | "failed">) | null
+  >(null);
 
   useEffect(() => {
     let cancelled = false;
+    const activateSession = (profileId: string) =>
+      activateSupabaseSessionRef.current?.(profileId) ?? Promise.resolve("failed" as const);
 
     // Check if URL contains password recovery hash or parameter
     if (typeof window !== "undefined") {
@@ -268,7 +215,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             if (typeof window !== "undefined") {
               localStorage.removeItem("yaqoob_signed_out");
             }
-            await activateSupabaseSession(sessionResult.data.session.user.id);
+            await activateSession(sessionResult.data.session.user.id);
           }
         }
       } catch (initializationError) {
@@ -295,7 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             if (typeof window !== "undefined") {
               localStorage.removeItem("yaqoob_signed_out");
             }
-            await activateSupabaseSession(session.user.id);
+            await activateSession(session.user.id);
           }
         },
       );
@@ -316,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 if (typeof window !== "undefined") {
                   localStorage.removeItem("yaqoob_signed_out");
                 }
-                await activateSupabaseSession(data.session.user.id);
+                await activateSession(data.session.user.id);
                 return;
               }
             }
@@ -326,7 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               if (typeof window !== "undefined") {
                 localStorage.removeItem("yaqoob_signed_out");
               }
-              await activateSupabaseSession(sessionResult.data.session.user.id);
+              await activateSession(sessionResult.data.session.user.id);
             }
           } catch (e) {
             console.warn("OAuth session handling warning:", e);
@@ -341,7 +288,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           desc.toLowerCase().includes("access_denied")
         ) {
           setError(
-            "Google Sign-In Access Denied (403): Your OAuth consent screen in Google Cloud Console is in 'Testing' mode. Please add your email (jamalarain186@gmail.com) under 'Test Users' in Google Cloud Console -> APIs & Services -> OAuth consent screen, or publish the application to Production.",
+            "Google sign-in is not available for this account yet. The app owner needs to finish Google OAuth access setup.",
           );
         } else if (
           desc.toLowerCase().includes("redirect_uri_mismatch") ||
@@ -368,9 +315,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [isSupabaseReady]);
 
-  const activate = (profile: UserProfile, org: Organization) => {
+  const activate = (profile: UserProfile, org: Organization, cloudAccount = false) => {
     setOrganization(org);
     setUser(profile);
+    setIsCloudAccount(cloudAccount);
     setRole(profile.role);
     setSecurityPrincipal(profile);
     setIsLocked(false);
@@ -382,7 +330,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const activateSupabaseSession = async (
     profileId: string,
-  ): Promise<boolean> => {
+  ): Promise<"ready" | "mfa_required" | "failed"> => {
+    setIsCloudAccount(false);
     const client = getSupabaseClient();
 
     // 1. Verify user exists in Supabase auth.users (critical if user accounts were deleted in Supabase)
@@ -396,23 +345,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         );
         try {
           await client.auth.signOut({ scope: "local" });
-        } catch {}
+        } catch {
+          console.warn("Could not clear the stale Supabase session before reset.");
+        }
         if (typeof window !== "undefined") {
           localStorage.removeItem(ACTIVE_PROFILE_KEY);
           localStorage.removeItem("yaqoob_signed_out");
         }
         setUser(null);
         setRole(null);
+        setIsCloudAccount(false);
         setIsLocked(true);
         setError(
           "Your previous cloud session expired or user accounts were reset in Supabase. Please sign in or create a new account.",
         );
-        return false;
+        return "failed";
       }
       authUser = authUserData.user;
     } catch (e) {
       console.warn("Could not verify auth user in Supabase:", e);
-      return false;
+      return "failed";
+    }
+
+    try {
+      const { data: assurance, error: assuranceError } = await client.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (assuranceError) throw assuranceError;
+      if (assurance.currentLevel === "aal1" && assurance.nextLevel === "aal2") {
+        setPendingMfaProfileId(profileId);
+        setMfaChallengeRequired(true);
+        setUser(null);
+        setRole(null);
+        setIsLocked(true);
+        setSecurityPrincipal(null);
+        return "mfa_required";
+      }
+      setMfaChallengeRequired(false);
+      setPendingMfaProfileId(null);
+    } catch (assuranceErr) {
+      console.warn("Could not check authenticator assurance level:", assuranceErr);
+      setError("Could not verify account security. Check your connection and sign in again.");
+      setUser(null);
+      setRole(null);
+      setIsCloudAccount(false);
+      setIsLocked(true);
+      setSecurityPrincipal(null);
+      return "failed";
     }
 
     let profileData: any = null;
@@ -445,7 +422,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const meta = authUser?.user_metadata || {};
       const googleAvatar = meta.avatar_url || meta.picture;
-      const googleName = meta.full_name || meta.name;
+      const metadataName = meta.full_name || meta.name;
+      const googleName =
+        typeof metadataName === "string" &&
+        !isPlaceholderProfileName(metadataName, authUser?.email)
+          ? metadataName.trim()
+          : "";
       let needUpdate = false;
       const updates: any = {};
       if (profileData) {
@@ -454,19 +436,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           profileData.avatar_url = googleAvatar;
           needUpdate = true;
         }
-        if (
-          googleName &&
-          (!profileData.full_name || profileData.full_name === profileData.email)
-        ) {
+        if (googleName && isPlaceholderProfileName(profileData.full_name, profileData.email)) {
           updates.full_name = googleName;
           profileData.full_name = googleName;
           needUpdate = true;
         }
         if (needUpdate) {
           try {
-            await client.from("profiles").update(updates).eq("id", profileId);
+            const { error: updateError } = await client
+              .from("profiles")
+              .update(updates)
+              .eq("id", profileId);
+            if (updateError) {
+              console.warn("Could not sync profile metadata to Supabase:", updateError.message);
+            }
+          } catch {
+            console.warn("Could not sync profile metadata to Supabase.");
+          }
+          try {
             await sqliteRepository.updateProfile({ id: profileId, ...updates });
-          } catch {}
+          } catch {
+            console.warn("Could not sync profile metadata to local storage.");
+          }
         }
       }
     } catch (metaErr) {
@@ -493,17 +484,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const shopName =
         meta.shop_name ||
         meta.organization_name ||
-        (profileData?.full_name ? `${profileData.full_name}'s Shop` : "Shop Pro");
-      const ownerName =
-        (profileData?.full_name && !profileData.full_name.includes("@"))
-          ? profileData.full_name
-          : (meta.full_name && !meta.full_name.includes("@"))
-          ? meta.full_name
-          : (meta.name && !meta.name.includes("@"))
-          ? meta.name
-          : authUser?.email
-          ? authUser.email.split("@")[0].replace(/[._+-]/g, " ")
-          : "Shop Owner";
+        "Shop Pro";
+      const profileName = isPlaceholderProfileName(profileData?.full_name, profileData?.email)
+        ? ""
+        : profileData?.full_name;
+      const metadataName = [meta.full_name, meta.name].find(
+        (name: unknown) => typeof name === "string" && !isPlaceholderProfileName(name, authUser?.email),
+      );
+      const ownerName = profileName || metadataName || "Shop Owner";
 
       organizationData = {
         ...EMPTY_ORGANIZATION,
@@ -520,6 +508,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         id: profileId,
         email: authUser?.email || "",
         full_name: organizationData.owner_name,
+        avatar_url: authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
         role: "OWNER",
         organization_id: organizationData.id,
         is_active: true,
@@ -528,6 +517,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     // Cache to local SQLite so offline queries, transactions, and POS checkout always work
+    let hasCachedPassword = false;
     try {
       const existingOrg = await sqliteRepository.getOrganization(organizationData.id);
       if (!existingOrg) {
@@ -550,33 +540,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLocalAccount(refreshedAcc);
       setHasLocalAccount(Boolean(refreshedAcc));
       setHasPinSetup(Boolean(refreshedAcc?.pin_hash));
+      const cachedProfile = await sqliteRepository.getSessionProfile(profileData.id);
+      hasCachedPassword = Boolean(cachedProfile?.password_hash);
     } catch (e) {
       console.warn("Could not sync local organization cache:", e);
     }
 
-    activate(profileData as UserProfile, organizationData);
-    setHasPasswordAccount(true);
-    return true;
+    activate(profileData as UserProfile, organizationData, true);
+    setHasPasswordAccount(
+      (Array.isArray(authUser?.identities) && authUser.identities.some((identity: { provider?: string }) => identity.provider === "email")) ||
+        authUser?.user_metadata?.password_login_enabled === true ||
+        hasCachedPassword,
+    );
+    return "ready";
   };
+  activateSupabaseSessionRef.current = activateSupabaseSession;
 
   const unlock = async (enteredPin: string): Promise<boolean> => {
     if (!localAccount || enteredPin.length < MIN_PIN_LENGTH) return false;
-    try {
-      const hash = await derivePin(
-        enteredPin,
-        decodeBytes(localAccount.pin_salt),
-      );
-      if (hash !== localAccount.pin_hash) return false;
-      const [org, profile] = await Promise.all([
-        sqliteRepository.getOrganization(localAccount.organization_id),
-        sqliteRepository.getSessionProfile(localAccount.profile_id),
-      ]);
-      if (!org || !profile || !profile.is_active) return false;
-      activate(profile, org);
-      return true;
-    } finally {
-      enteredPin = "";
-    }
+    if (!(await verifyPin(enteredPin, localAccount.pin_hash, localAccount.pin_salt))) return false;
+    const [org, profile] = await Promise.all([
+      sqliteRepository.getOrganization(localAccount.organization_id),
+      sqliteRepository.getSessionProfile(localAccount.profile_id),
+    ]);
+    if (!org || !profile || !profile.is_active) return false;
+    activate(profile, org);
+    return true;
   };
 
   const lock = () => {
@@ -708,7 +697,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       };
     }
     if (
-      !(await unlockCheck(
+      !(await verifyPin(
         currentPin.trim(),
         localAccount.pin_hash,
         localAccount.pin_salt,
@@ -733,6 +722,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const updatePassword = async (
     newPassword: string,
+    currentPassword?: string,
   ): Promise<{ success: boolean; error?: string }> => {
     const cleanPass = newPassword.trim();
     if (cleanPass.length < 8) {
@@ -743,9 +733,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
-      if (isSupabaseReady) {
-        const { error: supaErr } = await getSupabaseClient().auth.updateUser({
+      if (isCloudAccount) {
+        const client = getSupabaseClient();
+        const { data: authUserData, error: authUserError } = await client.auth.getUser();
+        if (authUserError || !authUserData.user) {
+          return { success: false, error: authUserError?.message || "Sign in again to update your password." };
+        }
+        const { error: supaErr } = await client.auth.updateUser({
           password: cleanPass,
+          ...(currentPassword ? { current_password: currentPassword } : {}),
+          data: {
+            ...(authUserData.user.user_metadata || {}),
+            password_login_enabled: true,
+          },
         });
         if (supaErr) {
           return { success: false, error: supaErr.message };
@@ -779,18 +779,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
-      if (isSupabaseReady) {
-        if (!user.email) {
-          return { success: false, error: "This account has no email address." };
-        }
-        const { data, error: signInError } =
-          await getSupabaseClient().auth.signInWithPassword({
-            email: user.email,
-            password: currentPassword,
-          });
-        if (signInError || data.user?.id !== user.id) {
-          return { success: false, error: "Current password is incorrect." };
-        }
+      if (isCloudAccount) {
+        return updatePassword(newPassword, currentPassword);
       } else {
         const profile = await sqliteRepository.getSessionProfile(user.id);
         if (
@@ -813,32 +803,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const updateProfilePhoto = async (
     avatarUrl: string,
   ): Promise<{ success: boolean; error?: string }> => {
+    return updateProfile({ avatar_url: avatarUrl });
+  };
+
+  const updateProfile = async (updates: {
+    full_name?: string;
+    avatar_url?: string | null;
+  }): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: "No active user session." };
-    try {
-      setUser((prev) => (prev ? { ...prev, avatar_url: avatarUrl } : null));
-
-      await sqliteRepository.updateProfile({
-        id: user.id,
-        avatar_url: avatarUrl,
-      });
-
-      if (isSupabaseReady) {
-        try {
-          await getSupabaseClient()
-            .from("profiles")
-            .update({ avatar_url: avatarUrl })
-            .eq("id", user.id);
-        } catch {
-          // Non-blocking sync failure handled gracefully
-        }
-      }
-      return { success: true };
-    } catch (err: any) {
-      return {
-        success: false,
-        error: err?.message || "Could not update profile photo.",
-      };
-    }
+    const result = await saveProfileUpdates(user, isCloudAccount, updates);
+    if (!result.success) return result;
+    setUser(result.user);
+    setSecurityPrincipal(result.user);
+    return { success: true };
   };
 
   const updateOrganization = (orgData: Partial<Organization>) => {
@@ -849,11 +826,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
     void sqliteRepository.updateOrganization(updated);
     setOrganization(updated);
-    if (user) {
+    if (
+      user &&
+      (Object.prototype.hasOwnProperty.call(orgData, "owner_name") ||
+        Object.prototype.hasOwnProperty.call(orgData, "email"))
+    ) {
       const updatedUser = {
         ...user,
-        full_name: updated.owner_name,
-        email: updated.email || user.email,
+        ...(Object.prototype.hasOwnProperty.call(orgData, "owner_name")
+          ? { full_name: updated.owner_name }
+          : {}),
+        ...(Object.prototype.hasOwnProperty.call(orgData, "email")
+          ? { email: updated.email || user.email }
+          : {}),
       };
       setUser(updatedUser);
       setSecurityPrincipal(updatedUser);
@@ -948,7 +933,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const activated = await activateSupabaseSession(
             response.data.user.id,
           );
-          if (activated) return {};
+          if (activated === "ready" || activated === "mfa_required") return {};
           return {
             error:
               "Authentication succeeded, but failed to load workspace. Please refresh.",
@@ -989,7 +974,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           "",
         );
         account = await sqliteRepository.getLocalAuthAccount(profile.id);
-      } catch {}
+      } catch {
+        console.warn("Could not restore the local authentication account.");
+      }
     }
     const org =
       (await sqliteRepository.getOrganization(profile.organization_id)) ||
@@ -1263,16 +1250,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const resetConnectionAndSession = async () => {
     try {
       if (isSupabaseReady) {
-        await getSupabaseClient()
-          .auth.signOut({ scope: "local" })
-          .catch(() => {});
+        const { error: signOutError } = await getSupabaseClient().auth.signOut({
+          scope: "local",
+        });
+        if (signOutError) {
+          console.warn("Could not sign out from Supabase before clearing the local session.");
+        }
       }
-    } catch {}
+    } catch {
+      console.warn("Could not sign out from Supabase before clearing the local session.");
+    }
     if (typeof window !== "undefined") {
       try {
         localStorage.clear();
         sessionStorage.clear();
-      } catch {}
+      } catch {
+        console.warn("Could not clear browser storage before reloading.");
+      }
       window.location.href = window.location.pathname;
     }
   };
@@ -1353,11 +1347,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setLocalAccount(null);
     setHasLocalAccount(false);
     setHasPasswordAccount(false);
+    setIsCloudAccount(false);
     setHasPinSetup(false);
+    setMfaChallengeRequired(false);
+    setPendingMfaProfileId(null);
     setOrganization(EMPTY_ORGANIZATION);
     setSecurityPrincipal(null);
     setIsLocked(true);
   };
+
+  const verifyMfaChallenge = async (code: string): Promise<{ success: boolean; error?: string }> => {
+    const cleanCode = code.replace(/\s/g, "");
+    if (!/^\d{6}$/.test(cleanCode)) {
+      return { success: false, error: "Enter the 6-digit code from your authenticator app." };
+    }
+    if (!pendingMfaProfileId) {
+      return { success: false, error: "Your sign-in session expired. Sign in again." };
+    }
+    try {
+      const client = getSupabaseClient();
+      const { data: factors, error: factorsError } = await client.auth.mfa.listFactors();
+      if (factorsError) throw factorsError;
+      const factor = factors.totp.find((item) => item.status === "verified");
+      if (!factor) throw new Error("No verified authenticator app is linked to this account.");
+      const { error: verifyError } = await client.auth.mfa.challengeAndVerify({
+        factorId: factor.id,
+        code: cleanCode,
+      });
+      if (verifyError) throw verifyError;
+      const profileId = pendingMfaProfileId;
+      const status = await activateSupabaseSession(profileId);
+      if (status !== "ready") throw new Error("The second factor was accepted, but the workspace could not be loaded. Refresh and try again.");
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: getErrorMessage(err, "Could not verify the authenticator code.") };
+    }
+  };
+
+  const cancelMfaChallenge = signOut;
 
   const enterDemoMode = async () => {
     setIsLoading(true);
@@ -1400,6 +1427,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         organization,
         role,
         isSupabaseReady,
+        isCloudAccount,
         isLoading,
         isLocked,
         hasLocalAccount,
@@ -1413,6 +1441,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         updatePassword,
         changePassword,
         updateProfilePhoto,
+        updateProfile,
+        mfaChallengeRequired,
+        verifyMfaChallenge,
+        cancelMfaChallenge,
         createAccount,
         onboardingCompleted,
         signIn,
@@ -1436,14 +1468,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     </AuthContext.Provider>
   );
 };
-
-async function unlockCheck(
-  pin: string,
-  expectedHash: string,
-  salt: string,
-): Promise<boolean> {
-  return (await derivePin(pin, decodeBytes(salt))) === expectedHash;
-}
 
 export function useAuth() {
   const context = useContext(AuthContext);

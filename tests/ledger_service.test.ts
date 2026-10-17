@@ -651,9 +651,8 @@ describe('ledger mutation concurrency', () => {
     const mockClient = {
       from: vi.fn((table: string) => {
         let pendingUpsert: Record<string, unknown> | undefined;
-        let filters: Record<string, unknown> = {};
-        let query: Record<string, any>;
-        query = {
+        const filters: Record<string, unknown> = {};
+        const query: Record<string, any> = {
           upsert: vi.fn((value: Record<string, unknown>) => {
             pendingUpsert = value;
             replayOrder.push(table);

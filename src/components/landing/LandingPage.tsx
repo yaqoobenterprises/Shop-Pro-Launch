@@ -6,12 +6,9 @@ import {
   ShieldCheck,
   WifiOff,
   Landmark,
-  Wallet,
   TrendingUp,
   Receipt,
-  Users,
   CheckCircle2,
-  Lock,
   ArrowDownLeft,
   ArrowUpRight,
   Sun,
@@ -53,7 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-surface font-sans text-on-surface transition-colors duration-200">
+    <div className="shop-landing-page min-h-screen bg-surface font-sans text-on-surface transition-colors duration-200">
       {/* Top Navigation */}
       <header className="sticky top-0 z-40 border-b border-border-standard bg-surface-bright/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -108,7 +105,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       </header>
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden py-12 sm:py-20 lg:py-24">
+      <section className="shop-landing-hero relative overflow-hidden py-12 sm:py-20 lg:py-24">
         {/* Subtle decorative background gradient */}
         <div
           aria-hidden="true"
@@ -118,7 +115,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
+          <div className="shop-landing-copy mx-auto max-w-3xl text-center">
             {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
               <Sparkles className="h-3.5 w-3.5" />
@@ -179,7 +176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Interactive Live Preview Mockup Card */}
-          <div className="mx-auto mt-12 max-w-4xl rounded-2xl border border-border-standard bg-surface-bright p-4 shadow-level-3 sm:p-6">
+          <div className="shop-landing-preview mx-auto mt-12 max-w-4xl rounded-2xl border border-border-standard bg-surface-bright p-4 shadow-level-3 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-standard pb-4">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-danger/80" />

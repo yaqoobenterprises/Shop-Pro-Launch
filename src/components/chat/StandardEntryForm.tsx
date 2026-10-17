@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Select } from "../common/Select";
 import { Check } from "lucide-react";
 import { ParseResult, SeedCategory, parseMessage } from "../../parser";
 import { getKarachiBusinessDate } from "../../lib/dates";
@@ -74,7 +75,7 @@ export const StandardEntryForm: React.FC<StandardEntryFormProps> = ({
         <label htmlFor="standard-entry-type" className="mb-1 block text-xs font-semibold text-secondary">
           {t("entry.type")}
         </label>
-        <select
+        <Select
           id="standard-entry-type"
           value={type}
           onChange={(event) => {
@@ -87,14 +88,14 @@ export const StandardEntryForm: React.FC<StandardEntryFormProps> = ({
         >
           <option value="income">{t("entry.income")}</option>
           <option value="expense">{t("entry.expense")}</option>
-        </select>
+        </Select>
       </div>
 
       <div>
         <label htmlFor="standard-entry-category" className="mb-1 block text-xs font-semibold text-secondary">
           {t("entry.category")}
         </label>
-        <select
+        <Select
           id="standard-entry-category"
           required
           value={categoryId}
@@ -105,7 +106,7 @@ export const StandardEntryForm: React.FC<StandardEntryFormProps> = ({
           {availableCategories.map((category) => (
             <option key={category.id} value={category.id}>{category.name}</option>
           ))}
-        </select>
+        </Select>
         {availableCategories.length === 0 && (
           <button type="button" onClick={onAddCategory} className="mt-1 text-xs font-semibold text-primary underline">
             {t("entry.addCategory")}

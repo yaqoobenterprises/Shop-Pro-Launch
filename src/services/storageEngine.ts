@@ -971,7 +971,7 @@ export class StorageEngine {
     return expense;
   }
 
-  static voidExpense(orgId: string, expenseId: string, userId: string, userName: string): Expense {
+  static voidExpense(orgId: string, expenseId: string, _userId: string, _userName: string): Expense {
     const principal = requirePermission(orgId, 'VOID_EXPENSE');
     const db = this.getDB();
     const expense = db.expenses.find((e) => e.organization_id === orgId && e.id === expenseId);

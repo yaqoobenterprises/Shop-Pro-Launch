@@ -72,8 +72,6 @@ export const urdu = {
   "settings.noCategories": "ابھی کوئی زمرہ نہیں۔",
   "settings.dataTools": "ڈیٹا اور ٹولز",
   "settings.dataToolsDescription": "لین دین برآمد کریں اور اس ڈیوائس پر محفوظ کام کا بیک اپ رکھیں۔",
-  "settings.aliasesKeywords": "متبادل نام اور کلیدی الفاظ",
-  "settings.mapCategory": "زمرے سے منسلک کریں...",
   "settings.income": "آمدنی",
   "settings.expense": "اخراجات",
   "settings.loading": "زمرے لوڈ ہو رہے ہیں…",

@@ -46,11 +46,7 @@ describe('Integer Paisa Money Engine', () => {
     expect(netProfit).toBe(350000); // Rs 3,500
     expect(paisaToRupees(netProfit)).toBe(3500);
 
-    // Verify capital and withdrawals have zero impact on profit calculation
-    const capitalIn = rupeesToPaisa(50000);
-    const withdrawal = rupeesToPaisa(10000);
-
-    // Net profit remains strictly 3500
+    // Profit is calculated from income and expenses only.
     expect(calculateNetProfitPaisa(income, expense)).toBe(350000);
   });
 });

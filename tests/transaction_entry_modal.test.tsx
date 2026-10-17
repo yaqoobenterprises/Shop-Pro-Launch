@@ -37,6 +37,11 @@ function parseEntry(input: string) {
     .entries[0];
 }
 
+const chooseOption = (label: string, optionName: string | RegExp) => {
+  fireEvent.click(screen.getByRole('combobox', { name: label }));
+  fireEvent.click(screen.getByRole('option', { name: optionName }));
+};
+
 describe('Unified transaction entry review', () => {
   it('reviews a recognized income and posts it to the selected active account in the same dialog', async () => {
     const onConfirmSingle = vi.fn().mockResolvedValue(undefined);
@@ -54,13 +59,11 @@ describe('Unified transaction entry review', () => {
 
     expect(screen.getByRole('dialog')).toBeTruthy();
     expect(screen.getByText('PRINT 300')).toBeTruthy();
-    expect((screen.getByLabelText('Transaction type') as HTMLSelectElement).value)
-      .toBe('income');
-    expect((screen.getByLabelText('Payment account') as HTMLSelectElement).value)
-      .toBe('cash-shop-1');
-    fireEvent.change(screen.getByLabelText('Payment account'), {
-      target: { value: 'bank-shop-1' },
-    });
+    expect(screen.getByRole('combobox', { name: 'Transaction type' }).textContent)
+      .toContain('Income');
+    expect(screen.getByRole('combobox', { name: 'Payment account' }).textContent)
+      .toContain('Till Cash');
+    chooseOption('Payment account', /Shop Bank/);
     fireEvent.click(screen.getByRole('button', { name: 'Confirm & post' }));
 
     await waitFor(() => expect(onConfirmSingle).toHaveBeenCalledWith(
@@ -86,10 +89,10 @@ describe('Unified transaction entry review', () => {
       />,
     );
 
-    expect((screen.getByLabelText('Transaction type') as HTMLSelectElement).value)
-      .toBe('expense');
-    expect((screen.getByLabelText('Payment account') as HTMLSelectElement).value)
-      .toBe('cash-shop-1');
+    expect(screen.getByRole('combobox', { name: 'Transaction type' }).textContent)
+      .toContain('Expense');
+    expect(screen.getByRole('combobox', { name: 'Payment account' }).textContent)
+      .toContain('Till Cash');
     expect((screen.getByRole('button', { name: 'Confirm & post' }) as HTMLButtonElement).disabled)
       .toBe(false);
   });
@@ -111,9 +114,7 @@ describe('Unified transaction entry review', () => {
     expect(confirm.disabled).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: /Income \(GLUE\)/ }));
     expect(confirm.disabled).toBe(true);
-    fireEvent.change(screen.getByLabelText('Category'), {
-      target: { value: 'cat-printing' },
-    });
+    chooseOption('Category', 'Printing');
     expect(confirm.disabled).toBe(false);
   });
 

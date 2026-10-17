@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FEATURES, useFeature, FeatureFlags } from '../src/config/features';
+import { FEATURES, isFeatureEnabled, FeatureFlags } from '../src/config/features';
 
 describe('Feature Flags Configuration', () => {
   const expectedFlags: (keyof FeatureFlags)[] = [
@@ -9,16 +9,23 @@ describe('Feature Flags Configuration', () => {
     'chatQueries',
   ];
 
-  it('declares all expected feature flags with default value false', () => {
+  const expectedState: Record<keyof FeatureFlags, boolean> = {
+    regionSettings: false,
+    languageUr: false,
+    entryModes: false,
+    chatQueries: false,
+  };
+
+  it('declares all expected feature flags with the intended release state', () => {
     for (const flag of expectedFlags) {
       expect(flag in FEATURES).toBe(true);
-      expect(FEATURES[flag]).toBe(false);
+      expect(FEATURES[flag]).toBe(expectedState[flag]);
     }
   });
 
-  it('exposes useFeature helper which returns false for each flag', () => {
+  it('exposes isFeatureEnabled helper with the configured state for each flag', () => {
     for (const flag of expectedFlags) {
-      expect(useFeature(flag)).toBe(false);
+      expect(isFeatureEnabled(flag)).toBe(expectedState[flag]);
     }
   });
 

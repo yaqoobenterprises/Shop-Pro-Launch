@@ -2,7 +2,7 @@
 
 ## Shipped design source
 
-src/index.css is the styling source for the web application. It uses Tailwind CSS v4 utilities, semantic tokens, and application-specific component styles. The design-reference directory is a visual reference scaffold and is not part of the deployed application.
+src/index.css is the styling source for the web application. It uses Tailwind CSS v4 utilities, semantic tokens, and application-specific component styles. The temporary Figma reference layout has been applied to the app and removed from the repository.
 
 The current interface uses Manrope from the existing local font package. Numeric text uses the system monospace stack. Urdu uses Noto Naskh Arabic, bundled locally and loaded only with the Urdu language chunk. The app does not fetch fonts from Google at runtime.
 
@@ -16,4 +16,4 @@ The document direction follows the selected language. Financial values use the n
 
 ## Change guidance
 
-Reuse the existing tokens and common components. Preserve visible focus outlines, touch targets, and mobile safe areas. Keep financial values in the existing formatting helpers. Visual changes should be compared against design-reference source and checked at mobile, tablet, and desktop sizes in both themes. A connected in-app Browser was unavailable during this audit, so no screenshot-based visual verification is claimed.
+Reuse the existing tokens and common components. Preserve visible focus outlines, touch targets, and mobile safe areas. Keep financial values in the existing formatting helpers. Check visual changes at desktop and narrow widths in both themes when the interface changes.

@@ -6,6 +6,7 @@ import { LedgerAccount } from "../../types/ledger";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
 import { ConfirmationModal } from "./ConfirmationModal";
+import { getProfileDisplayName } from "../../lib/profileDisplay";
 
 interface QuickEntryBarProps {
   onTransactionSaved?: () => void;
@@ -17,8 +18,7 @@ export const QuickEntryBar: React.FC<QuickEntryBarProps> = ({
   const { user } = useAuth();
   const { showToast } = useApp();
   const currentUserId = user?.id || "offline-user";
-  const currentUserName =
-    user?.full_name || user?.email?.split("@")[0] || "Shop Brother";
+  const currentUserName = getProfileDisplayName(user, "Shop Brother");
 
   const [text, setText] = useState("");
   const [activeClarification, setActiveClarification] =

@@ -110,7 +110,6 @@ export function setupDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
 
 async function seedDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
   const todayStr = getKarachiBusinessDate();
-  const nowIso = new Date().toISOString();
 
   // 1. Seed accounts into local cache
   await replaceCachedAccounts(DEMO_ORGANIZATION_ID, DEMO_ACCOUNTS);
@@ -121,7 +120,9 @@ async function seedDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
       `shop-pro:parser-categories:${DEMO_ORGANIZATION_ID}`,
       JSON.stringify(SEED_CATEGORIES),
     );
-  } catch {}
+  } catch {
+    // The parser can use its built-in categories if localStorage is unavailable.
+  }
 
   // 3. Clear any leftover demo items from queue before seeding fresh sample entries
   const existingQueue = await getOfflineQueue();
@@ -221,13 +222,17 @@ async function seedDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
       DEMO_ORGANIZATION,
       DEMO_PROFILE,
     );
-  } catch {}
+  } catch {
+    // The demo session remains usable without a native SQLite account.
+  }
 
   try {
     localStorage.setItem("yaqoob_demo_mode", "true");
     localStorage.setItem("yaqoob_demo_accounts", JSON.stringify(DEMO_ACCOUNTS));
     localStorage.setItem("yaqoob_demo_transactions", JSON.stringify(demoTransactions));
-  } catch {}
+  } catch {
+    // IndexedDB-backed demo data remains available if localStorage is blocked.
+  }
 
   return {
     organization: DEMO_ORGANIZATION,
@@ -257,5 +262,7 @@ export async function cleanupDemoWorkspace(): Promise<void> {
     localStorage.removeItem("yaqoob_demo_mode");
     localStorage.removeItem("yaqoob_demo_accounts");
     localStorage.removeItem("yaqoob_demo_transactions");
-  } catch {}
+  } catch {
+    // Cleanup continues in memory when localStorage is unavailable.
+  }
 }
