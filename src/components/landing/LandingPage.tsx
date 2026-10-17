@@ -1,21 +1,16 @@
 import React, { useState } from "react";
 import {
-  Sparkles,
-  Play,
-  ArrowRight,
-  ShieldCheck,
-  WifiOff,
-  Landmark,
-  TrendingUp,
-  Receipt,
-  CheckCircle2,
   ArrowDownLeft,
+  ArrowRight,
   ArrowUpRight,
-  Sun,
-  Moon,
-  Store,
-  Layers,
   FileSpreadsheet,
+  Landmark,
+  Moon,
+  Play,
+  Receipt,
+  Store,
+  Sun,
+  WifiOff,
 } from "lucide-react";
 import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
 import { useI18n } from "../../i18n";
@@ -50,409 +45,224 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="shop-landing-page min-h-screen bg-surface font-sans text-on-surface transition-colors duration-200">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-40 border-b border-border-standard bg-surface-bright/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white shadow-level-1">
-              <Store className="h-5 w-5" />
-            </div>
-            <div>
-              <span className="text-base font-bold tracking-tight text-on-surface sm:text-lg">
-                Shop Pro
-              </span>
-              <span className="ml-1.5 hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary sm:inline-block">
-                Ledger
-              </span>
-            </div>
+    <div className="shop-landing-page min-h-screen overflow-x-clip bg-surface font-sans text-on-surface">
+      <header className="sticky top-0 z-40 border-b border-border-standard bg-surface-bright">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+          <div className="inline-flex min-w-0 items-center gap-2.5 text-on-surface">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
+              <Store aria-hidden="true" className="h-[18px] w-[18px]" />
+            </span>
+            <span className="truncate text-base font-bold tracking-tight">Shop Pro</span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={toggleTheme}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border-standard bg-surface text-secondary hover:bg-surface-container-low transition-colors"
-              aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+              aria-label={t("landing.switchTheme")}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright text-secondary transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {theme === "dark" ? (
-                <Sun className="h-4 w-4" />
+                <Sun aria-hidden="true" className="h-4 w-4" />
               ) : (
-                <Moon className="h-4 w-4" />
+                <Moon aria-hidden="true" className="h-4 w-4" />
               )}
             </button>
-
             <button
               type="button"
               onClick={() => onOpenAuth("signIn")}
-              className="min-h-9 rounded-lg border border-border-standard bg-surface-bright px-3.5 text-xs font-semibold text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright px-3 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:px-4"
             >
               {t("landing.signIn")}
             </button>
-
             <button
               type="button"
               disabled={isDemoLoading}
               onClick={handleLaunchDemo}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-semibold text-white shadow-level-1 hover:bg-primary-hover transition-colors cursor-pointer disabled:opacity-50"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60 sm:px-4"
             >
-              <Play className="h-3 w-3 fill-current" />
-              <span className="hidden sm:inline">{t("landing.tryDemo")}</span>
+              <Play aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
+              <span className="hidden sm:inline">{t("landing.openDemo")}</span>
               <span className="sm:hidden">{t("landing.demo")}</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="shop-landing-hero relative overflow-hidden py-12 sm:py-20 lg:py-24">
-        {/* Subtle decorative background gradient */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80"
-        >
-          <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-primary to-emerald-300 opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" />
-        </div>
+      <main id="top">
+        <section className="shop-landing-hero border-b border-border-standard py-10 sm:py-14 lg:py-16">
+          <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12">
+            <div className="shop-landing-copy max-w-xl lg:py-8">
+              <h1 className="max-w-[14ch] text-3xl font-bold leading-tight tracking-tight text-on-surface sm:text-4xl lg:text-5xl">
+                {t("landing.headline")}
+              </h1>
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="shop-landing-copy mx-auto max-w-3xl text-center">
-            {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>{t("landing.badge")}</span>
+              <div className="mt-7 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
+                <button
+                  type="button"
+                  disabled={isDemoLoading}
+                  onClick={handleLaunchDemo}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
+                >
+                  <Play aria-hidden="true" className="h-4 w-4 fill-current" />
+                  {isDemoLoading ? t("landing.openingDemo") : t("landing.openDemo")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOpenAuth("signUp")}
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  {t("landing.createShop")}
+                  <ArrowRight aria-hidden="true" className="h-4 w-4 text-secondary" />
+                </button>
+              </div>
             </div>
 
-            <h1 className="mt-5 text-3xl font-extrabold tracking-tight text-on-surface sm:text-5xl lg:text-6xl">
-              {t("landing.headline")}{" "}
-              <span className="text-primary">{t("landing.zeroHassle")}</span>
-            </h1>
-
-            <p className="mt-5 text-sm leading-relaxed text-text-muted sm:text-base lg:text-lg">
-              {t("landing.description")}
-            </p>
-
-            {/* Hero CTAs */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
-              <button
-                type="button"
-                disabled={isDemoLoading}
-                onClick={handleLaunchDemo}
-                className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-level-2 hover:bg-primary-hover transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50"
-              >
-                <Play className="h-4 w-4 fill-current" />
-                <span>{t("landing.guestDemo")}</span>
-                <span className="text-xs font-normal opacity-80">{t("landing.noSignup")}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onOpenAuth("signUp")}
-                className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-border-standard bg-surface-bright px-6 text-sm font-semibold text-on-surface shadow-level-1 hover:bg-surface-container-low transition-colors cursor-pointer"
-              >
-                <span>{t("landing.createShop")}</span>
-                <ArrowRight className="h-4 w-4 text-secondary" />
-              </button>
-            </div>
-
-            {/* Quick Proof Badges */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-text-muted sm:gap-6">
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                {t("landing.offlineReady")}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                {t("landing.reconciliation")}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                {t("landing.regional")}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                {t("landing.secure")}
-              </span>
-            </div>
-          </div>
-
-          {/* Interactive Live Preview Mockup Card */}
-          <div className="shop-landing-preview mx-auto mt-12 max-w-4xl rounded-2xl border border-border-standard bg-surface-bright p-4 shadow-level-3 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-standard pb-4">
-              <div className="flex items-center gap-2">
-                <span className="h-3 w-3 rounded-full bg-danger/80" />
-                <span className="h-3 w-3 rounded-full bg-warning/80" />
-                <span className="h-3 w-3 rounded-full bg-success/80" />
-                <span className="ml-2 text-xs font-semibold text-text-muted">
-                  Interactive Register Preview — Today (Karachi)
+            <section
+              aria-label={t("landing.exampleRegister")}
+              className="shop-landing-preview min-w-0 rounded-xl border border-border-standard bg-surface-bright p-3 shadow-level-1 sm:p-5"
+            >
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border-standard pb-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Receipt aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
+                  <h2 className="truncate text-sm font-semibold text-on-surface sm:text-base">
+                    {t("landing.exampleRegister")}
+                  </h2>
+                </div>
+                <span className="inline-flex shrink-0 items-center rounded-full border border-border-standard bg-surface-container-low px-2.5 py-1 text-[11px] font-medium text-secondary">
+                  {t("landing.exampleData")}
                 </span>
               </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-success-bg px-2.5 py-0.5 text-[11px] font-semibold text-success">
-                <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                {t("landing.registerActive")}
-              </span>
-            </div>
 
-            {/* Metric Strips */}
-            <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-4">
-              <div className="rounded-xl border border-border-standard bg-surface-container-low p-3 sm:p-4">
-                <div className="flex items-center justify-between text-xs text-text-muted">
-                  <span>{t("landing.incomeToday")}</span>
-                  <ArrowDownLeft className="h-3.5 w-3.5 text-primary" />
+              <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
+                <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
+                  <dt className="text-xs font-medium text-secondary">{t("landing.incomeToday")}</dt>
+                  <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-primary sm:mt-1 sm:text-left sm:text-base">
+                    {formatPaisa(2_600_000)}
+                  </dd>
                 </div>
-                <p className="mt-1 font-mono text-base font-bold text-primary sm:text-xl">
-                  {formatPaisa(2_600_000)}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border-standard bg-surface-container-low p-3 sm:p-4">
-                <div className="flex items-center justify-between text-xs text-text-muted">
-                  <span>{t("landing.expensesToday")}</span>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-danger" />
+                <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
+                  <dt className="text-xs font-medium text-secondary">{t("landing.expensesToday")}</dt>
+                  <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-on-surface sm:mt-1 sm:text-left sm:text-base">
+                    {formatPaisa(365_000)}
+                  </dd>
                 </div>
-                <p className="mt-1 font-mono text-base font-bold text-danger sm:text-xl">
-                  {formatPaisa(365_000)}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-border-standard bg-surface-container-low p-3 sm:p-4">
-                <div className="flex items-center justify-between text-xs text-text-muted">
-                  <span>{t("landing.netProfitToday")}</span>
-                  <TrendingUp className="h-3.5 w-3.5 text-on-surface" />
+                <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
+                  <dt className="text-xs font-medium text-secondary">{t("landing.netProfitToday")}</dt>
+                  <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-on-surface sm:mt-1 sm:text-left sm:text-base">
+                    {formatPaisa(2_235_000)}
+                  </dd>
                 </div>
-                <p className="mt-1 font-mono text-base font-bold text-on-surface sm:text-xl">
-                  {formatPaisa(2_235_000)}
-                </p>
-              </div>
-            </div>
+              </dl>
 
-            {/* Sample Feed Items */}
-            <div className="mt-4 space-y-2 rounded-xl border border-border-standard/60 bg-surface p-3">
-              <div className="flex items-center justify-between rounded-lg bg-surface-bright p-2.5 text-xs shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-success-bg text-success">
-                    <ArrowDownLeft className="h-3.5 w-3.5" />
+              <h3 className="mt-4 text-xs font-semibold text-secondary">
+                {t("landing.recentEntries")}
+              </h3>
+              <ul className="mt-2 divide-y divide-border-standard overflow-hidden rounded-lg border border-border-standard">
+                <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-success-bg text-success">
+                      <ArrowDownLeft aria-hidden="true" className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-on-surface">{t("landing.sampleSale")}</p>
+                      <p className="truncate text-[11px] text-secondary">{t("landing.cashDrawer")}</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-semibold text-on-surface">LED Monitor 24-inch</span>
-                    <span className="ml-2 text-[11px] text-text-muted">{t("landing.cashDrawer")} · 2:15 PM</span>
+                  <span className="whitespace-nowrap text-right font-mono text-xs font-semibold text-success">+{formatPaisa(1_850_000)}</span>
+                </li>
+                <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-danger-bg text-danger">
+                      <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-on-surface">{t("landing.sampleExpense")}</p>
+                      <p className="truncate text-[11px] text-secondary">{t("landing.cashDrawer")}</p>
+                    </div>
                   </div>
-                </div>
-                <span className="font-mono font-bold text-success">+{formatPaisa(1_850_000)}</span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg bg-surface-bright p-2.5 text-xs shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-danger-bg text-danger">
-                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  <span className="whitespace-nowrap text-right font-mono text-xs font-semibold text-on-surface">−{formatPaisa(320_000)}</span>
+                </li>
+                <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-success-bg text-success">
+                      <ArrowDownLeft aria-hidden="true" className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-semibold text-on-surface">{t("landing.sampleSale")}</p>
+                      <p className="truncate text-[11px] text-secondary">{t("landing.bankAccount")}</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-semibold text-on-surface">Generator Petrol Fuel</span>
-                    <span className="ml-2 text-[11px] text-text-muted">{t("landing.cashDrawer")} · 1:40 PM</span>
-                  </div>
-                </div>
-                <span className="font-mono font-bold text-danger">−{formatPaisa(320_000)}</span>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg bg-surface-bright p-2.5 text-xs shadow-xs">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-success-bg text-success">
-                    <ArrowDownLeft className="h-3.5 w-3.5" />
-                  </div>
-                  <div>
-                    <span className="font-semibold text-on-surface">Wholesale Accessories Batch</span>
-                    <span className="ml-2 text-[11px] text-text-muted">{t("landing.bankAccount")} · 11:30 AM</span>
-                  </div>
-                </div>
-                <span className="font-mono font-bold text-success">+{formatPaisa(750_000)}</span>
-              </div>
-            </div>
-
-            {/* Launch Banner inside preview */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs">
-              <span className="text-secondary">
-                {t("landing.tryTransactions")}
-              </span>
-              <button
-                type="button"
-                disabled={isDemoLoading}
-                onClick={handleLaunchDemo}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary-hover transition-colors"
-              >
-                <Play className="h-3 w-3 fill-current" />
-                Launch Interactive Sandbox
-              </button>
-            </div>
+                  <span className="whitespace-nowrap text-right font-mono text-xs font-semibold text-success">+{formatPaisa(750_000)}</span>
+                </li>
+              </ul>
+            </section>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Feature Value Grid */}
-      <section className="border-t border-border-standard bg-surface-container-low/40 py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold tracking-tight text-on-surface sm:text-3xl">
-              Engineered for High-Speed Shop Operations
+        <section className="bg-surface-container-low/40 py-10 sm:py-14">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <h2 className="text-xl font-semibold tracking-tight text-on-surface sm:text-2xl">
+              {t("landing.featuresTitle")}
             </h2>
-            <p className="mt-3 text-xs leading-relaxed text-text-muted sm:text-sm">
-              Replace messy paper registers and complicated accounting suites with a
-              purpose-built system designed around how shopkeepers actually work.
-            </p>
-          </div>
-
-          <div className="mt-12 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {/* Feature 1 */}
-            <div className="rounded-2xl border border-border-standard bg-surface-bright p-6 shadow-level-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Receipt className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-on-surface">
-                Instant Chat Ledger & Quick Entry
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-text-muted">
-                Record transactions by voice or typing natural phrases like &quot;sale 4500 cash&quot;
-                or &quot;chai 150&quot;. The built-in deterministic parser classifies category and
-                amount instantly with zero mistakes.
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="rounded-2xl border border-border-standard bg-surface-bright p-6 shadow-level-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Landmark className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-on-surface">
-                Multi-Account & Cash Reconciliation
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-text-muted">
-                Track your Cash Drawer, Meezan Bank, JazzCash, EasyPaisa, or custom accounts.
-                Every sale and expense updates account balances with complete transfer audits.
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="rounded-2xl border border-border-standard bg-surface-bright p-6 shadow-level-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <WifiOff className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-on-surface">
-                100% Offline Resilience (PWA)
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-text-muted">
-                Load speed under 200ms with offline SQLite storage. Transactions are queued
-                locally and seamlessly synced with cloud conflict resolution when connection
-                restores.
-              </p>
-            </div>
-
-            {/* Feature 4 */}
-            <div className="rounded-2xl border border-border-standard bg-surface-bright p-6 shadow-level-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Layers className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-on-surface">
-                Audited Ledgers & Single-Click Detail
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-text-muted">
-                Ledger feeds show meaningful payment accounts and time instead of raw emails.
-                A single tap opens the full audit trail: Transaction ID, creator, notes, and
-                reversals.
-              </p>
-            </div>
-
-            {/* Feature 5 */}
-            <div className="rounded-2xl border border-border-standard bg-surface-bright p-6 shadow-level-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <FileSpreadsheet className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-on-surface">
-                Daily Closings & Net Profit Reports
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-text-muted">
-                Never wonder where the shop money went. Generate daily, weekly, and monthly
-                closings with visual expense breakdowns and 1-click CSV exports.
-              </p>
-            </div>
-
-            {/* Feature 6 */}
-            <div className="rounded-2xl border border-border-standard bg-surface-bright p-6 shadow-level-1">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <ShieldCheck className="h-5 w-5" />
-              </div>
-              <h3 className="mt-4 text-base font-bold text-on-surface">
-                Multi-Tenant Isolation & Role Security
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-text-muted">
-                Tenant isolation guarantees your business numbers are strictly private.
-                Role-based access (Owner, Manager, Staff) and quick 4-digit PIN locks secure
-                the shop register.
-              </p>
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Receipt aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.salesExpenses")}</h3>
+                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.salesExpensesDescription")}</p>
+              </article>
+              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Landmark aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.accountsTitle")}</h3>
+                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.accountsDescription")}</p>
+              </article>
+              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <FileSpreadsheet aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.reportsTitle")}</h3>
+                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.reportsDescription")}</p>
+              </article>
+              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <WifiOff aria-hidden="true" className="h-4 w-4" />
+                </span>
+                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.offlineTitle")}</h3>
+                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.offlineDescription")}</p>
+              </article>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* CTA Footer Banner */}
-      <section className="border-t border-border-standard bg-surface py-12 sm:py-16">
-        <div className="mx-auto max-w-5xl px-4 text-center sm:px-6">
-          <div className="rounded-3xl border border-border-standard bg-surface-bright p-8 shadow-level-2 sm:p-12">
-            <h2 className="text-2xl font-extrabold text-on-surface sm:text-4xl">
-              {t("landing.upgradeTitle")}
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-xs leading-relaxed text-text-muted sm:text-sm">
-              {t("landing.upgradeDescription")}
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                disabled={isDemoLoading}
-                onClick={handleLaunchDemo}
-                className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary px-6 text-sm font-bold text-white shadow-level-2 hover:bg-primary-hover transition-all cursor-pointer disabled:opacity-50"
-              >
-                <Play className="h-4 w-4 fill-current" />
-                <span>{t("landing.trySandbox")}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onOpenAuth("signUp")}
-                className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-border-standard bg-surface px-6 text-sm font-semibold text-on-surface hover:bg-surface-container-low transition-colors cursor-pointer"
-              >
-                <span>{t("landing.registerShop")}</span>
-                <ArrowRight className="h-4 w-4 text-secondary" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-border-standard bg-surface-container-low/60 py-8 text-xs text-text-muted">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 font-medium">
-            <Store className="h-4 w-4 text-primary" />
-            <span>Shop Pro</span>
-            <span>·</span>
-            <span>{t("landing.designSystem")}</span>
-          </div>
-
-          <div className="flex items-center gap-4">
+      <footer className="border-t border-border-standard bg-surface-bright py-5 text-xs text-secondary">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 sm:px-6">
+          <span className="inline-flex items-center gap-2 font-medium text-on-surface">
+            <Store aria-hidden="true" className="h-4 w-4 text-primary" />
+            Shop Pro
+            <span className="font-normal text-secondary">© {new Date().getFullYear()}</span>
+          </span>
+          <nav aria-label={t("landing.footerNavigation")} className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <button
               type="button"
               onClick={() => onOpenAuth("signIn")}
-              className="hover:text-on-surface transition-colors"
+              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               {t("landing.signIn")}
             </button>
             <button
               type="button"
+              disabled={isDemoLoading}
               onClick={handleLaunchDemo}
-              className="hover:text-on-surface transition-colors"
+              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-wait disabled:opacity-60"
             >
-              {t("landing.sandboxDemo")}
+              {t("landing.openDemo")}
             </button>
-            <span>© {new Date().getFullYear()} Shop Pro. {t("landing.copyright")}</span>
-          </div>
+          </nav>
         </div>
       </footer>
     </div>

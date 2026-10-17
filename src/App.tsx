@@ -131,24 +131,23 @@ const MainShell: React.FC = () => {
         <div
           role="status"
           aria-live="polite"
-          className="z-40 flex shrink-0 items-center justify-between gap-3 border-b border-primary/20 bg-primary/[0.08] px-4 py-2 text-xs text-primary backdrop-blur-sm sm:px-6"
+          className="z-40 grid min-h-14 shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border-standard bg-surface-bright px-4 py-2 text-xs sm:flex sm:justify-between sm:px-6"
         >
-          <div className="flex items-center gap-2 truncate">
-            <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-            <span className="font-semibold">{t("app.interactiveGuestSandbox")}</span>
-            <span className="text-secondary truncate hidden sm:inline">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="inline-flex min-h-7 shrink-0 items-center rounded-md bg-primary/10 px-2 font-semibold text-primary">
+              {t("app.interactiveGuestSandbox")}
+            </span>
+            <span className="min-w-0 break-words text-secondary">
               {t("app.sampleData")}
             </span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => void exitDemoMode()}
-              className="rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-white shadow-xs transition hover:bg-primary-hover"
-            >
-              {t("app.exitDemo")}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => void exitDemoMode()}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            {t("app.exitDemo")}
+          </button>
         </div>
       )}
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
