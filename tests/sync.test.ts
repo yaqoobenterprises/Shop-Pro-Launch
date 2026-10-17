@@ -19,6 +19,7 @@ describe('Offline Sync Engine & SQLite Persistence', () => {
       role: 'OWNER',
       organizationId: testOrgId,
     });
+    vi.spyOn(supabaseLib, 'hasActiveSupabaseSession').mockResolvedValue(true);
   });
 
   it('initializes local SQLite database with versioned schema migrations', async () => {
@@ -152,6 +153,31 @@ describe('Offline Sync Engine & SQLite Persistence', () => {
     expect(result.pushed).toBe(0);
     expect(result.pulled).toBe(0);
     expect(result.error).toBe('Cloud Supabase is not configured');
+  });
+
+  it('preserves queued work and skips Supabase requests without a matching cloud session', async () => {
+    const recordId = `unauthenticated-sync-${Date.now()}`;
+    await syncEngine.enqueue('products', recordId, 'INSERT', {
+      id: recordId,
+      organization_id: testOrgId,
+      name: 'Queued item',
+    });
+    vi.mocked(supabaseLib.hasActiveSupabaseSession).mockResolvedValue(false);
+    vi.spyOn(supabaseLib, 'isSupabaseConfigured').mockReturnValue(true);
+    const from = vi.fn();
+    vi.spyOn(supabaseLib, 'getSupabaseClient').mockReturnValue({ from } as never);
+
+    const result = await syncEngine.syncNow();
+
+    expect(result.error).toMatch(/sign-in is required/i);
+    expect(from).not.toHaveBeenCalled();
+    const db = await getSqliteDatabase();
+    const queued = await db.select<{ record_id: string; attempts: number; status: string }>(
+      `SELECT * FROM sync_queue WHERE record_id = ?;`,
+      [recordId],
+    );
+    expect(queued).toHaveLength(1);
+    expect(queued[0]).toMatchObject({ attempts: 0, status: 'pending' });
   });
 
   it('enqueues updates and deletes with proper operation tags', async () => {

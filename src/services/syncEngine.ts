@@ -1,4 +1,4 @@
-import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabaseClient, hasActiveSupabaseSession, isSupabaseConfigured } from '../lib/supabase';
 import { getSqliteDatabase, SqlDatabase } from './sqliteEngine';
 import { getSecurityPrincipal } from '../lib/security';
 
@@ -221,6 +221,11 @@ class SyncEngineService {
       return { pushed: 0, pulled: 0, error: 'Supabase client unavailable' };
     }
 
+    const principal = getSecurityPrincipal();
+    if (!principal || !(await hasActiveSupabaseSession(principal.id))) {
+      return { pushed: 0, pulled: 0, error: principal ? 'A matching Supabase sign-in is required before synchronization' : 'Authentication required before synchronization' };
+    }
+
     this.isSyncing = true;
     this.lastError = null;
     this.notify();
@@ -233,12 +238,6 @@ class SyncEngineService {
 
     try {
       db = await getSqliteDatabase();
-      const principal = getSecurityPrincipal();
-      if (!principal) {
-        this.isSyncing = false;
-        this.notify();
-        return { pushed: 0, pulled: 0, error: 'Authentication required before synchronization' };
-      }
       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(principal.organizationId)) {
         this.isSyncing = false;
         this.notify();

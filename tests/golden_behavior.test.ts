@@ -209,6 +209,7 @@ describe('Phase 1 Golden Tests: Baseline Freezing', () => {
       };
 
       vi.spyOn(supabaseLib, 'isSupabaseConfigured').mockReturnValue(true);
+      vi.spyOn(supabaseLib, 'hasConfiguredCloudSession').mockResolvedValue(true);
       vi.spyOn(supabaseLib, 'getSupabaseClient').mockReturnValue(mockClient as never);
       Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
 

@@ -1,5 +1,5 @@
 import { UserProfile } from "../types";
-import { getSupabaseClient } from "../lib/supabase";
+import { getSupabaseClient, hasActiveSupabaseSession, isSupabaseConfigured } from "../lib/supabase";
 import { sqliteRepository } from "./sqliteRepository";
 import { getErrorMessage } from "../lib/authErrors";
 
@@ -27,6 +27,9 @@ export async function saveProfileUpdates(
 
   try {
     if (isCloudAccount) {
+      if (!isSupabaseConfigured() || !(await hasActiveSupabaseSession(user.id))) {
+        throw new Error("Your cloud session has expired. Sign in again to update your profile.");
+      }
       const { data, error } = await getSupabaseClient()
         .from("profiles")
         .update(cleanUpdates)

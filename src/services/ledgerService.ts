@@ -4,7 +4,7 @@
  * Integrates with Supabase, handles RLS, Realtime broadcasts, and IndexedDB offline fallback.
  */
 
-import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
+import { getSupabaseClient, hasConfiguredCloudSession, isSupabaseConfigured, SupabaseSessionRequiredError } from '../lib/supabase';
 import { getSecurityPrincipal, requirePermission } from '../lib/security';
 import {
   Transaction,
@@ -45,6 +45,7 @@ import {
   saveOfflineDraft,
 } from './offlineDraftStore';
 import { sqliteRepository } from './sqliteRepository';
+import { subscribeToLiveTransactionsForUser } from './ledgerRealtime';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function isValidUUID(value: unknown): value is string {
@@ -221,7 +222,7 @@ export class LedgerService {
     await saveOfflineDraft(draft);
 
     const isDemo = principal.organizationId === DEMO_ORGANIZATION_ID || isDemoSessionActive();
-    if (isDemo || !isOnline() || !isSupabaseConfigured()) return draft;
+    if (isDemo || !(await hasConfiguredCloudSession(principal.id))) return draft;
     try {
       const syncedDraft = await this.syncDraftToCloud(draft);
       await removeOfflineDraft(draft.id);
@@ -238,7 +239,7 @@ export class LedgerService {
     const localDrafts = (await getOfflineDrafts(principal.organizationId))
       .filter((draft) => draft.business_date === dateStr);
     const isDemo = principal.organizationId === DEMO_ORGANIZATION_ID || isDemoSessionActive();
-    if (isDemo || !isOnline() || !isSupabaseConfigured()) return localDrafts;
+    if (isDemo || !(await hasConfiguredCloudSession(principal.id))) return localDrafts;
 
     try {
       const { data, error } = await getSupabaseClient()
@@ -346,7 +347,7 @@ export class LedgerService {
       return { transaction: demoTx, isQueuedOffline: false };
     }
 
-    if (!isOnline() || !isSupabaseConfigured()) {
+    if (!(await hasConfiguredCloudSession(principal.id))) {
       const accounts = await getCachedAccounts(principal.organizationId);
       if (!accounts.some((account) => account.id === accountId && account.is_active)) {
         throw new Error('Choose an active account loaded for this shop before posting offline.');
@@ -438,7 +439,6 @@ export class LedgerService {
     payload: CreateTransactionPayload,
     userId: string
   ): Promise<{ transaction: Partial<Transaction>; isQueuedOffline: boolean }> {
-    const supabase = getSupabaseClient();
     const id = generateUUID();
     const idempotencyKey = payload.idempotencyKey ||
       `tx-${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -450,7 +450,8 @@ export class LedgerService {
     if (!principal) throw new Error('Sign in to a shop before saving this transaction.');
 
     const isDemo = principal.organizationId === DEMO_ORGANIZATION_ID || isDemoSessionActive();
-    const isQueued = isDemo || !isOnline() || !isSupabaseConfigured();
+    const isCloudSessionActive = !isDemo && await hasConfiguredCloudSession(principal.id);
+    const isQueued = !isCloudSessionActive;
     if (isQueued) {
       if (isDemo) {
         const accounts = await getCachedAccounts(principal.organizationId);
@@ -515,6 +516,8 @@ export class LedgerService {
       });
       return { transaction: record, isQueuedOffline: true };
     }
+
+    const supabase = getSupabaseClient();
 
     try {
       if (payload.idempotencyKey) {
@@ -595,13 +598,10 @@ export class LedgerService {
    * Flushes queued transactions from IndexedDB to Supabase
    */
   async flushOfflineQueue(): Promise<{ syncedCount: number; errors: unknown[] }> {
-    if (isDemoOrganization(getSecurityPrincipal()?.organizationId)) {
+    const principal = getSecurityPrincipal();
+    if (!principal || isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) {
       return { syncedCount: 0, errors: [] };
     }
-    if (!isOnline() || !isSupabaseConfigured()) return { syncedCount: 0, errors: [] };
-
-    const principal = getSecurityPrincipal();
-    if (!principal) return { syncedCount: 0, errors: [] };
 
     const [accountOperations, queue] = await Promise.all([
       getOfflineAccountOperations(principal.organizationId),
@@ -868,7 +868,7 @@ export class LedgerService {
     const principal = getSecurityPrincipal();
     const isDemo = principal ? (principal.organizationId === DEMO_ORGANIZATION_ID || isDemoSessionActive()) : false;
     let cloudTransactions: any[] = [];
-    if (!isDemo && isOnline() && isSupabaseConfigured() && principal) {
+    if (!isDemo && principal && await hasConfiguredCloudSession(principal.id)) {
       try {
         let { data, error } = await supabase
           .from('transactions')
@@ -951,7 +951,7 @@ export class LedgerService {
     const principal = getSecurityPrincipal();
     if (!principal) return [];
 
-    if (isDemoOrganization(principal.organizationId) || !isOnline() || !isSupabaseConfigured()) {
+    if (isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) {
       return this.getLocalPaymentAccounts(principal.organizationId);
     }
 
@@ -1069,7 +1069,7 @@ export class LedgerService {
       account,
     };
 
-    if (isDemoOrganization(principal.organizationId) || !isOnline() || !isSupabaseConfigured()) {
+    if (isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) {
       await enqueueOfflineAccountOperation(operation, account);
       return { account, isQueuedOffline: true };
     }
@@ -1105,7 +1105,7 @@ export class LedgerService {
       accountId,
       changes: normalizedChanges,
     };
-    if (isDemoOrganization(principal.organizationId) || !isOnline() || !isSupabaseConfigured()) {
+    if (isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) {
       const accounts = await getCachedAccounts(principal.organizationId);
       const account = accounts.find((item) => item.id === accountId);
       if (!account) throw new Error('Load this shop account before changing it offline.');
@@ -1154,7 +1154,7 @@ export class LedgerService {
       businessDate: getKarachiBusinessDate(),
       notes: input.notes?.trim() || undefined,
     };
-    if (isDemoOrganization(principal.organizationId) || !isOnline() || !isSupabaseConfigured()) {
+    if (isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) {
       const accounts = await getCachedAccounts(principal.organizationId);
       const activeAccountIds = new Set(accounts
         .filter((account) => account.is_active)
@@ -1186,7 +1186,7 @@ export class LedgerService {
   async getAccountLedger(accountId: string): Promise<AccountLedgerEntry[]> {
     const principal = getSecurityPrincipal();
     if (!principal) return [];
-    if (isDemoOrganization(principal.organizationId) || !isOnline() || !isSupabaseConfigured()) return [];
+    if (isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) return [];
     try {
       const { data, error } = await getSupabaseClient()
         .from('account_ledger_entries')
@@ -1214,10 +1214,11 @@ export class LedgerService {
    * Fetches daily summary from security_invoker view
    */
   async getDailySummary(dateStr: string = getKarachiBusinessDate()): Promise<DailySummary> {
+    const principal = getSecurityPrincipal();
     const supabase = getSupabaseClient();
     let data: any = null;
 
-    if (!isDemoOrganization(getSecurityPrincipal()?.organizationId) && isOnline() && isSupabaseConfigured()) {
+    if (!isDemoOrganization(principal?.organizationId) && principal && await hasConfiguredCloudSession(principal.id)) {
       try {
         const res = await supabase
           .from('view_daily_summary')
@@ -1275,7 +1276,8 @@ export class LedgerService {
   }
 
   async getCategoryBreakdown(dateStr: string = getKarachiBusinessDate()): Promise<CategoryBreakdown[]> {
-    if (!isDemoOrganization(getSecurityPrincipal()?.organizationId) && isOnline() && isSupabaseConfigured()) {
+    const principal = getSecurityPrincipal();
+    if (!isDemoOrganization(principal?.organizationId) && principal && await hasConfiguredCloudSession(principal.id)) {
       try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
@@ -1321,7 +1323,7 @@ export class LedgerService {
   async getMonthlySummary(year: number, month: number): Promise<MonthlySummary | null> {
     const principal = getSecurityPrincipal();
     const isDemo = isDemoOrganization(principal?.organizationId);
-    if (!isDemo && isOnline() && isSupabaseConfigured()) {
+    if (!isDemo && principal && await hasConfiguredCloudSession(principal.id)) {
       try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
@@ -1388,7 +1390,7 @@ export class LedgerService {
   async getMonthlyReport(year: number): Promise<MonthlySummary[]> {
     const principal = getSecurityPrincipal();
     const isDemo = isDemoOrganization(principal?.organizationId);
-    if (!isDemo && isOnline() && isSupabaseConfigured()) {
+    if (!isDemo && principal && await hasConfiguredCloudSession(principal.id)) {
       try {
         const supabase = getSupabaseClient();
         const { data, error } = await supabase
@@ -1474,6 +1476,7 @@ export class LedgerService {
     }
 
     if (!isDemo && isOnline() && isSupabaseConfigured()) {
+      if (!(await hasConfiguredCloudSession(principal?.id))) throw new SupabaseSessionRequiredError();
       try {
         const supabase = getSupabaseClient();
         let query = supabase
@@ -1609,6 +1612,7 @@ export class LedgerService {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to this shop before voiding a transaction.');
     if (isDemoOrganization(principal.organizationId)) throw new Error('Voiding transactions is unavailable in the demo.');
+    if (!(await hasConfiguredCloudSession(principal.id))) throw new SupabaseSessionRequiredError();
     requirePermission(principal.organizationId, 'VOID_EXPENSE');
 
     const supabase = getSupabaseClient();
@@ -1648,6 +1652,7 @@ export class LedgerService {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to this shop before restoring a transaction.');
     if (isDemoOrganization(principal.organizationId)) throw new Error('Restoring transactions is unavailable in the demo.');
+    if (!(await hasConfiguredCloudSession(principal.id))) throw new SupabaseSessionRequiredError();
     requirePermission(principal.organizationId, 'VOID_EXPENSE');
 
     const supabase = getSupabaseClient();
@@ -1691,6 +1696,7 @@ export class LedgerService {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to this shop before editing a transaction.');
     if (isDemoOrganization(principal.organizationId)) throw new Error('Editing transactions is unavailable in the demo.');
+    if (!(await hasConfiguredCloudSession(principal.id))) throw new SupabaseSessionRequiredError();
     requirePermission(principal.organizationId, 'VOID_EXPENSE');
 
     const supabase = getSupabaseClient();
@@ -1737,7 +1743,7 @@ export class LedgerService {
     };
     this.saveLocalReviewQueueItem(item);
 
-    if (isOnline() && isSupabaseConfigured()) {
+    if (await hasConfiguredCloudSession(userId)) {
       try {
         const supabase = getSupabaseClient();
         await supabase.from('review_queue').insert({
@@ -1762,7 +1768,8 @@ export class LedgerService {
    * Review Queue: Fetch pending items
    */
   async getReviewQueue(): Promise<ReviewQueueItem[]> {
-    if (!isOnline() || !isSupabaseConfigured()) {
+    const principal = getSecurityPrincipal();
+    if (!principal || !(await hasConfiguredCloudSession(principal.id))) {
       return this.getLocalReviewQueue();
     }
 
@@ -1793,7 +1800,8 @@ export class LedgerService {
    * Review Queue: Resolve or dismiss item
    */
   async updateReviewQueueStatus(id: string, status: 'resolved' | 'dismissed'): Promise<void> {
-    if (isOnline() && isSupabaseConfigured()) {
+    const principal = getSecurityPrincipal();
+    if (principal && await hasConfiguredCloudSession(principal.id)) {
       const { error } = await getSupabaseClient()
         .from('review_queue')
         .update({ status })
@@ -1870,6 +1878,8 @@ export class LedgerService {
       }
     }
 
+    if (!(await hasConfiguredCloudSession(principal.id))) throw new SupabaseSessionRequiredError();
+
     const { data, error } = await getSupabaseClient()
       .from('categories')
       .select('*')
@@ -1915,8 +1925,11 @@ export class LedgerService {
       }
     };
 
-    if (isDemoOrganization(principal.organizationId)) return readCache();
-    if (!isOnline() || !isSupabaseConfigured()) return readCache();
+    if (isDemoOrganization(principal.organizationId) || !isOnline() || !isSupabaseConfigured()) return readCache();
+    if (!(await hasConfiguredCloudSession(principal.id))) {
+      const cached = readCache();
+      return cached.length > 0 ? cached : SEED_CATEGORIES;
+    }
 
     try {
       const supabase = getSupabaseClient();
@@ -2004,7 +2017,7 @@ export class LedgerService {
         return activeCategories.slice(0, limit);
       }
     };
-    if (!isOnline() || !isSupabaseConfigured()) return cachedSuggestions();
+    if (!(await hasConfiguredCloudSession(principal.id))) return cachedSuggestions();
 
     try {
       const { data, error } = await getSupabaseClient()
@@ -2082,9 +2095,10 @@ export class LedgerService {
    * Categories: Learn / save new alias
    */
   async learnAlias(categoryId: string, alias: string): Promise<void> {
-    const supabase = getSupabaseClient();
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('An active shop is required to save an alias.');
+    if (!(await hasConfiguredCloudSession(principal.id))) throw new SupabaseSessionRequiredError();
+    const supabase = getSupabaseClient();
     await supabase.from('category_aliases').insert({
       id: generateUUID(),
       organization_id: principal.organizationId,
@@ -2098,21 +2112,7 @@ export class LedgerService {
    * Realtime: Subscribe to live transaction events across all 3 brothers
    */
   subscribeToLiveTransactions(onPayload: (payload: any) => void): () => void {
-    const supabase = getSupabaseClient();
-    const channel = supabase
-      .channel('public:transactions')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transactions' },
-        (payload) => {
-          onPayload(payload);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return subscribeToLiveTransactionsForUser(onPayload);
   }
 }
 

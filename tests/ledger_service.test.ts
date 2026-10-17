@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as supabaseLib from '../src/lib/supabase';
 import { ledgerService } from '../src/services/ledgerService';
 import { LedgerAccount, Transaction } from '../src/types/ledger';
@@ -29,6 +29,10 @@ const creatorId = 'test-owner';
 const queueKeys: string[] = [];
 const accountOperationIds: string[] = [];
 const draftIds: string[] = [];
+
+beforeEach(() => vi.spyOn(supabaseLib, 'hasConfiguredCloudSession').mockImplementation(async (userId) => Boolean(
+  userId && supabaseLib.isSupabaseConfigured() && (typeof navigator === 'undefined' || navigator.onLine),
+)));
 
 const mutations = [
   {

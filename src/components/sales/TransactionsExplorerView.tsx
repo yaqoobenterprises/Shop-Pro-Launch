@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useEffect } from "react";
 import { Select } from "../common/Select";
 import { ledgerService } from "../../services/ledgerService";
+import { SupabaseSessionRequiredError } from "../../lib/supabase";
 import { Transaction, Category } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
 import { useRegion } from "../../regional/region";
@@ -88,7 +89,11 @@ export const TransactionsExplorerView: React.FC = () => {
       console.error("Error fetching transactions:", err);
       setTransactions([]);
       setTotalCount(0);
-      setLoadError("Transactions could not be loaded. Please refresh and try again.");
+      setLoadError(
+        err instanceof SupabaseSessionRequiredError
+          ? err.message
+          : "Transactions could not be loaded. Please refresh and try again.",
+      );
     } finally {
       setIsLoading(false);
     }

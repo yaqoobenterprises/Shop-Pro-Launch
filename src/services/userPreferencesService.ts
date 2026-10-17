@@ -1,4 +1,4 @@
-import { getSupabaseClient } from '../lib/supabase';
+import { getSupabaseClient, hasActiveSupabaseSession, isSupabaseConfigured } from '../lib/supabase';
 
 export type EntryMode = 'chat' | 'standard' | 'both';
 export type AppLanguage = 'en' | 'ur';
@@ -54,6 +54,7 @@ function saveLocalPreferences(userId: string, prefs: Partial<UserPreferences>): 
 
 export async function getUserPreferences(userId: string): Promise<UserPreferences> {
   const local = getLocalPreferences(userId);
+  if (!isSupabaseConfigured() || (typeof navigator !== 'undefined' && !navigator.onLine) || !(await hasActiveSupabaseSession(userId))) return local;
   try {
     const client = getSupabaseClient();
     const { data, error } = await client
@@ -82,6 +83,7 @@ export async function saveUserPreferences(
   prefs: Partial<UserPreferences>,
 ): Promise<void> {
   saveLocalPreferences(userId, prefs);
+  if (!isSupabaseConfigured() || (typeof navigator !== 'undefined' && !navigator.onLine) || !(await hasActiveSupabaseSession(userId))) return;
 
   try {
     const client = getSupabaseClient();

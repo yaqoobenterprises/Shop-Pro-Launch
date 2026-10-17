@@ -25,7 +25,7 @@
   "src/services/syncEngine.ts": 439,
   "src/types/index.ts": 402,
   "tests/e2e_real_world.test.ts": 484,
-  "tests/ledger_service.test.ts": 868,
+  "tests/ledger_service.test.ts": 872,
   "tests/pglite_database.test.ts": 869,
   "supabase/migrations/20261016094952_shop_pro_launch_baseline.sql": 3771,
   "supabase/migrations/20260918000000_initial_schema.sql": 395,

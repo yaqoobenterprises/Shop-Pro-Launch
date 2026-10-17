@@ -56,6 +56,33 @@ export function getSupabaseClient(): SupabaseClient {
   return supabaseInstance;
 }
 
+export class SupabaseSessionRequiredError extends Error {
+  constructor() {
+    super('Your cloud session is missing or has expired. Sign in again to load shop data.');
+    this.name = 'SupabaseSessionRequiredError';
+  }
+}
+
+/** Prevent cloud requests from falling back to the public anon role. */
+export async function hasActiveSupabaseSession(userId?: string): Promise<boolean> {
+  try {
+    const { data, error } = await getSupabaseClient().auth.getSession();
+    const session = data.session;
+    return Boolean(
+      !error &&
+      session?.access_token &&
+      session.user.id &&
+      (!userId || session.user.id === userId),
+    );
+  } catch {
+    return false;
+  }
+}
+
+export async function hasConfiguredCloudSession(userId?: string): Promise<boolean> {
+  return Boolean(userId && (typeof navigator === 'undefined' || navigator.onLine) && isSupabaseConfigured() && await hasActiveSupabaseSession(userId));
+}
+
 export function formatSupabaseError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error || '');
   if (!supabaseUrl) {

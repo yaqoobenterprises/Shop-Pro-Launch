@@ -44,7 +44,7 @@ const AccountsView = lazy(() =>
 );
 
 const I18nPreferenceSync: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isCloudAccount } = useAuth();
   const { setLanguage } = useI18n();
   const languageEnabled = isFeatureEnabled("languageUr");
 
@@ -57,7 +57,7 @@ const I18nPreferenceSync: React.FC = () => {
     return () => {
       active = false;
     };
-  }, [languageEnabled, user?.id, setLanguage]);
+  }, [languageEnabled, user?.id, isCloudAccount, setLanguage]);
 
   return null;
 };
