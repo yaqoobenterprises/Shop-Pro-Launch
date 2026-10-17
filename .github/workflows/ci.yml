@@ -47,6 +47,9 @@ jobs:
         run: npm run check:size
 
       - name: Run tests
+        env:
+          VITE_SUPABASE_URL: https://supabase-ci.invalid
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_test
         run: npm test -- --reporter=dot
 
       - name: Build production app
