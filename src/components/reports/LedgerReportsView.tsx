@@ -2,8 +2,8 @@ import React, { useCallback, useState, useEffect, useRef } from "react";
 import { Select } from "../common/Select";
 import { ledgerService } from "../../services/ledgerService";
 import { formatPaisa } from "../../lib/money";
+import { AnimatedAmount } from "../common/AnimatedAmount";
 import { getKarachiBusinessDate } from "../../lib/dates";
-import { RefreshCw } from "lucide-react";
 
 interface MonthlyReportRow {
   month_start: string;
@@ -94,20 +94,10 @@ export const LedgerReportsView: React.FC = () => {
     0,
   );
 
-  const profitMargin =
-    totalAnnualIncome > 0
-      ? Math.round((totalAnnualProfit / totalAnnualIncome) * 100)
-      : totalAnnualProfit > 0
-      ? 100
-      : 0;
-
   const maxMonthValue = Math.max(
     ...monthlyData.map((m) => Math.max(m.income_paisa, m.expense_paisa)),
     1,
   );
-  const formatMetric = (amountPaisa: number) =>
-    isLoading ? "Loading…" : loadError ? "—" : formatPaisa(amountPaisa);
-
   return (
     <main className="page-content reports-page">
       {/* Page Title */}
@@ -127,15 +117,6 @@ export const LedgerReportsView: React.FC = () => {
             <option value={currentYear - 2}>{currentYear - 2}</option>
           </Select>
 
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => void loadData()}
-            title="Refresh reports"
-            aria-label="Refresh reports"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
         </div>
       </div>
 
@@ -145,35 +126,27 @@ export const LedgerReportsView: React.FC = () => {
         </div>
       )}
 
-      {/* 3-Up Gradient Report Cards */}
+      {/* Annual report summary cards */}
       <div className="report-cards">
         <article>
           <span>NET PROFIT ({selectedYear})</span>
           <strong style={{ color: totalAnnualProfit >= 0 ? "var(--green)" : "var(--danger)" }}>
-            {formatMetric(totalAnnualProfit)}
+            <AnimatedAmount amountPaisa={totalAnnualProfit} loading={isLoading} error={Boolean(loadError)} />
           </strong>
-          <p>
-            <em className={totalAnnualProfit >= 0 ? "" : "warm"}>
-              {profitMargin}% margin
-            </em>{" "}
-            for the calendar year
-          </p>
         </article>
 
         <article>
           <span>TOTAL REVENUE</span>
-          <strong>{formatMetric(totalAnnualIncome)}</strong>
-          <p>
-            <em>Recorded income</em> across operating lines
-          </p>
+          <strong>
+            <AnimatedAmount amountPaisa={totalAnnualIncome} loading={isLoading} error={Boolean(loadError)} />
+          </strong>
         </article>
 
         <article>
           <span>TOTAL EXPENSES</span>
-          <strong>{formatMetric(totalAnnualExpense)}</strong>
-          <p>
-            <em className="warm">Operating outflows</em> and expenses
-          </p>
+          <strong>
+            <AnimatedAmount amountPaisa={totalAnnualExpense} loading={isLoading} error={Boolean(loadError)} />
+          </strong>
         </article>
       </div>
 
@@ -182,7 +155,6 @@ export const LedgerReportsView: React.FC = () => {
         <div className="panel-heading">
           <div>
             <h2>Monthly Performance</h2>
-            <p>Annual breakdown of income and expenses</p>
           </div>
           <div className="chart-legend">
             <span>
@@ -206,13 +178,16 @@ export const LedgerReportsView: React.FC = () => {
           </div>
 
           <div className="report-bars">
-            {monthlyData.map((row) => {
+            {monthlyData.map((row, index) => {
               const incPct = Math.min(100, Math.round((row.income_paisa / maxMonthValue) * 100));
               const expPct = Math.min(100, Math.round((row.expense_paisa / maxMonthValue) * 100));
               const label = monthNames[(row.month || 1) - 1]?.slice(0, 3) || `${row.month}`;
 
               return (
-                <div key={row.month_start}>
+                <div
+                  key={row.month_start}
+                  style={{ "--bar-animation-delay": `${Math.min(index, 11) * 18}ms` } as React.CSSProperties}
+                >
                   <div>
                     <i
                       style={{ height: `${Math.max(incPct, 3)}%` }}
@@ -236,7 +211,6 @@ export const LedgerReportsView: React.FC = () => {
         <div className="panel-heading">
           <div>
             <h2>Monthly Breakdown</h2>
-            <p>Financial ledger summary by month</p>
           </div>
         </div>
 

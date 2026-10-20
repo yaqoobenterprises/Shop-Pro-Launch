@@ -47,7 +47,7 @@ export const MobileNav: React.FC = () => {
   return (
     <nav
       aria-label="Main navigation"
-      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border-standard bg-surface-bright/95 px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] shadow-[0_-6px_24px_rgba(23,37,29,0.06)] backdrop-blur-xl md:hidden"
+      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border-standard bg-surface-bright px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       {primaryItems.map(({ id, icon: Icon }) => {
         const label = id === "chat" ? t("nav.ledger")

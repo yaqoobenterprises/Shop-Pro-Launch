@@ -2,16 +2,26 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Select } from "../common/Select";
 import {
   ArrowLeftRight,
+  Banknote,
+  Landmark,
   Plus,
   RefreshCw,
   Check,
+  Pencil,
+  Power,
+  WalletCards,
 } from "lucide-react";
 import {
   ledgerService,
   OFFLINE_SYNC_COMPLETE_EVENT,
 } from "../../services/ledgerService";
 import { formatPaisa, parseInputToPaisa } from "../../lib/money";
+import { AnimatedAmount } from "../common/AnimatedAmount";
 import { LedgerAccount } from "../../types/ledger";
+import {
+  findAccountProvider,
+  PAKISTAN_ACCOUNT_PROVIDERS,
+} from "../../lib/accountProviders";
 
 type AccountKind = LedgerAccount["type"];
 
@@ -196,18 +206,11 @@ export const AccountsView: React.FC = () => {
         <div className="title-actions">
           <div className="balance-total">
             <small>TOTAL LIQUIDITY</small>
-            <strong>{formatPaisa(totalBalancePaisa)}</strong>
+            <strong>
+              <AnimatedAmount amountPaisa={totalBalancePaisa} loading={isLoading && accounts.length === 0} />
+            </strong>
           </div>
 
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => void loadAccounts()}
-            title="Refresh"
-            aria-label="Refresh accounts"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
         </div>
       </div>
 
@@ -239,39 +242,80 @@ export const AccountsView: React.FC = () => {
           </div>
         )}
         {accounts.map((acc) => {
-          const initials = acc.type === "CASH" ? "CA" : acc.type === "BANK" ? "BA" : "DW";
+          const brand = findAccountProvider(acc.name);
+          const accountMarkLabel = brand?.name
+            ? `${brand.name} ${brand.logo ? "logo" : "brand mark"}`
+            : acc.type === "CASH"
+              ? "Cash account"
+              : acc.type === "BANK"
+                ? "Bank account"
+                : "Digital wallet account";
+          const accountMarkClass = brand
+            ? brand.logo
+              ? `account-brand--${brand.key}`
+              : "account-brand--provider"
+            : `account-brand--${acc.type.toLowerCase().replace("_", "-")}`;
+          const isEditing = editingAccountId === acc.id;
+          const deactivateBlocked = acc.is_active && !canDeactivate(acc);
           return (
             <div
               className="account-card"
               key={acc.id}
             >
               <div className="account-top">
-                <span>{initials}</span>
-                {editingAccountId === acc.id ? (
-                  <button
-                    type="button"
-                    onClick={() => void handleSaveName(acc.id)}
-                    style={{ fontSize: 10, fontWeight: 700, color: "var(--green)" }}
-                  >
-                    Save
-                  </button>
-                ) : (
+                <div
+                  className={`account-brand ${accountMarkClass}`}
+                  role="img"
+                  aria-label={accountMarkLabel}
+                  style={brand && !brand.logo ? { "--account-brand-color": brand.color } as React.CSSProperties : undefined}
+                >
+                  {brand?.logo ? (
+                    <img src={brand.logo} alt="" />
+                  ) : brand ? (
+                    <span className="account-brand-wordmark" aria-hidden="true">{brand.mark}</span>
+                  ) : acc.type === "CASH" ? (
+                    <Banknote aria-hidden="true" />
+                  ) : acc.type === "BANK" ? (
+                    <Landmark aria-hidden="true" />
+                  ) : (
+                    <WalletCards aria-hidden="true" />
+                  )}
+                </div>
+                <div className="account-actions">
                   <button
                     type="button"
                     onClick={() => {
+                      if (isEditing) {
+                        void handleSaveName(acc.id);
+                        return;
+                      }
                       setEditingAccountId(acc.id);
                       setEditingName(acc.name);
                     }}
-                    style={{ fontSize: 10 }}
+                    className="account-action-button account-edit-button"
+                    aria-label={isEditing ? `Save ${acc.name}` : `Edit ${acc.name}`}
+                    title={isEditing ? "Save account name" : "Edit account name"}
                   >
-                    Edit
+                    {isEditing ? <Check aria-hidden="true" /> : <Pencil aria-hidden="true" />}
                   </button>
-                )}
+                  <button
+                    type="button"
+                    className={`account-action-button account-status-button${acc.is_active ? " is-deactivate" : " is-reactivate"}`}
+                    onClick={() => void handleDeactivate(acc)}
+                    disabled={deactivateBlocked}
+                    aria-label={`${acc.is_active ? "Deactivate" : "Reactivate"} ${acc.name}`}
+                    title={
+                      deactivateBlocked
+                        ? "Move the balance and keep at least one active account"
+                        : `${acc.is_active ? "Deactivate" : "Reactivate"} account`
+                    }
+                  >
+                    <Power aria-hidden="true" />
+                  </button>
+                </div>
               </div>
 
-              <small>{acc.type}</small>
-
-              {editingAccountId === acc.id ? (
+              {isEditing ? (
                 <input
                   type="text"
                   value={editingName}
@@ -291,33 +335,8 @@ export const AccountsView: React.FC = () => {
               )}
 
               <strong className="metric-amount">
-                {formatPaisa(acc.balance_paisa)}
+                <AnimatedAmount amountPaisa={Number(acc.balance_paisa) || 0} />
               </strong>
-
-              <p>
-                <span
-                  className="status-dot"
-                  style={{ opacity: acc.is_active ? 1 : 0.45 }}
-                />
-                {acc.is_active
-                  ? acc.is_default
-                    ? "Default primary drawer"
-                    : "Active ledger account"
-                  : "Inactive account"}
-              </p>
-              <button
-                type="button"
-                className="button button-ghost account-status-action"
-                onClick={() => void handleDeactivate(acc)}
-                disabled={acc.is_active && !canDeactivate(acc)}
-                title={
-                  acc.is_active && !canDeactivate(acc)
-                    ? "Move the balance and keep at least one active account"
-                    : undefined
-                }
-              >
-                {acc.is_active ? "Deactivate" : "Reactivate"}
-              </button>
             </div>
           );
         })}
@@ -341,8 +360,14 @@ export const AccountsView: React.FC = () => {
                   required
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
-                  placeholder="e.g. Counter Cash, Meezan Bank"
+                  list="account-provider-suggestions"
+                  placeholder="e.g. Counter Cash, Meezan Bank, HBL"
                 />
+                <datalist id="account-provider-suggestions">
+                  {PAKISTAN_ACCOUNT_PROVIDERS.map((provider) => (
+                    <option key={provider.key} value={provider.name} />
+                  ))}
+                </datalist>
               </label>
 
               <label>

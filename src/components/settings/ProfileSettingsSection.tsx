@@ -87,7 +87,6 @@ export const ProfileSettingsSection: React.FC = () => {
         <div className="settings-icon"><UserRound className="h-4 w-4" /></div>
         <div>
           <h2 className="text-sm font-semibold text-on-surface">Profile</h2>
-          <p className="mt-0.5 text-xs text-text-muted">Your account name and profile photo.</p>
         </div>
       </div>
 
@@ -96,7 +95,7 @@ export const ProfileSettingsSection: React.FC = () => {
 
       <form onSubmit={handleSave} className="grid gap-5 sm:max-w-xl sm:grid-cols-[auto_1fr] sm:items-center">
         <div className="flex items-center gap-3 sm:block">
-          <UserAvatar src={avatarUrl || undefined} name={fullName || user?.email} size="2xl" />
+          <UserAvatar src={avatarUrl || undefined} name={fullName || "Shop Owner"} size="2xl" />
           <div className="flex flex-wrap gap-2 sm:mt-3">
             <button type="button" onClick={() => inputRef.current?.click()} disabled={isPreparingPhoto} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-on-surface hover:bg-surface-container-low disabled:opacity-60">
               <Camera className="h-3.5 w-3.5" />{isPreparingPhoto ? "Preparing…" : "Change photo"}
@@ -111,11 +110,6 @@ export const ProfileSettingsSection: React.FC = () => {
             <span>Full name</span>
             <input required maxLength={80} autoComplete="name" value={fullName} onChange={(event) => { setFullName(event.target.value); setSaved(false); }} placeholder="Your name" />
           </label>
-          <label className="settings-field block">
-            <span>Email</span>
-            <input type="email" value={user?.email || ""} readOnly className="opacity-70" />
-          </label>
-          <p className="text-[11px] text-text-muted">Profile pictures are resized and compressed before being saved to this account.</p>
           <button type="submit" disabled={isSaving || isPreparingPhoto || !user} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover disabled:opacity-60">
             {isSaving ? "Saving…" : "Save profile"}
           </button>

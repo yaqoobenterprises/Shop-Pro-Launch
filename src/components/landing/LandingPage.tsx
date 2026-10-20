@@ -15,6 +15,7 @@ import {
 import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
 import { useI18n } from "../../i18n";
 import { formatPaisa } from "../../lib/money";
+import { AnimatedAmount } from "../common/AnimatedAmount";
 
 export interface LandingPageProps {
   onOpenAuth: (initialMode?: "signIn" | "signUp") => void;
@@ -47,12 +48,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="shop-landing-page min-h-screen overflow-x-clip bg-surface font-sans text-on-surface">
       <header className="sticky top-0 z-40 border-b border-border-standard bg-surface-bright">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
           <div className="inline-flex min-w-0 items-center gap-2.5 text-on-surface">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
               <Store aria-hidden="true" className="h-[18px] w-[18px]" />
             </span>
-            <span className="truncate text-base font-bold tracking-tight">Shop Pro</span>
+            <span className="landing-brand-name truncate text-base font-bold tracking-tight">Shop Pro</span>
           </div>
 
           <div className="flex shrink-0 items-center gap-2">
@@ -71,7 +72,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <button
               type="button"
               onClick={() => onOpenAuth("signIn")}
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright px-3 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] sm:px-4"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright px-2 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] sm:px-4"
             >
               {t("landing.signIn")}
             </button>
@@ -79,7 +80,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               type="button"
               disabled={isDemoLoading}
               onClick={handleLaunchDemo}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60 sm:px-4"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60 sm:px-4"
             >
               <Play aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
               <span className="hidden sm:inline">{t("landing.openDemo")}</span>
@@ -138,19 +139,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
                   <dt className="text-xs font-medium text-secondary">{t("landing.incomeToday")}</dt>
                   <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-primary sm:mt-1 sm:text-left sm:text-base">
-                    {formatPaisa(2_600_000)}
+                    <AnimatedAmount amountPaisa={2_600_000} />
                   </dd>
                 </div>
                 <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
                   <dt className="text-xs font-medium text-secondary">{t("landing.expensesToday")}</dt>
                   <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-on-surface sm:mt-1 sm:text-left sm:text-base">
-                    {formatPaisa(365_000)}
+                    <AnimatedAmount amountPaisa={365_000} />
                   </dd>
                 </div>
                 <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
                   <dt className="text-xs font-medium text-secondary">{t("landing.netProfitToday")}</dt>
                   <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-on-surface sm:mt-1 sm:text-left sm:text-base">
-                    {formatPaisa(2_235_000)}
+                    <AnimatedAmount amountPaisa={2_235_000} />
                   </dd>
                 </div>
               </dl>

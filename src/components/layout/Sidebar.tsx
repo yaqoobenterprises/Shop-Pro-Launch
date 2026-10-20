@@ -53,7 +53,7 @@ const readSidebarCollapsed = () => {
 
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup, organization, user } = useAuth();
+  const { lock, hasPinSetup, isDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
   const [isCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
@@ -225,7 +225,7 @@ export const Sidebar: React.FC = () => {
           <span data-sidebar-label>{t("nav.settings")}</span>
         </button>
 
-        {hasPinSetup && (
+        {hasPinSetup && !isDemoMode && (
           <button
             type="button"
             onClick={lock}
@@ -239,16 +239,22 @@ export const Sidebar: React.FC = () => {
 
         <button
           type="button"
-          className="user-card"
+          className={`user-card${isDemoMode ? " user-card--demo" : ""}`}
           onClick={() => setCurrentView("settings")}
           aria-label={`${t("nav.profileSettings")}: ${displayName}`}
           title={isCollapsed ? t("nav.profileSettings") : undefined}
         >
-          <UserAvatar src={user?.avatar_url} name={displayName} size="sm" />
-          <span className="user-card-copy" data-sidebar-label>
-            <strong>{displayName}</strong>
-            {user?.email && <small>{user.email}</small>}
-          </span>
+          <UserAvatar
+            src={user?.avatar_url}
+            name={displayName}
+            size="md"
+            showBorder
+          />
+          {isDemoMode && !isCollapsed && (
+            <span className="user-card-copy" data-sidebar-label>
+              <strong>Jamal Yaqoob</strong>
+            </span>
+          )}
         </button>
       </div>
 

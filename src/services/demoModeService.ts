@@ -12,8 +12,7 @@ export const DEMO_USER_ID = "demo-user-0001";
 export const DEMO_ORGANIZATION: Organization = {
   id: DEMO_ORGANIZATION_ID,
   name: "Yaqoob Demo Electronics",
-  owner_name: "Muhammad Yaqoob",
-  email: "demo@yaqoobenterprises.com",
+  owner_name: "Jamal Yaqoob",
   phone: "+92 300 1234567",
   address: "Shop # 14, Hall Road, Lahore, Pakistan",
   currency: "PKR",
@@ -31,11 +30,12 @@ export const DEMO_ORGANIZATION: Organization = {
 
 export const DEMO_PROFILE: UserProfile = {
   id: DEMO_USER_ID,
-  email: "demo@yaqoobenterprises.com",
-  full_name: "Muhammad Yaqoob (Owner)",
+  email: "",
+  full_name: "Jamal Yaqoob",
   role: "OWNER",
   organization_id: DEMO_ORGANIZATION_ID,
   is_active: true,
+  avatar_url: "/assets/jamal-yaqoob.webp",
   created_at: new Date().toISOString(),
 };
 
@@ -148,7 +148,7 @@ async function seedDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
       deviceEntryTime: new Date(Date.now() - 3600000 * 3).toISOString(), // 3 hours ago
       note: "LED Monitor 24-inch sale",
       rawText: "sale 18500 led monitor cash",
-      createdByName: "Muhammad Yaqoob",
+      createdByName: "Jamal Yaqoob",
       status: "queued" as const,
       attempts: 0,
       createdAt: Date.now() - 3600000 * 3,
@@ -167,7 +167,7 @@ async function seedDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
       deviceEntryTime: new Date(Date.now() - 3600000 * 2).toISOString(), // 2 hours ago
       note: "Morning chai and samosas for staff",
       rawText: "chai samosa 450",
-      createdByName: "Muhammad Yaqoob",
+      createdByName: "Jamal Yaqoob",
       status: "queued" as const,
       attempts: 0,
       createdAt: Date.now() - 3600000 * 2,
@@ -186,7 +186,7 @@ async function seedDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
       deviceEntryTime: new Date(Date.now() - 3600000 * 1).toISOString(), // 1 hour ago
       note: "Cables & power bank batch",
       rawText: "sale 7500 bank meezan transfer",
-      createdByName: "Muhammad Yaqoob",
+      createdByName: "Jamal Yaqoob",
       status: "queued" as const,
       attempts: 0,
       createdAt: Date.now() - 3600000 * 1,
@@ -205,7 +205,7 @@ async function seedDemoWorkspace(): Promise<DemoWorkspaceSetupResult> {
       deviceEntryTime: new Date(Date.now() - 1800000).toISOString(), // 30 mins ago
       note: "Shop backup generator fuel",
       rawText: "generator petrol 3200",
-      createdByName: "Muhammad Yaqoob",
+      createdByName: "Jamal Yaqoob",
       status: "queued" as const,
       attempts: 0,
       createdAt: Date.now() - 1800000,

@@ -1,6 +1,6 @@
 export const english = {
   "landing.demo": "Demo",
-  "landing.signIn": "Sign In",
+  "landing.signIn": "Sign in",
   "landing.createShop": "Create account",
   "landing.openDemo": "Open demo",
   "landing.openingDemo": "Opening demo...",

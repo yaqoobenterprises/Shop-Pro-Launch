@@ -35,6 +35,11 @@ import {
   Check,
   X,
   Trash2,
+  UserRound,
+  ShieldCheck,
+  Languages,
+  Globe,
+  Database,
 } from "lucide-react";
 import { PaperRegisterImportModal } from "./PaperRegisterImportModal";
 import { useAuth } from "../../context/AuthContext";
@@ -47,6 +52,7 @@ import { UserPreferencesSection } from "./UserPreferencesSection";
 import { ProfileSettingsSection } from "./ProfileSettingsSection";
 import { SecuritySettingsSection } from "./SecuritySettingsSection";
 import { useI18n } from "../../i18n";
+import { isFeatureEnabled } from "../../config/features";
 
 async function requireSettingsCloudSession(userId: string): Promise<void> {
   if (!(await hasConfiguredCloudSession(userId))) {
@@ -59,6 +65,8 @@ export const LedgerSettingsView: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useApp();
   const isDemo = getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID;
+  const preferencesEnabled = isFeatureEnabled("languageUr") || isFeatureEnabled("entryModes");
+  const [activeSettingsSection, setActiveSettingsSection] = useState("profile");
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [categoriesLoadError, setCategoriesLoadError] = useState(false);
@@ -75,6 +83,38 @@ export const LedgerSettingsView: React.FC = () => {
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryKind, setNewCategoryKind] =
     useState<Category["kind"]>("income");
+
+  const settingsNavigationGroups = [
+    {
+      label: "Account",
+      items: [
+        { id: "profile", label: "Profile", Icon: UserRound },
+        { id: "security", label: "Security", Icon: ShieldCheck },
+      ],
+    },
+    {
+      label: "Preferences",
+      items: [
+        ...(preferencesEnabled
+          ? [{ id: "user-preferences", label: t("settings.language"), Icon: Languages }]
+          : []),
+        { id: "appearance", label: t("settings.appearance"), Icon: Sun },
+      ],
+    },
+    {
+      label: "Shop setup",
+      items: [
+        { id: "region", label: "Currency", Icon: Globe },
+        { id: "categories", label: t("settings.categories"), Icon: Layers },
+      ],
+    },
+    {
+      label: "Data",
+      items: [
+        { id: "data-tools", label: t("settings.dataTools"), Icon: Database },
+      ],
+    },
+  ];
 
   // Category Edit State
   const [editingCatId, setEditingCatId] = useState<string | null>(null);
@@ -551,35 +591,18 @@ export const LedgerSettingsView: React.FC = () => {
   };
 
   return (
-    <div className="workspace-page page-content settings-page flex-1 overflow-y-auto space-y-6 max-w-5xl mx-auto w-full">
+    <div className="workspace-page page-content settings-page flex-1 overflow-y-auto space-y-5 max-w-5xl mx-auto w-full">
       {/* Header */}
       <div className="workspace-header page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-on-surface">
             Settings
           </h1>
+          <p className="mt-1 text-xs text-text-muted">
+            Manage your account, preferences, shop setup, and data.
+          </p>
         </div>
       </div>
-
-      <nav aria-label="Settings sections" className="settings-nav no-scrollbar flex gap-1 overflow-x-auto border-b border-border-standard pb-2">
-        {[
-          ["#profile", "Profile"],
-          ["#security", "Security"],
-          ["#region", "Currency & region"],
-          ["#user-preferences", "Language"],
-          ["#appearance", t("settings.appearance")],
-          ["#categories", "Categories"],
-          ["#data-tools", t("settings.dataTools")],
-        ].map(([href, label]) => (
-          <a
-            key={href}
-            href={href}
-            className="shrink-0 rounded-lg px-3 py-2 text-xs font-semibold text-secondary transition-colors hover:bg-surface-container-low hover:text-on-surface"
-          >
-            {label}
-          </a>
-        ))}
-      </nav>
 
       {showPaperImport && (
         <PaperRegisterImportModal
@@ -591,11 +614,49 @@ export const LedgerSettingsView: React.FC = () => {
         />
       )}
 
-      <ProfileSettingsSection />
-      <SecuritySettingsSection />
-      <RegionSettingsSection />
-      <UserPreferencesSection />
+      <div className="settings-layout">
+        <nav aria-label="Settings sections" className="settings-nav">
+          {settingsNavigationGroups.map((group) => (
+            <div className="settings-nav-group" key={group.label}>
+              <h2 className="settings-nav-label">{group.label}</h2>
+              {group.items.map(({ id, label, Icon }) => {
+                const isActive = activeSettingsSection === id;
+                return (
+                  <button
+                    key={id}
+                    id={`settings-nav-${id}`}
+                    type="button"
+                    aria-current={isActive ? "page" : undefined}
+                    aria-controls={`settings-panel-${id}`}
+                    onClick={() => setActiveSettingsSection(id)}
+                    className={`settings-nav-item${isActive ? " is-active" : ""}`}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    <span>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
 
+        <div className="settings-content">
+          <div id="settings-panel-profile" role="region" aria-labelledby="settings-nav-profile" hidden={activeSettingsSection !== "profile"}>
+            <ProfileSettingsSection />
+          </div>
+          <div id="settings-panel-security" role="region" aria-labelledby="settings-nav-security" hidden={activeSettingsSection !== "security"}>
+            <SecuritySettingsSection />
+          </div>
+          <div id="settings-panel-region" role="region" aria-labelledby="settings-nav-region" hidden={activeSettingsSection !== "region"}>
+            <RegionSettingsSection />
+          </div>
+          {preferencesEnabled && (
+            <div id="settings-panel-user-preferences" role="region" aria-labelledby="settings-nav-user-preferences" hidden={activeSettingsSection !== "user-preferences"}>
+              <UserPreferencesSection />
+            </div>
+          )}
+
+      <div id="settings-panel-appearance" role="region" aria-labelledby="settings-nav-appearance" hidden={activeSettingsSection !== "appearance"}>
       <section id="appearance" className="workspace-panel settings-section p-5">
         <div className="mb-4 flex items-start gap-3">
           <div className="settings-icon"><Sun className="h-4 w-4" /></div>
@@ -627,7 +688,9 @@ export const LedgerSettingsView: React.FC = () => {
           ))}
         </div>
       </section>
+      </div>
 
+      <div id="settings-panel-categories" role="region" aria-labelledby="settings-nav-categories" hidden={activeSettingsSection !== "categories"}>
       <section id="categories" className="workspace-panel settings-section space-y-4 p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
@@ -635,7 +698,7 @@ export const LedgerSettingsView: React.FC = () => {
             <div>
               <h2 className="text-sm font-semibold text-on-surface">{t("settings.categories")}</h2>
               <p className="mt-0.5 text-xs text-text-muted">
-                {isDemo ? "Demo categories are read-only." : "Create, edit, and remove ledger categories."}
+                {isDemo ? "Demo categories are read-only." : "Manage income and expense categories."}
               </p>
             </div>
           </div>
@@ -796,7 +859,9 @@ export const LedgerSettingsView: React.FC = () => {
           )}
         </div>
       </section>
+      </div>
 
+      <div id="settings-panel-data-tools" role="region" aria-labelledby="settings-nav-data-tools" hidden={activeSettingsSection !== "data-tools"}>
       <section id="data-tools" className="workspace-panel settings-section space-y-5 p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -855,6 +920,9 @@ export const LedgerSettingsView: React.FC = () => {
           </div>
         </div>
       </section>
+      </div>
+        </div>
+      </div>
     </div>
   );
 };

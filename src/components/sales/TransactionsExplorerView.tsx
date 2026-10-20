@@ -175,15 +175,6 @@ export const TransactionsExplorerView: React.FC = () => {
             <Download className="h-4 w-4" />
             {isExporting ? "Exporting..." : "Export CSV"}
           </button>
-          <button
-            type="button"
-            className="icon-button"
-            onClick={() => void loadData()}
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
         </div>
       </div>
 
@@ -268,7 +259,7 @@ export const TransactionsExplorerView: React.FC = () => {
             setPage(0);
           }}
           className="button button-ghost"
-          style={{ minHeight: 38, padding: "0 10px", fontSize: 11 }}
+          style={{ minHeight: 38, padding: "0 10px" }}
         >
           Reset
         </button>

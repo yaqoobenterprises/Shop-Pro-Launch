@@ -156,7 +156,7 @@ export const SecuritySettingsSection: React.FC = () => {
         <div className="settings-icon"><ShieldCheck className="h-4 w-4" /></div>
         <div>
           <h2 className="text-sm font-semibold text-on-surface">Security</h2>
-          <p className="mt-0.5 text-xs text-text-muted">Password and authenticator app sign-in for {user?.email || "your account"}.</p>
+          <p className="mt-0.5 text-xs text-text-muted">Password and two-step verification.</p>
         </div>
       </div>
 
@@ -175,7 +175,7 @@ export const SecuritySettingsSection: React.FC = () => {
 
       <div className="border-t border-border-standard pt-5">
         <div className="mb-3 flex items-center gap-2"><Smartphone className="h-4 w-4 text-primary" /><h3 className="text-xs font-semibold text-on-surface">Authenticator app</h3></div>
-        <p className="mb-4 max-w-2xl text-xs text-text-muted">Use an authenticator app to generate a one-time code when you sign in. Scan the QR code once, then verify a code to finish setup.</p>
+        <p className="mb-4 max-w-2xl text-xs text-text-muted">Use an authenticator app for a verification code at sign-in.</p>
         {mfaError && <p role="alert" className="mb-3 rounded-lg border border-danger-border bg-danger-bg p-3 text-xs text-danger">{mfaError}</p>}
         {mfaMessage && <p role="status" className="mb-3 rounded-lg border border-success-border bg-success-bg p-3 text-xs text-success">{mfaMessage}</p>}
         {!isCloudAccount ? <p className="text-xs text-text-muted">Authenticator sign-in is available after signing in to a cloud account.</p> : verifiedFactor ? (

@@ -1,35 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Select } from "../common/Select";
-import { Globe, Lock, Clock, AlertTriangle, Check } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Select } from '../common/Select';
 import { useAuth } from '../../context/AuthContext';
 import { useRegion } from '../../regional/region';
-import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../../regional/currencies';
+import { getCurrencyConfig } from '../../regional/currencies';
 import { getSupabaseClient, hasConfiguredCloudSession, isSupabaseConfigured } from '../../lib/supabase';
-import { getRegionLocale, isValidTimeZone } from '../../regional/format';
-import { ALL_TIMEZONES, COUNTRY_OPTIONS } from '../../regional/timezoneOptions';
 import { useI18n } from '../../i18n';
+import { Globe } from 'lucide-react';
+
+const CURRENCY_OPTIONS = [
+  'PKR', 'USD', 'INR', 'BDT', 'LKR', 'NPR', 'AED', 'SAR', 'QAR', 'TRY',
+  'EGP', 'CAD', 'AUD', 'NZD', 'GBP', 'EUR', 'CHF', 'SEK', 'NOK', 'DKK',
+] as const;
 
 export const RegionSettingsSection: React.FC = () => {
   const { user, organization, updateOrganization, isCloudAccount } = useAuth();
   const { region, setRegion } = useRegion();
-  const { t, language } = useI18n();
+  const { t } = useI18n();
 
   const isOwner = user?.role === 'OWNER';
-
   const [currency, setCurrency] = useState(organization.currency || region.currency || 'PKR');
-  const [timeZone, setTimeZone] = useState(organization.timezone || region.timeZone || 'Asia/Karachi');
-  const [country, setCountry] = useState(organization.country || region.country || 'Pakistan');
+  const currencyOptions = CURRENCY_OPTIONS.includes(currency as (typeof CURRENCY_OPTIONS)[number])
+    ? CURRENCY_OPTIONS
+    : [currency, ...CURRENCY_OPTIONS];
   const [hasEntries, setHasEntries] = useState(false);
   const [isCheckingEntries, setIsCheckingEntries] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [currentTimeStr, setCurrentTimeStr] = useState('');
-  const [timeZoneError, setTimeZoneError] = useState<string | null>(null);
 
-  // Check if transactions exist to lock currency
   useEffect(() => {
     let isMounted = true;
+
     async function checkTransactions() {
       setIsCheckingEntries(true);
       if (!organization?.id) {
@@ -50,12 +50,13 @@ export const RegionSettingsSection: React.FC = () => {
         }
         return;
       }
+
       try {
         const [{ count: transactionCount, error: transactionError }, { count: ledgerCount, error: ledgerError }] = await Promise.all([
           getSupabaseClient()
-          .from('transactions')
-          .select('id', { count: 'exact', head: true })
-          .eq('organization_id', organization.id),
+            .from('transactions')
+            .select('id', { count: 'exact', head: true })
+            .eq('organization_id', organization.id),
           getSupabaseClient()
             .from('account_ledger_entries')
             .select('id', { count: 'exact', head: true })
@@ -71,59 +72,34 @@ export const RegionSettingsSection: React.FC = () => {
         if (isMounted) setIsCheckingEntries(false);
       }
     }
+
     void checkTransactions();
     return () => {
       isMounted = false;
     };
   }, [organization?.id, user?.id, isCloudAccount]);
 
-  // Live clock preview for selected timezone
-  useEffect(() => {
-    function updateClock() {
-      try {
-        const time = new Intl.DateTimeFormat(getRegionLocale(), {
-          timeZone,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: true,
-        }).format(new Date());
-        setCurrentTimeStr(time);
-      } catch {
-        setCurrentTimeStr('Invalid timezone');
-      }
-    }
-    updateClock();
-    const interval = setInterval(updateClock, 1000);
-    return () => clearInterval(interval);
-  }, [timeZone, region.currency, region.country, region.uiLanguage, language]);
+  const handleCurrencyChange = async (event: { target: { value: string } }) => {
+    const nextCurrency = event.target.value;
+    if (!isOwner || !organization?.id || nextCurrency === currency) return;
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isOwner || !organization?.id) return;
+    const previousCurrency = currency;
+    const currencyConfig = getCurrencyConfig(nextCurrency);
+    if (!currencyConfig) return;
 
+    setCurrency(nextCurrency);
     setIsSaving(true);
-    setSaveMessage(null);
     setSaveError(null);
 
-    const cfg = getCurrencyConfig(currency);
-    const currencySymbol = cfg?.symbol || currency;
+    const currencySymbol = currencyConfig.symbol || nextCurrency;
+    const updates = {
+      currency: nextCurrency,
+      currency_symbol: currencySymbol,
+      region_configured: true,
+      updated_at: new Date().toISOString(),
+    };
 
     try {
-      if (!isValidTimeZone(timeZone)) {
-        setTimeZoneError('Select a valid IANA timezone.');
-        return;
-      }
-      if (!country.trim()) throw new Error('Enter the shop country.');
-      setTimeZoneError(null);
-      const updates = {
-        currency,
-        currency_symbol: currencySymbol,
-        timezone: timeZone,
-        country: country.trim(),
-        region_configured: true,
-        updated_at: new Date().toISOString(),
-      };
       const hasCloudSession = Boolean(
         isCloudAccount && user?.id && await hasConfiguredCloudSession(user.id),
       );
@@ -136,24 +112,15 @@ export const RegionSettingsSection: React.FC = () => {
           .update(updates)
           .eq('id', organization.id);
         if (error) throw new Error(error.message);
-      } else if (currency !== organization.currency) {
+      } else if (nextCurrency !== organization.currency) {
         throw new Error(t('settings.offlineCurrencyLocked'));
       }
 
-      updateOrganization({
-        ...updates,
-      });
-
-      setRegion({
-        currency,
-        currencySymbol,
-        timeZone,
-        country,
-      });
-
-      setSaveMessage(t('region.saved'));
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : 'Failed to save settings.');
+      updateOrganization(updates);
+      setRegion({ currency: nextCurrency, currencySymbol });
+    } catch (error) {
+      setCurrency(previousCurrency);
+      setSaveError(error instanceof Error ? error.message : t('region.saveFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -161,139 +128,42 @@ export const RegionSettingsSection: React.FC = () => {
 
   return (
     <section id="region" className="workspace-panel settings-section p-5">
-      <div className="mb-4 flex items-start gap-3">
-        <div className="settings-icon">
-          <Globe className="h-4 w-4" />
-        </div>
+      <div className="mb-5 flex items-center gap-3">
+        <div className="settings-icon"><Globe className="h-4 w-4" /></div>
         <div>
           <h2 className="text-sm font-semibold text-on-surface">{t('region.title')}</h2>
-          <p className="mt-0.5 text-xs text-text-muted">
-            {t('region.description')}
-          </p>
+          <p className="mt-0.5 text-xs text-text-muted">{t('region.currencyDescription')}</p>
         </div>
       </div>
-
-      {!isOwner && (
-        <div className="mb-4 rounded-xl border border-border-standard bg-surface-container-low p-3 text-xs text-text-muted">
-          {t('region.ownerOnly')}
-        </div>
-      )}
-
-      {saveMessage && (
-        <div className="mb-4 flex items-center gap-2 rounded-xl bg-success-bg border border-success-border p-3 text-xs text-success">
-          <Check className="h-4 w-4 shrink-0" />
-          <span>{saveMessage}</span>
-        </div>
-      )}
-
-      {saveError && (
-        <div className="mb-4 rounded-xl bg-danger-bg border border-danger-border p-3 text-xs text-danger">
-          {saveError}
-        </div>
-      )}
-
-      <form onSubmit={handleSave} className="space-y-4 max-w-lg text-xs">
-        <div>
-          <label htmlFor="settings-currency" className="block font-semibold text-secondary mb-1">
-            {t('region.currency')}
-          </label>
-          <div className="relative">
-            <Select
-              id="settings-currency"
-              disabled={!isOwner || hasEntries || isCheckingEntries || !isSupabaseConfigured()}
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-              className="workspace-control w-full min-h-10 px-3 py-2 text-xs disabled:opacity-60"
-            >
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.code} ({c.symbol}) — {c.name}
-                </option>
-              ))}
-            </Select>
-            {hasEntries && (
-              <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-text-muted">
-                <Lock className="h-3 w-3 shrink-0" />
-                <span>{t('region.currencyLocked')}</span>
-              </div>
-            )}
-            {!isSupabaseConfigured() && (
-              <div className="mt-1.5 text-[11px] text-text-muted">
-                {t('region.offlineCurrencyLocked')}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="settings-country" className="block font-semibold text-secondary mb-1">
-            {t('region.country')}
-          </label>
-          <Select
-            id="settings-country"
-            disabled={!isOwner}
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            searchable
-            searchPlaceholder={t('region.country')}
-            className="w-full min-h-10 px-3 py-2 text-xs disabled:opacity-60"
-          >
-            {COUNTRY_OPTIONS.map((name) => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </Select>
-        </div>
-
-        <div>
-          <label htmlFor="settings-timezone" className="block font-semibold text-secondary mb-1">
-            {t('region.timezone')}
-          </label>
-          <Select
-            id="settings-timezone"
-            disabled={!isOwner}
-            value={timeZone}
-            onChange={(e) => setTimeZone(e.target.value)}
-            searchable
-            searchPlaceholder={t('region.searchTimezone')}
-            className="w-full min-h-10 px-3 py-2 text-xs font-mono disabled:opacity-60"
-          >
-            {!ALL_TIMEZONES.includes(timeZone) && (
-              <option value={timeZone}>{timeZone} (Current)</option>
-            )}
-            {ALL_TIMEZONES.map((tz) => (
-              <option key={tz} value={tz}>{tz}</option>
-            ))}
-          </Select>
-          {timeZoneError && <p role="alert" className="mt-1 text-danger">{timeZoneError}</p>}
-
-          <div className="mt-2 flex items-center justify-between rounded-lg bg-surface-container-low px-3 py-2 text-[11px]">
-            <span className="flex items-center gap-1.5 text-text-muted">
-              <Clock className="h-3.5 w-3.5" />
-              {t('region.liveTime')}
-            </span>
-            <span className="font-mono font-semibold text-on-surface">{currentTimeStr}</span>
-          </div>
-
-          <div className="mt-2 flex items-start gap-1.5 text-[11px] text-amber-600 dark:text-amber-400">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            <span>
-              {t('region.pastDates')}
-            </span>
-          </div>
-        </div>
-
-        {isOwner && (
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-4 py-2 bg-primary hover:bg-primary-hover disabled:opacity-50 text-on-primary rounded-xl font-semibold text-xs transition"
-            >
-              {isSaving ? t('settings.saving') : t('region.save')}
-            </button>
-          </div>
-        )}
-      </form>
+      <label htmlFor="settings-currency" className="mb-1 block text-sm font-semibold text-on-surface">
+        {t('region.currency')}
+      </label>
+      <Select
+        id="settings-currency"
+        disabled={!isOwner || hasEntries || isCheckingEntries || isSaving || !isSupabaseConfigured()}
+        value={currency}
+        onChange={handleCurrencyChange}
+        title={
+          !isOwner
+            ? t('region.ownerOnly')
+            : hasEntries
+              ? t('region.currencyLocked')
+              : !isSupabaseConfigured()
+                ? t('region.offlineCurrencyLocked')
+                : undefined
+        }
+        className="workspace-control w-full min-h-10 px-3 py-2 text-xs disabled:opacity-60"
+      >
+        {currencyOptions.map((code) => {
+          const config = getCurrencyConfig(code);
+          return config ? (
+            <option key={config.code} value={config.code}>
+              {config.code} ({config.symbol}) - {config.name}
+            </option>
+          ) : null;
+        })}
+      </Select>
+      {saveError && <p role="alert" className="mt-2 text-xs text-danger">{saveError}</p>}
     </section>
   );
 };

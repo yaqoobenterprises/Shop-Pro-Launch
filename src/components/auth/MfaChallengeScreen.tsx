@@ -18,11 +18,11 @@ export const MfaChallengeScreen: React.FC = () => {
   };
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-surface px-4 py-10">
-      <section className="workspace-panel w-full max-w-md p-6 sm:p-8">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/[0.08] text-primary"><ShieldCheck className="h-6 w-6" /></div>
+    <main className="auth-screen flex min-h-dvh items-center justify-center bg-surface px-4 py-10 font-sans text-on-surface">
+      <section className="auth-card workspace-panel w-full max-w-md p-6 sm:p-8">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] text-primary"><ShieldCheck className="h-6 w-6" /></div>
         <div className="text-center">
-          <h1 className="text-lg font-bold text-on-surface">Verify it’s you</h1>
+          <h1 className="text-xl font-bold tracking-tight text-on-surface">Verify your account</h1>
           <p className="mt-2 text-sm text-text-muted">Enter the current 6-digit code from your authenticator app to continue.</p>
         </div>
         {error && <p role="alert" className="mt-5 rounded-lg border border-danger-border bg-danger-bg p-3 text-xs text-danger">{error}</p>}

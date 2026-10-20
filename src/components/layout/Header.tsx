@@ -6,13 +6,13 @@ import {
   LockKeyhole,
   Settings,
   LogOut,
-  ChevronDown,
   Sun,
   Moon,
 } from "lucide-react";
 import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
+import { APP_NAME } from "../../config/app";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();
@@ -25,7 +25,6 @@ export const Header: React.FC = () => {
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
   const displayName = getProfileDisplayName(user, organization.owner_name, t("header.owner"));
-  const email = user?.email || organization.email || "";
   const menuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -68,6 +67,7 @@ export const Header: React.FC = () => {
   return (
     <header className="app-header" dir={dir}>
       <div className="workspace-name">
+        <span className="workspace-brand md:hidden">{APP_NAME}</span>
         <span
           className={`network-status-dot ${isOnline ? "network-status-dot--online" : "network-status-dot--offline"}`}
           role="status"
@@ -77,32 +77,6 @@ export const Header: React.FC = () => {
       </div>
 
       <div className="header-actions">
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="icon-button theme-toggle"
-          title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-        >
-          {theme === "dark" ? (
-            <Sun className="h-4 w-4" />
-          ) : (
-            <Moon className="h-4 w-4" />
-          )}
-        </button>
-
-        {hasPinSetup && !isDemoMode && (
-          <button
-            type="button"
-            onClick={lock}
-            title={t("header.lockRegister")}
-            aria-label={t("header.lockRegister")}
-            className="icon-button hidden sm:grid"
-          >
-            <LockKeyhole className="h-4 w-4" />
-          </button>
-        )}
-
         <div className="relative" ref={menuRef}>
           <button
             ref={profileButtonRef}
@@ -111,18 +85,14 @@ export const Header: React.FC = () => {
             aria-expanded={isMenuOpen}
             aria-controls="profile-menu"
             aria-label={t("header.openAccountMenu")}
-            className="flex cursor-pointer items-center gap-2 rounded-lg p-1 transition-colors hover:bg-surface-2"
+            className="profile-trigger"
           >
             <UserAvatar
               src={user?.avatar_url}
               name={displayName}
-              size="sm"
+              size="md"
+              showBorder
             />
-            <span className="hidden md:flex min-w-0 flex-col items-start text-start leading-tight">
-              <strong className="max-w-40 truncate text-xs font-semibold text-ink">{displayName}</strong>
-              {email && <small className="max-w-40 truncate text-[10px] font-normal text-muted">{email}</small>}
-            </span>
-            <ChevronDown className="hidden sm:inline h-3.5 w-3.5 text-muted" />
           </button>
 
           {isMenuOpen && (
@@ -134,12 +104,24 @@ export const Header: React.FC = () => {
                 <p className="truncate text-xs font-bold text-ink">
                   {displayName}
                 </p>
-                <p className="truncate text-[11px] text-muted">
-                  {email}
-                </p>
               </div>
 
               <div className="py-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleTheme();
+                    setIsMenuOpen(false);
+                  }}
+                  className="profile-menu-action"
+                >
+                  {theme === "dark" ? (
+                    <Sun className="h-4 w-4 text-muted" aria-hidden="true" />
+                  ) : (
+                    <Moon className="h-4 w-4 text-muted" aria-hidden="true" />
+                  )}
+                  <span>{t("landing.switchTheme")}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {

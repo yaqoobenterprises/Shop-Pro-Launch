@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { DailySummary } from "../../types/ledger";
-import { formatPaisa } from "../../lib/money";
+import { AnimatedAmount } from "../common/AnimatedAmount";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
 import { useI18n } from "../../i18n";
 import {
@@ -84,7 +84,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
             <ArrowDownLeft className="w-3.5 h-3.5" />
           </div>
           <div className="summary-metric__value font-mono tabular-nums">
-            {formatPaisa(summary.income_paisa)}
+            <AnimatedAmount amountPaisa={summary.income_paisa} />
           </div>
         </div>
 
@@ -95,7 +95,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
             <ArrowUpRight className="w-3.5 h-3.5" />
           </div>
           <div className="summary-metric__value font-mono tabular-nums">
-            {formatPaisa(summary.expense_paisa)}
+            <AnimatedAmount amountPaisa={summary.expense_paisa} />
           </div>
         </div>
 
@@ -110,7 +110,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
               summary.net_profit_paisa < 0 ? "text-danger" : ""
             }`}
           >
-            {formatPaisa(summary.net_profit_paisa)}
+            <AnimatedAmount amountPaisa={summary.net_profit_paisa} />
           </div>
         </div>
       </div>
@@ -121,13 +121,13 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
           <div>
             Capital In:{" "}
             <span className="font-semibold text-secondary font-mono">
-              {formatPaisa(summary.capital_in_paisa)}
+              <AnimatedAmount amountPaisa={summary.capital_in_paisa} />
             </span>
           </div>
           <div>
             Withdrawals:{" "}
             <span className="font-semibold text-secondary font-mono">
-              {formatPaisa(summary.withdrawal_paisa)}
+              <AnimatedAmount amountPaisa={summary.withdrawal_paisa} />
             </span>
           </div>
         </div>

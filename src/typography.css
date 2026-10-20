@@ -1,0 +1,586 @@
+/* Shared type scale for the public flow, authentication, and signed-in workspace. */
+:root {
+  --type-display: clamp(2.25rem, 4.8vw, 3.75rem);
+  --type-page: clamp(1.5rem, 1.32rem + 0.7vw, 1.875rem);
+  --type-section: 1.125rem;
+  --type-card-title: 1rem;
+  --type-body: 0.875rem;
+  --type-label: 0.8125rem;
+  --type-caption: 0.75rem;
+  --type-micro: 0.6875rem;
+  --leading-copy: 1.55;
+  --leading-heading: 1.25;
+}
+
+.min-h-screen.bg-surface.font-sans.text-on-surface.shop-landing-page > main > section:first-child h1 {
+  font-size: var(--type-display);
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+}
+
+.min-h-screen.bg-surface.font-sans.text-on-surface.shop-landing-page > main > section:not(:first-child) h2 {
+  font-size: clamp(1.5rem, 1.35rem + 0.65vw, 1.875rem);
+  line-height: 1.2;
+}
+
+.shop-landing-page > main h3 {
+  font-size: var(--type-card-title);
+  line-height: var(--leading-heading);
+}
+
+.shop-landing-page p {
+  line-height: var(--leading-copy);
+}
+
+.shop-landing-page button {
+  font-size: var(--type-label);
+  line-height: 1.2;
+}
+
+.auth-screen h1 {
+  font-size: clamp(1.375rem, 1.25rem + 0.5vw, 1.625rem);
+  line-height: var(--leading-heading);
+  letter-spacing: -0.035em;
+}
+
+.auth-screen h2,
+.auth-screen h3 {
+  font-size: var(--type-card-title);
+  line-height: var(--leading-heading);
+}
+
+.auth-screen p {
+  font-size: var(--type-body);
+  line-height: var(--leading-copy);
+}
+
+.auth-screen label,
+.auth-screen .settings-field > span {
+  font-size: var(--type-label);
+  line-height: 1.4;
+}
+
+.auth-screen input,
+.auth-screen select,
+.auth-screen textarea {
+  font-size: var(--type-body);
+}
+
+.auth-screen button {
+  line-height: 1.35;
+}
+
+.app-shell .page-title h1,
+.app-shell .workspace-header h1,
+.app-shell .overview-hero h1 {
+  font-size: var(--type-page);
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.04em;
+}
+
+.app-shell .cashbook-summary h1 {
+  font-size: clamp(1.375rem, 1.25rem + 0.45vw, 1.625rem);
+  font-weight: 750;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+}
+
+.app-shell .page-title p:not(.page-eyebrow),
+.app-shell .workspace-header p:not(.page-eyebrow),
+.app-shell .overview-hero p {
+  font-size: var(--type-body);
+  line-height: var(--leading-copy);
+}
+
+.app-shell .page-title .page-eyebrow,
+.app-shell .page-title .overview-hero__eyebrow,
+.app-shell .page-eyebrow,
+.app-shell .overview-hero__eyebrow {
+  font-size: var(--type-caption);
+  line-height: 1.35;
+  letter-spacing: 0.07em;
+}
+
+.app-shell .panel-heading h2,
+.app-shell .panel-heading h3,
+.app-shell .workspace-panel-heading h2,
+.app-shell .workspace-panel-heading h3,
+.app-shell .accounts-page .account-tool-heading h2,
+.app-shell .settings-section > div:first-child h2,
+.app-shell .settings-section > div:first-child h3 {
+  font-size: var(--type-section);
+  font-weight: 700;
+  line-height: var(--leading-heading);
+  letter-spacing: -0.025em;
+}
+
+.app-shell .settings-section h3 {
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.app-shell .settings-section h2,
+.app-shell .settings-section h3 {
+  line-height: var(--leading-heading);
+}
+
+.app-shell .settings-section p,
+.app-shell .settings-section li {
+  font-size: var(--type-body);
+  line-height: var(--leading-copy);
+}
+
+.app-shell .settings-nav a,
+.app-shell .settings-section button,
+.app-shell button.button,
+.app-shell .profile-menu-action {
+  font-size: var(--type-label);
+  line-height: 1.35;
+}
+
+.app-shell .sidebar nav button {
+  font-size: var(--type-label);
+  line-height: 1.35;
+}
+
+.app-shell .mobile-bottom-nav button {
+  font-size: var(--type-caption);
+  line-height: 1.25;
+}
+
+.app-shell .metric-top,
+.app-shell .metric-top span,
+.app-shell .overview-page .metric-top span,
+.app-shell .metric-detail,
+.app-shell .metric p,
+.app-shell .dashboard-metric__label,
+.app-shell .summary-metric__label,
+.app-shell .reports-page .report-cards > article > span,
+.app-shell .accounts-page .account-card > small,
+.app-shell .accounts-page .balance-total small {
+  font-size: var(--type-caption);
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.035em;
+}
+
+.app-shell .overview-page .metric-amount {
+  font-size: clamp(1.125rem, 1rem + 0.65vw, 1.375rem);
+  font-weight: 650;
+  font-family: var(--font-sans);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .summary-metric__value {
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.375rem);
+  font-weight: 700;
+  font-family: var(--font-sans);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .reports-page .report-cards > article > strong {
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.5rem);
+  font-weight: 650;
+  font-family: var(--font-sans);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .reports-page .report-cards strong span {
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: none;
+}
+
+.app-shell .accounts-page .account-card h2 {
+  font-size: var(--type-card-title);
+  font-weight: 700;
+  line-height: var(--leading-heading);
+}
+
+.app-shell .account-top > span,
+.app-shell .transaction-icon {
+  font-size: var(--type-caption);
+}
+
+.app-shell .accounts-page .account-card > strong.metric-amount,
+.app-shell .accounts-page .accounts-total strong,
+.app-shell .accounts-page .balance-total strong {
+  font-size: clamp(1.125rem, 1rem + 0.6vw, 1.375rem);
+  font-weight: 650;
+  font-family: var(--font-sans);
+  font-family: var(--font-sans);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .panel-heading p,
+.app-shell .dashboard-metric__note,
+.app-shell .account-card p {
+  font-size: var(--type-caption);
+  line-height: 1.5;
+}
+
+.app-shell .chart-legend,
+.app-shell .y-labels,
+.app-shell .bar-group > span,
+.app-shell .score-ring span,
+.app-shell .score p,
+.app-shell .health-items span,
+.app-shell .transaction small,
+.app-shell .transaction > strong,
+.app-shell .report-y,
+.app-shell .report-bars > div > span,
+.app-shell .breakdown-head,
+.app-shell .breakdown-row,
+.app-shell .table-head,
+.app-shell .table-row small,
+.app-shell .table-row > span,
+.app-shell .table-footer,
+.app-shell .status-badge {
+  font-size: var(--type-caption);
+  line-height: 1.45;
+}
+
+.app-shell .y-labels,
+.app-shell .report-y,
+.app-shell .transaction > strong,
+.app-shell .table-row > strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .cash-chart {
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+}
+
+.app-shell .line-report {
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+}
+
+.app-shell .transaction strong,
+.app-shell .table-row strong {
+  font-size: var(--type-body);
+  line-height: 1.4;
+}
+
+.app-shell .table-head {
+  font-size: var(--type-caption);
+  letter-spacing: 0.04em;
+}
+
+.app-shell .table-row {
+  font-size: var(--type-label);
+  line-height: 1.45;
+}
+
+.app-shell .table-row > strong {
+  font-size: var(--type-label);
+}
+
+.app-shell .filter-panel select,
+.app-shell .search-field,
+.app-shell .search-field input,
+.app-shell form label,
+.app-shell .form-grid label,
+.app-shell .settings-field,
+.app-shell .settings-field > span {
+  font-size: var(--type-label);
+  line-height: 1.4;
+}
+
+.app-shell .accounts-page .account-tool-panel .form-grid label {
+  font-size: var(--type-label);
+}
+
+.app-shell input,
+.app-shell select,
+.app-shell textarea,
+.app-shell .workspace-control {
+  font-size: var(--type-body);
+  line-height: 1.4;
+}
+
+.app-shell .empty-state strong {
+  font-size: var(--type-card-title);
+  line-height: var(--leading-heading);
+}
+
+.app-shell .empty-state h4 {
+  font-size: var(--type-card-title);
+  font-weight: 700;
+  line-height: var(--leading-heading);
+}
+
+.app-shell .empty-state p {
+  font-size: var(--type-body);
+  line-height: var(--leading-copy);
+}
+
+.app-shell .modal-heading h2,
+.app-shell [role="dialog"] h2 {
+  font-size: var(--type-section);
+  line-height: var(--leading-heading);
+}
+
+.app-shell [role="dialog"] p,
+.app-shell [role="dialog"] label {
+  font-size: var(--type-label);
+  line-height: var(--leading-copy);
+}
+
+.app-shell [role="dialog"] input,
+.app-shell [role="dialog"] select,
+.app-shell [role="dialog"] textarea {
+  font-size: var(--type-body);
+}
+
+.app-shell #profile-menu .profile-menu-action {
+  font-size: var(--type-label);
+}
+
+.auth-screen :is(.text-\[10px\], .text-\[11px\]) {
+  font-size: var(--type-caption);
+}
+
+.app-shell :is(.text-\[8px\], .text-\[9px\], .text-\[10px\], .text-\[11px\]) {
+  font-size: var(--type-caption);
+  line-height: 1.4;
+}
+
+html[lang="ur"] :is(.shop-landing-page, .auth-screen, .app-shell) {
+  --leading-copy: 1.9;
+  --leading-heading: 1.45;
+}
+
+html[lang="ur"] .shop-landing-page h1,
+html[lang="ur"] .shop-landing-page h2,
+html[lang="ur"] .auth-screen h1,
+html[lang="ur"] .auth-screen h2,
+html[lang="ur"] .app-shell h1,
+html[lang="ur"] .app-shell h2,
+html[lang="ur"] .app-shell h3 {
+  line-height: 1.45;
+  letter-spacing: normal;
+}
+
+html[lang="ur"] .auth-screen label,
+html[lang="ur"] .app-shell label {
+  line-height: 1.8;
+}
+
+@media (max-width: 639px) {
+  .min-h-screen.bg-surface.font-sans.text-on-surface.shop-landing-page > main > section:first-child h1 {
+    font-size: clamp(2.25rem, 9vw, 2.75rem);
+  }
+
+  .app-shell .page-title h1,
+  .app-shell .workspace-header h1,
+  .app-shell .overview-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .app-shell .page-title p:not(.page-eyebrow),
+  .app-shell .workspace-header p:not(.page-eyebrow) {
+    font-size: var(--type-body);
+  }
+
+  .app-shell .overview-page .metric-amount {
+    font-size: clamp(1.0625rem, 4.8vw, 1.25rem);
+  }
+
+  .app-shell .summary-metric__value,
+  .app-shell .accounts-page .account-card > strong.metric-amount,
+  .app-shell .accounts-page .accounts-total strong,
+  .app-shell .accounts-page .balance-total strong {
+    font-size: clamp(1.0625rem, 4.8vw, 1.25rem);
+  }
+
+  .app-shell .reports-page .report-cards > article > strong {
+    font-size: clamp(1.125rem, 5vw, 1.375rem);
+  }
+
+  .app-shell .breakdown-head,
+  .app-shell .breakdown-row {
+    font-size: var(--type-micro);
+  }
+}
+
+.app-shell .accounts-page .account-top {
+  margin-bottom: 0.875rem;
+}
+
+.app-shell .accounts-page .account-top > .account-brand {
+  display: grid;
+  flex: 0 0 2.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--green) 14%, var(--line));
+  border-radius: 0.75rem;
+  background: var(--tint);
+  color: var(--accent-ink);
+}
+
+.app-shell .accounts-page .account-brand > svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  stroke-width: 1.8;
+}
+
+.app-shell .accounts-page .account-brand > img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.app-shell .accounts-page .account-brand--meezan > img {
+  width: 8.25rem;
+  max-width: none;
+  height: 2.5rem;
+  object-fit: cover;
+  object-position: left center;
+}
+
+.app-shell .accounts-page .account-brand--jazzcash > img {
+  width: 2rem;
+  height: 2rem;
+}
+
+.app-shell .accounts-page .account-brand--provider {
+  border-color: color-mix(in srgb, var(--account-brand-color) 26%, var(--line));
+  background: color-mix(in srgb, var(--account-brand-color) 12%, var(--surface-card));
+  color: color-mix(in srgb, var(--account-brand-color) 82%, #132620);
+}
+
+.app-shell .accounts-page .account-brand-wordmark {
+  max-width: 100%;
+  padding-inline: 0.125rem;
+  overflow: hidden;
+  font-size: 0.575rem;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  text-align: center;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.dark .app-shell .accounts-page .account-brand--provider {
+  border-color: color-mix(in srgb, var(--account-brand-color) 44%, var(--line));
+  background: color-mix(in srgb, var(--account-brand-color) 22%, var(--surface-card));
+  color: color-mix(in srgb, var(--account-brand-color) 62%, #ffffff);
+}
+
+.app-shell .accounts-page .account-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.app-shell .accounts-page .account-top .account-action-button {
+  display: grid;
+  flex: 0 0 2.5rem;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--surface-card);
+  color: var(--accent-ink);
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.app-shell .accounts-page .account-top .account-action-button svg {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 2;
+}
+
+.app-shell .accounts-page .account-top .account-action-button:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+}
+
+.app-shell .accounts-page .account-top .account-action-button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.app-shell .accounts-page .account-top .account-status-button.is-deactivate {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--line));
+}
+
+.app-shell .accounts-page .account-top .account-status-button.is-deactivate:hover:not(:disabled) {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.app-shell .accounts-page .account-top .account-status-button.is-reactivate {
+  color: var(--green);
+}
+
+.app-shell .accounts-page .account-top .account-action-button:disabled {
+  cursor: not-allowed;
+}
+
+.app-shell .accounts-page .account-top .account-status-button.is-deactivate:disabled {
+  opacity: 1;
+}
+
+.app-shell .accounts-page .account-card h2 {
+  min-height: 1.25em;
+  margin: 0 0 0.75rem;
+}
+
+.app-shell .accounts-page {
+  --accounts-type-label: var(--type-caption);
+  --accounts-type-name: var(--type-card-title);
+  --accounts-type-value: clamp(1.125rem, 1rem + 0.55vw, 1.375rem);
+}
+
+.app-shell .accounts-page .account-card h2 {
+  font-size: var(--accounts-type-name);
+  line-height: var(--leading-heading);
+}
+
+.app-shell .accounts-page .account-card > strong.metric-amount,
+.app-shell .accounts-page .accounts-total strong,
+.app-shell .accounts-page .balance-total strong {
+  font-size: var(--accounts-type-value);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .accounts-page .balance-total small {
+  font-size: var(--accounts-type-label);
+  line-height: 1.4;
+  letter-spacing: 0.055em;
+}
+
+.app-shell .accounts-page .account-tool-panel .form-grid label {
+  font-size: var(--type-label);
+  line-height: 1.4;
+}
+
+.app-shell .accounts-page .account-tool-panel .form-grid input,
+.app-shell .accounts-page .account-tool-panel .form-grid select,
+.app-shell .accounts-page .account-tool-panel .form-grid textarea {
+  font-size: var(--type-body);
+  line-height: 1.4;
+}

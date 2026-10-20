@@ -3,6 +3,7 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 import './motion.css';
+import './typography.css';
 import { applyTheme, getSavedTheme } from './lib/theme';
 
 // Handle OAuth popup window callback: notify parent window and auto-close

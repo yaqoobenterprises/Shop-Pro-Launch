@@ -83,7 +83,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
 
   return (
     <div className="ledger-composer border-t border-border-standard px-3 py-2.5 sm:px-5 sm:py-3">
-      <div className="no-scrollbar mx-auto mb-2 flex w-full max-w-4xl items-center gap-2 overflow-x-auto pb-1 text-xs">
+      <div className="mx-auto mb-2 flex w-full max-w-4xl items-center gap-2 overflow-x-auto pb-1 text-xs">
         {categories.length > 0 ? categories.map((category) => (
           <button
             key={category.id}

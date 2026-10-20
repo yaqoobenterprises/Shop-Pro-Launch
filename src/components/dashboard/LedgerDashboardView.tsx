@@ -2,6 +2,7 @@ import React, { useCallback, useState, useEffect, useRef, useMemo } from "react"
 import { ledgerService } from "../../services/ledgerService";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { formatPaisa } from "../../lib/money";
+import { AnimatedAmount } from "../common/AnimatedAmount";
 import { useI18n } from "../../i18n";
 import { DatePicker } from "../common/DatePicker";
 import { MonthPicker } from "../common/MonthPicker";
@@ -12,7 +13,6 @@ import {
   LedgerAccount,
 } from "../../types/ledger";
 import {
-  RefreshCw,
   TrendingUp,
   Wallet,
   ArrowUpRight,
@@ -120,13 +120,6 @@ export const LedgerDashboardView: React.FC = () => {
     0,
   );
 
-  const profitMargin =
-    activeIncome > 0
-      ? Math.round((activeProfit / activeIncome) * 100)
-      : activeProfit > 0
-      ? 100
-      : 0;
-
   const formatMetric = (amountPaisa: number) =>
     isLoading ? "Loading…" : loadError ? "—" : formatPaisa(amountPaisa);
 
@@ -134,11 +127,6 @@ export const LedgerDashboardView: React.FC = () => {
     () => breakdowns.filter((b) => b.type === "expense" && b.total_paisa > 0),
     [breakdowns],
   );
-
-  const largestExpenseCategory = useMemo(() => {
-    if (expenseBreakdowns.length === 0) return null;
-    return [...expenseBreakdowns].sort((a, b) => b.total_paisa - a.total_paisa)[0];
-  }, [expenseBreakdowns]);
 
   const trendMax = Math.max(
     ...monthlyTrend.map((m) => Math.max(m.income_paisa, m.expense_paisa)),
@@ -155,51 +143,44 @@ export const LedgerDashboardView: React.FC = () => {
           <h1>Overview</h1>
         </div>
 
-        <div className="title-actions">
-          <div className="title-actions" style={{ gap: 4 }}>
+        <div className="title-actions overview-filter-controls">
+          <div className="overview-period-toggle" role="group" aria-label="Overview period">
             <button
               type="button"
-              className={`button ${period === "day" ? "button-primary" : "button-secondary"}`}
-              style={{ minHeight: 36, padding: "0 12px", fontSize: 11 }}
+              aria-pressed={period === "day"}
+              className={`button overview-period-option ${period === "day" ? "button-primary" : "button-secondary"}`}
               onClick={() => setPeriod("day")}
             >
               Day
             </button>
             <button
               type="button"
-              className={`button ${period === "month" ? "button-primary" : "button-secondary"}`}
-              style={{ minHeight: 36, padding: "0 12px", fontSize: 11 }}
+              aria-pressed={period === "month"}
+              className={`button overview-period-option ${period === "month" ? "button-primary" : "button-secondary"}`}
               onClick={() => setPeriod("month")}
             >
               Month
             </button>
           </div>
 
-          {period === "day" ? (
-            <DatePicker
-              value={currentDate}
-              onChange={setCurrentDate}
-              ariaLabel="Filter date"
-              className="min-w-[170px]"
-            />
-          ) : (
-            <MonthPicker
-              value={currentDate.slice(0, 7)}
-              onChange={(value) => setCurrentDate(value)}
-              ariaLabel="Filter month"
-              className="min-w-[170px]"
-            />
-          )}
+          <div className="overview-period-picker">
+            {period === "day" ? (
+              <DatePicker
+                value={currentDate}
+                onChange={setCurrentDate}
+                ariaLabel="Filter date"
+                className="w-full"
+              />
+            ) : (
+              <MonthPicker
+                value={currentDate.slice(0, 7)}
+                onChange={(value) => setCurrentDate(value)}
+                ariaLabel="Filter month"
+                className="w-full"
+              />
+            )}
+          </div>
 
-          <button
-            type="button"
-            onClick={() => void loadData()}
-            className="icon-button"
-            title="Refresh"
-            aria-label="Refresh"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          </button>
         </div>
       </div>
 
@@ -216,10 +197,9 @@ export const LedgerDashboardView: React.FC = () => {
             <span>Total Liquidity</span>
             <Wallet className="h-4 w-4" />
           </div>
-          <strong className="metric-amount">{formatMetric(totalBalancePaisa)}</strong>
-          <p className="metric-detail">
-            <em>Live</em> across {activeAccounts.length} active accounts
-          </p>
+          <strong className="metric-amount">
+            <AnimatedAmount amountPaisa={totalBalancePaisa} loading={isLoading} error={Boolean(loadError)} />
+          </strong>
         </article>
 
         <article className="metric">
@@ -227,10 +207,9 @@ export const LedgerDashboardView: React.FC = () => {
             <span>{t("dashboard.income")}</span>
             <TrendingUp className="h-4 w-4" />
           </div>
-          <strong className="metric-amount">{formatMetric(activeIncome)}</strong>
-          <p className="metric-detail">
-            <em className="positive">Revenue</em> recorded for this {period}
-          </p>
+          <strong className="metric-amount">
+            <AnimatedAmount amountPaisa={activeIncome} loading={isLoading} error={Boolean(loadError)} />
+          </strong>
         </article>
 
         <article className="metric">
@@ -238,10 +217,9 @@ export const LedgerDashboardView: React.FC = () => {
             <span>{t("dashboard.expenses")}</span>
             <ArrowDownLeft className="h-4 w-4" />
           </div>
-          <strong className="metric-amount">{formatMetric(activeExpense)}</strong>
-          <p className="metric-detail">
-            <em className="neutral">Outflow</em> operating expenses
-          </p>
+          <strong className="metric-amount">
+            <AnimatedAmount amountPaisa={activeExpense} loading={isLoading} error={Boolean(loadError)} />
+          </strong>
         </article>
 
         <article className="metric">
@@ -250,14 +228,8 @@ export const LedgerDashboardView: React.FC = () => {
             <ArrowUpRight className="h-4 w-4" />
           </div>
           <strong className="metric-amount" style={{ color: activeProfit >= 0 ? "var(--green)" : "var(--danger)" }}>
-            {formatMetric(activeProfit)}
+            <AnimatedAmount amountPaisa={activeProfit} loading={isLoading} error={Boolean(loadError)} />
           </strong>
-          <p className="metric-detail">
-            <em className={activeProfit >= 0 ? "positive" : "neutral"}>
-              {profitMargin}% margin
-            </em>
-            net performance
-          </p>
         </article>
       </div>
 
@@ -268,7 +240,6 @@ export const LedgerDashboardView: React.FC = () => {
           <div className="panel-heading">
             <div>
               <h2>Cash flow</h2>
-              <p>Income and expenses over time</p>
             </div>
             <div className="chart-legend">
               <span>
@@ -294,12 +265,16 @@ export const LedgerDashboardView: React.FC = () => {
                     <span>0</span>
                   </div>
                   <div className="chart-bars">
-                    {monthlyTrend.map((row) => {
+                    {monthlyTrend.map((row, index) => {
                       const incHeight = Math.min(100, Math.round((row.income_paisa / trendMax) * 100));
                       const expHeight = Math.min(100, Math.round((row.expense_paisa / trendMax) * 100));
                       const label = monthNames[(row.month || 1) - 1] || `${row.month}`;
                       return (
-                        <div className="bar-group" key={row.month_start}>
+                        <div
+                          className="bar-group"
+                          key={row.month_start}
+                          style={{ "--bar-animation-delay": `${Math.min(index, 11) * 18}ms` } as React.CSSProperties}
+                        >
                           <div>
                             <i style={{ height: `${Math.max(incHeight, 4)}%` }} title={`Income: ${formatPaisa(row.income_paisa)}`} />
                             <i style={{ height: `${Math.max(expHeight, 4)}%` }} title={`Expenses: ${formatPaisa(row.expense_paisa)}`} />
@@ -311,18 +286,15 @@ export const LedgerDashboardView: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <p style={{ color: "var(--muted)", fontSize: 11, padding: "20px 0", textAlign: "center" }}>
+                <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "20px 0", textAlign: "center" }}>
                   No monthly trends recorded.
                 </p>
               )}
-              <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 12 }}>
-                {monthlyTrend.length} active month{monthlyTrend.length === 1 ? "" : "s"} reported. Net operating profit is income less expenses; transfers and owner cash flows are excluded.
-              </p>
             </div>
           ) : (
             <div style={{ padding: "16px 0" }}>
               <div style={{ display: "grid", gap: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--type-label)" }}>
                   <span>Recorded Income</span>
                   <strong className="positive" style={{ fontFamily: "DM Mono" }}>
                     {formatMetric(activeIncome)}
@@ -330,6 +302,7 @@ export const LedgerDashboardView: React.FC = () => {
                 </div>
                 <div style={{ height: 8, background: "var(--line)", borderRadius: 4, overflow: "hidden" }}>
                   <div
+                    className="cash-progress-fill"
                     style={{
                       height: "100%",
                       width: `${Math.min(100, activeIncome > 0 ? 100 : 0)}%`,
@@ -339,7 +312,7 @@ export const LedgerDashboardView: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginTop: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--type-label)", marginTop: 8 }}>
                   <span>Operating Expenses</span>
                   <strong style={{ fontFamily: "DM Mono", color: "var(--orange)" }}>
                     {formatMetric(activeExpense)}
@@ -347,6 +320,7 @@ export const LedgerDashboardView: React.FC = () => {
                 </div>
                 <div style={{ height: 8, background: "var(--line)", borderRadius: 4, overflow: "hidden" }}>
                   <div
+                    className="cash-progress-fill"
                     style={{
                       height: "100%",
                       width: `${activeIncome > 0 ? Math.min(100, (activeExpense / activeIncome) * 100) : activeExpense > 0 ? 100 : 0}%`,
@@ -358,11 +332,11 @@ export const LedgerDashboardView: React.FC = () => {
               </div>
 
               <div style={{ marginTop: 24 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
+                <p style={{ fontSize: "var(--type-caption)", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
                   Expense totals by category
                 </p>
                 {expenseBreakdowns.length === 0 ? (
-                  <p style={{ color: "var(--muted)", fontSize: 11, padding: "16px 0", textAlign: "center" }}>
+                  <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "16px 0", textAlign: "center" }}>
                     No active expenses for this date. Recorded expenses will appear here.
                   </p>
                 ) : (
@@ -377,7 +351,7 @@ export const LedgerDashboardView: React.FC = () => {
                           style={{
                             display: "flex",
                             justifyContent: "space-between",
-                            fontSize: 11,
+                            fontSize: "var(--type-label)",
                             padding: "6px 0",
                             borderBottom: "1px solid var(--line)",
                           }}
@@ -389,11 +363,6 @@ export const LedgerDashboardView: React.FC = () => {
                         </li>
                       ))}
                     </ul>
-                    {largestExpenseCategory && (
-                      <p style={{ fontSize: 11, color: "var(--muted)", marginTop: 10 }}>
-                        Largest expense category: <strong style={{ color: "var(--ink)" }}>{largestExpenseCategory.category_name}</strong>, {formatPaisa(largestExpenseCategory.total_paisa)}.
-                      </p>
-                    )}
                   </>
                 )}
               </div>
@@ -408,26 +377,33 @@ export const LedgerDashboardView: React.FC = () => {
             <div className="panel-heading">
               <div>
                 <h2>Capital & Drawings</h2>
-                <p>Owner equity and cash adjustments</p>
               </div>
             </div>
 
             <div className="health-items">
               <span>
                 Capital Introduced
-                <strong>{formatMetric(activeCapital)}</strong>
+                <strong>
+                  <AnimatedAmount amountPaisa={activeCapital} loading={isLoading} error={Boolean(loadError)} />
+                </strong>
               </span>
               <span>
                 Owner Drawings
-                <strong>{formatMetric(activeWithdrawal)}</strong>
+                <strong>
+                  <AnimatedAmount amountPaisa={activeWithdrawal} loading={isLoading} error={Boolean(loadError)} />
+                </strong>
               </span>
               <span>
                 Cash Adjustments In
-                <strong>{formatMetric(activeAdjIn)}</strong>
+                <strong>
+                  <AnimatedAmount amountPaisa={activeAdjIn} loading={isLoading} error={Boolean(loadError)} />
+                </strong>
               </span>
               <span>
                 Cash Adjustments Out
-                <strong>{formatMetric(activeAdjOut)}</strong>
+                <strong>
+                  <AnimatedAmount amountPaisa={activeAdjOut} loading={isLoading} error={Boolean(loadError)} />
+                </strong>
               </span>
             </div>
           </section>
@@ -437,13 +413,12 @@ export const LedgerDashboardView: React.FC = () => {
             <div className="panel-heading">
               <div>
                 <h2>Active Accounts</h2>
-                <p>Live liquidity across shop drawers & bank</p>
               </div>
             </div>
 
             <div>
               {activeAccounts.length === 0 ? (
-                <p style={{ color: "var(--muted)", fontSize: 11, padding: "16px 0", textAlign: "center" }}>
+                <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "16px 0", textAlign: "center" }}>
                   No active shop accounts are available. Set up an account to see balances.
                 </p>
               ) : (

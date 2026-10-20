@@ -324,7 +324,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-3 text-text-muted hover:text-on-surface transition cursor-pointer"
+                  className="auth-password-toggle absolute right-1 top-1 text-text-muted hover:text-on-surface transition cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ?
@@ -355,7 +355,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword((v) => !v)}
-                  className="absolute right-3 top-3 text-text-muted hover:text-on-surface transition cursor-pointer"
+                  className="auth-password-toggle absolute right-1 top-1 text-text-muted hover:text-on-surface transition cursor-pointer"
                   aria-label={
                     showConfirmPassword ? "Hide password" : "Show password"
                   }
@@ -402,7 +402,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             <button
               type="button"
               onClick={cancelPasswordReset}
-              className="w-full pt-2 text-center text-xs font-medium text-text-muted hover:text-on-surface hover:underline cursor-pointer"
+              className="min-h-11 w-full pt-2 text-center text-xs font-medium text-text-muted hover:text-on-surface hover:underline cursor-pointer"
             >
               {t("auth.cancelBack")}
             </button>
@@ -494,34 +494,34 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             {mode === "signIn" ?
               "Welcome back"
             : mode === "signUp" ?
-              "Create shop register"
+              "Create your account"
             : "Reset your password"}
           </h1>
           <p className="mt-1 max-w-[300px] text-xs text-text-muted">
             {mode === "signIn" ?
-              "Sign in to access your ledger, accounts, and point of sale"
+              "Sign in to access your shop ledger and accounts."
             : mode === "signUp" ?
-              "Set up your store terminal and start recording sales"
+              "Set up your shop and start recording transactions."
             : "Enter your registered email to receive reset instructions"}
           </p>
         </div>
 
         {/* Mode Selector Tabs (Sign In / Sign Up) */}
         {mode !== "forgotPassword" && (
-          <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border-standard bg-surface p-1">
+          <div className="auth-mode-tabs mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border-standard bg-surface p-1">
             <button
               type="button"
               onClick={() => {
                 setMode("signIn");
                 setFeedback(null);
               }}
-              className={`flex h-9 items-center justify-center rounded-md text-xs font-semibold transition cursor-pointer ${
+              className={`auth-mode-tab flex h-11 items-center justify-center rounded-md text-xs font-semibold transition cursor-pointer ${
                 mode === "signIn" ?
                   "bg-surface-bright text-on-surface shadow-xs"
                 : "text-text-muted hover:text-on-surface"
               }`}
             >
-              Sign In
+              Sign in
             </button>
             <button
               type="button"
@@ -529,13 +529,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 setMode("signUp");
                 setFeedback(null);
               }}
-              className={`flex h-9 items-center justify-center rounded-md text-xs font-semibold transition cursor-pointer ${
+              className={`auth-mode-tab flex h-11 items-center justify-center rounded-md text-xs font-semibold transition cursor-pointer ${
                 mode === "signUp" ?
                   "bg-surface-bright text-on-surface shadow-xs"
                 : "text-text-muted hover:text-on-surface"
               }`}
             >
-              Create Account
+              Create account
             </button>
           </div>
         )}
@@ -654,7 +654,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                       setMode("forgotPassword");
                       setFeedback(null);
                     }}
-                    className="text-xs font-medium text-primary hover:text-primary-hover hover:underline cursor-pointer"
+                    className="auth-inline-action min-h-11 px-1 text-xs font-medium text-primary hover:text-primary-hover hover:underline cursor-pointer"
                   >
                     Forgot password?
                   </button>
@@ -678,7 +678,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-3 text-text-muted hover:text-on-surface transition cursor-pointer"
+                  className="auth-password-toggle absolute right-1 top-1 text-text-muted hover:text-on-surface transition cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ?
@@ -719,7 +719,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     href={feedback.authUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 underline text-primary hover:text-primary-hover cursor-pointer"
+                    className="auth-inline-action min-h-10 gap-1 underline text-primary hover:text-primary-hover cursor-pointer"
                   >
                     <span>{t("auth.openGoogleSignIn")}</span>
                     <ExternalLink className="h-3 w-3" />
@@ -731,7 +731,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                         setIsGoogleLoading(false);
                         setFeedback(null);
                       }}
-                      className="text-text-muted hover:text-on-surface hover:underline cursor-pointer font-normal"
+                      className="auth-inline-action min-h-10 text-text-muted hover:text-on-surface hover:underline cursor-pointer font-normal"
                     >
                       Cancel
                     </button>
@@ -763,16 +763,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
                 <span>
-                  {mode === "signIn" ? "Signing In..."
-                  : mode === "signUp" ? "Creating Account..."
-                  : "Sending Reset Link..."}
+                  {mode === "signIn" ? "Signing in..."
+                  : mode === "signUp" ? "Creating account..."
+                  : "Sending reset link..."}
                 </span>
               </>
             : <>
                 <span>
-                  {mode === "signIn" ? "Sign In to Register"
-                  : mode === "signUp" ? "Create Account & Start"
-                  : "Send Password Reset Link"}
+                  {mode === "signIn" ? "Sign in"
+                  : mode === "signUp" ? "Create account"
+                  : "Send reset link"}
                 </span>
                 <ArrowRight className="h-4 w-4" />
               </>
@@ -789,7 +789,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 setMode("signIn");
                 setFeedback(null);
               }}
-              className="inline-flex items-center gap-1.5 font-semibold text-primary hover:underline cursor-pointer"
+              className="auth-inline-action min-h-11 gap-1.5 px-1 font-semibold text-primary hover:underline cursor-pointer"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>{t("auth.backToSignIn")}</span>
@@ -803,7 +803,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   setMode("signUp");
                   setFeedback(null);
                 }}
-                className="font-semibold text-primary hover:underline cursor-pointer"
+                className="auth-inline-action min-h-11 px-1 font-semibold text-primary hover:underline cursor-pointer"
               >
                 Create one now
               </button>
@@ -816,7 +816,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   setMode("signIn");
                   setFeedback(null);
                 }}
-                className="font-semibold text-primary hover:underline cursor-pointer"
+                className="auth-inline-action min-h-11 px-1 font-semibold text-primary hover:underline cursor-pointer"
               >
                 Sign in instead
               </button>
@@ -834,7 +834,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 });
                 await resetConnectionAndSession();
               }}
-              className="text-[11px] text-text-muted hover:text-primary transition underline cursor-pointer"
+              className="auth-inline-action min-h-10 px-1 text-[11px] text-text-muted hover:text-primary transition underline cursor-pointer"
             >
               Reset connection & clear cached session
             </button>
@@ -957,7 +957,7 @@ export const PinSetupScreen: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowPin((v) => !v)}
-              className="font-medium text-primary hover:underline cursor-pointer"
+              className="auth-inline-action min-h-10 px-1 font-medium text-primary hover:underline cursor-pointer"
             >
               {showPin ? "Hide numbers" : "Show numbers"}
             </button>
@@ -991,7 +991,7 @@ export const PinSetupScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => void signOut()}
-            className="w-full pt-2 text-center text-xs font-medium text-text-muted hover:text-on-surface hover:underline"
+            className="min-h-11 w-full pt-2 text-center text-xs font-medium text-text-muted hover:text-on-surface hover:underline"
           >
             Cancel and sign out
           </button>
@@ -1087,7 +1087,7 @@ export const LockScreen: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowPin((v) => !v)}
-                className="absolute right-3.5 top-3 text-text-muted hover:text-on-surface transition cursor-pointer"
+                className="auth-password-toggle absolute right-1 top-1 text-text-muted hover:text-on-surface transition cursor-pointer"
                 aria-label={showPin ? "Hide PIN" : "Show PIN"}
               >
                 {showPin ?
@@ -1118,7 +1118,7 @@ export const LockScreen: React.FC = () => {
           <button
             type="button"
             onClick={() => void signOut()}
-            className="w-full pt-2 text-center text-xs font-medium text-text-muted hover:text-on-surface hover:underline"
+            className="min-h-11 w-full pt-2 text-center text-xs font-medium text-text-muted hover:text-on-surface hover:underline"
           >
             Switch account
           </button>

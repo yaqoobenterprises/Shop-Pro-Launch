@@ -59,7 +59,7 @@ describe('real-data dashboard charts', () => {
     expect(expenses.textContent).not.toContain('Service Income');
     expect(screen.getByRole('list', { name: 'Current balances by account' }).textContent)
       .toContain('Till Cash');
-    expect(screen.getByText('Largest expense category:', { exact: false })).toBeTruthy();
+    expect(expenses.querySelectorAll('li')).toHaveLength(1);
   });
 
   it('shows an explicit empty state instead of drawing a zero-filled expense chart', async () => {
@@ -116,9 +116,8 @@ describe('real-data dashboard charts', () => {
     render(<LedgerDashboardView />);
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
 
-    await waitFor(() => expect(
-      screen.getByText(/1 active month reported/),
-    ).toBeTruthy());
+    await waitFor(() => expect(screen.getByTitle('Income: Rs 300')).toBeTruthy());
+    expect(screen.getByTitle('Expenses: Rs 100')).toBeTruthy();
     expect(ledgerService.getMonthlyReport).toHaveBeenCalled();
   });
 });

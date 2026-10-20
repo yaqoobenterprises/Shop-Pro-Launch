@@ -85,9 +85,7 @@ export const UserPreferencesSection: React.FC = () => {
                 : t('settings.entryMode')}
           </h2>
           <p className="mt-0.5 text-xs text-text-muted">
-            {languageUrEnabled && !entryModesEnabled
-              ? 'Choose the language used across the app.'
-              : t('settings.preferenceDescription')}
+            {t('settings.preferenceDescription')}
           </p>
         </div>
       </div>

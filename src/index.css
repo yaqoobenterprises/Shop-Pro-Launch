@@ -2975,7 +2975,6 @@ select.entries-filter-control {
   gap: 0.35rem;
   border-color: var(--line);
   padding-bottom: 0.6rem;
-  scrollbar-width: none;
 }
 
 .settings-nav a {
@@ -3244,16 +3243,14 @@ select.entries-filter-control {
 
 /* Authentication and register-lock screens — preserve all existing forms and flows. */
 .auth-screen {
-  background:
-    radial-gradient(ellipse at 78% 8%, var(--hero-glow) 0, transparent 42%),
-    var(--paper);
+  background: var(--paper);
 }
 
 .auth-card {
   border-color: var(--line);
-  border-radius: 1.25rem;
+  border-radius: 0.875rem;
   background: var(--surface-card);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-1);
 }
 
 .auth-card > div:first-child h1,
@@ -3310,6 +3307,27 @@ select.entries-filter-control {
   border-radius: 0.75rem;
 }
 
+.auth-card .auth-mode-tab {
+  min-height: 2.75rem;
+  font-size: 0.8125rem;
+}
+
+.auth-card .auth-inline-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card .auth-password-toggle {
+  display: grid;
+  top: 50%;
+  width: 2.75rem;
+  height: 2.75rem;
+  transform: translateY(-50%);
+  place-items: center;
+  padding: 0;
+}
+
 .auth-card [role="alert"],
 .auth-card [role="status"] {
   border-radius: 0.85rem;
@@ -3324,7 +3342,7 @@ select.entries-filter-control {
   .auth-card {
     margin-block: auto;
     padding: 1.25rem;
-    border-radius: 1.1rem;
+    border-radius: 0.875rem;
   }
 }
 
@@ -3813,8 +3831,16 @@ html.dark .app-shell .accounts-total {
 .app-shell .app-header {
   min-height: 4rem;
   border-bottom-color: var(--line);
-  background: var(--glass);
+  background: var(--surface-card);
   padding-inline: clamp(1rem, 2.5vw, 2rem);
+  backdrop-filter: none;
+}
+
+.app-shell .workspace-brand {
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 750;
+  letter-spacing: -0.025em;
 }
 
 .app-shell .page-content {
@@ -3834,10 +3860,8 @@ html.dark .app-shell .accounts-total {
   margin: 0 0 0.25rem;
   padding: 1.3rem 1.45rem;
   border: 1px solid var(--line);
-  border-radius: 1.15rem;
-  background:
-    radial-gradient(ellipse at 100% 0%, var(--hero-glow) 0, transparent 43%),
-    var(--surface-card);
+  border-radius: 0.875rem;
+  background: var(--surface-card);
   box-shadow: var(--shadow-1);
 }
 
@@ -3872,6 +3896,42 @@ html.dark .app-shell .accounts-total {
   border-radius: 0.75rem;
 }
 
+.app-shell .page-title .title-actions > button {
+  min-height: 2.8rem;
+}
+
+.app-shell .overview-filter-controls {
+  width: auto;
+  max-width: 100%;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.app-shell .overview-period-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.app-shell .overview-period-option {
+  width: 4rem;
+  min-height: 2.8rem;
+  padding-inline: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.app-shell .overview-period-picker {
+  min-width: 0;
+  flex: 1 1 13.25rem;
+}
+
+.app-shell .overview-period-picker .workspace-control {
+  width: 100%;
+  min-height: 2.8rem;
+}
+
 .app-shell .metrics {
   display: grid;
   align-items: stretch;
@@ -3893,8 +3953,8 @@ html.dark .app-shell .accounts-total {
   padding: 1.3rem 1.35rem;
   border: 1px solid var(--line);
   border-top: 3px solid var(--metric-accent, var(--green));
-  border-radius: 1rem;
-  background: linear-gradient(145deg, var(--surface-card) 58%, var(--metric-tint, var(--glass-soft)));
+  border-radius: 0.875rem;
+  background: var(--surface-card);
   box-shadow: var(--shadow-1);
 }
 
@@ -3935,7 +3995,7 @@ html.dark .app-shell .accounts-total {
   min-height: 3.65rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--line);
-  background: linear-gradient(90deg, var(--surface-card), var(--glass-soft));
+  background: var(--surface-card);
 }
 
 .app-shell .panel-heading h2,
@@ -4064,8 +4124,8 @@ html.dark .app-shell .accounts-total {
 }
 
 .app-shell .accounts-page .account-card {
-  border-radius: 1rem;
-  background: linear-gradient(150deg, var(--surface-card) 68%, var(--glass-soft));
+  border-radius: 0.875rem;
+  background: var(--surface-card);
 }
 
 .app-shell .accounts-page .accounts-total {
@@ -4087,9 +4147,7 @@ html.dark .app-shell .accounts-total {
 }
 
 html.dark .app-shell .page-title {
-  background:
-    radial-gradient(ellipse at 100% 0%, var(--hero-glow) 0, transparent 43%),
-    var(--surface-card);
+  background: var(--surface-card);
 }
 
 html.dark .app-shell .entries-page .entries-table tbody tr:hover,
@@ -6110,5 +6168,688 @@ html[dir="rtl"] .app-shell select,
   .app-shell .sidebar-toggle,
   .app-shell .sidebar-resize-handle::after {
     transition: none;
+  }
+}
+
+/* Keep the workspace usable when the desktop navigation no longer fits. */
+@media (max-width: 767px) {
+  .app-shell aside#app-sidebar {
+    display: none;
+  }
+
+  .app-shell .mobile-bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: calc(3.5rem + env(safe-area-inset-bottom));
+    padding-inline: 0.375rem;
+    border-top-color: var(--line);
+    background: var(--surface-card);
+  }
+
+  .app-shell .workspace {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-shell .overview-filter-controls {
+    width: 100%;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+  }
+
+}
+
+@media (min-width: 768px) {
+  .app-shell .mobile-bottom-nav {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1099px) {
+  .app-shell .page-title > div:last-child {
+    min-width: 0;
+    flex-shrink: 1;
+  }
+
+  .app-shell .reports-page .report-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell .reports-page .report-cards > article:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: calc((100% - 13px) / 2);
+    justify-self: center;
+  }
+
+  .app-shell .accounts-page .account-tools {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell .accounts-page .account-grid > .account-card:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: calc((100% - 13px) / 2);
+    justify-self: center;
+  }
+}
+
+.app-shell .accounts-page .account-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
+}
+
+.app-shell .accounts-page .account-tool-panel .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.app-shell .accounts-page .account-tool-panel .form-grid label {
+  min-width: 0;
+  font-size: 0.75rem;
+}
+
+.app-shell .accounts-page .account-tool-panel .form-grid input,
+.app-shell .accounts-page .account-tool-panel .form-grid .workspace-control {
+  min-width: 0;
+  max-width: 100%;
+  font-size: 0.875rem;
+}
+
+.app-shell .accounts-page .account-top button {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.625rem;
+  background: var(--surface-card);
+  color: var(--accent-ink);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.app-shell .accounts-page .account-top button:hover {
+  background: var(--surface-2);
+}
+
+.app-shell .accounts-page .account-status-action {
+  min-height: 2.75rem;
+}
+
+@media (max-width: 900px) {
+  .app-shell .settings-page .settings-nav {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    overflow: visible;
+  }
+
+  .app-shell .settings-page .settings-nav a {
+    min-height: 2.75rem;
+    padding: 0.55rem 0.65rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell .accounts-page .account-tool-panel .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.app-shell .accounts-page .balance-total small {
+  font-size: 0.625rem;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 340px) {
+  .shop-landing-page .landing-brand-name {
+    display: none;
+  }
+}
+
+/* Use solid surfaces and comfortable labels across the active workspace. */
+.app-shell .workspace-header,
+.app-shell .overview-hero,
+.app-shell .summary-metric,
+.app-shell .dashboard-metric,
+.app-shell .report-cards > article,
+.app-shell .cashbook-summary,
+.app-shell .entries-filter-panel {
+  background: var(--surface-card);
+}
+
+.app-shell .workspace-header,
+.app-shell .overview-hero {
+  border-radius: 0.875rem;
+}
+
+html.dark .app-shell .workspace-header,
+html.dark .app-shell .overview-hero {
+  background: var(--surface-card);
+}
+
+.app-shell .reports-page .report-cards > article:nth-child(1) {
+  background: var(--report-tint-1);
+}
+
+.app-shell .reports-page .report-cards > article:nth-child(2) {
+  background: var(--report-tint-2);
+}
+
+.app-shell .reports-page .report-cards > article:nth-child(3) {
+  background: var(--report-tint-3);
+}
+
+.app-shell .ledger-composer {
+  border-top: 1px solid var(--line);
+  background: var(--surface-card);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.app-shell .ledger-composer__input {
+  border-radius: 0.875rem;
+}
+
+.app-shell .ledger-composer__input:focus-within {
+  background: var(--surface-card);
+}
+
+.app-shell .metric-top span,
+.app-shell .metric-detail,
+.app-shell .metric p,
+.app-shell .reports-page .report-cards > article > span,
+.app-shell .accounts-page .account-card > small {
+  font-size: 0.6875rem;
+}
+
+.app-shell .accounts-page .account-card p {
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.app-shell .overview-page .metrics > .metric {
+  display: flex;
+  min-width: 0;
+  min-height: 7.25rem;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.app-shell .overview-page .metric-top {
+  min-height: 2rem;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.app-shell .overview-page .metric-top span {
+  min-width: 0;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  overflow-wrap: anywhere;
+}
+
+.app-shell .overview-page .metric-top svg {
+  flex: 0 0 auto;
+}
+
+.app-shell .overview-page .metric-amount {
+  margin: 0.75rem 0 0;
+  font-size: clamp(0.9rem, 2.2vw, 1.3rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .reports-page .report-cards > article {
+  display: flex;
+  min-width: 0;
+  min-height: 7rem;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+.app-shell .reports-page .report-cards > article > span {
+  min-height: 2rem;
+  line-height: 1.25;
+}
+
+.app-shell .reports-page .report-cards > article > strong {
+  margin: 0.75rem 0 0;
+  font-size: clamp(1.05rem, 2vw, 1.45rem);
+  line-height: 1.2;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .accounts-page .account-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0;
+}
+
+.app-shell .accounts-page .account-card > small {
+  min-height: 1rem;
+  line-height: 1.25;
+}
+
+.app-shell .accounts-page .account-card h2 {
+  min-width: 0;
+  min-height: 1.1rem;
+  line-height: 1.25;
+}
+
+.app-shell .accounts-page .account-card > strong.metric-amount {
+  margin: 0;
+  font-size: clamp(1rem, 1.7vw, 1.25rem);
+  line-height: 1.25;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .accounts-page .account-status-action {
+  align-self: flex-start;
+  margin-top: 0.75rem;
+}
+
+.app-shell .modal-backdrop,
+.app-shell [class~="fixed"][class~="inset-0"][class~="z-50"] {
+  backdrop-filter: none;
+}
+
+.min-h-screen.bg-surface.font-sans.text-on-surface > header {
+  background: var(--surface-card);
+  backdrop-filter: none;
+}
+
+.min-h-screen.bg-surface.font-sans.text-on-surface > main > section:first-child {
+  background: var(--paper);
+}
+
+/* Keep Day and Month on the same grid so the Overview header cannot reflow on toggle. */
+.app-shell .page-title > .overview-filter-controls {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  width: min(24rem, 100%);
+  max-width: 100%;
+  min-width: 0;
+  flex: 0 1 24rem;
+  flex-shrink: 1;
+}
+
+.app-shell .overview-period-toggle {
+  width: max-content;
+  min-width: 0;
+}
+
+.app-shell .overview-period-option {
+  height: 2.8rem;
+  min-height: 2.8rem;
+  box-sizing: border-box;
+}
+
+.app-shell .overview-period-option:hover {
+  transform: none;
+}
+
+.app-shell .overview-period-picker {
+  width: 100%;
+  min-width: 0;
+  flex: none;
+}
+
+.app-shell .overview-period-picker > .relative {
+  width: 100%;
+  height: 2.8rem;
+  min-width: 0;
+}
+
+.app-shell .overview-period-picker .workspace-control {
+  width: 100%;
+  height: 2.8rem;
+  min-height: 2.8rem;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.app-shell .overview-period-picker > button > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .app-shell .page-title > .overview-filter-controls {
+    width: 100%;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 460px) {
+  .app-shell .page-title > .overview-filter-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1099px) {
+  .app-shell .accounts-page .account-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell .accounts-page .account-grid > .account-card:last-child:nth-child(odd) {
+    width: calc((100% - 1rem) / 2);
+  }
+}
+
+.min-h-screen.bg-surface.font-sans.text-on-surface > main > section:first-child [class*="max-w-4xl"][class*="rounded-2xl"] {
+  border-radius: 0.875rem;
+  box-shadow: var(--shadow-1);
+}
+
+.min-h-screen.bg-surface.font-sans.text-on-surface > main > section:first-child [class*="grid-cols-3"] > div {
+  border-radius: 0.75rem;
+  background: var(--surface-card);
+}
+
+.min-h-screen.bg-surface.font-sans.text-on-surface > main > section:not(:first-child) article,
+.min-h-screen.bg-surface.font-sans.text-on-surface > main > section:not(:first-child) [class*="rounded-2xl"][class*="border-border-standard"] {
+  border-radius: 0.875rem;
+}
+
+.app-shell .profile-trigger {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  padding: 0.125rem;
+  border: 1px solid var(--line);
+  border-radius: 9999px;
+  background: var(--surface-card);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.app-shell .profile-trigger:hover {
+  border-color: var(--good-line);
+  background: var(--surface-2);
+}
+
+.app-shell .profile-trigger:focus-visible,
+.app-shell .profile-menu-action:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.app-shell #profile-menu {
+  width: 13.5rem;
+  padding: 0.375rem;
+  border-radius: 0.875rem;
+  box-shadow: var(--shadow-1);
+}
+
+.app-shell .profile-menu-action {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 0;
+  border-radius: 0.625rem;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: start;
+  transition: background-color 150ms ease;
+}
+
+.app-shell .profile-menu-action:hover {
+  background: var(--surface-2);
+}
+
+.app-shell .sidebar .sidebar-bottom > .user-card {
+  width: 3rem;
+  min-height: 3rem;
+  justify-self: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9999px;
+  background: transparent;
+}
+
+.app-shell .sidebar .sidebar-bottom > .user-card:hover {
+  border-color: var(--good-line);
+  background: var(--surface-2);
+}
+
+.app-shell .sidebar:not(.is-collapsed) .sidebar-bottom > .user-card.user-card--demo {
+  width: 100%;
+  justify-self: stretch;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.75rem;
+  background: var(--surface-2);
+}
+
+.app-shell .sidebar:not(.is-collapsed) .sidebar-bottom > .user-card.user-card--demo:hover {
+  border-color: var(--good-line);
+  background: var(--good-bg);
+}
+
+.app-shell .sidebar:not(.is-collapsed) .user-card--demo .user-card-copy {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: start;
+}
+
+.app-shell .sidebar:not(.is-collapsed) .user-card--demo .user-card-copy strong {
+  display: block;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 460px) {
+  .app-shell .overview-page .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+
+  .app-shell .overview-page .metrics > .metric {
+    min-height: 6rem;
+    padding: 0.8rem;
+  }
+
+  .app-shell .overview-page .metric-amount {
+    font-size: clamp(0.8rem, 4vw, 1.05rem);
+  }
+}
+
+/* Keep every application scroll surface on the Shop Pro palette. */
+* {
+  scrollbar-color: color-mix(in srgb, var(--muted) 54%, var(--surface-2)) var(--surface-2);
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid var(--surface-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 54%, var(--surface-2));
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-ink);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: var(--green);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--surface-2);
+}
+
+@media (forced-colors: active) {
+  * {
+    scrollbar-color: auto;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: Canvas;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border-color: Canvas;
+    background: ButtonText;
+  }
+}
+
+/* Keep Settings compact with grouped navigation and one focused panel. */
+.app-shell .settings-page .settings-layout {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.app-shell .settings-page .settings-nav {
+  position: sticky;
+  top: 0.75rem;
+  display: flex;
+  max-height: calc(100vh - 1.5rem);
+  flex-direction: column;
+  gap: 0.35rem;
+  overflow-y: auto;
+  padding: 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--surface-card);
+}
+
+.app-shell .settings-page .settings-nav-group {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.3rem 0.2rem 0.55rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.app-shell .settings-page .settings-nav-group:last-child {
+  border-bottom: 0;
+  padding-bottom: 0.2rem;
+}
+
+.app-shell .settings-page .settings-nav-label {
+  padding: 0.25rem 0.65rem 0.35rem;
+  color: var(--muted);
+  font-size: 0.625rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.app-shell .settings-page .settings-nav-item {
+  display: flex;
+  min-width: 0;
+  min-height: 2.65rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.app-shell .settings-page .settings-nav-item svg {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.app-shell .settings-page .settings-nav-item:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.app-shell .settings-page .settings-nav-item[aria-current="page"] {
+  border-color: var(--accent-line-2);
+  background: var(--tint);
+  color: var(--accent-ink);
+}
+
+.app-shell .settings-page .settings-nav-item[aria-current="page"] svg {
+  color: var(--accent-ink);
+}
+
+.app-shell .settings-page .settings-nav-item:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.app-shell .settings-page .settings-content {
+  min-width: 0;
+}
+
+.app-shell .settings-page .settings-content > [hidden],
+.app-shell .settings-page .settings-content > section[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .app-shell .settings-page .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .app-shell .settings-page .settings-nav {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: none;
+    gap: 0.35rem;
+    overflow: visible;
+  }
+
+  .app-shell .settings-page .settings-nav-group {
+    display: grid;
+    align-content: start;
+    gap: 0.2rem;
+    padding: 0.25rem;
+    border: 0;
+  }
+
+  .app-shell .settings-page .settings-nav-label {
+    display: block;
+    padding-inline: 0.55rem;
+  }
+
+  .app-shell .settings-page .settings-nav-item {
+    min-height: 2.75rem;
+    width: 100%;
+    min-width: 0;
+    gap: 0.5rem;
   }
 }
