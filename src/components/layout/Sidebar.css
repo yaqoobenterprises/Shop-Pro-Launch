@@ -1,0 +1,60 @@
+/* The collapsed desktop rail keeps only the Shop Plus mark. */
+.app-shell #app-sidebar.is-collapsed {
+  gap: 0;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.app-shell #app-sidebar.is-collapsed .side-brand {
+  position: relative;
+  display: grid;
+  width: 2.5rem;
+  min-height: 2.5rem;
+  flex: 0 0 2.5rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+}
+
+.app-shell #app-sidebar.is-collapsed .brand {
+  width: 2rem;
+  height: 2rem;
+  justify-content: center;
+}
+
+.app-shell #app-sidebar.is-collapsed .brand-mark {
+  width: 2rem;
+  height: 2rem;
+}
+
+.app-shell #app-sidebar.is-collapsed nav,
+.app-shell #app-sidebar.is-collapsed .sidebar-bottom {
+  display: none;
+}
+
+.app-shell #app-sidebar.is-collapsed .sidebar-toggle {
+  position: absolute;
+  z-index: 1;
+  inset: 0.125rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-color: var(--line);
+  background: var(--paper);
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: var(--shadow-1);
+  transition: opacity 150ms ease, background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.app-shell #app-sidebar.is-collapsed .side-brand:hover .sidebar-toggle,
+.app-shell #app-sidebar.is-collapsed .side-brand:focus-within .sidebar-toggle,
+.app-shell #app-sidebar.is-collapsed .sidebar-toggle:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell #app-sidebar.is-collapsed .sidebar-toggle {
+    transition: none;
+  }
+}

@@ -5,6 +5,7 @@ import { useI18n } from "../../i18n";
 import { APP_NAME } from "../../config/app";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
+import "./Sidebar.css";
 import {
   BarChart3,
   LayoutDashboard,
@@ -22,7 +23,9 @@ const SIDEBAR_COLLAPSED_KEY = "shop-pro.sidebar-collapsed";
 const MIN_SIDEBAR_WIDTH = 208;
 const MAX_SIDEBAR_WIDTH = 360;
 const DEFAULT_SIDEBAR_WIDTH = 244;
-const COLLAPSED_SIDEBAR_WIDTH = 72;
+const COLLAPSED_SIDEBAR_WIDTH = 56;
+const COLLAPSE_SIDEBAR_AT = 176;
+const EXPAND_SIDEBAR_AT = 220;
 
 const clampSidebarWidth = (width: number) =>
   Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, width));
@@ -89,15 +92,16 @@ export const Sidebar: React.FC = () => {
     if (persist) saveSidebarWidth(nextWidth);
   };
 
-  const toggleCollapsed = () => {
-    const nextCollapsed = !isCollapsed;
-    setIsCollapsed(nextCollapsed);
+  const persistCollapsedState = (collapsed: boolean) => {
+    setIsCollapsed(collapsed);
     try {
-      window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(nextCollapsed));
+      window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(collapsed));
     } catch {
       // Keep the selected layout for this session when storage is unavailable.
     }
   };
+
+  const toggleCollapsed = () => persistCollapsedState(!isCollapsed);
 
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || isCollapsed) return;
@@ -116,7 +120,16 @@ export const Sidebar: React.FC = () => {
     const start = resizeStart.current;
     if (!start || start.pointerId !== event.pointerId) return;
     const pointerDelta = start.isRtl ? start.startX - event.clientX : event.clientX - start.startX;
-    updateSidebarWidth(start.startWidth + pointerDelta);
+    const requestedWidth = start.startWidth + pointerDelta;
+
+    if (!isCollapsed && requestedWidth <= COLLAPSE_SIDEBAR_AT) {
+      persistCollapsedState(true);
+    } else if (isCollapsed && requestedWidth >= EXPAND_SIDEBAR_AT) {
+      persistCollapsedState(false);
+      updateSidebarWidth(requestedWidth);
+    } else if (!isCollapsed) {
+      updateSidebarWidth(requestedWidth);
+    }
   };
 
   const finishResize = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -239,16 +252,17 @@ export const Sidebar: React.FC = () => {
         </button>
       </div>
 
-      {!isCollapsed && (
+      {(!isCollapsed || isResizing) && (
         <div
           className="sidebar-resize-handle"
-          role="separator"
-          aria-label={t("nav.resizeSidebar")}
-          aria-orientation="vertical"
-          aria-valuemin={MIN_SIDEBAR_WIDTH}
-          aria-valuemax={MAX_SIDEBAR_WIDTH}
-          aria-valuenow={sidebarWidth}
-          tabIndex={0}
+          role={isCollapsed ? "presentation" : "separator"}
+          aria-hidden={isCollapsed || undefined}
+          aria-label={isCollapsed ? undefined : t("nav.resizeSidebar")}
+          aria-orientation={isCollapsed ? undefined : "vertical"}
+          aria-valuemin={isCollapsed ? undefined : MIN_SIDEBAR_WIDTH}
+          aria-valuemax={isCollapsed ? undefined : MAX_SIDEBAR_WIDTH}
+          aria-valuenow={isCollapsed ? undefined : sidebarWidth}
+          tabIndex={isCollapsed ? -1 : 0}
           onPointerDown={startResize}
           onPointerMove={moveResize}
           onPointerUp={finishResize}
