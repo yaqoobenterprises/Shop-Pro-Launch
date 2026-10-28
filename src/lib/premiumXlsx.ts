@@ -44,7 +44,7 @@ const columnName = (column: number): string => {
 };
 
 const safeSheetName = (name: string): string => {
-  const cleaned = name.replace(/[\\/*?:[\]]/g, " ").trim().replace(/^'+|'+$/g, "");
+  const cleaned = name.split("\\\\").join(" ").replace(/[\\/:*?\\[\\]]/g, " ").trim().replace(/^'+|'+$/g, "");
   return (cleaned || "Report").slice(0, 31);
 };
 
@@ -143,8 +143,8 @@ ${views}
 <sheetFormatPr defaultRowHeight="22"/>
 <cols>${columns}</cols>
 <sheetData>${sheetRows}</sheetData>
-<mergeCells count="3">${merges}</mergeCells>
 ${filter}
+<mergeCells count="3">${merges}</mergeCells>
 <pageMargins left="0.3" right="0.3" top="0.5" bottom="0.5" header="0.2" footer="0.2"/>
 <pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/>
 </worksheet>`;
