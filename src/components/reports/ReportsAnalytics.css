@@ -607,3 +607,8 @@
   .app-shell .reports-modern__apply,
   .app-shell .reports-modern__reset { transition: none; }
 }
+
+.app-shell .reports-modern__kpi--profit.is-negative {
+  --kpi-accent: var(--danger);
+  --kpi-wash: var(--danger-bg);
+}
