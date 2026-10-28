@@ -1,13 +1,14 @@
 @import "tailwindcss";
-@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/inter";
+@import "@fontsource/noto-naskh-arabic";
 
 /* Make Tailwind dark: utilities follow the app's saved .dark class, not OS preference. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Manrope", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Manrope", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-2);
@@ -726,7 +727,7 @@ input:focus-visible {
 .metric-amount,
 .metric > strong {
   display: block;
-  font: 500 22px "DM Mono", monospace;
+  font: 500 22px var(--font-sans); font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
   margin: 14px 0 8px;
   color: var(--ink);
@@ -865,7 +866,7 @@ input:focus-visible {
   padding-bottom: 26px;
   color: var(--faint);
   font-size: 8px;
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
 }
 
 .chart-bars {
@@ -938,7 +939,7 @@ input:focus-visible {
 }
 
 .score-ring strong {
-  font: 500 24px "DM Mono", monospace;
+  font: 500 24px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
@@ -980,7 +981,7 @@ input:focus-visible {
 
 .health-items strong {
   color: var(--ink);
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
 }
 
 /* Transactions / Activity Panel */
@@ -1033,7 +1034,7 @@ input:focus-visible {
 }
 
 .transaction > strong {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
   font-size: 11px;
 }
 
@@ -1153,7 +1154,7 @@ input:focus-visible {
 }
 
 .table-row > strong {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
   font-size: 11px;
   text-align: right;
 }
@@ -1261,7 +1262,7 @@ input:focus-visible {
 
 .report-cards strong {
   display: block;
-  font: 500 24px "DM Mono", monospace;
+  font: 500 24px var(--font-sans); font-variant-numeric: tabular-nums;
   margin: 20px 0 10px;
   color: var(--ink);
 }
@@ -1304,7 +1305,7 @@ input:focus-visible {
   padding-bottom: 26px;
   font-size: 8px;
   color: var(--muted);
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
 }
 
 .report-bars {
@@ -1375,7 +1376,7 @@ input:focus-visible {
 
 .breakdown-row {
   border-bottom: 1px solid var(--line);
-  font: 10px "DM Mono", monospace;
+  font: 10px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
@@ -1401,7 +1402,7 @@ input:focus-visible {
 }
 
 .balance-total strong {
-  font: 500 20px "DM Mono", monospace;
+  font: 500 20px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
@@ -1476,7 +1477,7 @@ input:focus-visible {
 }
 
 .account-card > strong {
-  font: 500 18px "DM Mono", monospace;
+  font: 500 18px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
   display: block;
 }
@@ -1829,7 +1830,7 @@ html[dir="rtl"] .text-right {
 }
 html[lang="ur"] body,
 html[lang="ur"] .font-sans {
-  font-family: "Noto Naskh Arabic", "Segoe UI", serif;
+  font-family: "Noto Naskh Arabic", var(--font-sans), sans-serif;
   line-height: 1.9;
 }
 
@@ -4239,7 +4240,7 @@ body {
   height: 100%;
   color: var(--ink);
   background: var(--paper);
-  font-family: "Manrope", sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -4747,7 +4748,7 @@ input:focus-visible {
 .metric-amount,
 .metric > strong {
   display: block;
-  font: 500 22px "DM Mono", monospace;
+  font: 500 22px var(--font-sans); font-variant-numeric: tabular-nums;
   letter-spacing: -0.5px;
   margin: 14px 0 8px;
   color: var(--ink);
@@ -4886,7 +4887,7 @@ input:focus-visible {
   padding-bottom: 26px;
   color: var(--faint);
   font-size: 8px;
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
 }
 
 .chart-bars {
@@ -4959,7 +4960,7 @@ input:focus-visible {
 }
 
 .score-ring strong {
-  font: 500 24px "DM Mono", monospace;
+  font: 500 24px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
@@ -5001,7 +5002,7 @@ input:focus-visible {
 
 .health-items strong {
   color: var(--ink);
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
 }
 
 /* Transactions / Activity Panel */
@@ -5054,7 +5055,7 @@ input:focus-visible {
 }
 
 .transaction > strong {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
   font-size: 11px;
 }
 
@@ -5174,7 +5175,7 @@ input:focus-visible {
 }
 
 .table-row > strong {
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
   font-size: 11px;
   text-align: right;
 }
@@ -5282,7 +5283,7 @@ input:focus-visible {
 
 .report-cards strong {
   display: block;
-  font: 500 24px "DM Mono", monospace;
+  font: 500 24px var(--font-sans); font-variant-numeric: tabular-nums;
   margin: 20px 0 10px;
   color: var(--ink);
 }
@@ -5325,7 +5326,7 @@ input:focus-visible {
   padding-bottom: 26px;
   font-size: 8px;
   color: var(--muted);
-  font-family: "DM Mono", monospace;
+  font-family: var(--font-sans); font-variant-numeric: tabular-nums;
 }
 
 .report-bars {
@@ -5396,7 +5397,7 @@ input:focus-visible {
 
 .breakdown-row {
   border-bottom: 1px solid var(--line);
-  font: 10px "DM Mono", monospace;
+  font: 10px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
@@ -5422,7 +5423,7 @@ input:focus-visible {
 }
 
 .balance-total strong {
-  font: 500 20px "DM Mono", monospace;
+  font: 500 20px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
 
@@ -5497,7 +5498,7 @@ input:focus-visible {
 }
 
 .account-card > strong {
-  font: 500 18px "DM Mono", monospace;
+  font: 500 18px var(--font-sans); font-variant-numeric: tabular-nums;
   color: var(--ink);
   display: block;
 }
@@ -5850,7 +5851,7 @@ html[dir="rtl"] .text-right {
 }
 html[lang="ur"] body,
 html[lang="ur"] .font-sans {
-  font-family: "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", "Segoe UI", serif;
+  font-family: "Noto Naskh Arabic", var(--font-sans), sans-serif;
 }
 
 /* Branded, keyboard-friendly form controls shared by every workspace view. */

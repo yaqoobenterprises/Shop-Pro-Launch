@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import "@fontsource-variable/inter";
 @import "tailwindcss";
 
 :root {
@@ -108,7 +108,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; color: var(--ink); background: var(--paper); font-family: "Manrope", sans-serif; -webkit-font-smoothing: antialiased; }
+body { margin: 0; color: var(--ink); background: var(--paper); font-family: "Inter", sans-serif; -webkit-font-smoothing: antialiased; }
 button, textarea, select { font: inherit; }
 input, select, textarea { color: var(--ink); }
 ::placeholder { color: var(--muted); opacity: .8; }
@@ -139,7 +139,7 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .eyebrow { width: fit-content; display: flex; align-items: center; gap: 8px; background: var(--glass-soft); border: 1px solid var(--line); border-radius: 20px; padding: 8px 12px; }
 .live-dot, .success-dot, .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dot); display: inline-block; }
 .hero h1 { font-size: clamp(52px, 5vw, 74px); line-height: .99; letter-spacing: -4.4px; margin: 25px 0 25px; font-weight: 700; }
-.hero h1 em { font-family: Georgia, serif; color: var(--green); font-weight: 400; }
+.hero h1 em { font-family: "Inter", sans-serif; color: var(--green); font-weight: 400; }
 .hero-copy > p { color: var(--muted); font-size: 17px; line-height: 1.75; max-width: 520px; }
 .hero-actions { display: flex; gap: 10px; margin: 32px 0; }
 .hero-actions .button { min-height: 50px; padding-inline: 22px; }
@@ -168,14 +168,14 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .mock-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 .mock-stats > div { border: 1px solid var(--line); background: var(--surface); padding: 14px; border-radius: 8px; position: relative; }
 .mock-stats small { color: var(--muted); display: block; font-size: 7px; }
-.mock-stats strong { display: block; font-family: "DM Mono"; font-size: 13px; margin-top: 8px; }
+.mock-stats strong { display: block; font-family: "Inter"; font-size: 13px; margin-top: 8px; }
 .mock-stats em, .chart-panel em { color: var(--green); font-size: 7px; font-style: normal; }
 .mock-panels { display: grid; grid-template-columns: 1.8fr 1fr; gap: 8px; margin-top: 8px; }
 .chart-panel, .activity-panel { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 14px; }
-.chart-panel > strong { display: block; font-family: "DM Mono"; margin-top: 8px; font-size: 13px; }
+.chart-panel > strong { display: block; font-family: "Inter"; margin-top: 8px; font-size: 13px; }
 .chart-panel svg { width: 100%; height: 155px; margin-top: 12px; }
 .activity-panel > div { display: flex; justify-content: space-between; font-size: 8px; padding: 15px 0; border-bottom: 1px solid var(--line); }
-.activity-panel strong { font-family: "DM Mono"; }
+.activity-panel strong { font-family: "Inter"; }
 .float-card { position: absolute; z-index: 3; background: var(--glass); border: 1px solid var(--line); box-shadow: var(--shadow-sm); border-radius: 9px; padding: 12px 15px; font-size: 9px; backdrop-filter: blur(10px); }
 .float-income { left: -32px; bottom: 47px; }
 .float-income span, .float-income strong { display: block; }
@@ -232,7 +232,7 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .metrics { display: grid; grid-template-columns: repeat(4,1fr); gap: 13px; }
 .metric { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 19px; }
 .metric > div { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
-.metric > strong { display: block; font: 500 21px "DM Mono"; letter-spacing: -1px; margin: 16px 0 10px; }
+.metric > strong { display: block; font: 500 21px "Inter"; letter-spacing: -1px; margin: 16px 0 10px; }
 .metric p { color: var(--muted); font-size: 9px; margin: 0; }
 .metric em { color: var(--green); background: var(--good-bg); padding: 3px 5px; border-radius: 4px; font-style: normal; font-weight: 700; }
 .metric em.neutral { color: var(--orange); background: var(--warn-bg); }
@@ -255,19 +255,19 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .bar-group span { font-size: 8px; color: var(--muted); height: 25px; padding-top: 8px; }
 .score { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: 17px; padding: 24px 0; }
 .score-ring { width: 105px; height: 105px; border-radius: 50%; display: grid; place-content: center; text-align: center; background: radial-gradient(circle,var(--surface) 61%,transparent 63%), conic-gradient(var(--green) 0 86%,var(--track) 86%); }
-.score-ring strong { font: 500 25px "DM Mono"; }
+.score-ring strong { font: 500 25px "Inter"; }
 .score-ring span { color: var(--green); font-size: 8px; font-weight: 700; }
 .score h3 { font-size: 13px; margin: 0 0 6px; }
 .score p { font-size: 10px; line-height: 1.5; color: var(--muted); }
 .health-items { display: grid; gap: 0; }
 .health-items span { border-top: 1px solid var(--line); padding: 10px 0; font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; }
-.health-items strong { color: var(--ink); font-family: "DM Mono"; }
+.health-items strong { color: var(--ink); font-family: "Inter"; }
 .transaction { display: grid; grid-template-columns: 35px 1fr auto; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
 .transaction-icon { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 8px; background: var(--soft); font-size: 8px; font-weight: 800; color: var(--accent-ink); }
 .transaction > div { display: grid; }
 .transaction strong { font-size: 10px; }
 .transaction small { color: var(--muted); font-size: 8px; margin-top: 3px; }
-.transaction > strong { font-family: "DM Mono"; }
+.transaction > strong { font-family: "Inter"; }
 .transaction > strong.positive { color: var(--green); }
 .insight-panel { background: var(--insight-bg); position: relative; overflow: hidden; }
 .insight-panel:after { content: ""; position: absolute; width: 180px; height: 180px; border: 35px solid var(--insight-ring); border-radius: 50%; right: -65px; bottom: -80px; }
@@ -298,7 +298,7 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .answer-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 18px 0; }
 .answer-stats span { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 12px; }
 .answer-stats small { font-size: 7px; color: var(--muted); display: block; }
-.answer-stats strong { font: 500 14px "DM Mono"; display: block; margin-top: 4px; color: var(--accent-ink); }
+.answer-stats strong { font: 500 14px "Inter"; display: block; margin-top: 4px; color: var(--accent-ink); }
 .source-note { color: var(--muted); font-size: 9px; }
 .composer-wrap { padding: 12px max(30px, calc((100% - 800px)/2)) 15px; }
 .composer { border: 1px solid var(--accent-line); background: var(--surface); border-radius: 13px; padding: 13px 13px 9px; box-shadow: 0 10px 35px rgba(38,69,58,.08); }
@@ -325,7 +325,7 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .ledger-row > div:nth-child(2) { display: grid; gap: 3px; }
 .ledger-row strong { font-size: 11px; }
 .ledger-row small, .ledger-row p { color: var(--muted); font-size: 8px; margin: 0; }
-.ledger-row > strong { font-family: "DM Mono"; }
+.ledger-row > strong { font-family: "Inter"; }
 .row-actions { display: flex !important; flex-direction: row; }
 .row-actions button { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 8px; color: var(--muted); font-size: 8px; cursor: pointer; }
 .quick-entry { position: sticky; bottom: 0; background: var(--dock-bg); backdrop-filter: blur(14px); border: 1px solid var(--line); box-shadow: 0 -8px 35px rgba(24,49,41,.07); border-radius: 12px 12px 0 0; padding: 13px; margin-top: 15px; z-index: 4; }
@@ -363,7 +363,7 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .table-row > div > div { display: grid; gap: 3px; }
 .table-row strong { font-size: 10px; }
 .table-row small, .table-row > span { color: var(--muted); font-size: 8px; }
-.table-row > strong { font-family: "DM Mono"; text-align: right; }
+.table-row > strong { font-family: "Inter"; text-align: right; }
 .status-badge { justify-self: start; color: var(--green) !important; background: var(--good-bg); border-radius: 15px; padding: 5px 8px; }
 .empty-state { padding: 55px; display: grid; justify-items: center; gap: 8px; color: var(--muted); }
 .empty-state strong { color: var(--ink); font-size: 12px; }
@@ -378,7 +378,7 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .report-cards article:nth-child(2) { background: linear-gradient(135deg,var(--surface),var(--report-tint-2)); }
 .report-cards article:nth-child(3) { background: linear-gradient(135deg,var(--surface),var(--report-tint-3)); }
 .report-cards span { font-size: 8px; letter-spacing: 1px; font-weight: 800; color: var(--muted); }
-.report-cards strong { display: block; font: 500 24px "DM Mono"; margin: 25px 0 10px; }
+.report-cards strong { display: block; font: 500 24px "Inter"; margin: 25px 0 10px; }
 .report-cards p { color: var(--muted); font-size: 8px; margin: 0; }
 .report-cards em { color: var(--green); background: var(--good-bg); padding: 3px 5px; border-radius: 4px; font-style: normal; font-weight: 700; }
 .report-cards em.warm { color: var(--orange); background: var(--warn-bg); }
@@ -394,11 +394,11 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .breakdown-table { padding-bottom: 9px; }
 .breakdown-head, .breakdown-row { display: grid; grid-template-columns: 1.5fr repeat(4,1fr); gap: 12px; padding: 12px 0; }
 .breakdown-head { border-bottom: 1px solid var(--line); color: var(--muted); font-size: 8px; text-transform: uppercase; font-weight: 700; margin-top: 12px; }
-.breakdown-row { border-bottom: 1px solid var(--line); font: 9px "DM Mono"; }
+.breakdown-row { border-bottom: 1px solid var(--line); font: 9px "Inter"; }
 
 .balance-total { text-align: right; display: grid; gap: 5px; }
 .balance-total small { color: var(--muted); font-size: 8px; letter-spacing: .8px; }
-.balance-total strong { font: 500 19px "DM Mono"; }
+.balance-total strong { font: 500 19px "Inter"; }
 .account-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
 .account-card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
 .account-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 17px; }
@@ -406,7 +406,7 @@ button:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3p
 .account-top button { border: 0; background: transparent; color: var(--muted); cursor: pointer; }
 .account-card > small { color: var(--muted); font-size: 7px; letter-spacing: .8px; }
 .account-card h2 { font-size: 12px; margin: 5px 0 18px; }
-.account-card > strong { font: 500 18px "DM Mono"; }
+.account-card > strong { font: 500 18px "Inter"; }
 .account-card p { border-top: 1px solid var(--line); margin: 18px 0 0; padding-top: 12px; color: var(--muted); font-size: 8px; display: flex; align-items: center; gap: 6px; }
 .account-tools { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
 .stack-form { display: grid; gap: 12px; margin-top: 18px; }

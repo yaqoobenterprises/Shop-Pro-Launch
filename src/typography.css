@@ -33,7 +33,7 @@ html {
 }
 
 body {
-  font-family: var(--font-sans, "Manrope", ui-sans-serif, system-ui, sans-serif);
+  font-family: var(--font-sans, "Inter", ui-sans-serif, system-ui, sans-serif);
   font-size: var(--type-body);
   font-weight: var(--weight-regular);
   line-height: var(--leading-copy);
