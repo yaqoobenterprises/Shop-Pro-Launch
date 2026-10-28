@@ -5,7 +5,7 @@ import { formatPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import { useI18n } from "../../i18n";
 import { DatePicker } from "../common/DatePicker";
-import { MonthPicker } from "../common/MonthPicker";
+import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
 import "./OverviewAnalytics.css";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
@@ -24,7 +24,7 @@ import {
 
 export const LedgerDashboardView: React.FC = () => {
   const { t } = useI18n();
-  const [period, setPeriod] = useState<"day" | "week" | "month" | "custom">("day");
+  const [period, setPeriod] = useState<OverviewPeriod>("day");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
   const [rangeEnd, setRangeEnd] = useState(getKarachiBusinessDate());
@@ -165,57 +165,17 @@ export const LedgerDashboardView: React.FC = () => {
           <h1>Overview</h1>
         </div>
 
-        <div className="title-actions overview-filter-controls">
-          <div className="overview-period-toggle" role="group" aria-label="Overview period">
-            {([
-              ["day", "Day"],
-              ["week", "Week"],
-              ["month", "Month"],
-              ["custom", "Custom"],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={period === value}
-                className={`button overview-period-option ${period === value ? "button-primary" : "button-secondary"}`}
-                onClick={() => setPeriod(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className="overview-period-picker">
-            {period === "month" ? (
-              <MonthPicker
-                value={currentDate.slice(0, 7)}
-                onChange={(value) => setCurrentDate(value)}
-                ariaLabel="Filter month"
-                className="w-full"
-              />
-            ) : period === "custom" ? (
-              <div className="overview-range-picker">
-                <label>
-                  <span>From</span>
-                  <DatePicker value={rangeStart} onChange={setRangeStart} ariaLabel="Overview start date" max={rangeEnd} className="w-full" />
-                </label>
-                <label>
-                  <span>To</span>
-                  <DatePicker value={rangeEnd} onChange={setRangeEnd} ariaLabel="Overview end date" min={rangeStart} max={getKarachiBusinessDate()} className="w-full" />
-                </label>
-              </div>
-            ) : (
-              <DatePicker
-                value={currentDate}
-                onChange={setCurrentDate}
-                ariaLabel={period === "week" ? "Choose a date in the week" : "Filter date"}
-                max={getKarachiBusinessDate()}
-                className="w-full"
-              />
-            )}
-          </div>
-
-        </div>
+        <OverviewPeriodControls
+          period={period}
+          setPeriod={setPeriod}
+          currentDate={currentDate}
+          setCurrentDate={setCurrentDate}
+          rangeStart={rangeStart}
+          setRangeStart={setRangeStart}
+          rangeEnd={rangeEnd}
+          setRangeEnd={setRangeEnd}
+          today={getKarachiBusinessDate()}
+        />
       </div>
 
       {loadError && (
