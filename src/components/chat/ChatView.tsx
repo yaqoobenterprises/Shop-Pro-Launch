@@ -35,7 +35,7 @@ interface UndoState {
 }
 
 export const ChatView: React.FC = () => {
-  const { user, isDemoMode } = useAuth();
+  const { user } = useAuth();
   const { showToast, setCurrentView, entryMode, newEntryRequestId } = useApp();
   const { t } = useI18n();
   const currentUserId = user?.id || "offline-user";
@@ -413,7 +413,6 @@ export const ChatView: React.FC = () => {
         transactions={transactions}
         drafts={drafts}
         accounts={accounts}
-        isDemoMode={isDemoMode}
         canManageTransactions={canManageTransactions}
         onEdit={(tx) => setEditingTransaction(tx)}
         onVoid={(tx) => setVoidingTransaction(tx)}

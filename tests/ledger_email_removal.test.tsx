@@ -4,51 +4,44 @@ import { render, screen } from "@testing-library/react";
 import { TransactionDetailModal } from "../src/components/common/TransactionDetailModal";
 import { Transaction } from "../src/types/ledger";
 
-describe("Ledger Email Removal & Transaction Detail View", () => {
+describe("Cashbook rows and transaction receipt", () => {
   const sampleTx: Transaction = {
     id: "tx-test-12345",
-    organization_id: "org-test-1",
     business_date: "2026-10-11",
     device_entry_time: "2026-10-11T14:30:00.000Z",
     type: "income",
     category_id: "cat-1",
+    category_name: "Repairs",
     amount_paisa: 150000, // Rs 1,500
     raw_text: "Repairs cash received 1500",
-    status: "final",
+    status: "active",
+    idempotency_key: "tx-test-key",
+    created_by: "user-test-1",
     created_by_name: "Staff",
     account_id: "acc-1",
     account_name: "Meezan Bank Account",
-    sync_status: "synced",
+    created_at: "2026-10-11T14:30:00.000Z",
+    updated_at: "2026-10-11T14:30:00.000Z",
   };
 
-  it("renders payment account name prominently instead of author email", () => {
+  it("renders a receipt with amount, account, date, and original description", () => {
     render(
       <TransactionDetailModal
         isOpen={true}
         transaction={sampleTx}
         onClose={vi.fn()}
-      />
+      />,
     );
 
-    // Modal title & amount
-    expect(screen.getByText("Transaction Details")).toBeTruthy();
-    expect(screen.getByText("Rs 1,500")).toBeTruthy();
-
-    // Account Name
-    expect(screen.getByText("Payment Account")).toBeTruthy();
-    expect(screen.getByText("Meezan Bank Account")).toBeTruthy();
-
-    // Formatted time
-    expect(screen.getByText("Device Entry Time")).toBeTruthy();
-    expect(screen.getByText("Business Date")).toBeTruthy();
-    expect(screen.getByText("2026-10-11")).toBeTruthy();
-
-    // Raw text preserved
+    expect(screen.getAllByText("Transaction Receipt").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Rs 1,500").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Meezan Bank Account").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2026-10-11").length).toBeGreaterThan(0);
     expect(screen.getByText("Original Input Text")).toBeTruthy();
-    expect(screen.getByText("Repairs cash received 1500")).toBeTruthy();
+    expect(screen.getAllByText("Repairs cash received 1500").length).toBeGreaterThan(0);
   });
 
-  it("falls back to 'Cash In Hand' when account_name is unspecified", () => {
+  it("shows the Cash In Hand fallback in the receipt when no account is specified", () => {
     const txWithoutAccount: Transaction = {
       ...sampleTx,
       account_name: undefined,
@@ -59,22 +52,28 @@ describe("Ledger Email Removal & Transaction Detail View", () => {
         isOpen={true}
         transaction={txWithoutAccount}
         onClose={vi.fn()}
-      />
+      />,
     );
 
-    expect(screen.getByText("Cash In Hand")).toBeTruthy();
+    // Both the screen detail section and print receipt carry the account.
+    expect(screen.getAllByText("Cash In Hand").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("ChatFeed source code renders account_name rather than created_by_name or email", async () => {
+  it("keeps the Today feed compact and opens a receipt when a transaction is clicked", async () => {
     const chatFeedSource = await import("../src/components/chat/ChatFeed?raw");
-    // Verify that tx.account_name is used
-    expect(chatFeedSource.default).toContain("tx.account_name || \"Cash In Hand\"");
-    // Verify it doesn't display tx.created_by_name in the main feed line
-    expect(chatFeedSource.default).not.toContain("{tx.created_by_name || \"Staff\"}");
+
+    expect(chatFeedSource.default).toContain("onClick={() => setSelectedDetailTx(tx)}");
+    expect(chatFeedSource.default).toContain("{categoryName}");
+    expect(chatFeedSource.default).toContain("formatPaisa(tx.amount_paisa)");
+    expect(chatFeedSource.default).not.toContain("tx.account_name");
+    expect(chatFeedSource.default).not.toContain("tx.raw_text");
+    expect(chatFeedSource.default).not.toContain("tx.note");
+    expect(chatFeedSource.default).not.toContain("tx.created_by_name");
   });
 
-  it("TransactionsExplorerView localizes the 'Account' header instead of showing 'Entered By'", async () => {
+  it("TransactionsExplorerView localizes the 'Account' header and keeps transaction details accessible", async () => {
     const explorerSource = await import("../src/components/sales/TransactionsExplorerView?raw");
+
     expect(explorerSource.default).toContain('t("transactions.account")');
     expect(explorerSource.default).not.toContain(">Entered By<");
     expect(explorerSource.default).toContain("TransactionDetailModal");

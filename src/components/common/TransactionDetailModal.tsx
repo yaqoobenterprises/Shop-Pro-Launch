@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import { Modal } from "./Modal";
 import { Transaction } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
-import { formatKarachiTime } from "../../lib/dates";
 import { formatBusinessDateTime } from "../../regional/format";
 import { getCurrencyConfig } from "../../regional/currencies";
 import { useRegion } from "../../regional/region";
 import { useI18n } from "../../i18n";
-import { formatDate } from "../../lib/utils";
+import { TransactionPrintReceipt } from "./TransactionPrintReceipt";
+import { TransactionReceiptDetails } from "./TransactionReceiptDetails";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -16,16 +16,11 @@ import {
   Scale,
   Copy,
   Check,
-  Calendar,
-  Clock,
-  CreditCard,
-  User,
-  Tag,
-  FileText,
   ShieldCheck,
   Ban,
   Edit2,
   Trash2,
+  Printer,
   RotateCcw,
 } from "lucide-react";
 
@@ -73,16 +68,26 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     : isCapital ? "Capital In"
     : isWithdrawal ? "Withdrawal"
     : "Adjustment";
+  const receiptDescription = transaction.raw_text || transaction.category_name || typeLabel;
+  const handlePrint = () => window.print();
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Transaction Details"
+      title="Transaction Receipt"
       description={`ID: ${transaction.id.slice(0, 8)}...`}
       maxWidth="lg"
     >
       <div className="space-y-5">
+        <TransactionPrintReceipt
+          transaction={transaction}
+          typeLabel={typeLabel}
+          isExpense={isExpense}
+          isVoided={isVoided}
+          receiptDescription={receiptDescription}
+        />
+
         {/* Header Hero Card */}
         <div
           className={`flex items-center justify-between rounded-xl border p-4 ${
@@ -178,80 +183,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           </div>
         )}
 
-        {/* Core Financial & Account Info */}
-        <div className="grid grid-cols-1 gap-3 rounded-xl border border-border-standard bg-surface-container-low/40 p-4 sm:grid-cols-2">
-          <div className="flex items-start gap-2.5">
-            <CreditCard className="mt-0.5 h-4 w-4 text-secondary shrink-0" />
-            <div>
-              <p className="text-[11px] font-medium text-text-muted">{t("transaction.account")}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                {transaction.account_name || "Cash In Hand"}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5">
-            <Calendar className="mt-0.5 h-4 w-4 text-secondary shrink-0" />
-            <div>
-              <p className="text-[11px] font-medium text-text-muted">{t("transaction.businessDateLabel")}</p>
-              <p className="text-sm font-semibold text-on-surface font-mono">
-                {transaction.business_date}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5">
-            <Clock className="mt-0.5 h-4 w-4 text-secondary shrink-0" />
-            <div>
-              <p className="text-[11px] font-medium text-text-muted">{t("transaction.deviceTime")}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                {formatKarachiTime(transaction.device_entry_time)}
-                <span className="ml-1 text-[11px] font-normal text-text-muted">
-                  ({formatDate(transaction.device_entry_time)})
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2.5">
-            <User className="mt-0.5 h-4 w-4 text-secondary shrink-0" />
-            <div>
-              <p className="text-[11px] font-medium text-text-muted">{t("transaction.recordedBy")}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                {transaction.created_by_name || "Staff Member"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Original Entry & Notes */}
-        {(transaction.raw_text || transaction.note) && (
-          <div className="space-y-3 rounded-xl border border-border-standard bg-surface-container-low/40 p-4">
-            {transaction.raw_text && (
-              <div>
-                <p className="flex items-center gap-1.5 text-[11px] font-medium text-text-muted">
-                  <FileText className="h-3.5 w-3.5 text-secondary" />
-                  Original Input Text
-                </p>
-                <p className="mt-1 rounded-md bg-surface-bright border border-border-standard px-3 py-2 text-xs font-mono text-on-surface">
-                  {transaction.raw_text}
-                </p>
-              </div>
-            )}
-
-            {transaction.note && (
-              <div>
-                <p className="flex items-center gap-1.5 text-[11px] font-medium text-text-muted">
-                  <Tag className="h-3.5 w-3.5 text-secondary" />
-                  Remarks / Notes
-                </p>
-                <p className="mt-1 text-xs text-on-surface">
-                  {transaction.note}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
+        <TransactionReceiptDetails transaction={transaction} />
 
         {/* Audit & System Metadata */}
         <div className="rounded-xl border border-border-standard bg-surface-container-low/20 p-4 text-xs space-y-2.5">
@@ -319,9 +251,18 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-standard">
-          <div className="flex items-center gap-2">
+        {/* Receipt actions */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-standard pt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary transition-colors hover:bg-surface-container-low"
+            >
+              <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+              Print
+            </button>
+
             {canManage && !isVoided && onEdit && (
               <button
                 type="button"
@@ -329,9 +270,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   onClose();
                   onEdit(transaction);
                 }}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary hover:bg-surface-container-low transition-colors"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary transition-colors hover:bg-surface-container-low"
               >
-                <Edit2 className="h-3.5 w-3.5" />
+                <Edit2 className="h-3.5 w-3.5" aria-hidden="true" />
                 Edit
               </button>
             )}
@@ -339,14 +280,15 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             {canManage && !isVoided && onVoid && (
               <button
                 type="button"
+                title="Remove this entry from active cashbook (audit history is retained)"
                 onClick={() => {
                   onClose();
                   onVoid(transaction);
                 }}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border bg-danger-bg px-3 text-xs font-semibold text-danger hover:bg-danger-bg/80 transition-colors"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border bg-danger-bg px-3 text-xs font-semibold text-danger transition-colors hover:bg-danger-bg/80"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                Void
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Delete
               </button>
             )}
 
@@ -357,9 +299,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   onClose();
                   onRestore(transaction);
                 }}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-primary hover:bg-surface-container-low transition-colors"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-primary transition-colors hover:bg-surface-container-low"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 Restore
               </button>
             )}
@@ -368,7 +310,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-9 rounded-lg bg-on-surface px-4 text-xs font-semibold text-surface-bright hover:bg-secondary transition-colors"
+            className="min-h-9 rounded-lg bg-on-surface px-4 text-xs font-semibold text-surface-bright transition-colors hover:bg-secondary"
           >
             Close
           </button>
