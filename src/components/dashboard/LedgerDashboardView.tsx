@@ -1,6 +1,6 @@
 import React, { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { ledgerService } from "../../services/ledgerService";
-import { getKarachiBusinessDate } from "../../lib/dates";
+import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
 import { formatPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import { useI18n } from "../../i18n";
@@ -161,6 +161,13 @@ export const LedgerDashboardView: React.FC = () => {
   );
 
   const trendRows: ReportTrendBucket[] = rangeTrend;
+  const selectedRangeLabel = period === "day"
+    ? formatDisplayDate(currentDate)
+    : period === "week"
+      ? getWeekRange(currentDate).map(formatDisplayDate).join(" – ")
+      : period === "month"
+        ? new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentDate.slice(0, 7)}-01T00:00:00.000Z`))
+        : `${formatDisplayDate(rangeStart)} – ${formatDisplayDate(rangeEnd)}`;
   const trendMax = Math.max(...trendRows.map((row) => Math.max(row.income_paisa, row.expense_paisa)), 1);
 
   return (
@@ -280,6 +287,7 @@ export const LedgerDashboardView: React.FC = () => {
           <div className="panel-heading">
             <div>
               <h2>Cash flow</h2>
+              <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
             <div className="chart-legend">
               <span>
