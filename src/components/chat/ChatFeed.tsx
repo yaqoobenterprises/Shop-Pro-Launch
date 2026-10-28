@@ -11,12 +11,7 @@ import {
   Wallet,
   Scale,
   RotateCcw,
-  Edit2,
-  Trash2,
-  CloudOff,
-  Ban,
   Check,
-  Info,
 } from "lucide-react";
 import { TransactionDetailModal } from "../common/TransactionDetailModal";
 import { ChatFeedEmptyState } from "./ChatFeedEmptyState";
@@ -25,7 +20,6 @@ interface ChatFeedProps {
   transactions: Transaction[];
   drafts: TransactionDraft[];
   accounts: LedgerAccount[];
-  isDemoMode: boolean;
   canManageTransactions: boolean;
   onEdit: (tx: Transaction) => void;
   onVoid: (tx: Transaction) => void;
@@ -37,7 +31,6 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
   transactions,
   drafts,
   accounts,
-  isDemoMode,
   canManageTransactions,
   onEdit,
   onVoid,
@@ -157,14 +150,11 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
         )}
         {transactions.map((tx, index) => {
           const isVoided = tx.status === "voided";
-          const isQueued = !tx.created_at; // local queued entries don't have server created_at yet
-
           const isIncome = tx.type === "income";
           const isExpense = tx.type === "expense";
           const isCapital = tx.type === "capital_in";
           const isWithdrawal = tx.type === "withdrawal";
-
-          const timeStr = formatKarachiTime(tx.device_entry_time);
+          const categoryName = tx.category_name || tx.type.replace("_", " ");
 
           const typeTone =
             isIncome ? "text-primary"
@@ -172,57 +162,50 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
             : isWithdrawal ? "text-warning"
             : isCapital ? "text-primary"
             : "text-secondary";
+
           return (
             <article
               key={tx.id}
-              className={`ledger-entry-row ${index < 5 ? "ledger-entry-row--enter" : ""} py-3.5 ${isVoided ? "opacity-60" : ""}`}
+              className={`ledger-entry-row ${index < 5 ? "ledger-entry-row--enter" : ""} border-b-0 ${isVoided ? "opacity-60" : ""}`}
               style={index < 5 ? { "--entry-animation-delay": `${index * 36}ms` } as React.CSSProperties : undefined}
             >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <div
+              <button
+                type="button"
+                onClick={() => setSelectedDetailTx(tx)}
+                aria-label={`Open receipt for ${categoryName} transaction`}
+                title="View transaction receipt"
+                className="group flex w-full items-center justify-between gap-3 rounded-lg px-1 py-3.5 text-left transition-colors hover:bg-surface-container-low/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:px-2"
+              >
+                <span className="flex min-w-0 items-center gap-3">
+                  <span
                     className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-surface-container-low ${typeTone}`}
+                    aria-hidden="true"
                   >
-                    {isIncome ?
-                      <ArrowDownLeft className="h-4 w-4" aria-hidden="true" />
-                    : isExpense ?
-                      <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                    : isCapital ?
-                      <Landmark className="h-4 w-4" aria-hidden="true" />
-                    : isWithdrawal ?
-                      <Wallet className="h-4 w-4" aria-hidden="true" />
-                    : <Scale className="h-4 w-4" aria-hidden="true" />}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <h3 className="truncate text-sm font-semibold text-on-surface">
-                        {tx.category_name || tx.type.replace("_", " ")}
-                      </h3>
-                      {isVoided && (
-                        <span className="rounded-sm bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold text-danger">
-                          Voided
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-text-muted">
-                      <span className="font-medium text-secondary">{tx.account_name || "Cash In Hand"}</span>
-                      {!isDemoMode && (
-                        <>
-                          <span aria-hidden="true">·</span>
-                          <time>{timeStr}</time>
-                          {isQueued && (
-                            <span className="inline-flex items-center gap-1 font-medium text-warning">
-                              <CloudOff className="h-3 w-3" aria-hidden="true" />{" "}
-                              Queued
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                    {isIncome ? (
+                      <ArrowDownLeft className="h-4 w-4" />
+                    ) : isExpense ? (
+                      <ArrowUpRight className="h-4 w-4" />
+                    ) : isCapital ? (
+                      <Landmark className="h-4 w-4" />
+                    ) : isWithdrawal ? (
+                      <Wallet className="h-4 w-4" />
+                    ) : (
+                      <Scale className="h-4 w-4" />
+                    )}
+                  </span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-sm font-semibold text-on-surface">
+                      {categoryName}
+                    </span>
+                    {isVoided && (
+                      <span className="shrink-0 rounded-sm bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold text-danger">
+                        Voided
+                      </span>
+                    )}
+                  </span>
+                </span>
 
-                <p
+                <span
                   className={`shrink-0 font-mono text-sm font-semibold tabular-nums sm:text-base ${
                     isVoided ? "line-through text-text-muted"
                     : isIncome ? "text-primary"
@@ -232,71 +215,8 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                 >
                   {isExpense ? "−" : ""}
                   {formatPaisa(tx.amount_paisa)}
-                </p>
-              </div>
-
-              {!isDemoMode && tx.raw_text && tx.raw_text !== tx.category_name && (
-                <p className="ml-12 mt-1 truncate text-xs text-text-muted">
-                  {tx.raw_text}
-                </p>
-              )}
-              {!isDemoMode && tx.note && (
-                <p className="ml-12 mt-1 text-xs text-secondary">{tx.note}</p>
-              )}
-
-              {!isDemoMode && (isVoided ?
-                <div className="ml-12 mt-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="flex items-center gap-1.5 text-xs text-danger">
-                    <Ban className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    Voided: {tx.void_reason}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setSelectedDetailTx(tx)}
-                      aria-label={`View details for ${tx.category_name || tx.type} transaction`}
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border-standard bg-surface-bright px-2.5 text-xs font-medium text-secondary transition-colors hover:bg-surface-container-low"
-                    >
-                      <Info className="h-3.5 w-3.5" aria-hidden="true" /> Details
-                    </button>
-                    {canManageTransactions && (
-                      <button
-                        onClick={() => onRestore(tx)}
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border-standard bg-surface-bright px-2.5 text-xs font-medium text-primary transition-colors hover:bg-surface-container-low"
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />{" "}
-                        Restore
-                      </button>
-                    )}
-                  </div>
-                </div>
-              : <div className="ml-12 mt-2 flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedDetailTx(tx)}
-                    aria-label={`View details for ${tx.category_name || tx.type} transaction`}
-                    className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border-standard bg-surface-bright px-2.5 text-xs font-medium text-secondary transition-colors hover:bg-surface-container-low"
-                  >
-                    <Info className="h-3.5 w-3.5" aria-hidden="true" /> Details
-                  </button>
-                  {canManageTransactions && (
-                    <>
-                      <button
-                        onClick={() => onEdit(tx)}
-                        aria-label={`Edit ${tx.category_name || tx.type} transaction`}
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border-standard bg-surface-bright px-2.5 text-xs font-medium text-secondary transition-colors hover:bg-surface-container-low"
-                      >
-                        <Edit2 className="h-3.5 w-3.5" aria-hidden="true" /> Edit
-                      </button>
-                      <button
-                        onClick={() => onVoid(tx)}
-                        aria-label={`Void ${tx.category_name || tx.type} transaction`}
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-md border border-border-standard bg-surface-bright px-2.5 text-xs font-medium text-secondary transition-colors hover:border-danger-border hover:bg-danger-bg hover:text-danger"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" /> Void
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
+                </span>
+              </button>
             </article>
           );
         })}
