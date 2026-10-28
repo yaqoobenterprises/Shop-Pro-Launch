@@ -1,5 +1,4 @@
 import type { Transaction } from "../types/ledger";
-import { getKarachiBusinessDate } from "./dates";
 export interface ReportTrendBucket {
   key: string;
   label: string;
@@ -191,18 +190,4 @@ export const calculateReportTotals = (transactions: Transaction[]) => {
     adjustment_out_paisa: 0,
     transaction_count: 0,
   });
-};
-
-export const getWeekRangeForDate = (value: string): [string, string] => {
-  const [year, month, day] = value.split("-").map(Number);
-  const selected = new Date(Date.UTC(year, month - 1, day));
-  const mondayOffset = (selected.getUTCDay() + 6) % 7;
-  const start = new Date(selected);
-  start.setUTCDate(start.getUTCDate() - mondayOffset);
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 6);
-  const startDate = toIsoDate(start);
-  const endDate = toIsoDate(end);
-  const today = getKarachiBusinessDate();
-  return [startDate, endDate > today ? today : endDate];
 };
