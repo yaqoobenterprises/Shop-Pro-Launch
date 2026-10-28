@@ -63,18 +63,11 @@ export const cellStyle = (
     if (columnKind === "percent") return 10;
     return 7;
   }
-  if (alternate && columnKind === "money") return 12;
-  if (alternate) return 11;
-  if (columnKind === "money") return 5;
   if (columnKind === "date") return 6;
+  if (columnKind === "money") return alternate ? 12 : 5;
   if (columnKind === "number") return 9;
   if (columnKind === "percent") return 10;
-  return 4;
-};
-
-export const excelDateSerial = (value: string): number => {
-  const [year, month, day] = value.split("-").map(Number);
-  return Math.round((Date.UTC(year, month - 1, day) - Date.UTC(1899, 11, 30)) / 86400000);
+  return alternate ? 11 : 4;
 };
 
 export const buildCell = (
