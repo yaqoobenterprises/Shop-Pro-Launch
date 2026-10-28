@@ -55,14 +55,14 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       ],
     }));
   const summaryRows = [
-    { values: ["Income", rupees(totals.income_paisa), "Matched active entries"], kind: "data" as const },
-    { values: ["Expenses", rupees(totals.expense_paisa), "Matched active entries"], kind: "data" as const },
-    { values: ["Net profit", rupees(totals.net_profit_paisa), "Income less operating expenses"], kind: "total" as const },
-    { values: ["Capital introduced", rupees(totals.capital_in_paisa), "Non-operating inflow"], kind: "data" as const },
-    { values: ["Owner drawings", rupees(totals.withdrawal_paisa), "Non-operating outflow"], kind: "data" as const },
-    { values: ["Cash adjustments in", rupees(totals.adjustment_in_paisa), "Separate from operating profit"], kind: "data" as const },
-    { values: ["Cash adjustments out", rupees(totals.adjustment_out_paisa), "Separate from operating profit"], kind: "data" as const },
-    { values: ["Transactions", totals.transaction_count, "Count of filtered active entries"], kind: "total" as const },
+    { values: ["Income", rupees(totals.income_paisa), null, "Matched active entries"], kind: "data" as const },
+    { values: ["Expenses", rupees(totals.expense_paisa), null, "Matched active entries"], kind: "data" as const },
+    { values: ["Net profit", rupees(totals.net_profit_paisa), null, "Income less operating expenses"], kind: "total" as const },
+    { values: ["Capital introduced", rupees(totals.capital_in_paisa), null, "Non-operating inflow"], kind: "data" as const },
+    { values: ["Owner drawings", rupees(totals.withdrawal_paisa), null, "Non-operating outflow"], kind: "data" as const },
+    { values: ["Cash adjustments in", rupees(totals.adjustment_in_paisa), null, "Separate from operating profit"], kind: "data" as const },
+    { values: ["Cash adjustments out", rupees(totals.adjustment_out_paisa), null, "Separate from operating profit"], kind: "data" as const },
+    { values: ["Active transactions", null, totals.transaction_count, "Count of filtered active entries"], kind: "total" as const },
   ];
   const sheets: WorkbookSheet[] = [
     {
@@ -70,7 +70,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       title: "SHOP PRO | FINANCIAL REPORT",
       subtitle: `Reporting period: ${rangeLabel}`,
       metadata: `${metadata} · Generated ${getKarachiBusinessDate()}`,
-      columns: [{ header: "Metric", width: 29 }, { header: "Value", width: 20, kind: "money" }, { header: "Context", width: 42 }],
+      columns: [{ header: "Metric", width: 29 }, { header: "Amount (Rs)", width: 20, kind: "money" }, { header: "Entries", width: 13, kind: "number" }, { header: "Context", width: 42 }],
       rows: summaryRows,
       freezeRows: 5,
     },
