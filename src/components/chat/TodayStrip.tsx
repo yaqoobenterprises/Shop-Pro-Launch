@@ -94,7 +94,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
             <span>{t("dashboard.expenses")}</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </div>
-          <div className="summary-metric__value font-mono tabular-nums">
+          <div className="summary-metric__value cashbook-summary__amount font-mono tabular-nums">
             <AnimatedAmount amountPaisa={summary.expense_paisa} />
           </div>
         </div>
