@@ -9,25 +9,13 @@ import { getKarachiBusinessDate } from '../src/lib/dates';
 afterEach(() => vi.restoreAllMocks());
 
 const makeTransaction = (id: string, type: Transaction['type'], amountPaisa: number, date: string): Transaction => ({
-  id,
-  type,
-  amount_paisa: amountPaisa,
-  category_id: type === 'income' ? 'category-print' : 'category-paper',
-  category_name: type === 'income' ? 'Printing' : 'Paper',
-  account_id: 'account-cash',
-  account_name: 'Till Cash',
-  business_date: date,
-  device_entry_time: `${date}T12:00:00.000Z`,
-  raw_text: type === 'income' ? 'Printing received 300' : 'Paper purchase 100',
-  status: 'active',
-  idempotency_key: id,
-  created_by: 'owner',
-  created_by_name: 'Owner',
-  created_at: `${date}T12:00:00.000Z`,
-  updated_at: `${date}T12:00:00.000Z`,
+  id, type, amount_paisa: amountPaisa, category_id: type === 'income' ? 'category-print' : 'category-paper',
+  category_name: type === 'income' ? 'Printing' : 'Paper', account_id: 'account-cash', account_name: 'Till Cash',
+  business_date: date, device_entry_time: `${date}T12:00:00.000Z`, note: null,
+  raw_text: type === 'income' ? 'Printing received 300' : 'Paper purchase 100', status: 'active',
+  idempotency_key: id, created_by: 'owner', created_by_name: 'Owner',
+  created_at: `${date}T12:00:00.000Z`, updated_at: `${date}T12:00:00.000Z`,
 });
-
-
 describe('real-data dashboard charts', () => {
   it('shows expense categories and current configured account balances, not income categories', async () => {
     vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([{
@@ -111,18 +99,6 @@ describe('real-data dashboard charts', () => {
   it('plots daily cash flow for the selected month and exposes the date range modes', async () => {
     const today = getKarachiBusinessDate();
     vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
-    vi.spyOn(ledgerService, 'getMonthlySummary').mockResolvedValue({
-      month_start: `${today.slice(0, 7)}-01`,
-      year: Number(today.slice(0, 4)),
-      month: Number(today.slice(5, 7)),
-      income_paisa: 30_000,
-      expense_paisa: 10_000,
-      net_profit_paisa: 20_000,
-      capital_in_paisa: 0,
-      withdrawal_paisa: 0,
-      adjustment_in_paisa: 0,
-      adjustment_out_paisa: 0,
-    });
     const allTransactions = vi.spyOn(ledgerService, 'getAllFilteredTransactions').mockResolvedValue([
       makeTransaction('income-month', 'income', 30_000, today),
       makeTransaction('expense-month', 'expense', 10_000, today),
