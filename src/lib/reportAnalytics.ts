@@ -1,5 +1,5 @@
 import type { Transaction } from "../types/ledger";
-
+import { getKarachiBusinessDate } from "./dates";
 export interface ReportTrendBucket {
   key: string;
   label: string;
@@ -9,7 +9,6 @@ export interface ReportTrendBucket {
   net_profit_paisa: number;
   transaction_count: number;
 }
-
 export interface ReportCategoryBucket {
   key: string;
   category_id: string | null;
@@ -18,32 +17,25 @@ export interface ReportCategoryBucket {
   total_paisa: number;
   entry_count: number;
 }
-
 const parseIsoDate = (value: string): Date => {
   const [year, month, day] = value.split("-").map(Number);
   return new Date(Date.UTC(year, month - 1, day));
 };
-
 const toIsoDate = (value: Date): string => value.toISOString().slice(0, 10);
-
 const addDays = (value: Date, days: number): Date => {
   const result = new Date(value);
   result.setUTCDate(result.getUTCDate() + days);
   return result;
 };
-
 const dateDifference = (start: string, end: string): number =>
   Math.max(0, Math.round((parseIsoDate(end).getTime() - parseIsoDate(start).getTime()) / 86400000));
-
 export type TrendGrouping = "day" | "week" | "month";
-
 export const getTrendGrouping = (startDate: string, endDate: string): TrendGrouping => {
   const days = dateDifference(startDate, endDate) + 1;
   if (days <= 31) return "day";
   if (days <= 120) return "week";
   return "month";
 };
-
 const bucketStart = (date: string, grouping: TrendGrouping): string => {
   const parsed = parseIsoDate(date);
   if (grouping === "month") return `${date.slice(0, 7)}-01`;
@@ -53,7 +45,6 @@ const bucketStart = (date: string, grouping: TrendGrouping): string => {
   }
   return date;
 };
-
 const labelBucket = (key: string, grouping: TrendGrouping): string => {
   const date = parseIsoDate(key);
   if (grouping === "month") {
@@ -64,7 +55,6 @@ const labelBucket = (key: string, grouping: TrendGrouping): string => {
   }
   return new Intl.DateTimeFormat("en", { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
 };
-
 export const buildReportTrend = (
   transactions: Transaction[],
   startDate: string,
@@ -75,7 +65,6 @@ export const buildReportTrend = (
   const buckets = new Map<string, ReportTrendBucket>();
   const start = parseIsoDate(startDate);
   const end = parseIsoDate(endDate);
-
   if (grouping === "month") {
     let cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
     const lastMonth = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
@@ -110,7 +99,6 @@ export const buildReportTrend = (
       }
     }
   }
-
   for (const transaction of transactions) {
     const key = bucketStart(transaction.business_date, grouping);
     let bucket = buckets.get(key);
@@ -138,10 +126,8 @@ export const buildReportTrend = (
       bucket.net_profit_paisa -= Number(transaction.amount_paisa) || 0;
     }
   }
-
   return [...buckets.values()].sort((left, right) => left.key.localeCompare(right.key));
 };
-
 export const buildReportCategoryBreakdown = (
   transactions: Transaction[],
 ): ReportCategoryBucket[] => {
@@ -170,7 +156,6 @@ export const buildReportCategoryBreakdown = (
   }
   return [...grouped.values()].sort((left, right) => right.total_paisa - left.total_paisa);
 };
-
 export const calculateReportTotals = (transactions: Transaction[]) => {
   return transactions.reduce((totals, transaction) => {
     const amount = Number(transaction.amount_paisa) || 0;
@@ -206,4 +191,18 @@ export const calculateReportTotals = (transactions: Transaction[]) => {
     adjustment_out_paisa: 0,
     transaction_count: 0,
   });
+};
+
+export const getWeekRangeForDate = (value: string): [string, string] => {
+  const [year, month, day] = value.split("-").map(Number);
+  const selected = new Date(Date.UTC(year, month - 1, day));
+  const mondayOffset = (selected.getUTCDay() + 6) % 7;
+  const start = new Date(selected);
+  start.setUTCDate(start.getUTCDate() - mondayOffset);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const startDate = toIsoDate(start);
+  const endDate = toIsoDate(end);
+  const today = getKarachiBusinessDate();
+  return [startDate, endDate > today ? today : endDate];
 };
