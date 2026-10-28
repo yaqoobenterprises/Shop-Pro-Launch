@@ -46,7 +46,6 @@ export const LedgerDashboardView: React.FC = () => {
   const [dailyData, setDailyData] = useState<DailySummary | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlySummary | null>(null);
   const [rangeSummary, setRangeSummary] = useState<ReturnType<typeof calculateReportTotals> | null>(null);
-  const [monthlyTrend, setMonthlyTrend] = useState<MonthlySummary[]>([]);
   const [rangeTrend, setRangeTrend] = useState<ReportTrendBucket[]>([]);
   const [breakdowns, setBreakdowns] = useState<CategoryBreakdown[]>([]);
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
@@ -60,7 +59,6 @@ export const LedgerDashboardView: React.FC = () => {
     setDailyData(null);
     setMonthlyData(null);
     setRangeSummary(null);
-    setMonthlyTrend([]);
     setRangeTrend([]);
     setBreakdowns([]);
     setAccounts([]);
@@ -80,13 +78,25 @@ export const LedgerDashboardView: React.FC = () => {
       } else if (period === "month") {
         const year = parseInt(currentDate.split("-")[0], 10);
         const month = parseInt(currentDate.split("-")[1], 10);
-        const [mData, trendData] = await Promise.all([
+        const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+        const monthEnd = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+        const today = getKarachiBusinessDate();
+        const endDate = monthEnd > today && startDate <= today ? today : monthEnd;
+        const [mData, records] = await Promise.all([
           ledgerService.getMonthlySummary(year, month),
-          ledgerService.getMonthlyReport(year),
+          ledgerService.getAllFilteredTransactions({ startDate, endDate, status: "active" }),
         ]);
         if (currentRequestId !== requestId.current) return;
         setMonthlyData(mData);
-        setMonthlyTrend(trendData);
+        setRangeTrend(buildReportTrend(records, startDate, endDate));
+        setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
+          business_date: startDate,
+          type: item.type,
+          category_id: item.category_id || "uncategorized",
+          category_name: item.category_name,
+          total_paisa: item.total_paisa,
+          entry_count: item.entry_count,
+        })));
       } else {
         const [startDate, endDate] = period === "week"
           ? getWeekRange(currentDate)
@@ -150,18 +160,7 @@ export const LedgerDashboardView: React.FC = () => {
     [breakdowns],
   );
 
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const trendRows: ReportTrendBucket[] = period === "month"
-    ? monthlyTrend.map((row) => ({
-      key: row.month_start,
-      label: monthNames[(row.month || 1) - 1],
-      title: `${monthNames[(row.month || 1) - 1]} ${row.year}`,
-      income_paisa: row.income_paisa,
-      expense_paisa: row.expense_paisa,
-      net_profit_paisa: row.net_profit_paisa,
-      transaction_count: 0,
-    }))
-    : rangeTrend;
+  const trendRows: ReportTrendBucket[] = rangeTrend;
   const trendMax = Math.max(...trendRows.map((row) => Math.max(row.income_paisa, row.expense_paisa)), 1);
 
   return (
