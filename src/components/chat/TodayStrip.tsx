@@ -66,6 +66,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
             <button
               type="button"
               onClick={onOpenInstallHelp}
+              style={{ display: "none" }}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary transition-colors hover:bg-surface-container-low"
               title="Install App as PWA"
             >
