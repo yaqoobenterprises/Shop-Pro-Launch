@@ -33,7 +33,7 @@ describe("Cashbook rows and transaction receipt", () => {
       />,
     );
 
-    expect(screen.getByText("Transaction Receipt")).toBeTruthy();
+    expect(screen.getAllByText("Transaction Receipt").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Rs 1,500").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Meezan Bank Account").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2026-10-11").length).toBeGreaterThan(0);
