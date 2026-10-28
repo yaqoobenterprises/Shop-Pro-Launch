@@ -46,7 +46,7 @@ export const TransactionPrintReceipt: React.FC<TransactionPrintReceiptProps> = (
     }
   `}</style>
   <div className="transaction-receipt-print" aria-hidden="true">
-    <div style={{ maxWidth: 640, margin: "0 auto", fontFamily: "Arial, sans-serif", fontSize: 13, lineHeight: 1.5 }}>
+    <div style={{ maxWidth: 640, margin: "0 auto", fontFamily: "Inter, sans-serif", fontSize: 13, lineHeight: 1.5 }}>
       <header style={{ textAlign: "center", paddingBottom: 16, marginBottom: 16, borderBottom: "2px solid #222" }}>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Shop Pro</h1>
         <p style={{ margin: "4px 0 0", fontSize: 14 }}>Transaction Receipt</p>
