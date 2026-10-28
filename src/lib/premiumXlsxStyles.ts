@@ -23,7 +23,6 @@ export interface WorkbookSheet {
   freezeRows?: number;
 }
 
-const encoder = new TextEncoder();
 export const xml = (value: unknown): string =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
