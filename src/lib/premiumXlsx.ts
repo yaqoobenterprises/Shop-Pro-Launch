@@ -8,6 +8,8 @@ import {
 } from "./premiumXlsxStyles";
 import { stylesXml } from "./premiumXlsxTheme";
 
+const encoder = new TextEncoder();
+
 const crc32 = (bytes: Uint8Array): number => {
   let crc = 0xffffffff;
   for (const byte of bytes) {
@@ -146,7 +148,9 @@ export const buildPremiumXlsx = (sheets: WorkbookSheet[]): Uint8Array => {
 export const downloadPremiumXlsx = (sheets: WorkbookSheet[], fileName: string): void => {
   const bytes = buildPremiumXlsx(sheets);
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/\.xlsx?$/i, "");
-  const blob = new Blob([bytes], {
+  const outputBuffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(outputBuffer).set(bytes);
+  const blob = new Blob([outputBuffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   const url = URL.createObjectURL(blob);
