@@ -1,21 +1,88 @@
-/* Shared type scale for the public flow, authentication, and signed-in workspace. */
+/* Shared typography tokens for the public flow, authentication, and workspace. */
 :root {
-  --type-display: clamp(2.25rem, 4.8vw, 3.75rem);
-  --type-page: clamp(1.5rem, 1.32rem + 0.7vw, 1.875rem);
-  --type-section: 1.125rem;
+  --type-display: clamp(2.25rem, 4.2vw + 0.9rem, 3.75rem);
+  --type-page: clamp(1.625rem, 1.45rem + 0.7vw, 2rem);
+  --type-section: clamp(1.0625rem, 1.015rem + 0.25vw, 1.1875rem);
   --type-card-title: 1rem;
-  --type-body: 0.875rem;
-  --type-label: 0.8125rem;
+  --type-body: 0.9375rem;
+  --type-label: 0.875rem;
   --type-caption: 0.75rem;
   --type-micro: 0.6875rem;
-  --leading-copy: 1.55;
-  --leading-heading: 1.25;
+  --leading-display: 1.08;
+  --leading-heading: 1.24;
+  --leading-copy: 1.6;
+  --leading-label: 1.4;
+  --tracking-display: -0.05em;
+  --tracking-heading: -0.03em;
+  --tracking-copy: 0;
+  --tracking-label: 0.01em;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+}
+
+/* Keep typography consistent without overriding component-specific size utilities. */
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  font-synthesis: none;
+}
+
+body {
+  font-family: var(--font-sans, "Manrope", ui-sans-serif, system-ui, sans-serif);
+  font-size: var(--type-body);
+  font-weight: var(--weight-regular);
+  line-height: var(--leading-copy);
+  letter-spacing: var(--tracking-copy);
+  font-kerning: normal;
+  font-optical-sizing: auto;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-kerning: inherit;
+  letter-spacing: inherit;
+}
+
+:is(h1, h2, h3, h4, h5, h6) {
+  line-height: var(--leading-heading);
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
+}
+
+p,
+li,
+dd,
+blockquote {
+  line-height: var(--leading-copy);
+  text-wrap: pretty;
+}
+
+small,
+label,
+legend {
+  line-height: var(--leading-label);
+}
+
+.tabular-nums,
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
 .min-h-screen.bg-surface.font-sans.text-on-surface.shop-landing-page > main > section:first-child h1 {
   font-size: var(--type-display);
-  line-height: 1.08;
-  letter-spacing: -0.055em;
+  line-height: var(--leading-display);
+  letter-spacing: var(--tracking-display);
 }
 
 .min-h-screen.bg-surface.font-sans.text-on-surface.shop-landing-page > main > section:not(:first-child) h2 {
@@ -40,7 +107,7 @@
 .auth-screen h1 {
   font-size: clamp(1.375rem, 1.25rem + 0.5vw, 1.625rem);
   line-height: var(--leading-heading);
-  letter-spacing: -0.035em;
+  letter-spacing: var(--tracking-heading);
 }
 
 .auth-screen h2,
@@ -76,7 +143,7 @@
   font-size: var(--type-page);
   font-weight: 750;
   line-height: 1.2;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-heading);
 }
 
 .app-shell .cashbook-summary h1 {
@@ -110,9 +177,9 @@
 .app-shell .settings-section > div:first-child h2,
 .app-shell .settings-section > div:first-child h3 {
   font-size: var(--type-section);
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   line-height: var(--leading-heading);
-  letter-spacing: -0.025em;
+  letter-spacing: var(--tracking-heading);
 }
 
 .app-shell .settings-section h3 {
