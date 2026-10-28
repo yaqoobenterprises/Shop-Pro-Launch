@@ -118,8 +118,13 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
         </label>
         <label className="reports-modern__field">
           <span>Category</span>
-          <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} className="workspace-control w-full">
-            <option value="all">All categories</option>
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            disabled={typeFilter === "capital_in" || typeFilter === "withdrawal" || typeFilter === "adjustment"}
+            className="workspace-control w-full"
+          >
+            <option value="all">{typeFilter === "capital_in" || typeFilter === "withdrawal" || typeFilter === "adjustment" ? "Not applicable for this type" : "All categories"}</option>
             {matchingCategories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}
           </select>
         </label>
