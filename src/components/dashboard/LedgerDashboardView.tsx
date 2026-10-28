@@ -6,6 +6,7 @@ import { AnimatedAmount } from "../common/AnimatedAmount";
 import { useI18n } from "../../i18n";
 import { DatePicker } from "../common/DatePicker";
 import { MonthPicker } from "../common/MonthPicker";
+import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import {
   DailySummary,
   MonthlySummary,
@@ -19,15 +20,33 @@ import {
   ArrowDownLeft,
 } from "lucide-react";
 
+const getWeekRange = (value: string): [string, string] => {
+  const [year, month, day] = value.split("-").map(Number);
+  const selected = new Date(Date.UTC(year, month - 1, day));
+  const offset = (selected.getUTCDay() + 6) % 7;
+  const start = new Date(selected);
+  start.setUTCDate(start.getUTCDate() - offset);
+  const end = new Date(start);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const startDate = start.toISOString().slice(0, 10);
+  const endDate = end.toISOString().slice(0, 10);
+  const today = getKarachiBusinessDate();
+  return [startDate, endDate > today ? today : endDate];
+};
+
 export const LedgerDashboardView: React.FC = () => {
   const { t } = useI18n();
-  const [period, setPeriod] = useState<"day" | "month">("day");
+  const [period, setPeriod] = useState<"day" | "week" | "month" | "custom">("day");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
+  const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
+  const [rangeEnd, setRangeEnd] = useState(getKarachiBusinessDate());
   const [isLoading, setIsLoading] = useState(true);
 
   const [dailyData, setDailyData] = useState<DailySummary | null>(null);
   const [monthlyData, setMonthlyData] = useState<MonthlySummary | null>(null);
+  const [rangeSummary, setRangeSummary] = useState<ReturnType<typeof calculateReportTotals> | null>(null);
   const [monthlyTrend, setMonthlyTrend] = useState<MonthlySummary[]>([]);
+  const [rangeTrend, setRangeTrend] = useState<ReportTrendBucket[]>([]);
   const [breakdowns, setBreakdowns] = useState<CategoryBreakdown[]>([]);
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -39,7 +58,9 @@ export const LedgerDashboardView: React.FC = () => {
     setLoadError(null);
     setDailyData(null);
     setMonthlyData(null);
+    setRangeSummary(null);
     setMonthlyTrend([]);
+    setRangeTrend([]);
     setBreakdowns([]);
     setAccounts([]);
     try {
@@ -55,7 +76,7 @@ export const LedgerDashboardView: React.FC = () => {
         if (currentRequestId !== requestId.current) return;
         setDailyData(daySummary);
         setBreakdowns(bData || []);
-      } else {
+      } else if (period === "month") {
         const year = parseInt(currentDate.split("-")[0], 10);
         const month = parseInt(currentDate.split("-")[1], 10);
         const [mData, trendData] = await Promise.all([
@@ -65,6 +86,27 @@ export const LedgerDashboardView: React.FC = () => {
         if (currentRequestId !== requestId.current) return;
         setMonthlyData(mData);
         setMonthlyTrend(trendData);
+      } else {
+        const [startDate, endDate] = period === "week"
+          ? getWeekRange(currentDate)
+          : [rangeStart, rangeEnd];
+        if (startDate > endDate) throw new Error("The start date must be on or before the end date.");
+        const records = await ledgerService.getAllFilteredTransactions({
+          startDate,
+          endDate,
+          status: "active",
+        });
+        if (currentRequestId !== requestId.current) return;
+        setRangeSummary(calculateReportTotals(records));
+        setRangeTrend(buildReportTrend(records, startDate, endDate));
+        setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
+          business_date: startDate,
+          type: item.type,
+          category_id: item.category_id || "uncategorized",
+          category_name: item.category_name,
+          total_paisa: item.total_paisa,
+          entry_count: item.entry_count,
+        })));
       }
     } catch (err) {
       console.error("Error fetching dashboard summary views:", err);
@@ -78,41 +120,20 @@ export const LedgerDashboardView: React.FC = () => {
     } finally {
       if (currentRequestId === requestId.current) setIsLoading(false);
     }
-  }, [period, currentDate]);
+  }, [period, currentDate, rangeStart, rangeEnd]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
 
-  const activeIncome =
-    period === "day"
-      ? dailyData?.income_paisa || 0
-      : monthlyData?.income_paisa || 0;
-  const activeExpense =
-    period === "day"
-      ? dailyData?.expense_paisa || 0
-      : monthlyData?.expense_paisa || 0;
-  const activeProfit =
-    period === "day"
-      ? dailyData?.net_profit_paisa || 0
-      : monthlyData?.net_profit_paisa || 0;
-
-  const activeCapital =
-    period === "day"
-      ? dailyData?.capital_in_paisa || 0
-      : monthlyData?.capital_in_paisa || 0;
-  const activeWithdrawal =
-    period === "day"
-      ? dailyData?.withdrawal_paisa || 0
-      : monthlyData?.withdrawal_paisa || 0;
-  const activeAdjIn =
-    period === "day"
-      ? dailyData?.adjustment_in_paisa || 0
-      : monthlyData?.adjustment_in_paisa || 0;
-  const activeAdjOut =
-    period === "day"
-      ? dailyData?.adjustment_out_paisa || 0
-      : monthlyData?.adjustment_out_paisa || 0;
+  const activeSummary = period === "day" ? dailyData : period === "month" ? monthlyData : rangeSummary;
+  const activeIncome = activeSummary?.income_paisa || 0;
+  const activeExpense = activeSummary?.expense_paisa || 0;
+  const activeProfit = activeSummary?.net_profit_paisa || 0;
+  const activeCapital = activeSummary?.capital_in_paisa || 0;
+  const activeWithdrawal = activeSummary?.withdrawal_paisa || 0;
+  const activeAdjIn = activeSummary?.adjustment_in_paisa || 0;
+  const activeAdjOut = activeSummary?.adjustment_out_paisa || 0;
 
   const activeAccounts = accounts.filter((account) => account.is_active);
   const totalBalancePaisa = activeAccounts.reduce(
@@ -128,12 +149,19 @@ export const LedgerDashboardView: React.FC = () => {
     [breakdowns],
   );
 
-  const trendMax = Math.max(
-    ...monthlyTrend.map((m) => Math.max(m.income_paisa, m.expense_paisa)),
-    1,
-  );
-
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const trendRows: ReportTrendBucket[] = period === "month"
+    ? monthlyTrend.map((row) => ({
+      key: row.month_start,
+      label: monthNames[(row.month || 1) - 1],
+      title: `${monthNames[(row.month || 1) - 1]} ${row.year}`,
+      income_paisa: row.income_paisa,
+      expense_paisa: row.expense_paisa,
+      net_profit_paisa: row.net_profit_paisa,
+      transaction_count: 0,
+    }))
+    : rangeTrend;
+  const trendMax = Math.max(...trendRows.map((row) => Math.max(row.income_paisa, row.expense_paisa)), 1);
 
   return (
     <div className="page-content overview-page">
@@ -145,37 +173,49 @@ export const LedgerDashboardView: React.FC = () => {
 
         <div className="title-actions overview-filter-controls">
           <div className="overview-period-toggle" role="group" aria-label="Overview period">
-            <button
-              type="button"
-              aria-pressed={period === "day"}
-              className={`button overview-period-option ${period === "day" ? "button-primary" : "button-secondary"}`}
-              onClick={() => setPeriod("day")}
-            >
-              Day
-            </button>
-            <button
-              type="button"
-              aria-pressed={period === "month"}
-              className={`button overview-period-option ${period === "month" ? "button-primary" : "button-secondary"}`}
-              onClick={() => setPeriod("month")}
-            >
-              Month
-            </button>
+            {([
+              ["day", "Day"],
+              ["week", "Week"],
+              ["month", "Month"],
+              ["custom", "Custom"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={period === value}
+                className={`button overview-period-option ${period === value ? "button-primary" : "button-secondary"}`}
+                onClick={() => setPeriod(value)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           <div className="overview-period-picker">
-            {period === "day" ? (
-              <DatePicker
-                value={currentDate}
-                onChange={setCurrentDate}
-                ariaLabel="Filter date"
-                className="w-full"
-              />
-            ) : (
+            {period === "month" ? (
               <MonthPicker
                 value={currentDate.slice(0, 7)}
                 onChange={(value) => setCurrentDate(value)}
                 ariaLabel="Filter month"
+                className="w-full"
+              />
+            ) : period === "custom" ? (
+              <div className="overview-range-picker">
+                <label>
+                  <span>From</span>
+                  <DatePicker value={rangeStart} onChange={setRangeStart} ariaLabel="Overview start date" max={rangeEnd} className="w-full" />
+                </label>
+                <label>
+                  <span>To</span>
+                  <DatePicker value={rangeEnd} onChange={setRangeEnd} ariaLabel="Overview end date" min={rangeStart} max={getKarachiBusinessDate()} className="w-full" />
+                </label>
+              </div>
+            ) : (
+              <DatePicker
+                value={currentDate}
+                onChange={setCurrentDate}
+                ariaLabel={period === "week" ? "Choose a date in the week" : "Filter date"}
+                max={getKarachiBusinessDate()}
                 className="w-full"
               />
             )}
@@ -253,9 +293,9 @@ export const LedgerDashboardView: React.FC = () => {
             </div>
           </div>
 
-          {period === "month" ? (
+          {period !== "day" ? (
             <div>
-              {monthlyTrend.length > 0 ? (
+              {trendRows.length > 0 ? (
                 <div className="cash-chart">
                   <div className="y-labels">
                     <span>{formatPaisa(trendMax)}</span>
@@ -265,21 +305,21 @@ export const LedgerDashboardView: React.FC = () => {
                     <span>0</span>
                   </div>
                   <div className="chart-bars">
-                    {monthlyTrend.map((row, index) => {
-                      const incHeight = Math.min(100, Math.round((row.income_paisa / trendMax) * 100));
-                      const expHeight = Math.min(100, Math.round((row.expense_paisa / trendMax) * 100));
-                      const label = monthNames[(row.month || 1) - 1] || `${row.month}`;
+                    {trendRows.map((row, index) => {
+                      const incHeight = row.income_paisa > 0 ? Math.max(4, Math.min(100, Math.round((row.income_paisa / trendMax) * 100))) : 0;
+                      const expHeight = row.expense_paisa > 0 ? Math.max(4, Math.min(100, Math.round((row.expense_paisa / trendMax) * 100))) : 0;
                       return (
                         <div
                           className="bar-group"
-                          key={row.month_start}
-                          style={{ "--bar-animation-delay": `${Math.min(index, 11) * 18}ms` } as React.CSSProperties}
+                          key={row.key}
+                          title={row.title}
+                          style={{ "--bar-animation-delay": `${Math.min(index, 15) * 18}ms` } as React.CSSProperties}
                         >
                           <div>
-                            <i style={{ height: `${Math.max(incHeight, 4)}%` }} title={`Income: ${formatPaisa(row.income_paisa)}`} />
-                            <i style={{ height: `${Math.max(expHeight, 4)}%` }} title={`Expenses: ${formatPaisa(row.expense_paisa)}`} />
+                            <i style={{ height: `${incHeight}%` }} title={`Income: ${formatPaisa(row.income_paisa)}`} />
+                            <i style={{ height: `${expHeight}%` }} title={`Expenses: ${formatPaisa(row.expense_paisa)}`} />
                           </div>
-                          <span>{label}</span>
+                          <span>{row.label}</span>
                         </div>
                       );
                     })}
