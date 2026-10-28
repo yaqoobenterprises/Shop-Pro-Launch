@@ -78,7 +78,6 @@ export const LedgerReportsView: React.FC = () => {
     [transactions],
   );
   const chartMax = Math.max(1, ...trend.map((bucket) => Math.max(bucket.income_paisa, bucket.expense_paisa)));
-  const rangeLabel = `${formatDisplayDate(filters.fromDate)} – ${formatDisplayDate(filters.toDate)}`;
   const grouping = getTrendGrouping(filters.fromDate, filters.toDate);
   const handleExport = () => {
     setIsExporting(true);
