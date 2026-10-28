@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import baseStyles from "../src/index.css?raw";
-import typographyStyles from "../src/typography.css?raw";
+
+const baseStyles = readFileSync(fileURLToPath(new URL("../src/index.css", import.meta.url)), "utf8");
+const typographyStyles = readFileSync(fileURLToPath(new URL("../src/typography.css", import.meta.url)), "utf8");
 
 describe("project-wide typography system", () => {
   it("uses the bundled Manrope variable font with a resilient system fallback", () => {
