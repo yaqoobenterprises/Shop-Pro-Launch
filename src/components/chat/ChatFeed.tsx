@@ -10,7 +10,6 @@ import {
   Landmark,
   Wallet,
   Scale,
-  RotateCcw,
   Check,
 } from "lucide-react";
 import { TransactionDetailModal } from "../common/TransactionDetailModal";
