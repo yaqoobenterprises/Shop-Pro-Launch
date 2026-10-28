@@ -87,7 +87,7 @@ describe("premium Excel workbook", () => {
     expect(payload).toContain("SHOP PRO | FINANCIAL REPORT");
     expect(payload).toContain('autoFilter ref="A5:B6"');
     expect(payload).toContain('ySplit="5"');
-    expect(payload).toContain("Rs ");
+    expect(payload).toContain("&quot;Rs &quot;");
     expect(payload).toContain("=1+1 is text, not a formula");
     expect(payload).not.toContain("<f>");
   });
