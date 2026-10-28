@@ -3,9 +3,19 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { LedgerDashboardView } from '../src/components/dashboard/LedgerDashboardView';
 import { ledgerService } from '../src/services/ledgerService';
+import type { Transaction } from '../src/types/ledger';
+import { getKarachiBusinessDate } from '../src/lib/dates';
 
 afterEach(() => vi.restoreAllMocks());
 
+const makeTransaction = (id: string, type: Transaction['type'], amountPaisa: number, date: string): Transaction => ({
+  id, type, amount_paisa: amountPaisa, category_id: type === 'income' ? 'category-print' : 'category-paper',
+  category_name: type === 'income' ? 'Printing' : 'Paper', account_id: 'account-cash', account_name: 'Till Cash',
+  business_date: date, device_entry_time: `${date}T12:00:00.000Z`, note: null,
+  raw_text: type === 'income' ? 'Printing received 300' : 'Paper purchase 100', status: 'active',
+  idempotency_key: id, created_by: 'owner', created_by_name: 'Owner',
+  created_at: `${date}T12:00:00.000Z`, updated_at: `${date}T12:00:00.000Z`,
+});
 describe('real-data dashboard charts', () => {
   it('shows expense categories and current configured account balances, not income categories', async () => {
     vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([{
@@ -86,38 +96,25 @@ describe('real-data dashboard charts', () => {
     expect(screen.getByText(/No active shop accounts are available/)).toBeTruthy();
   });
 
-  it('loads month trend from the report service when Month is selected', async () => {
+  it('plots daily cash flow for the selected month and exposes the date range modes', async () => {
+    const today = getKarachiBusinessDate();
     vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
-    vi.spyOn(ledgerService, 'getMonthlySummary').mockResolvedValue({
-      month_start: '2026-10-01',
-      year: 2026,
-      month: 10,
-      income_paisa: 30_000,
-      expense_paisa: 10_000,
-      net_profit_paisa: 20_000,
-      capital_in_paisa: 0,
-      withdrawal_paisa: 0,
-      adjustment_in_paisa: 0,
-      adjustment_out_paisa: 0,
-    });
-    vi.spyOn(ledgerService, 'getMonthlyReport').mockResolvedValue([{
-      month_start: '2026-10-01',
-      year: 2026,
-      month: 10,
-      income_paisa: 30_000,
-      expense_paisa: 10_000,
-      net_profit_paisa: 20_000,
-      capital_in_paisa: 0,
-      withdrawal_paisa: 0,
-      adjustment_in_paisa: 0,
-      adjustment_out_paisa: 0,
-    }]);
+    const allTransactions = vi.spyOn(ledgerService, 'getAllFilteredTransactions').mockResolvedValue([
+      makeTransaction('income-month', 'income', 30_000, today),
+      makeTransaction('expense-month', 'expense', 10_000, today),
+    ]);
 
     render(<LedgerDashboardView />);
+    expect(screen.getByRole('button', { name: 'Week' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Custom' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Month' }));
 
     await waitFor(() => expect(screen.getByTitle('Income: Rs 300')).toBeTruthy());
     expect(screen.getByTitle('Expenses: Rs 100')).toBeTruthy();
-    expect(ledgerService.getMonthlyReport).toHaveBeenCalled();
+    expect(allTransactions).toHaveBeenCalledWith({
+      startDate: `${today.slice(0, 7)}-01`,
+      endDate: today,
+      status: 'active',
+    });
   });
 });

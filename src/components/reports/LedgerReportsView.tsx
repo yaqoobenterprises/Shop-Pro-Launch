@@ -1,256 +1,203 @@
-import React, { useCallback, useState, useEffect, useRef } from "react";
-import { Select } from "../common/Select";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Download,
+  FileSpreadsheet,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { ledgerService } from "../../services/ledgerService";
 import { formatPaisa } from "../../lib/money";
-import { AnimatedAmount } from "../common/AnimatedAmount";
-import { getKarachiBusinessDate } from "../../lib/dates";
-
-interface MonthlyReportRow {
-  month_start: string;
-  year: number;
-  month: number;
-  income_paisa: number;
-  expense_paisa: number;
-  net_profit_paisa: number;
-  capital_in_paisa: number;
-  withdrawal_paisa: number;
-  adjustment_in_paisa: number;
-  adjustment_out_paisa: number;
-}
+import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
+import type { Category, Transaction } from "../../types/ledger";
+import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, getTrendGrouping } from "../../lib/reportAnalytics";
+import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
+import { buildReportsWorkbook } from "./buildReportsWorkbook";
+import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
+import "./ReportsAnalytics.css";
 
 export const LedgerReportsView: React.FC = () => {
-  const currentYear = Number(getKarachiBusinessDate().slice(0, 4));
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [monthlyData, setMonthlyData] = useState<MonthlyReportRow[]>([]);
+  const today = getKarachiBusinessDate();
+  const currentYearStart = `${today.slice(0, 4)}-01-01`;
+  const [filters, setFilters] = useState<ReportFilters>({
+    fromDate: currentYearStart,
+    toDate: today,
+    type: "all",
+    categoryId: "all",
+  });
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [showAllTransactions, setShowAllTransactions] = useState(false);
   const requestId = useRef(0);
 
-  const loadData = useCallback(async () => {
-    const currentRequestId = ++requestId.current;
+  useEffect(() => {
+    let cancelled = false;
+    void ledgerService.getCategories().then((items) => {
+      if (!cancelled) setCategories(items.filter((item) => item.is_active));
+    }).catch((error: unknown) => {
+      console.warn("Could not load report categories:", error);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const loadReport = useCallback(async () => {
+    const id = ++requestId.current;
     setIsLoading(true);
     setLoadError(null);
-    setMonthlyData([]);
     try {
-      const data = await ledgerService.getMonthlyReport(selectedYear);
-      if (currentRequestId !== requestId.current) return;
-      setMonthlyData(
-        data.map((row) => ({
-          month_start: row.month_start,
-          year: row.year,
-          month: row.month,
-          income_paisa: Number(row.income_paisa || 0),
-          expense_paisa: Number(row.expense_paisa || 0),
-          net_profit_paisa: Number(row.net_profit_paisa || 0),
-          capital_in_paisa: Number(row.capital_in_paisa || 0),
-          withdrawal_paisa: Number(row.withdrawal_paisa || 0),
-          adjustment_in_paisa: Number(row.adjustment_in_paisa || 0),
-          adjustment_out_paisa: Number(row.adjustment_out_paisa || 0),
-        })),
-      );
-    } catch (err) {
-      console.error("Error loading reports:", err);
-      if (currentRequestId === requestId.current) {
-        setLoadError(
-          err instanceof Error
-            ? err.message
-            : "The selected reporting period could not be loaded.",
-        );
-      }
+      const rows = await ledgerService.getAllFilteredTransactions({
+        startDate: filters.fromDate,
+        endDate: filters.toDate,
+        type: filters.type,
+        categoryId: filters.categoryId,
+        status: "active",
+      });
+      if (id !== requestId.current) return;
+      setTransactions(rows);
+      setShowAllTransactions(false);
+    } catch (error) {
+      if (id !== requestId.current) return;
+      setTransactions([]);
+      setLoadError(error instanceof Error ? error.message : "The selected report could not be loaded.");
     } finally {
-      if (currentRequestId === requestId.current) setIsLoading(false);
+      if (id === requestId.current) setIsLoading(false);
     }
-  }, [selectedYear]);
+  }, [filters]);
 
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
+  useEffect(() => { void loadReport(); }, [loadReport]);
 
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
+  const totals = useMemo(() => calculateReportTotals(transactions), [transactions]);
+  const trend = useMemo(
+    () => buildReportTrend(transactions, filters.fromDate, filters.toDate),
+    [transactions, filters.fromDate, filters.toDate],
+  );
+  const categoryBreakdown = useMemo(
+    () => buildReportCategoryBreakdown(transactions),
+    [transactions],
+  );
+  const chartMax = Math.max(1, ...trend.map((bucket) => Math.max(bucket.income_paisa, bucket.expense_paisa)));
+  const grouping = getTrendGrouping(filters.fromDate, filters.toDate);
+  const handleExport = () => {
+    setIsExporting(true);
+    try {
+      const workbook = buildReportsWorkbook({
+        transactions,
+        categories,
+        fromDate: filters.fromDate,
+        toDate: filters.toDate,
+        type: filters.type,
+        categoryId: filters.categoryId,
+        trend,
+        grouping,
+      });
+      downloadPremiumXlsx(workbook.sheets, workbook.fileName);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : "Could not create the Excel workbook.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-  const totalAnnualIncome = monthlyData.reduce(
-    (acc, m) => acc + m.income_paisa,
-    0,
-  );
-  const totalAnnualExpense = monthlyData.reduce(
-    (acc, m) => acc + m.expense_paisa,
-    0,
-  );
-  const totalAnnualProfit = monthlyData.reduce(
-    (acc, month) => acc + month.net_profit_paisa,
-    0,
-  );
-
-  const maxMonthValue = Math.max(
-    ...monthlyData.map((m) => Math.max(m.income_paisa, m.expense_paisa)),
-    1,
-  );
+  const visibleTransactions = showAllTransactions ? transactions : transactions.slice(0, 50);
   return (
-    <main className="page-content reports-page">
-      {/* Page Title */}
-      <div className="page-title">
+    <main className="page-content reports-page reports-modern">
+      <header className="reports-modern__hero">
         <div>
+          <span className="reports-modern__eyebrow">FINANCIAL INTELLIGENCE</span>
           <h1>Reports</h1>
+          <p>Explore your shop performance, inspect category trends and export a polished workbook.</p>
         </div>
+        <button type="button" className="reports-modern__export" onClick={handleExport} disabled={isExporting || isLoading}>
+          <FileSpreadsheet size={17} aria-hidden="true" />
+          {isExporting ? "Preparing Excel…" : "Export to Excel"}
+          <Download size={15} aria-hidden="true" />
+        </button>
+      </header>
 
-        <div className="title-actions">
-          <Select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(Number(e.target.value))}
-            aria-label="Select report year"
-          >
-            <option value={currentYear}>{currentYear}</option>
-            <option value={currentYear - 1}>{currentYear - 1}</option>
-            <option value={currentYear - 2}>{currentYear - 2}</option>
-          </Select>
+      <ReportFiltersPanel
+        filters={filters}
+        categories={categories}
+        today={today}
+        isLoading={isLoading}
+        onApply={setFilters}
+      />
 
-        </div>
-      </div>
+      {loadError && <div role="alert" className="reports-modern__error reports-modern__load-error">{loadError}</div>}
 
-      {loadError && (
-        <div role="alert" className="toast-note" style={{ background: "var(--danger-bg)", borderColor: "var(--danger)", color: "var(--danger)" }}>
-          {loadError}
-        </div>
-      )}
-
-      {/* Annual report summary cards */}
-      <div className="report-cards">
-        <article>
-          <span>NET PROFIT ({selectedYear})</span>
-          <strong style={{ color: totalAnnualProfit >= 0 ? "var(--green)" : "var(--danger)" }}>
-            <AnimatedAmount amountPaisa={totalAnnualProfit} loading={isLoading} error={Boolean(loadError)} />
-          </strong>
+      <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
+        <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
+          <span>NET PROFIT</span><TrendingUp size={18} aria-hidden="true" />
+          <strong>{isLoading ? "Loading…" : formatPaisa(totals.net_profit_paisa)}</strong>
+          <small>Income less operating expenses</small>
         </article>
-
-        <article>
-          <span>TOTAL REVENUE</span>
-          <strong>
-            <AnimatedAmount amountPaisa={totalAnnualIncome} loading={isLoading} error={Boolean(loadError)} />
-          </strong>
+        <article className="reports-modern__kpi reports-modern__kpi--income">
+          <span>TOTAL INCOME</span><TrendingUp size={18} aria-hidden="true" />
+          <strong>{isLoading ? "Loading…" : formatPaisa(totals.income_paisa)}</strong>
+          <small>{totals.transaction_count.toLocaleString()} matching entries</small>
         </article>
-
-        <article>
-          <span>TOTAL EXPENSES</span>
-          <strong>
-            <AnimatedAmount amountPaisa={totalAnnualExpense} loading={isLoading} error={Boolean(loadError)} />
-          </strong>
+        <article className="reports-modern__kpi reports-modern__kpi--expense">
+          <span>TOTAL EXPENSES</span><TrendingDown size={18} aria-hidden="true" />
+          <strong>{isLoading ? "Loading…" : formatPaisa(totals.expense_paisa)}</strong>
+          <small>Operating outflow</small>
         </article>
-      </div>
-
-      {/* Monthly Chart Panel */}
-      <section className="panel report-chart">
-        <div className="panel-heading">
-          <div>
-            <h2>Monthly Performance</h2>
-          </div>
-          <div className="chart-legend">
-            <span>
-              <i className="green" />
-              Income
-            </span>
-            <span>
-              <i />
-              Expenses
-            </span>
-          </div>
-        </div>
-
-        <div className="line-report">
-          <div className="report-y">
-            <span>{formatPaisa(maxMonthValue)}</span>
-            <span>{formatPaisa(Math.round(maxMonthValue * 0.75))}</span>
-            <span>{formatPaisa(Math.round(maxMonthValue * 0.5))}</span>
-            <span>{formatPaisa(Math.round(maxMonthValue * 0.25))}</span>
-            <span>0</span>
-          </div>
-
-          <div className="report-bars">
-            {monthlyData.map((row, index) => {
-              const incPct = Math.min(100, Math.round((row.income_paisa / maxMonthValue) * 100));
-              const expPct = Math.min(100, Math.round((row.expense_paisa / maxMonthValue) * 100));
-              const label = monthNames[(row.month || 1) - 1]?.slice(0, 3) || `${row.month}`;
-
-              return (
-                <div
-                  key={row.month_start}
-                  style={{ "--bar-animation-delay": `${Math.min(index, 11) * 18}ms` } as React.CSSProperties}
-                >
-                  <div>
-                    <i
-                      style={{ height: `${Math.max(incPct, 3)}%` }}
-                      title={`Income: ${formatPaisa(row.income_paisa)}`}
-                    />
-                    <i
-                      style={{ height: `${Math.max(expPct, 3)}%` }}
-                      title={`Expenses: ${formatPaisa(row.expense_paisa)}`}
-                    />
-                  </div>
-                  <span>{label}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <article className="reports-modern__kpi reports-modern__kpi--count">
+          <span>TRANSACTIONS</span><FileSpreadsheet size={18} aria-hidden="true" />
+          <strong>{isLoading ? "—" : totals.transaction_count.toLocaleString()}</strong>
+          <small>Active records in this report</small>
+        </article>
       </section>
 
-      {/* Breakdown Table */}
-      <section className="panel breakdown-table">
-        <div className="panel-heading">
-          <div>
-            <h2>Monthly Breakdown</h2>
-          </div>
+      <section className="reports-modern__chart-panel">
+        <div className="reports-modern__section-heading">
+          <div><span className="reports-modern__section-kicker">PERFORMANCE</span><h2>Cash flow over time</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
+          <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
-
-        <div className="breakdown-head">
-          <span>Month</span>
-          <span>Income</span>
-          <span>Expenses</span>
-          <span>Net Profit</span>
-          <span style={{ textAlign: "right" }}>Margin</span>
-        </div>
-
-        {monthlyData.map((row) => {
-          const mName = monthNames[(row.month || 1) - 1] || `Month ${row.month}`;
-          const mMargin =
-            row.income_paisa > 0
-              ? Math.round((row.net_profit_paisa / row.income_paisa) * 100)
-              : row.net_profit_paisa > 0
-              ? 100
-              : 0;
-
-          return (
-            <div className="breakdown-row" key={row.month_start}>
-              <span style={{ fontWeight: 600 }}>{mName}</span>
-              <span style={{ color: "var(--green)" }}>{formatPaisa(row.income_paisa)}</span>
-              <span>{formatPaisa(row.expense_paisa)}</span>
-              <strong style={{ color: row.net_profit_paisa >= 0 ? "var(--green)" : "var(--danger)" }}>
-                {formatPaisa(row.net_profit_paisa)}
-              </strong>
-              <span style={{ textAlign: "right" }}>{mMargin}%</span>
+        {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
+          <div className="reports-modern__trend-scroll">
+            <div className="reports-modern__trend" style={{ gridTemplateColumns: `repeat(${trend.length}, minmax(36px, 1fr))` }}>
+              {trend.map((bucket) => {
+                const incomeHeight = bucket.income_paisa > 0 ? Math.max(3, (bucket.income_paisa / chartMax) * 100) : 0;
+                const expenseHeight = bucket.expense_paisa > 0 ? Math.max(3, (bucket.expense_paisa / chartMax) * 100) : 0;
+                return <div className="reports-modern__trend-item" key={bucket.key} title={`${bucket.title}\nIncome: ${formatPaisa(bucket.income_paisa)}\nExpenses: ${formatPaisa(bucket.expense_paisa)}`}>
+                  <div className="reports-modern__bar-area"><span className="reports-modern__bar is-income" style={{ height: `${incomeHeight}%` }} /><span className="reports-modern__bar is-expense" style={{ height: `${expenseHeight}%` }} /></div>
+                  <span className="reports-modern__trend-label">{bucket.label}</span>
+                </div>;
+              })}
             </div>
-          );
-        })}
-
-        {monthlyData.length === 0 && !isLoading && !loadError && (
-          <div className="empty-state">
-            <strong>No data recorded</strong>
-            <p>No ledger entries recorded for {selectedYear}.</p>
           </div>
         )}
       </section>
+
+      <div className="reports-modern__analysis-grid">
+        <section className="reports-modern__table-panel">
+          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">BY CATEGORY</span><h2>Category performance</h2><p>Highest activity first</p></div></div>
+          {categoryBreakdown.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
+            {categoryBreakdown.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={`reports-modern__type-badge type-${item.type}`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
+          </tbody></table></div>}
+        </section>
+
+        <section className="reports-modern__table-panel">
+          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">NON-OPERATING</span><h2>Other cash movements</h2><p>Separated from operating profit</p></div></div>
+          <div className="reports-modern__movement-list">
+            <div><span>Capital introduced</span><strong>{formatPaisa(totals.capital_in_paisa)}</strong></div>
+            <div><span>Owner drawings</span><strong>{formatPaisa(totals.withdrawal_paisa)}</strong></div>
+            <div><span>Cash adjustments in</span><strong>{formatPaisa(totals.adjustment_in_paisa)}</strong></div>
+            <div><span>Cash adjustments out</span><strong>{formatPaisa(totals.adjustment_out_paisa)}</strong></div>
+          </div>
+          <p className="reports-modern__footnote">Net profit is calculated from income minus operating expenses. Capital, drawings and cash adjustments remain separately visible.</p>
+        </section>
+      </div>
+
+      <section className="reports-modern__table-panel reports-modern__transactions">
+        <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">AUDITABLE DETAIL</span><h2>Transaction register</h2><p>All filtered active entries are included in Excel export.</p></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
+        {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
+          {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
+        </tbody></table></div>}
+        {transactions.length > 50 && <button type="button" className="reports-modern__show-more" onClick={() => setShowAllTransactions((value) => !value)}>{showAllTransactions ? "Show latest 50 only" : `Show all ${transactions.length.toLocaleString()} records`}</button>}
+      </section>
+      <p className="reports-modern__footer-note">Report generated from active ledger records · Date boundaries use the shop business date.</p>
     </main>
   );
 };
