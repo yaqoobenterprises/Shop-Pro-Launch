@@ -99,6 +99,7 @@ export const buildReportTrend = (
     }
   }
   for (const transaction of transactions) {
+    if (transaction.business_date < startDate || transaction.business_date > endDate) continue;
     const key = bucketStart(transaction.business_date, grouping);
     let bucket = buckets.get(key);
     if (!bucket) {
