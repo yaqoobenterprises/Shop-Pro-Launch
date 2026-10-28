@@ -106,7 +106,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
         <button
           type="button"
           onClick={() => insertChip("yesterday")}
-          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md border border-border-standard bg-surface-bright px-3 text-secondary transition-colors hover:bg-surface-container-low"
+          className="ledger-composer__chip inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border-standard bg-surface-bright px-3.5 text-secondary transition-colors hover:bg-surface-container-low"
         >
           <CalendarDays
             className="h-3.5 w-3.5 text-text-muted"
