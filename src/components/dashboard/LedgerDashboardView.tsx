@@ -6,6 +6,7 @@ import { AnimatedAmount } from "../common/AnimatedAmount";
 import { useI18n } from "../../i18n";
 import { DatePicker } from "../common/DatePicker";
 import { MonthPicker } from "../common/MonthPicker";
+import "./OverviewAnalytics.css";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import {
   DailySummary,
