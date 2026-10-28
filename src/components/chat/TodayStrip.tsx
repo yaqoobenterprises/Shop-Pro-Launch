@@ -55,10 +55,10 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
 
   return (
     <div className="cashbook-summary border-b border-border-standard bg-surface-bright px-3 py-4 sm:px-5">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="cashbook-summary__header mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="m-0 text-lg font-bold tracking-tight text-on-surface sm:text-xl">{t("nav.ledger")}</h1>
-          <p className="mt-0.5 text-xs font-medium text-text-muted">Today · {displayDate}</p>
+          <p className="cashbook-summary__date mt-1 text-xs font-medium text-text-muted">Today · {displayDate}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -76,37 +76,37 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
       </div>
 
       {/* 3 Metric Cards: Income, Expense, Net Profit */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="cashbook-summary__metrics grid grid-cols-3 gap-2 sm:gap-3">
         {/* Income Card */}
-        <div className="summary-metric flex flex-col justify-between">
+        <div className="summary-metric summary-metric--income flex min-w-0 flex-col justify-between">
           <div className="summary-metric__label flex items-center justify-between">
             <span>{t("dashboard.income")}</span>
             <ArrowDownLeft className="w-3.5 h-3.5" />
           </div>
-          <div className="summary-metric__value font-mono tabular-nums">
+          <div className="summary-metric__value cashbook-summary__amount font-mono tabular-nums">
             <AnimatedAmount amountPaisa={summary.income_paisa} />
           </div>
         </div>
 
         {/* Expense Card */}
-        <div className="summary-metric flex flex-col justify-between">
+        <div className="summary-metric summary-metric--expense flex min-w-0 flex-col justify-between">
           <div className="summary-metric__label flex items-center justify-between">
             <span>{t("dashboard.expenses")}</span>
             <ArrowUpRight className="w-3.5 h-3.5" />
           </div>
-          <div className="summary-metric__value font-mono tabular-nums">
+          <div className="summary-metric__value cashbook-summary__amount font-mono tabular-nums">
             <AnimatedAmount amountPaisa={summary.expense_paisa} />
           </div>
         </div>
 
         {/* Net Profit Card */}
-        <div className="summary-metric flex flex-col justify-between">
+        <div className="summary-metric summary-metric--profit flex min-w-0 flex-col justify-between">
           <div className="summary-metric__label flex items-center justify-between">
             <span>{t("dashboard.netProfit")}</span>
             <TrendingUp className="w-3.5 h-3.5" />
           </div>
           <div
-            className={`summary-metric__value font-mono tabular-nums ${
+            className={`summary-metric__value cashbook-summary__amount font-mono tabular-nums ${
               summary.net_profit_paisa < 0 ? "text-danger" : ""
             }`}
           >
