@@ -1,0 +1,210 @@
+/* Overview period controls and trend chart polish. Scoped to the Overview view. */
+.app-shell .overview-page .overview-filter-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+
+.app-shell .overview-page .overview-period-toggle {
+  display: inline-grid;
+  grid-template-columns: repeat(4, minmax(3.5rem, 1fr));
+  gap: 0.2rem;
+  max-width: 100%;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 0.9rem;
+  background: var(--surface-2);
+}
+
+.app-shell .overview-page .overview-period-option {
+  min-height: 2.45rem;
+  min-width: 3.35rem;
+  padding: 0.45rem 0.7rem;
+  border: 0;
+  border-radius: 0.65rem;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  transition: background-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.app-shell .overview-page .overview-period-option.button-primary {
+  background: var(--surface-card);
+  color: var(--forest);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.app-shell .overview-page .overview-period-option.button-secondary:hover {
+  background: color-mix(in srgb, var(--surface-card) 65%, transparent);
+  color: var(--ink);
+}
+
+.app-shell .overview-page .overview-period-picker {
+  min-width: 10.5rem;
+  max-width: 100%;
+}
+
+.app-shell .overview-page .overview-range-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(8rem, 1fr));
+  gap: 0.5rem;
+}
+
+.app-shell .overview-page .overview-range-picker label {
+  display: grid;
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.app-shell .overview-page .overview-range-picker label > span {
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.app-shell .overview-page .overview-range-picker .workspace-control {
+  min-height: 2.65rem;
+  border-radius: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.app-shell .overview-page .cash-panel {
+  overflow: hidden;
+}
+
+.app-shell .overview-page .cash-panel > .panel-heading {
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.app-shell .overview-page .cash-panel .chart-legend {
+  gap: 0.85rem;
+}
+
+.app-shell .overview-page .cash-panel .chart-legend span {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.app-shell .overview-page .cash-panel .cash-chart {
+  min-height: 15rem;
+  grid-template-columns: minmax(3.6rem, 4.2rem) minmax(0, 1fr);
+  gap: 0.55rem;
+  padding-top: 0.5rem;
+}
+
+.app-shell .overview-page .cash-panel .y-labels {
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .overview-page .cash-panel .chart-bars {
+  min-width: 0;
+  gap: clamp(0.25rem, 0.9vw, 0.75rem);
+  padding: 0 0.2rem;
+}
+
+.app-shell .overview-page .cash-panel .bar-group {
+  min-width: 1.85rem;
+}
+
+.app-shell .overview-page .cash-panel .bar-group > div {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.2rem;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0.45rem 0.45rem 0 0;
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent 24%, color-mix(in srgb, var(--line) 55%, transparent) 25%);
+}
+
+.app-shell .overview-page .cash-panel .bar-group i {
+  width: min(40%, 1.05rem);
+  min-height: 0;
+  border-radius: 0.3rem 0.3rem 0 0;
+}
+
+.app-shell .overview-page .cash-panel .bar-group i:first-child {
+  background: linear-gradient(180deg, #42aa83, var(--green));
+}
+
+.app-shell .overview-page .cash-panel .bar-group i + i {
+  background: linear-gradient(180deg, #e8a092, var(--danger));
+}
+
+.app-shell .overview-page .cash-panel .bar-group > span {
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 750;
+}
+
+.app-shell .overview-page .cash-progress-fill {
+  transition: width 220ms ease;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--green) 18%, transparent);
+}
+
+@media (max-width: 1050px) {
+  .app-shell .overview-page .overview-filter-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell .overview-page .overview-filter-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.55rem;
+  }
+
+  .app-shell .overview-page .overview-period-toggle {
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .app-shell .overview-page .overview-period-option {
+    min-width: 0;
+    padding-inline: 0.35rem;
+    font-size: 0.71rem;
+  }
+
+  .app-shell .overview-page .overview-period-picker {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-shell .overview-page .overview-range-picker {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell .overview-page .overview-range-picker .workspace-control {
+    padding-inline: 0.55rem;
+    font-size: 0.7rem;
+  }
+
+  .app-shell .overview-page .cash-panel .cash-chart {
+    min-height: 13rem;
+    grid-template-columns: 3.4rem minmax(0, 1fr);
+  }
+
+  .app-shell .overview-page .cash-panel .chart-bars {
+    overflow-x: auto;
+    grid-template-columns: repeat(auto-fit, minmax(1.8rem, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .overview-page .cash-progress-fill,
+  .app-shell .overview-page .overview-period-option {
+    transition: none;
+  }
+}
