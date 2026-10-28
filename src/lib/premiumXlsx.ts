@@ -44,7 +44,7 @@ const columnName = (column: number): string => {
 };
 
 const safeSheetName = (name: string): string => {
-  const cleaned = name.split("\\\\").join(" ").replace(/[\\/:*?\\[\\]]/g, " ").trim().replace(/^'+|'+$/g, "");
+  const cleaned = name.split(String.fromCharCode(92)).join(" ").split("/").join(" ").split("*").join(" ").split("?").join(" ").split(":").join(" ").split("[").join(" ").split("]").join(" ").trim().replace(/^'+|'+$/g, "");
   return (cleaned || "Report").slice(0, 31);
 };
 
@@ -70,6 +70,11 @@ const cellStyle = (
   if (columnKind === "number") return 9;
   if (columnKind === "percent") return 10;
   return 4;
+};
+
+const excelDateSerial = (value: string): number => {
+  const [year, month, day] = value.split("-").map(Number);
+  return Math.round((Date.UTC(year, month - 1, day) - Date.UTC(1899, 11, 30)) / 86400000);
 };
 
 const buildCell = (
@@ -106,10 +111,13 @@ const buildWorksheet = (sheet: WorkbookSheet): string => {
     const height = row.kind === "title" ? 32 : row.kind === "header" ? 26 : row.kind === "blank" ? 8 : 22;
     const cells = row.values.map((value, colIndex) => {
       const columnKind = sheet.columns[colIndex]?.kind || "text";
+      const cellValue = columnKind === "date" && typeof value === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(value)
+        ? excelDateSerial(value)
+        : value;
       const alternate = row.kind === "data" && rowNumber % 2 === 0;
       return buildCell(
         `${columnName(colIndex)}${rowNumber}`,
-        value,
+        cellValue,
         cellStyle(row.kind, columnKind, alternate),
       );
     }).join("");
@@ -152,10 +160,11 @@ ${filter}
 
 const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-<numFmts count="3">
+<numFmts count="4">
 <numFmt numFmtId="164" formatCode="&quot;Rs &quot;#,##0.00;[Red](&quot;Rs &quot;#,##0.00)"/>
 <numFmt numFmtId="165" formatCode="#,##0.00;[Red](#,##0.00)"/>
 <numFmt numFmtId="166" formatCode="0.0%"/>
+<numFmt numFmtId="167" formatCode="dd mmm yyyy"/>
 </numFmts>
 <fonts count="5">
 <font><sz val="10"/><color rgb="FF25352E"/><name val="Aptos"/><family val="2"/></font>
@@ -184,10 +193,10 @@ const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" horizontal="left" wrapText="1"/></xf>
 <xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
 <xf numFmtId="164" fontId="0" fillId="0" borderId="2" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" horizontal="right"/></xf>
-<xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="167" fontId="0" fillId="0" borderId="2" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="center"/></xf>
 <xf numFmtId="0" fontId="4" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
 <xf numFmtId="164" fontId="4" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyNumberFormat="1"><alignment vertical="center" horizontal="right"/></xf>
-<xf numFmtId="165" fontId="0" fillId="0" borderId="2" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" horizontal="right"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="2" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="center" horizontal="right"/></xf>
 <xf numFmtId="166" fontId="0" fillId="0" borderId="2" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" horizontal="right"/></xf>
 <xf numFmtId="0" fontId="0" fillId="4" borderId="2" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
 <xf numFmtId="164" fontId="0" fillId="4" borderId="2" xfId="0" applyFill="1" applyBorder="1" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" horizontal="right"/></xf>
