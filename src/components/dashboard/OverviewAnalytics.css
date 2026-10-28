@@ -208,3 +208,10 @@
     transition: none;
   }
 }
+
+.app-shell .overview-page .cash-panel .overview-chart-range {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
