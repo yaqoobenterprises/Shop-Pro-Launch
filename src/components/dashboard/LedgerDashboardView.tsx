@@ -11,7 +11,6 @@ import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, 
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import {
   DailySummary,
-  MonthlySummary,
   CategoryBreakdown,
   LedgerAccount,
 } from "../../types/ledger";
@@ -31,7 +30,6 @@ export const LedgerDashboardView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [dailyData, setDailyData] = useState<DailySummary | null>(null);
-  const [monthlyData, setMonthlyData] = useState<MonthlySummary | null>(null);
   const [rangeSummary, setRangeSummary] = useState<ReturnType<typeof calculateReportTotals> | null>(null);
   const [rangeTrend, setRangeTrend] = useState<ReportTrendBucket[]>([]);
   const [breakdowns, setBreakdowns] = useState<CategoryBreakdown[]>([]);
@@ -44,7 +42,6 @@ export const LedgerDashboardView: React.FC = () => {
     setIsLoading(true);
     setLoadError(null);
     setDailyData(null);
-    setMonthlyData(null);
     setRangeSummary(null);
     setRangeTrend([]);
     setBreakdowns([]);
@@ -69,12 +66,13 @@ export const LedgerDashboardView: React.FC = () => {
         const monthEnd = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
         const today = getKarachiBusinessDate();
         const endDate = monthEnd > today && startDate <= today ? today : monthEnd;
-        const [mData, records] = await Promise.all([
-          ledgerService.getMonthlySummary(year, month),
-          ledgerService.getAllFilteredTransactions({ startDate, endDate, status: "active" }),
-        ]);
+        const records = await ledgerService.getAllFilteredTransactions({
+          startDate,
+          endDate,
+          status: "active",
+        });
         if (currentRequestId !== requestId.current) return;
-        setMonthlyData(mData);
+        setRangeSummary(calculateReportTotals(records));
         setRangeTrend(buildReportTrend(records, startDate, endDate));
         setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
           business_date: startDate,
@@ -124,7 +122,7 @@ export const LedgerDashboardView: React.FC = () => {
     void loadData();
   }, [loadData]);
 
-  const activeSummary = period === "day" ? dailyData : period === "month" ? monthlyData : rangeSummary;
+  const activeSummary = period === "day" ? dailyData : rangeSummary;
   const activeIncome = activeSummary?.income_paisa || 0;
   const activeExpense = activeSummary?.expense_paisa || 0;
   const activeProfit = activeSummary?.net_profit_paisa || 0;
