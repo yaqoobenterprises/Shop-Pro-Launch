@@ -100,7 +100,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
         </div>
 
         {/* Net Profit Card */}
-        <div className="summary-metric summary-metric--profit flex min-w-0 flex-col justify-between">
+        <div className={`summary-metric ${summary.net_profit_paisa < 0 ? "summary-metric--negative" : "summary-metric--profit"} flex min-w-0 flex-col justify-between`}>
           <div className="summary-metric__label flex items-center justify-between">
             <span>{t("dashboard.netProfit")}</span>
             <TrendingUp className="w-3.5 h-3.5" />
