@@ -76,8 +76,13 @@
 }
 
 .app-shell .ledger-page .summary-metric--profit {
-  --metric-accent: var(--orange);
-  --metric-wash: var(--warn-bg);
+  --metric-accent: var(--green);
+  --metric-wash: var(--good-bg);
+}
+
+.app-shell .ledger-page .summary-metric--negative {
+  --metric-accent: var(--danger);
+  --metric-wash: var(--danger-bg);
 }
 
 .app-shell .ledger-page .summary-metric__label {
