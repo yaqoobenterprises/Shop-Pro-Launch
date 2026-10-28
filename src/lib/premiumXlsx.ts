@@ -1,3 +1,5 @@
+export type { WorkbookCellKind, WorkbookColumn, WorkbookRow, WorkbookSheet, WorkbookValue } from "./premiumXlsxStyles";
+
 import {
   buildWorksheet,
   safeSheetName,
