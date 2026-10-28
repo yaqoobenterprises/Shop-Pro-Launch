@@ -8,6 +8,7 @@ import { DatePicker } from "../common/DatePicker";
 import { MonthPicker } from "../common/MonthPicker";
 import "./OverviewAnalytics.css";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
+import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import {
   DailySummary,
   MonthlySummary,
@@ -20,20 +21,6 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
 } from "lucide-react";
-
-const getWeekRange = (value: string): [string, string] => {
-  const [year, month, day] = value.split("-").map(Number);
-  const selected = new Date(Date.UTC(year, month - 1, day));
-  const offset = (selected.getUTCDay() + 6) % 7;
-  const start = new Date(selected);
-  start.setUTCDate(start.getUTCDate() - offset);
-  const end = new Date(start);
-  end.setUTCDate(end.getUTCDate() + 6);
-  const startDate = start.toISOString().slice(0, 10);
-  const endDate = end.toISOString().slice(0, 10);
-  const today = getKarachiBusinessDate();
-  return [startDate, endDate > today ? today : endDate];
-};
 
 export const LedgerDashboardView: React.FC = () => {
   const { t } = useI18n();
@@ -99,7 +86,7 @@ export const LedgerDashboardView: React.FC = () => {
         })));
       } else {
         const [startDate, endDate] = period === "week"
-          ? getWeekRange(currentDate)
+          ? getWeekRangeForDate(currentDate)
           : [rangeStart, rangeEnd];
         if (startDate > endDate) throw new Error("The start date must be on or before the end date.");
         const records = await ledgerService.getAllFilteredTransactions({
@@ -164,7 +151,7 @@ export const LedgerDashboardView: React.FC = () => {
   const selectedRangeLabel = period === "day"
     ? formatDisplayDate(currentDate)
     : period === "week"
-      ? getWeekRange(currentDate).map(formatDisplayDate).join(" – ")
+      ? getWeekRangeForDate(currentDate).map(formatDisplayDate).join(" – ")
       : period === "month"
         ? new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentDate.slice(0, 7)}-01T00:00:00.000Z`))
         : `${formatDisplayDate(rangeStart)} – ${formatDisplayDate(rangeEnd)}`;
