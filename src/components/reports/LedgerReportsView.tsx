@@ -111,9 +111,11 @@ export const LedgerReportsView: React.FC = () => {
   const rangeLabel = `${formatDisplayDate(filters.fromDate)} – ${formatDisplayDate(filters.toDate)}`;
   const grouping = getTrendGrouping(filters.fromDate, filters.toDate);
   const matchingCategories = categories.filter((category) =>
-    filters.type === "all" || filters.type === "capital_in" || filters.type === "withdrawal" || filters.type === "adjustment"
-      ? filters.type === "all" || category.kind === "income" || category.kind === "expense"
-      : category.kind === filters.type,
+    typeFilter === "all" ||
+    typeFilter === "capital_in" ||
+    typeFilter === "withdrawal" ||
+    typeFilter === "adjustment" ||
+    category.kind === typeFilter,
   );
 
   const applyFilters = () => {
@@ -234,7 +236,7 @@ export const LedgerReportsView: React.FC = () => {
       {loadError && <div role="alert" className="reports-modern__error reports-modern__load-error">{loadError}</div>}
 
       <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
-        <article className="reports-modern__kpi reports-modern__kpi--profit">
+        <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
           <span>NET PROFIT</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.net_profit_paisa)}</strong>
           <small>Income less operating expenses</small>
