@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Select } from "../common/Select";
 import { LedgerAccount, Transaction, TransactionDraft } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
-import { formatKarachiTime } from "../../lib/dates";
 import { useI18n } from "../../i18n";
 import {
   ArrowDownLeft,
