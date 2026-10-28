@@ -95,7 +95,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             .transaction-receipt-print * { visibility: visible !important; }
             .transaction-receipt-print {
               display: block !important;
-              position: absolute !important;
+              position: fixed !important;
               left: 0 !important;
               top: 0 !important;
               width: 100% !important;
