@@ -413,7 +413,6 @@ export const ChatView: React.FC = () => {
         transactions={transactions}
         drafts={drafts}
         accounts={accounts}
-        isDemoMode={isDemoMode}
         canManageTransactions={canManageTransactions}
         onEdit={(tx) => setEditingTransaction(tx)}
         onVoid={(tx) => setVoidingTransaction(tx)}
