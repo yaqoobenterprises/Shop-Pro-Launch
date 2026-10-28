@@ -26,6 +26,7 @@ import {
   Ban,
   Edit2,
   Trash2,
+  Printer,
   RotateCcw,
 } from "lucide-react";
 
@@ -73,16 +74,95 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     : isCapital ? "Capital In"
     : isWithdrawal ? "Withdrawal"
     : "Adjustment";
+  const receiptDescription = transaction.raw_text || transaction.category_name || typeLabel;
+  const handlePrint = () => window.print();
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Transaction Details"
+      title="Transaction Receipt"
       description={`ID: ${transaction.id.slice(0, 8)}...`}
       maxWidth="lg"
     >
       <div className="space-y-5">
+        <style>{`
+          .transaction-receipt-print { display: none; }
+          @media print {
+            @page { margin: 12mm; }
+            body * { visibility: hidden !important; }
+            .transaction-receipt-print,
+            .transaction-receipt-print * { visibility: visible !important; }
+            .transaction-receipt-print {
+              display: block !important;
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              padding: 24px !important;
+              box-sizing: border-box !important;
+              background: #fff !important;
+              color: #111 !important;
+              z-index: 999999 !important;
+            }
+            .transaction-receipt-print .receipt-rule {
+              border-bottom: 1px dashed #bbb !important;
+            }
+          }
+        `}</style>
+        <div className="transaction-receipt-print" aria-hidden="true">
+          <div style={{ maxWidth: 640, margin: "0 auto", fontFamily: "Arial, sans-serif", fontSize: 13, lineHeight: 1.5 }}>
+            <header style={{ textAlign: "center", paddingBottom: 16, marginBottom: 16, borderBottom: "2px solid #222" }}>
+              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Shop Pro</h1>
+              <p style={{ margin: "4px 0 0", fontSize: 14 }}>Transaction Receipt</p>
+              <p style={{ margin: "4px 0 0", fontSize: 11 }}>Receipt ID: {transaction.id}</p>
+            </header>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 20, marginBottom: 16 }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 11, color: "#555" }}>CATEGORY</p>
+                <p style={{ margin: "2px 0 0", fontSize: 16, fontWeight: 700 }}>{transaction.category_name || typeLabel}</p>
+                <p style={{ margin: "2px 0 0" }}>{typeLabel} · {isVoided ? "Voided" : "Active"}</p>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ margin: 0, fontSize: 11, color: "#555" }}>AMOUNT</p>
+                <p style={{ margin: "2px 0 0", fontSize: 22, fontWeight: 700 }}>{isExpense ? "−" : ""}{formatPaisa(transaction.amount_paisa)}</p>
+              </div>
+            </div>
+            <div className="receipt-rule" style={{ padding: "10px 0", borderBottom: "1px dashed #bbb", display: "flex", justifyContent: "space-between", gap: 16 }}>
+              <span>Date</span><strong>{transaction.business_date}</strong>
+            </div>
+            <div className="receipt-rule" style={{ padding: "10px 0", borderBottom: "1px dashed #bbb", display: "flex", justifyContent: "space-between", gap: 16 }}>
+              <span>Time</span><strong>{formatKarachiTime(transaction.device_entry_time)} ({formatDate(transaction.device_entry_time)})</strong>
+            </div>
+            <div className="receipt-rule" style={{ padding: "10px 0", borderBottom: "1px dashed #bbb", display: "flex", justifyContent: "space-between", gap: 16 }}>
+              <span>Account</span><strong>{transaction.account_name || "Cash In Hand"}</strong>
+            </div>
+            <div className="receipt-rule" style={{ padding: "10px 0", borderBottom: "1px dashed #bbb", display: "flex", justifyContent: "space-between", gap: 16 }}>
+              <span>Entered by</span><strong>{transaction.created_by_name || "Staff Member"}</strong>
+            </div>
+            <div className="receipt-rule" style={{ padding: "10px 0", borderBottom: "1px dashed #bbb" }}>
+              <p style={{ margin: 0, fontSize: 11, color: "#555" }}>DESCRIPTION</p>
+              <p style={{ margin: "4px 0 0", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{receiptDescription}</p>
+            </div>
+            {transaction.note && (
+              <div className="receipt-rule" style={{ padding: "10px 0", borderBottom: "1px dashed #bbb" }}>
+                <p style={{ margin: 0, fontSize: 11, color: "#555" }}>REMARKS / NOTES</p>
+                <p style={{ margin: "4px 0 0", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{transaction.note}</p>
+              </div>
+            )}
+            {isVoided && transaction.void_reason && (
+              <div className="receipt-rule" style={{ padding: "10px 0", borderBottom: "1px dashed #bbb" }}>
+                <strong>Void reason:</strong> {transaction.void_reason}
+              </div>
+            )}
+            <footer style={{ marginTop: 24, paddingTop: 12, borderTop: "1px solid #bbb", fontSize: 10, color: "#555", overflowWrap: "anywhere" }}>
+              <p style={{ margin: "2px 0" }}>Transaction ID: {transaction.id}</p>
+              {transaction.created_at && <p style={{ margin: "2px 0" }}>Recorded: {formatBusinessDateTime(transaction.created_at)}</p>}
+              {transaction.updated_at && <p style={{ margin: "2px 0" }}>Last updated: {formatBusinessDateTime(transaction.updated_at)}</p>}
+              <p style={{ margin: "12px 0 0", textAlign: "center" }}>Thank you</p>
+            </footer>
+          </div>
+        </div>
         {/* Header Hero Card */}
         <div
           className={`flex items-center justify-between rounded-xl border p-4 ${
@@ -319,9 +399,18 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           )}
         </div>
 
-        {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border-standard">
-          <div className="flex items-center gap-2">
+        {/* Receipt actions */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-standard pt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary transition-colors hover:bg-surface-container-low"
+            >
+              <Printer className="h-3.5 w-3.5" aria-hidden="true" />
+              Print
+            </button>
+
             {canManage && !isVoided && onEdit && (
               <button
                 type="button"
@@ -329,9 +418,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   onClose();
                   onEdit(transaction);
                 }}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary hover:bg-surface-container-low transition-colors"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-secondary transition-colors hover:bg-surface-container-low"
               >
-                <Edit2 className="h-3.5 w-3.5" />
+                <Edit2 className="h-3.5 w-3.5" aria-hidden="true" />
                 Edit
               </button>
             )}
@@ -339,14 +428,15 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             {canManage && !isVoided && onVoid && (
               <button
                 type="button"
+                title="Remove this entry from active cashbook (audit history is retained)"
                 onClick={() => {
                   onClose();
                   onVoid(transaction);
                 }}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border bg-danger-bg px-3 text-xs font-semibold text-danger hover:bg-danger-bg/80 transition-colors"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border bg-danger-bg px-3 text-xs font-semibold text-danger transition-colors hover:bg-danger-bg/80"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                Void
+                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Delete
               </button>
             )}
 
@@ -357,9 +447,9 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   onClose();
                   onRestore(transaction);
                 }}
-                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-primary hover:bg-surface-container-low transition-colors"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-primary transition-colors hover:bg-surface-container-low"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 Restore
               </button>
             )}
@@ -368,7 +458,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="min-h-9 rounded-lg bg-on-surface px-4 text-xs font-semibold text-surface-bright hover:bg-secondary transition-colors"
+            className="min-h-9 rounded-lg bg-on-surface px-4 text-xs font-semibold text-surface-bright transition-colors hover:bg-secondary"
           >
             Close
           </button>
