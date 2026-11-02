@@ -32,6 +32,8 @@ jobs:
         run: npm ci
 
       - name: Audit dependencies
+        id: dependency_audit
+        continue-on-error: true
         run: npm audit
 
       - name: Check TypeScript
@@ -54,3 +56,11 @@ jobs:
 
       - name: Build production app
         run: npm run build
+
+      # Keep static analysis and regression tests running even when the
+      # dependency audit fails, then preserve the audit as a required gate.
+      - name: Enforce dependency audit result
+        if: steps.dependency_audit.outcome == 'failure'
+        run: |
+          echo "::error::The dependency audit found unresolved vulnerabilities. See the audit report above."
+          exit 1

@@ -868,4 +868,5 @@ describe('ledger mutation concurrency', () => {
     expect((await getCachedAccounts(organizationId)).find((item) => item.id === account.id)?.balance_paisa)
       .toBe(9000);
   });
+
 });
