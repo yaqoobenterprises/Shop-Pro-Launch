@@ -7,7 +7,7 @@ import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { Button } from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import { ledgerService } from "../../services/ledgerService";
+import { recordQuickExpense } from "../../services/quickExpenseService";
 import { Category, LedgerAccount } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
 import { parseLocalizedMoneyInput } from "../../regional/moneyInput";
@@ -126,50 +126,26 @@ export const QuickExpenseModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const selectedCategory = categories.find(
-        (category) => category.id === targetCategoryId && category.kind === "expense",
-      );
-      const selectedPaymentAccount = accounts.find(
-        (account) => account.id === targetAccountId && account.is_active,
-      );
-      if (!selectedCategory || !selectedPaymentAccount) {
-        throw new Error("Choose an active expense category and payment account.");
-      }
-      if (!user?.id) {
-        throw new Error("Sign in again before recording this expense.");
-      }
-
-      const detailParts = [
-        description.trim(),
-        referenceNumber.trim() ? `Receipt reference: ${referenceNumber.trim()}` : "",
-        notes.trim() ? `Notes: ${notes.trim()}` : "",
-      ].filter(Boolean);
-      const rawText = `Quick expense: ${detailParts.join(" | ")}`;
-      const note = detailParts.slice(1).join(" | ") || null;
-
-      // Quick Expense is a normal ledger expense: save a draft first, then
-      // post it to the selected account through the same atomic database RPC.
-      const draft = await ledgerService.createTransactionDraft(
-        {
-          type: "expense",
-          amountPaisa: parsedAmount.minor,
-          categoryId: selectedCategory.id,
-          categoryName: selectedCategory.name,
-          businessDate: date,
-          rawText,
-          note,
-          createdByName: getProfileDisplayName(user),
-        },
-        user.id,
-      );
-      const posting = await ledgerService.postTransactionDraft(draft.id, targetAccountId);
+      const posting = await recordQuickExpense({
+        amountPaisa: parsedAmount.minor,
+        categoryId: targetCategoryId,
+        accountId: targetAccountId,
+        categories,
+        accounts,
+        description: description.trim(),
+        referenceNumber,
+        notes,
+        businessDate: date,
+        userId: user?.id,
+        createdByName: getProfileDisplayName(user),
+      });
 
       showToast(
         posting.isQueuedOffline ? "warning" : "success",
         posting.isQueuedOffline ? "Expense saved offline" : "Expense recorded",
         posting.isQueuedOffline
           ? "The expense is saved on this device and will post to the selected account when synchronization succeeds."
-          : `${formatPaisa(parsedAmount.minor)} paid from ${selectedPaymentAccount.name}`,
+          : `${formatPaisa(parsedAmount.minor)} paid from ${posting.accountName}`,
       );
       setIsQuickExpenseOpen(false);
       refreshData();
