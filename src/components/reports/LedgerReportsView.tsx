@@ -4,11 +4,14 @@ import {
   FileSpreadsheet,
   TrendingDown,
   TrendingUp,
+  ArrowDown,
+  ArrowDownUp,
+  ArrowUp,
 } from "lucide-react";
 import { ledgerService } from "../../services/ledgerService";
 import { formatPaisa } from "../../lib/money";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
-import type { Category, Transaction } from "../../types/ledger";
+import type { Category, LedgerAccount, Transaction } from "../../types/ledger";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, getTrendGrouping } from "../../lib/reportAnalytics";
 import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
 import { buildReportsWorkbook } from "./buildReportsWorkbook";
@@ -23,22 +26,33 @@ export const LedgerReportsView: React.FC = () => {
     toDate: today,
     type: "all",
     categoryId: "all",
+    accountId: "all",
+    searchQuery: "",
   });
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [sortKey, setSortKey] = useState<"date" | "type" | "category" | "description" | "account" | "amount">("date");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [categorySort, setCategorySort] = useState<"amount" | "entries" | "name">("amount");
   const requestId = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
-    void ledgerService.getCategories().then((items) => {
-      if (!cancelled) setCategories(items.filter((item) => item.is_active));
-    }).catch((error: unknown) => {
-      console.warn("Could not load report categories:", error);
-    });
+    void Promise.all([ledgerService.getCategories(), ledgerService.getPaymentAccounts()])
+      .then(([categoryItems, accountItems]) => {
+        if (cancelled) return;
+        setCategories(categoryItems.filter((item) => item.is_active));
+        setAccounts(accountItems.filter((item) => item.is_active));
+      })
+      .catch((error: unknown) => {
+        console.warn("Could not load report filters:", error);
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -52,11 +66,13 @@ export const LedgerReportsView: React.FC = () => {
         endDate: filters.toDate,
         type: filters.type,
         categoryId: filters.categoryId,
+        accountId: filters.accountId,
+        searchQuery: filters.searchQuery,
         status: "active",
       });
       if (id !== requestId.current) return;
       setTransactions(rows);
-      setShowAllTransactions(false);
+      setPage(0);
     } catch (error) {
       if (id !== requestId.current) return;
       setTransactions([]);
@@ -89,6 +105,8 @@ export const LedgerReportsView: React.FC = () => {
         toDate: filters.toDate,
         type: filters.type,
         categoryId: filters.categoryId,
+        accountId: filters.accountId,
+        searchQuery: filters.searchQuery,
         trend,
         grouping,
       });
@@ -100,7 +118,69 @@ export const LedgerReportsView: React.FC = () => {
     }
   };
 
-  const visibleTransactions = showAllTransactions ? transactions : transactions.slice(0, 50);
+  const sortedTransactions = useMemo(() => [...transactions].sort((left, right) => {
+    let comparison = 0;
+    switch (sortKey) {
+      case "date":
+        comparison = left.business_date.localeCompare(right.business_date)
+          || left.device_entry_time.localeCompare(right.device_entry_time);
+        break;
+      case "type":
+        comparison = left.type.localeCompare(right.type);
+        break;
+      case "category":
+        comparison = (left.category_name || "Uncategorised").localeCompare(right.category_name || "Uncategorised");
+        break;
+      case "description":
+        comparison = (left.raw_text || "").localeCompare(right.raw_text || "");
+        break;
+      case "account":
+        comparison = (left.account_name || "").localeCompare(right.account_name || "");
+        break;
+      case "amount":
+        comparison = Number(left.amount_paisa) - Number(right.amount_paisa);
+        break;
+    }
+    return sortDirection === "asc" ? comparison : -comparison;
+  }), [transactions, sortKey, sortDirection]);
+  const pageCount = Math.max(1, Math.ceil(sortedTransactions.length / pageSize));
+  const currentPage = Math.min(page, pageCount - 1);
+  const visibleTransactions = sortedTransactions.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
+  const pageStart = sortedTransactions.length === 0 ? 0 : currentPage * pageSize + 1;
+  const pageEnd = Math.min(sortedTransactions.length, (currentPage + 1) * pageSize);
+  const accountBreakdown = useMemo(() => {
+    const grouped = new Map<string, { key: string; name: string; count: number; total: number }>();
+    for (const item of transactions) {
+      const key = item.account_id || "unassigned";
+      const row = grouped.get(key) || { key, name: item.account_name || "Cash In Hand", count: 0, total: 0 };
+      row.count += 1;
+      row.total += Number(item.amount_paisa) || 0;
+      grouped.set(key, row);
+    }
+    return [...grouped.values()].sort((a, b) => b.total - a.total);
+  }, [transactions]);
+  const sortedCategories = useMemo(() => [...categoryBreakdown].sort((a, b) => {
+    if (categorySort === "entries") return b.entry_count - a.entry_count;
+    if (categorySort === "name") return a.category_name.localeCompare(b.category_name);
+    return b.total_paisa - a.total_paisa;
+  }), [categoryBreakdown, categorySort]);
+  const sortRegister = (key: typeof sortKey) => {
+    if (sortKey === key) setSortDirection((direction) => direction === "asc" ? "desc" : "asc");
+    else {
+      setSortKey(key);
+      setSortDirection(key === "date" || key === "amount" ? "desc" : "asc");
+    }
+    setPage(0);
+  };
+  const sortIcon = (key: typeof sortKey) => sortKey !== key
+    ? <ArrowDownUp size={13} aria-hidden="true" />
+    : sortDirection === "asc" ? <ArrowUp size={13} aria-hidden="true" /> : <ArrowDown size={13} aria-hidden="true" />;
+  const sortHeader = (key: typeof sortKey, label: string) => (
+    <button type="button" className="reports-modern__sort-button" onClick={() => sortRegister(key)}
+      aria-label={`Sort by ${label.toLocaleLowerCase()}`} aria-pressed={sortKey === key}>
+      {label}{sortIcon(key)}
+    </button>
+  );
   return (
     <main className="page-content reports-page reports-modern">
       <header className="reports-modern__hero">
@@ -119,6 +199,7 @@ export const LedgerReportsView: React.FC = () => {
       <ReportFiltersPanel
         filters={filters}
         categories={categories}
+        accounts={accounts}
         today={today}
         isLoading={isLoading}
         onApply={setFilters}
