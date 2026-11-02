@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildPremiumXlsx } from "../src/lib/premiumXlsx";
+import { buildReportsWorkbook } from "../src/components/reports/buildReportsWorkbook";
+import { getTrendGrouping, buildReportTrend } from "../src/lib/reportAnalytics";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals } from "../src/lib/reportAnalytics";
-import type { Transaction } from "../src/types/ledger";
+import type { LedgerAccount, Transaction } from "../src/types/ledger";
 
 const transaction = (
   id: string,
@@ -66,6 +68,42 @@ describe("report analytics", () => {
 });
 
 describe("premium Excel workbook", () => {
+  it("preserves the exact account and search scope in exported workbook metadata", () => {
+    const selectedAccount: LedgerAccount = {
+      id: "bank",
+      organization_id: "shop-1",
+      name: "Business Bank",
+      type: "BANK",
+      balance_paisa: 0,
+      current_balance: 0,
+      opening_balance: 0,
+      is_active: true,
+      is_default: false,
+      created_at: "",
+    };
+    const fromDate = "2026-10-01";
+    const toDate = "2026-10-31";
+    const trend = buildReportTrend([], fromDate, toDate);
+    const workbook = buildReportsWorkbook({
+      transactions: [transaction("bank-entry", fromDate, "income", 15000, "print", "Colour Print")],
+      categories: [],
+      accounts: [selectedAccount],
+      fromDate,
+      toDate,
+      type: "income",
+      categoryId: "all",
+      accountId: "bank",
+      searchQuery: "invoice 42",
+      trend,
+      grouping: getTrendGrouping(fromDate, toDate),
+    });
+
+    expect(workbook.sheets[0].metadata).toContain("Account: Business Bank");
+    expect(workbook.sheets[0].metadata).toContain("Search: invoice 42");
+    expect(workbook.sheets[1].metadata).toContain("Account: Business Bank");
+    expect(workbook.sheets[1].metadata).toContain("Search: invoice 42");
+  });
+
   it("produces a valid XLSX zip container with styled tables, filters and frozen headers", () => {
     const workbook = buildPremiumXlsx([{
       name: "Transactions",
