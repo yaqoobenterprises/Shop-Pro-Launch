@@ -16,6 +16,7 @@ const orgB = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const managerId = "11111111-1111-4111-8111-111111111111";
 const ownerId = "22222222-2222-4222-8222-222222222222";
 const inactiveId = "33333333-3333-4333-8333-333333333333";
+const cashierId = "88888888-8888-4888-8888-888888888888";
 const accountA = "44444444-4444-4444-8444-444444444444";
 const categoryA = "55555555-5555-4555-8555-555555555555";
 const draftA = "66666666-6666-4666-8666-666666666666";
@@ -32,6 +33,19 @@ describe("pending authorization-hardening migration", () => {
       CREATE SCHEMA private;
       GRANT USAGE ON SCHEMA auth TO anon, authenticated;
       GRANT USAGE ON SCHEMA private TO authenticated;
+      -- PGlite does not fully emulate SECURITY DEFINER ownership changes. Grant
+      -- the underlying table privileges used by the same RPCs in production,
+      -- while retaining the RLS policies under test on organizations, categories
+      -- and transaction_drafts.
+      GRANT SELECT, INSERT, UPDATE ON auth.users TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.organizations TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.organization_members TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.shop_members TO authenticated;
+      GRANT SELECT ON public.payment_accounts, public.categories TO authenticated;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.transactions TO authenticated;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.transaction_drafts TO authenticated;
+      GRANT ALL ON public.categories TO authenticated;
 
       CREATE FUNCTION auth.uid() RETURNS UUID
       LANGUAGE SQL STABLE
@@ -125,10 +139,31 @@ describe("pending authorization-hardening migration", () => {
         created_by_name TEXT NOT NULL
       );
 
+      CREATE FUNCTION private.has_permission(target_org UUID, permission_name TEXT)
+      RETURNS BOOLEAN
+      LANGUAGE SQL
+      SECURITY DEFINER
+      SET search_path = public
+      AS $
+        SELECT EXISTS (
+          SELECT 1 FROM public.organization_members
+          WHERE organization_id = target_org
+            AND user_id = (SELECT auth.uid())
+            AND is_active = TRUE
+            AND (
+              role = 'OWNER'
+              OR (role = 'MANAGER' AND permission_name = 'MANAGE_INVENTORY')
+            )
+        );
+      $;
+      REVOKE ALL ON FUNCTION private.has_permission(UUID, TEXT) FROM PUBLIC, anon;
+      GRANT EXECUTE ON FUNCTION private.has_permission(UUID, TEXT) TO authenticated;
+
       CREATE FUNCTION public.seed_shop_defaults(target_org UUID)
-      RETURNS VOID LANGUAGE SQL AS $$ SELECT; $$;
+      RETURNS VOID LANGUAGE SQL AS $ SELECT; $;
 
       ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
       ALTER TABLE public.transaction_drafts ENABLE ROW LEVEL SECURITY;
 
       -- Model the live, permissive legacy policies that the migration replaces.
@@ -154,6 +189,23 @@ describe("pending authorization-hardening migration", () => {
         SELECT organization_id FROM public.organization_members
         WHERE user_id = (SELECT auth.uid()) AND is_active
       ));
+
+      CREATE POLICY "Members can insert categories"
+      ON public.categories FOR INSERT TO authenticated
+      WITH CHECK (TRUE);
+      CREATE POLICY "Members can read categories"
+      ON public.categories FOR SELECT TO authenticated
+      USING (TRUE);
+      CREATE POLICY "Members can update categories"
+      ON public.categories FOR UPDATE TO authenticated
+      USING (TRUE) WITH CHECK (TRUE);
+      CREATE POLICY categories_select
+      ON public.categories FOR SELECT TO authenticated
+      USING (private.is_org_member(organization_id));
+      CREATE POLICY categories_write
+      ON public.categories FOR ALL TO authenticated
+      USING (private.has_permission(organization_id, 'MANAGE_INVENTORY'))
+      WITH CHECK (private.has_permission(organization_id, 'MANAGE_INVENTORY'));
 
       CREATE POLICY transaction_drafts_select
       ON public.transaction_drafts FOR SELECT TO authenticated
@@ -181,23 +233,27 @@ describe("pending authorization-hardening migration", () => {
       VALUES
         ('${managerId}', 'manager@example.test'),
         ('${ownerId}', 'owner@example.test'),
-        ('${inactiveId}', 'inactive@example.test');
+        ('${inactiveId}', 'inactive@example.test'),
+        ('${cashierId}', 'cashier@example.test');
 
       INSERT INTO public.profiles (id, email, full_name, role, organization_id, is_active)
       VALUES
         ('${managerId}', 'manager@example.test', 'Manager', 'MANAGER', '${orgA}', TRUE),
         ('${ownerId}', 'owner@example.test', 'Owner', 'OWNER', '${orgA}', TRUE),
-        ('${inactiveId}', 'inactive@example.test', 'Inactive', 'MANAGER', '${orgA}', TRUE);
+        ('${inactiveId}', 'inactive@example.test', 'Inactive', 'MANAGER', '${orgA}', TRUE),
+        ('${cashierId}', 'cashier@example.test', 'Cashier', 'CASHIER', '${orgA}', TRUE);
 
       INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
       VALUES
         ('${orgA}', '${managerId}', 'MANAGER', TRUE),
         ('${orgA}', '${ownerId}', 'OWNER', TRUE),
-        ('${orgA}', '${inactiveId}', 'MANAGER', FALSE);
+        ('${orgA}', '${inactiveId}', 'MANAGER', FALSE),
+        ('${orgA}', '${cashierId}', 'CASHIER', TRUE);
 
       INSERT INTO public.shop_members (user_id, organization_id, full_name, email, role)
       VALUES
-        ('${inactiveId}', '${orgA}', 'Inactive', 'inactive@example.test', 'MANAGER');
+        ('${inactiveId}', '${orgA}', 'Inactive', 'inactive@example.test', 'MANAGER'),
+        ('${cashierId}', '${orgA}', 'Cashier', 'cashier@example.test', 'CASHIER');
 
       INSERT INTO public.payment_accounts (id, organization_id, is_active)
       VALUES ('${accountA}', '${orgA}', TRUE);
@@ -258,6 +314,35 @@ describe("pending authorization-hardening migration", () => {
       .toBe(false);
     expect((await db.query("SELECT id FROM public.organizations WHERE id = $1", [orgA])).rows)
       .toHaveLength(0);
+  });
+
+  it("does not allow cashiers to bypass MANAGE_INVENTORY through legacy category policies", async () => {
+    await db.exec(`
+      SELECT set_config('request.jwt.claim.sub', '${cashierId}', false);
+      SET ROLE authenticated;
+    `);
+
+    const update = await db.query(
+      "UPDATE public.categories SET name = 'Cashier Attempt' WHERE id = $1",
+      [categoryA],
+    );
+    expect(update.rowCount).toBe(0);
+
+    await expect(db.query(
+      "INSERT INTO public.categories (id, organization_id, name) VALUES ($1, $2, 'Cashier Attempt')",
+      ["99999999-9999-4999-8999-999999999999", orgA],
+    )).rejects.toThrow();
+
+    await db.exec("RESET ROLE");
+    await db.exec(`
+      SELECT set_config('request.jwt.claim.sub', '${managerId}', false);
+      SET ROLE authenticated;
+    `);
+    const managerInsert = await db.query(
+      "INSERT INTO public.categories (id, organization_id, name) VALUES ($1, $2, 'Manager Category')",
+      ["aaaaaaaa-9999-4999-8999-999999999999", orgA],
+    );
+    expect(managerInsert.rowCount).toBe(1);
   });
 
   it("removes anonymous draft-table privileges while retaining authenticated access", async () => {
@@ -364,6 +449,17 @@ describe("pending authorization-hardening migration", () => {
     for (const fn of functions.rows) {
       expect(fn.settings).toContain('search_path=""');
     }
+
+    const wrapperSecurity = await db.query(`
+      SELECT proname, prosecdef
+      FROM pg_proc
+      WHERE proname IN ('get_auth_org_id', 'is_active_shop_member')
+      ORDER BY proname
+    `);
+    expect(wrapperSecurity.rows).toEqual([
+      { proname: "get_auth_org_id", prosecdef: false },
+      { proname: "is_active_shop_member", prosecdef: false },
+    ]);
 
     const helperGrants = await db.query(`
       SELECT
