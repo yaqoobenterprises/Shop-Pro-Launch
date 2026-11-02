@@ -1575,10 +1575,6 @@ export class LedgerService {
       offset += page.transactions.length;
     } while (offset < count);
 
-    // Offline writes remain visible in Overview and Reports until the server
-    // confirms synchronization. Merge them after pagination, deduplicating by
-    // idempotency key so an item already accepted by the server is never counted
-    // twice while the local queue is waiting to be cleared.
     const principal = getSecurityPrincipal();
     const [queue, accounts] = await Promise.all([
       getOfflineQueue(),
@@ -1599,12 +1595,7 @@ export class LedgerService {
         ...queuedTransactionToLedgerTransaction(item),
         account_name: accounts.find((account) => account.id === item.accountId)?.name,
       }));
-    return [...transactions, ...queued]
-      .sort((left, right) =>
-        right.business_date.localeCompare(left.business_date)
-        || right.device_entry_time.localeCompare(left.device_entry_time)
-        || left.id.localeCompare(right.id),
-      );
+    return [...transactions, ...queued];
   }
 
   /**
