@@ -43,9 +43,8 @@ describe('real-data dashboard charts', () => {
     expect(screen.getByRole('list', { name: 'Current balances by account' }).textContent)
       .toContain('Till Cash');
     expect(expenses.querySelectorAll('li')).toHaveLength(1);
-    expect(screen.getByText('Rs 100')).toBeTruthy();
     expect(screen.getByText('Rs 200')).toBeTruthy();
-    expect(screen.getByText('Rs 100')).toBeTruthy();
+    expect(screen.getAllByText('Rs 100').length).toBeGreaterThanOrEqual(2);
   });
 
   it('shows explicit empty states when the filtered ledger has no activity', async () => {
