@@ -869,7 +869,7 @@ describe('ledger mutation concurrency', () => {
       .toBe(9000);
   });
 
-  it('retries an ambiguous draft response through the same idempotent RPC without creating a second transaction', async () => {
+  it('retries an ambiguous online draft response through the same idempotent RPC without creating a second transaction', async () => {
     setSecurityPrincipal({
       id: creatorId,
       organizationId,
@@ -877,6 +877,7 @@ describe('ledger mutation concurrency', () => {
       fullName: 'Test Owner',
     });
     vi.spyOn(supabaseLib, 'isSupabaseConfigured').mockReturnValue(true);
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
 
     const account: LedgerAccount = {
       id: 'ambiguous-draft-account',
@@ -892,35 +893,25 @@ describe('ledger mutation concurrency', () => {
     };
     await cacheAccounts([account]);
 
-    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
-    const draft = await ledgerService.createTransactionDraft({
-      type: 'expense',
-      amountPaisa: 2500,
-      categoryId: 'category-expense',
-      categoryName: 'Supplies',
-      businessDate: '2026-10-04',
-      rawText: 'Quick expense: Supplies',
-      createdByName: 'Test Owner',
-      note: 'Receipt reference: INV-8',
-    }, creatorId);
-    draftIds.push(draft.id);
-
-    const queued = await ledgerService.postTransactionDraft(draft.id, account.id);
-    expect(queued.isQueuedOffline).toBe(true);
-
-    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    let upsertedDraft: Record<string, unknown> | null = null;
+    const draftQuery = {
+      upsert: vi.fn().mockImplementation((payload: Record<string, unknown>) => {
+        upsertedDraft = payload;
+        return draftQuery;
+      }),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn().mockImplementation(async () => ({
+        data: upsertedDraft,
+        error: null,
+      })),
+    };
     const serverTransaction = {
       id: 'ambiguous-draft-posted-tx',
       account_id: account.id,
       amount_paisa: 2500,
-      idempotency_key: `draft-${draft.id}`,
+      idempotency_key: 'draft-pending',
     };
     let databaseCommitCount = 0;
-    const draftQuery = {
-      upsert: vi.fn().mockReturnThis(),
-      select: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({ data: draft, error: null }),
-    };
     const rpc = vi.fn().mockImplementation(async (
       functionName: string,
       args: { draft_id: string; selected_account_id: string },
@@ -935,25 +926,44 @@ describe('ledger mutation concurrency', () => {
         // The server commits, but the client receives a network failure response.
         return { data: null, error: new TypeError('Failed to fetch') };
       }
-      return { data: serverTransaction, error: null };
+      return {
+        data: { ...serverTransaction, idempotency_key: `draft-${draft.id}` },
+        error: null,
+      };
     });
     const from = vi.fn().mockReturnValue(draftQuery);
     vi.spyOn(supabaseLib, 'getSupabaseClient').mockReturnValue({ from, rpc } as never);
-    const directRecord = vi.spyOn(ledgerService, 'recordTransaction');
 
+    const draft = await ledgerService.createTransactionDraft({
+      type: 'expense',
+      amountPaisa: 2500,
+      categoryId: 'category-expense',
+      categoryName: 'Supplies',
+      businessDate: '2026-10-04',
+      rawText: 'Quick expense: Supplies',
+      createdByName: 'Test Owner',
+      note: 'Receipt reference: INV-8',
+    }, creatorId);
+    draftIds.push(draft.id);
+    expect((await getOfflineDrafts(organizationId)).map((item) => item.id)).toContain(draft.id);
+
+    const directRecord = vi.spyOn(ledgerService, 'recordTransaction');
     const firstAttempt = await ledgerService.postTransactionDraft(draft.id, account.id);
     expect(firstAttempt).toEqual({ isQueuedOffline: true });
     expect((await getOfflineDrafts(organizationId)).find((item) => item.id === draft.id))
       .toMatchObject({ pending_account_id: account.id });
-    expect(from.mock.calls.map(([table]) => table)).toEqual(['transaction_drafts']);
     expect(directRecord).not.toHaveBeenCalled();
 
     const retry = await ledgerService.postTransactionDraft(draft.id, account.id);
-    expect(retry.transaction).toMatchObject(serverTransaction);
+    expect(retry.transaction).toMatchObject({
+      ...serverTransaction,
+      idempotency_key: `draft-${draft.id}`,
+    });
     expect(retry.isQueuedOffline).toBe(false);
     expect(rpc).toHaveBeenCalledTimes(2);
     expect(databaseCommitCount).toBe(1);
     expect(await getOfflineDrafts(organizationId)).toEqual([]);
+    expect(from).toHaveBeenCalledTimes(3);
     expect(from.mock.calls.every(([table]) => table === 'transaction_drafts')).toBe(true);
     expect(directRecord).not.toHaveBeenCalled();
   });
