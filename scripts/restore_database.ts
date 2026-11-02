@@ -7,7 +7,51 @@ import { createClient } from '@supabase/supabase-js';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { validateBackupArchive, type LegacyBackupArchive } from './backup_format';
+import {
+  BACKUP_TABLES,
+  validateBackupArchive,
+  type FullBackupArchive,
+  type LegacyBackupArchive,
+} from './backup_format';
+
+export interface BackupRestorePlan {
+  mode: 'offline-plan-only';
+  sourceSupabaseUrl: string;
+  exportedAt: string;
+  schemaVersion: string;
+  sha256: string;
+  targetRequirements: string[];
+  steps: Array<{
+    order: number;
+    table: string;
+    primaryKey: string;
+    rowCount: number;
+  }>;
+}
+
+export function createBackupRestorePlan(backup: FullBackupArchive): BackupRestorePlan {
+  return {
+    mode: 'offline-plan-only',
+    sourceSupabaseUrl: backup.metadata.supabaseUrl,
+    exportedAt: backup.metadata.exportedAt,
+    schemaVersion: backup.metadata.schemaVersion,
+    sha256: backup.metadata.sha256,
+    targetRequirements: [
+      'Create an isolated staging Supabase project; never test a restore against production.',
+      'Apply the exact database schema/migration set before inserting application rows.',
+      'Prepare and verify corresponding Supabase Auth users first; auth.users is not included in this public-table archive.',
+      'Restore public tables in the declared dependency order below, then verify row counts, foreign keys, tenant boundaries, ledger balances and audit chains.',
+      'Storage objects, Auth credentials, project settings, secrets and Edge Function configuration are not included in this archive.',
+      'This command is a read-only plan. It does not connect to Supabase or apply any database changes.',
+    ],
+    steps: BACKUP_TABLES.map(({ name, primaryKey }, index) => ({
+      order: index + 1,
+      table: name,
+      primaryKey,
+      rowCount: backup.metadata.tableCounts[name],
+    })),
+  };
+}
 
 export function readAndValidateBackup(filePath: string): ReturnType<typeof validateBackupArchive> {
   const resolvedPath = path.resolve(process.cwd(), filePath);
@@ -72,14 +116,32 @@ async function applyLegacyTransactionBackup(backup: LegacyBackupArchive): Promis
 
 export async function runRestore(args = process.argv.slice(2)): Promise<void> {
   const [mode, filePath, ...extraArgs] = args;
-  if (extraArgs.length || !filePath || !['--validate-only', '--apply'].includes(mode)) {
+  if (extraArgs.length || !filePath || !['--validate-only', '--plan', '--apply'].includes(mode)) {
     throw new Error(
       'Usage: npx tsx scripts/restore_database.ts --validate-only <backup.json>\n'
+      + '   or: npx tsx scripts/restore_database.ts --plan <backup.json>\n'
       + '   or: npx tsx scripts/restore_database.ts --apply <legacy-v2-backup.json>',
     );
   }
 
   const backup = readAndValidateBackup(filePath);
+  if (mode === '--plan') {
+    const plan = 'format' in backup
+      ? createBackupRestorePlan(backup)
+      : {
+          mode: 'offline-plan-only',
+          archiveVersion: '2.0.0',
+          sourceSupabaseUrl: backup.metadata.supabaseUrl || null,
+          transactionRows: backup.data.length,
+          targetRequirements: [
+            'Use a separate empty staging Supabase project.',
+            'The legacy archive contains transactions only, not the complete Shop Pro schema.',
+            'No database connection or write is performed by this plan.',
+          ],
+        };
+    console.log(JSON.stringify(plan, null, 2));
+    return;
+  }
   if (mode === '--validate-only') {
     if ('format' in backup) {
       console.log(`Valid Shop Pro backup: ${Object.values(backup.metadata.tableCounts).reduce((a, b) => a + b, 0)} rows across ${Object.keys(backup.tables).length} tables; SHA-256 ${backup.metadata.sha256}`);
