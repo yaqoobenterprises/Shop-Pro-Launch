@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { CalendarDays, Filter, RotateCcw } from "lucide-react";
 import { DatePicker } from "../common/DatePicker";
-import type { Category, TransactionType } from "../../types/ledger";
+import type { Category, LedgerAccount, TransactionType } from "../../types/ledger";
 import { formatDisplayDate } from "../../lib/dates";
 
 export type ReportTypeFilter = "all" | TransactionType;
@@ -11,11 +11,14 @@ export interface ReportFilters {
   toDate: string;
   type: ReportTypeFilter;
   categoryId: string;
+  accountId: string;
+  searchQuery: string;
 }
 
 interface ReportFiltersPanelProps {
   filters: ReportFilters;
   categories: Category[];
+  accounts: LedgerAccount[];
   today: string;
   isLoading: boolean;
   onApply: (filters: ReportFilters) => void;
@@ -40,6 +43,7 @@ const dateDaysAgo = (date: string, days: number): string => {
 export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
   filters,
   categories,
+  accounts,
   today,
   isLoading,
   onApply,
@@ -49,6 +53,8 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
   const [toDate, setToDate] = useState(filters.toDate);
   const [typeFilter, setTypeFilter] = useState<ReportTypeFilter>(filters.type);
   const [categoryFilter, setCategoryFilter] = useState(filters.categoryId);
+  const [accountFilter, setAccountFilter] = useState(filters.accountId);
+  const [searchQuery, setSearchQuery] = useState(filters.searchQuery);
   const [filterError, setFilterError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,6 +62,8 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
     setToDate(filters.toDate);
     setTypeFilter(filters.type);
     setCategoryFilter(filters.categoryId);
+    setAccountFilter(filters.accountId);
+    setSearchQuery(filters.searchQuery);
   }, [filters]);
 
   const matchingCategories = categories.filter((category) =>
@@ -70,7 +78,7 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
     setFromDate(start);
     setToDate(end);
     setFilterError(null);
-    onApply({ fromDate: start, toDate: end, type: typeFilter, categoryId: categoryFilter });
+    onApply({ fromDate: start, toDate: end, type: typeFilter, categoryId: categoryFilter, accountId: accountFilter, searchQuery });
   };
 
   const applyFilters = () => {
@@ -83,7 +91,7 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
       return;
     }
     setFilterError(null);
-    onApply({ fromDate, toDate, type: typeFilter, categoryId: categoryFilter });
+    onApply({ fromDate, toDate, type: typeFilter, categoryId: categoryFilter, accountId: accountFilter, searchQuery });
   };
 
   return (
@@ -128,6 +136,25 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
             {matchingCategories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}
           </select>
         </label>
+        <label className="reports-modern__field">
+          <span>Account</span>
+          <select value={accountFilter} onChange={(event) => setAccountFilter(event.target.value)} className="workspace-control w-full">
+            <option value="all">All active accounts</option>
+            {accounts.filter((account) => account.is_active).map((account) => (
+              <option value={account.id} key={account.id}>{account.name}</option>
+            ))}
+          </select>
+        </label>
+        <label className="reports-modern__field">
+          <span>Search description</span>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Find a note or description"
+            className="workspace-control w-full"
+          />
+        </label>
         <div className="reports-modern__filter-actions">
           <button type="button" className="reports-modern__apply" onClick={applyFilters} disabled={isLoading}>
             <Filter size={15} aria-hidden="true" /> Apply filters
@@ -137,8 +164,10 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
             setToDate(today);
             setTypeFilter("all");
             setCategoryFilter("all");
+            setAccountFilter("all");
+            setSearchQuery("");
             setFilterError(null);
-            onApply({ fromDate: yearStart, toDate: today, type: "all", categoryId: "all" });
+            onApply({ fromDate: yearStart, toDate: today, type: "all", categoryId: "all", accountId: "all", searchQuery: "" });
           }}>
             <RotateCcw size={15} aria-hidden="true" /> Reset
           </button>
@@ -150,6 +179,8 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
         <strong>{formatDisplayDate(filters.fromDate)} – {formatDisplayDate(filters.toDate)}</strong>
         <span>{filters.type === "all" ? "All transaction types" : types.find((item) => item.value === filters.type)?.label}</span>
         <span>{filters.categoryId === "all" ? "All categories" : categories.find((item) => item.id === filters.categoryId)?.name}</span>
+        <span>{filters.accountId === "all" ? "All accounts" : accounts.find((item) => item.id === filters.accountId)?.name || "Selected account"}</span>
+        {filters.searchQuery && <span>Search: {filters.searchQuery}</span>}
       </div>
     </section>
   );
