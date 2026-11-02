@@ -43,7 +43,7 @@ describe('real-data dashboard charts', () => {
     expect(screen.getByRole('list', { name: 'Current balances by account' }).textContent)
       .toContain('Till Cash');
     expect(expenses.querySelectorAll('li')).toHaveLength(1);
-    expect(screen.getByText('Rs 200')).toBeTruthy();
+    expect(screen.getAllByText('Rs 200').length).toBeGreaterThanOrEqual(2);
     expect(screen.getAllByText('Rs 100').length).toBeGreaterThanOrEqual(2);
   });
 
@@ -101,6 +101,7 @@ describe('real-data dashboard charts', () => {
     ]);
 
     render(<LedgerDashboardView />);
+    await screen.findByRole('option', { name: 'Till Cash' });
     fireEvent.change(screen.getByLabelText('Account'), { target: { value: 'account-cash' } });
     await waitFor(() => expect(getData).toHaveBeenLastCalledWith({
       startDate: today,
