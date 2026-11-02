@@ -55,6 +55,14 @@ export async function runBackup(): Promise<string> {
       offset += data.length;
     }
 
+    const { count: finalCount, error: finalCountError } = await supabase
+      .from(tableName)
+      .select('*', { count: 'exact', head: true });
+
+    if (finalCountError) throw new Error(`Failed to re-count ${tableName}: ${finalCountError.message}`);
+    if ((finalCount ?? 0) !== expectedCount) {
+      throw new Error(`Concurrent change detected for ${tableName}: row count changed from ${expectedCount} to ${finalCount ?? 0} during export`);
+    }
     if (rows.length !== expectedCount) {
       throw new Error(`Integrity failure for ${tableName}: retrieved ${rows.length}, expected ${expectedCount}`);
     }
