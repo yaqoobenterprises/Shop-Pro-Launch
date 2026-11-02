@@ -141,14 +141,14 @@ export async function createAuthorizationHardeningDb(): Promise<PGlite> {
       LANGUAGE SQL
       SECURITY DEFINER
       SET search_path = public
-      AS $
+      AS $$
         SELECT EXISTS (
           SELECT 1 FROM public.organization_members
           WHERE organization_id = target_org
             AND user_id = (SELECT auth.uid())
             AND is_active = TRUE
         );
-      $;
+      $$;
       REVOKE ALL ON FUNCTION private.is_org_member(UUID) FROM PUBLIC, anon;
       GRANT EXECUTE ON FUNCTION private.is_org_member(UUID) TO authenticated;
 
