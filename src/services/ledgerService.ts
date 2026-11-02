@@ -74,6 +74,7 @@ export interface TransactionFilter {
   endDate?: string;
   type?: string;
   categoryId?: string;
+  accountId?: string;
   searchQuery?: string;
   status?: 'active' | 'voided' | 'all';
   limit?: number;
@@ -1468,6 +1469,9 @@ export class LedgerService {
         if (filter.categoryId && filter.categoryId !== 'all') {
           query = query.eq('category_id', filter.categoryId);
         }
+        if (filter.accountId && filter.accountId !== 'all') {
+          query = query.eq('account_id', filter.accountId);
+        }
         if (filter.status && filter.status !== 'all') {
           query = query.eq('status', filter.status);
         }
@@ -1492,6 +1496,7 @@ export class LedgerService {
           if (filter.endDate) retryQuery = retryQuery.lte('business_date', filter.endDate);
           if (filter.type && filter.type !== 'all') retryQuery = retryQuery.eq('type', filter.type);
           if (filter.categoryId && filter.categoryId !== 'all') retryQuery = retryQuery.eq('category_id', filter.categoryId);
+          if (filter.accountId && filter.accountId !== 'all') retryQuery = retryQuery.eq('account_id', filter.accountId);
           if (filter.status && filter.status !== 'all') retryQuery = retryQuery.eq('status', filter.status);
           if (filter.searchQuery) retryQuery = retryQuery.ilike('raw_text', `%${filter.searchQuery}%`);
 
@@ -1539,6 +1544,7 @@ export class LedgerService {
     if (filter.endDate) localItems = localItems.filter((tx) => tx.business_date <= filter.endDate!);
     if (filter.type && filter.type !== 'all') localItems = localItems.filter((tx) => tx.type === filter.type);
     if (filter.categoryId && filter.categoryId !== 'all') localItems = localItems.filter((tx) => tx.category_id === filter.categoryId);
+    if (filter.accountId && filter.accountId !== 'all') localItems = localItems.filter((tx) => tx.account_id === filter.accountId);
     if (filter.status && filter.status !== 'all') localItems = localItems.filter((tx) => tx.status === filter.status);
     if (filter.searchQuery) {
       const q = filter.searchQuery.toLowerCase();
@@ -1569,7 +1575,36 @@ export class LedgerService {
       offset += page.transactions.length;
     } while (offset < count);
 
-    return transactions;
+    // Offline writes remain visible in Overview and Reports until the server
+    // confirms synchronization. Merge them after pagination, deduplicating by
+    // idempotency key so an item already accepted by the server is never counted
+    // twice while the local queue is waiting to be cleared.
+    const principal = getSecurityPrincipal();
+    const [queue, accounts] = await Promise.all([
+      getOfflineQueue(),
+      this.getPaymentAccounts().catch(() => [] as LedgerAccount[]),
+    ]);
+    const seen = new Set(transactions.map((item) => item.idempotency_key || item.id));
+    const queued = queue
+      .filter((item) => !principal || item.organizationId === principal.organizationId)
+      .filter((item) => !seen.has(item.idempotencyKey) && !seen.has(item.id))
+      .filter((item) => !filter.startDate || item.businessDate >= filter.startDate)
+      .filter((item) => !filter.endDate || item.businessDate <= filter.endDate)
+      .filter((item) => !filter.type || filter.type === 'all' || item.type === filter.type)
+      .filter((item) => !filter.categoryId || filter.categoryId === 'all' || item.categoryId === filter.categoryId)
+      .filter((item) => !filter.accountId || filter.accountId === 'all' || item.accountId === filter.accountId)
+      .filter((item) => !filter.status || filter.status === 'all' || filter.status === 'active')
+      .filter((item) => !filter.searchQuery || item.rawText.toLowerCase().includes(filter.searchQuery.toLowerCase()))
+      .map((item) => ({
+        ...queuedTransactionToLedgerTransaction(item),
+        account_name: accounts.find((account) => account.id === item.accountId)?.name,
+      }));
+    return [...transactions, ...queued]
+      .sort((left, right) =>
+        right.business_date.localeCompare(left.business_date)
+        || right.device_entry_time.localeCompare(left.device_entry_time)
+        || left.id.localeCompare(right.id),
+      );
   }
 
   /**
