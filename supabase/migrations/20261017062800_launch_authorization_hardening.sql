@@ -59,11 +59,14 @@ AS $$
 $$;
 
 -- Avoid public-schema name shadowing in the authenticated SECURITY DEFINER RPCs.
+-- These two compatibility wrappers are safe to call from RLS policies, but
+-- must not elevate the caller's privileges. The private membership reader is
+-- the only SECURITY DEFINER layer and is explicitly granted below.
 CREATE OR REPLACE FUNCTION public.get_auth_org_id()
 RETURNS UUID
 LANGUAGE sql
 STABLE
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
   SELECT membership.org_id
@@ -76,7 +79,7 @@ CREATE OR REPLACE FUNCTION public.is_active_shop_member()
 RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
   SELECT EXISTS (
@@ -173,6 +176,18 @@ BEGIN
 END;
 $$;
 
+-- Private schema helpers must never inherit PostgreSQL's default
+-- PUBLIC EXECUTE grant. Authenticated callers need them for RLS evaluation;
+-- anonymous callers do not.
+REVOKE ALL ON FUNCTION private.get_auth_user_org_ids() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.get_auth_user_org_ids() TO authenticated;
+REVOKE ALL ON FUNCTION private.get_org_role(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.get_org_role(UUID) TO authenticated;
+REVOKE ALL ON FUNCTION private.is_org_member(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.is_org_member(UUID) TO authenticated;
+REVOKE ALL ON FUNCTION private.is_org_owner(UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.is_org_owner(UUID) TO authenticated;
+
 REVOKE ALL ON FUNCTION public.get_auth_org_id() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_auth_org_id() TO authenticated;
 REVOKE ALL ON FUNCTION public.is_active_shop_member() FROM PUBLIC, anon;
@@ -195,6 +210,12 @@ CREATE POLICY organizations_update ON public.organizations
   FOR UPDATE TO authenticated
   USING (private.is_org_owner(id))
   WITH CHECK (private.is_org_owner(id));
+
+-- Remove older broad category write policies. They were permissive and
+-- therefore OR-combined with categories_write, allowing any member to bypass
+-- the MANAGE_INVENTORY permission check. Keep the newer role-aware policy.
+DROP POLICY IF EXISTS "Members can insert categories" ON public.categories;
+DROP POLICY IF EXISTS "Members can update categories" ON public.categories;
 
 -- Drafts are only available to authenticated users under RLS.
 REVOKE ALL ON TABLE public.transaction_drafts FROM anon, PUBLIC;
