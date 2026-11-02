@@ -157,7 +157,7 @@ export async function createAuthorizationHardeningDb(): Promise<PGlite> {
       GRANT EXECUTE ON FUNCTION private.has_permission(UUID, TEXT) TO authenticated;
 
       CREATE FUNCTION public.seed_shop_defaults(target_org UUID)
-      RETURNS VOID LANGUAGE SQL AS $$ SELECT; $;
+      RETURNS VOID LANGUAGE SQL AS $$ SELECT; $$;
 
       ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
       ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
