@@ -869,5 +869,4 @@ describe('ledger mutation concurrency', () => {
       .toBe(9000);
   });
 
-
 });
