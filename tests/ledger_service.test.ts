@@ -293,16 +293,72 @@ describe('ledger mutation concurrency', () => {
   it('loads all filtered transaction pages for export', async () => {
     const firstPage = Array.from({ length: 1000 }, (_, index) => ({ id: `tx-${index}` }) as Transaction);
     const finalPage = [{ id: 'tx-1000' }, { id: 'tx-1001' }] as Transaction[];
+    vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
     const getPage = vi
       .spyOn(ledgerService, 'getFilteredTransactions')
       .mockResolvedValueOnce({ transactions: firstPage, count: 1002 })
       .mockResolvedValueOnce({ transactions: finalPage, count: 1002 });
 
-    const transactions = await ledgerService.getAllFilteredTransactions({ type: 'income' });
+    const transactions = await ledgerService.getAllFilteredTransactions({ type: 'income', accountId: 'account-1' });
 
     expect(transactions).toHaveLength(1002);
-    expect(getPage).toHaveBeenNthCalledWith(1, { type: 'income', limit: 1000, offset: 0 });
-    expect(getPage).toHaveBeenNthCalledWith(2, { type: 'income', limit: 1000, offset: 1000 });
+    expect(getPage).toHaveBeenNthCalledWith(1, { type: 'income', accountId: 'account-1', limit: 1000, offset: 0 });
+    expect(getPage).toHaveBeenNthCalledWith(2, { type: 'income', accountId: 'account-1', limit: 1000, offset: 1000 });
+  });
+
+  it('merges matching offline transactions into unified reports without duplicate or cross-account entries', async () => {
+    setSecurityPrincipal({
+      id: creatorId,
+      organizationId,
+      role: 'OWNER',
+      fullName: 'Test Owner',
+    });
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+    vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
+    const cloudTransaction = {
+      id: 'cloud-entry',
+      type: 'income',
+      amount_paisa: 3000,
+      category_id: 'category-print',
+      account_id: 'account-1',
+      business_date: '2026-10-04',
+      device_entry_time: timestamp,
+      note: null,
+      raw_text: 'Cloud printing',
+      status: 'active',
+      idempotency_key: 'queued-key-1',
+      created_by: creatorId,
+      created_by_name: 'Test Owner',
+    } as Transaction;
+    vi.spyOn(ledgerService, 'getFilteredTransactions').mockResolvedValue({
+      transactions: [cloudTransaction],
+      count: 1,
+    });
+    await enqueueForTest(makeQueuedTransaction({
+      id: 'duplicate-local-copy',
+      idempotencyKey: 'queued-key-1',
+      accountId: 'account-1',
+    }));
+    await enqueueForTest(makeQueuedTransaction({
+      id: 'offline-account-one',
+      idempotencyKey: 'queued-account-one',
+      accountId: 'account-1',
+      rawText: 'Offline printing',
+    }));
+    await enqueueForTest(makeQueuedTransaction({
+      id: 'offline-account-two',
+      idempotencyKey: 'queued-account-two',
+      accountId: 'account-2',
+    }));
+
+    const rows = await ledgerService.getAllFilteredTransactions({
+      accountId: 'account-1',
+      startDate: '2026-10-01',
+      endDate: '2026-10-31',
+      status: 'active',
+    });
+
+    expect(rows.map((row) => row.id)).toEqual(['cloud-entry', 'offline-account-one']);
   });
 
   it('rejects incomplete exports instead of returning partial results', async () => {
