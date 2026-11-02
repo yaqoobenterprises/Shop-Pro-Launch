@@ -149,6 +149,7 @@ BEGIN
   PERFORM public.seed_shop_defaults(profile_org_id);
 END;
 $$;
+GRANT USAGE ON SCHEMA private TO authenticated;
 REVOKE ALL ON FUNCTION private.get_auth_user_org_ids() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.get_auth_user_org_ids() TO authenticated;
 REVOKE ALL ON FUNCTION private.get_org_role(UUID) FROM PUBLIC, anon;
