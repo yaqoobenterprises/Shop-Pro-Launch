@@ -151,7 +151,7 @@
 
 .app-shell .reports-modern__filter-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: end;
   gap: 0.8rem;
 }
@@ -435,7 +435,7 @@
 
 .app-shell .reports-modern__analysis-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(17rem, 0.8fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
   align-items: start;
 }
