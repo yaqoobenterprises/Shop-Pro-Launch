@@ -101,6 +101,7 @@ export const LedgerReportsView: React.FC = () => {
       const workbook = buildReportsWorkbook({
         transactions,
         categories,
+        accounts,
         fromDate: filters.fromDate,
         toDate: filters.toDate,
         type: filters.type,
