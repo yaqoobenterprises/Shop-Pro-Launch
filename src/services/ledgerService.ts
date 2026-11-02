@@ -1593,7 +1593,7 @@ export class LedgerService {
       .filter((item) => !filter.type || filter.type === 'all' || item.type === filter.type)
       .filter((item) => !filter.categoryId || filter.categoryId === 'all' || item.categoryId === filter.categoryId)
       .filter((item) => !filter.accountId || filter.accountId === 'all' || item.accountId === filter.accountId)
-      .filter((item) => !filter.status || filter.status === 'all' || filter.status === 'active')
+      .filter((item) => filter.status !== 'voided' && ['queued', 'sending', 'failed'].includes(item.status))
       .filter((item) => !filter.searchQuery || item.rawText.toLowerCase().includes(filter.searchQuery.toLowerCase()))
       .map((item) => ({
         ...queuedTransactionToLedgerTransaction(item),
