@@ -224,9 +224,10 @@ export class LedgerService {
     const isDemo = principal.organizationId === DEMO_ORGANIZATION_ID || isDemoSessionActive();
     if (isDemo || !(await hasConfiguredCloudSession(principal.id))) return draft;
     try {
-      const syncedDraft = await this.syncDraftToCloud(draft);
-      await removeOfflineDraft(draft.id);
-      return syncedDraft;
+      // Keep the local copy until post_transaction_draft confirms the
+      // account posting. It is the durable retry record if the RPC commits
+      // but its response is lost on the way back to the client.
+      return await this.syncDraftToCloud(draft);
     } catch (error) {
       console.warn('Could not sync draft to cloud, retaining offline draft:', error);
       return draft;
