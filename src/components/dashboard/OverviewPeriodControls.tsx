@@ -1,8 +1,10 @@
 import React from "react";
 import { DatePicker } from "../common/DatePicker";
 import { MonthPicker } from "../common/MonthPicker";
+import type { LedgerAccount, Transaction } from "../../types/ledger";
 
 export type OverviewPeriod = "day" | "week" | "month" | "custom";
+type OverviewTransactionType = "all" | Transaction["type"];
 
 interface OverviewPeriodControlsProps {
   period: OverviewPeriod;
@@ -14,6 +16,11 @@ interface OverviewPeriodControlsProps {
   rangeEnd: string;
   setRangeEnd: (value: string) => void;
   today: string;
+  accounts: LedgerAccount[];
+  accountId: string;
+  setAccountId: (value: string) => void;
+  transactionType: OverviewTransactionType;
+  setTransactionType: (value: OverviewTransactionType) => void;
 }
 
 export const OverviewPeriodControls: React.FC<OverviewPeriodControlsProps> = ({
@@ -26,6 +33,11 @@ export const OverviewPeriodControls: React.FC<OverviewPeriodControlsProps> = ({
   rangeEnd,
   setRangeEnd,
   today,
+  accounts,
+  accountId,
+  setAccountId,
+  transactionType,
+  setTransactionType,
 }) => (
   <div className="title-actions overview-filter-controls">
     <div className="overview-period-toggle" role="group" aria-label="Overview period">
@@ -47,6 +59,32 @@ export const OverviewPeriodControls: React.FC<OverviewPeriodControlsProps> = ({
       ))}
     </div>
 
+    <div className="overview-scope-controls">
+      <label>
+        <span>Account</span>
+        <select className="workspace-control" value={accountId} onChange={(event) => setAccountId(event.target.value)}>
+          <option value="all">All active accounts</option>
+          {accounts.filter((account) => account.is_active).map((account) => (
+            <option key={account.id} value={account.id}>{account.name}</option>
+          ))}
+        </select>
+      </label>
+      <label>
+        <span>Transaction type</span>
+        <select
+          className="workspace-control"
+          value={transactionType}
+          onChange={(event) => setTransactionType(event.target.value as OverviewTransactionType)}
+        >
+          <option value="all">All types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expenses</option>
+          <option value="capital_in">Capital introduced</option>
+          <option value="withdrawal">Owner drawings</option>
+          <option value="adjustment">Cash adjustments</option>
+        </select>
+      </label>
+    </div>
     <div className="overview-period-picker">
       {period === "month" ? (
         <MonthPicker
