@@ -235,7 +235,7 @@ export const LedgerReportsView: React.FC = () => {
           <div><span className="reports-modern__section-kicker">PERFORMANCE</span><h2>Cash flow over time</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
           <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
-        {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
+        {isLoading ? <div className="reports-modern__empty">Updating cash-flow trend…</div> : trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
           <div className="reports-modern__trend-scroll">
             <div className="reports-modern__trend" style={{ gridTemplateColumns: `repeat(${trend.length}, minmax(36px, 1fr))` }}>
               {trend.map((bucket) => {
@@ -261,14 +261,14 @@ export const LedgerReportsView: React.FC = () => {
               </select>
             </label>
           </div>
-          {sortedCategories.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
+          {isLoading ? <div className="reports-modern__empty">Updating category performance…</div> : sortedCategories.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
             {sortedCategories.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={`reports-modern__type-badge type-\${item.type}`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
           </tbody></table></div>}
         </section>
 
         <section className="reports-modern__table-panel">
-          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">BY ACCOUNT</span><h2>Account activity</h2><p>Recorded movement by payment account</p></div></div>
-          {accountBreakdown.length === 0 ? <div className="reports-modern__empty">No account activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Account</th><th>Entries</th><th>Movement</th></tr></thead><tbody>
+          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">BY ACCOUNT</span><h2>Account activity</h2><p>Gross value of filtered entries, not current account balance</p></div></div>
+          {isLoading ? <div className="reports-modern__empty">Updating account activity…</div> : accountBreakdown.length === 0 ? <div className="reports-modern__empty">No account activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Account</th><th>Entries</th><th>Gross activity</th></tr></thead><tbody>
             {accountBreakdown.map((item) => <tr key={item.key}><td><strong>{item.name}</strong></td><td>{item.count}</td><td>{formatPaisa(item.total)}</td></tr>)}
           </tbody></table></div>}
         </section>
@@ -290,7 +290,7 @@ export const LedgerReportsView: React.FC = () => {
           <div><span className="reports-modern__section-kicker">AUDITABLE DETAIL</span><h2>Transaction register</h2><p>Every row matches the filters above and is included in the export.</p></div>
           <span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span>
         </div>
-        {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display. Try changing the date range or filters.</div> : <>
+        {isLoading ? <div className="reports-modern__empty">Updating transaction register…</div> : transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display. Try changing the date range or filters.</div> : <>
           <div className="reports-modern__table-scroll"><table><thead><tr>
             <th>{sortHeader("date", "Date")}</th><th>{sortHeader("type", "Type")}</th><th>{sortHeader("category", "Category")}</th>
             <th>{sortHeader("description", "Description")}</th><th>{sortHeader("account", "Account")}</th><th className="is-numeric">{sortHeader("amount", "Amount")}</th>
