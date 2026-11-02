@@ -2,7 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   createAuthorizationHardeningDb, orgA, orgB, managerId, ownerId,
-  inactiveId, cashierId, accountA, categoryA, draftA, crossShopDraft,
+  accountA, categoryA, draftA, crossShopDraft,
 } from "./support/authorizationHardeningDb";
 
 describe("authorization RPC and execution boundaries", () => {
