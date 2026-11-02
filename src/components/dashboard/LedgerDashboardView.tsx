@@ -13,6 +13,7 @@ import {
   DailySummary,
   CategoryBreakdown,
   LedgerAccount,
+  Transaction,
 } from "../../types/ledger";
 import {
   TrendingUp,
@@ -104,6 +105,10 @@ export const LedgerDashboardView: React.FC = () => {
       console.error("Error fetching dashboard summary views:", err);
       if (currentRequestId === requestId.current) {
         setTransactions([]);
+        setDailyData(null);
+        setRangeSummary(null);
+        setRangeTrend([]);
+        setBreakdowns([]);
         setLoadError(
           err instanceof Error
             ? err.message
@@ -148,7 +153,11 @@ export const LedgerDashboardView: React.FC = () => {
   const selectedRangeLabel = period === "day"
     ? formatDisplayDate(currentDate)
     : period === "week"
-      ? getWeekRangeForDate(currentDate).map(formatDisplayDate).join(" – ")
+      ? (() => {
+          const [weekStart, weekEnd] = getWeekRangeForDate(currentDate);
+          return [weekStart, weekEnd > getKarachiBusinessDate() ? getKarachiBusinessDate() : weekEnd]
+            .map(formatDisplayDate).join(" – ");
+        })()
       : period === "month"
         ? new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentDate.slice(0, 7)}-01T00:00:00.000Z`))
         : `${formatDisplayDate(rangeStart)} – ${formatDisplayDate(rangeEnd)}`;
