@@ -2,7 +2,8 @@ import { createHash } from 'node:crypto';
 
 export const BACKUP_FORMAT = 'SHOP_PRO_SUPABASE_BACKUP_V1';
 export const BACKUP_VERSION = '3.0.0';
-export const BACKUP_SCHEMA_VERSION = '20261004007000';
+export const BACKUP_SCHEMA_VERSION = '20261020060229';
+const LEGACY_BACKUP_SCHEMA_VERSION = '20261004007000';
 
 export const BACKUP_TABLES = [
   { name: 'organizations', primaryKey: 'id' },
@@ -89,7 +90,7 @@ export interface FullBackupArchive {
     exportedAt: string;
     supabaseUrl: string;
     version: typeof BACKUP_VERSION;
-    schemaVersion: typeof BACKUP_SCHEMA_VERSION;
+    schemaVersion: string;
     tableCounts: Record<BackupTableName, number>;
     sha256: string;
   };
