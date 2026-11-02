@@ -371,28 +371,14 @@ export class LedgerService {
       await removeOfflineDraft(draftId);
       return { transaction: postedTransaction as Transaction, isQueuedOffline: false };
     } catch (error) {
-      console.warn('post_transaction_draft failed, attempting resilient fallback:', error);
-      if (localDraft) {
-        try {
-          const directResult = await this.recordTransaction({
-            type: localDraft.type,
-            amountPaisa: localDraft.amount_paisa,
-            categoryId: localDraft.category_id,
-            categoryName: localDraft.category_name,
-            accountId,
-            businessDate: localDraft.business_date,
-            note: localDraft.note,
-            rawText: localDraft.raw_text,
-            createdByName: localDraft.created_by_name,
-            adjustmentDir: localDraft.adjustment_dir,
-            idempotencyKey: `posted-${draftId}`,
-          }, principal.id);
-          await removeOfflineDraft(draftId);
-          return { transaction: directResult.transaction as Transaction, isQueuedOffline: directResult.isQueuedOffline };
-        } catch (directErr) {
-          console.warn('Direct recording fallback also encountered error:', directErr);
-        }
+      // A failed response is not proof that the database did not commit.
+      // Never create a second transaction with a different idempotency key.
+      // Only network failures are safe to retry; authorization and validation
+      // failures must be surfaced to the user instead of being hidden offline.
+      if (!isNetworkFailure(error) || isPermissionOrAuthError(error)) {
+        throw error;
       }
+
       const accounts = await getCachedAccounts(principal.organizationId);
       if (localDraft && accounts.some((account) => account.id === accountId && account.is_active)) {
         await saveOfflineDraft({ ...localDraft, pending_account_id: accountId });
@@ -663,30 +649,16 @@ export class LedgerService {
         } else if (task.kind === 'DRAFT') {
           const syncedDraft = await this.syncDraftToCloud(task.draft);
           if (syncedDraft.pending_account_id) {
-            try {
-              const { error } = await getSupabaseClient().rpc('post_transaction_draft', {
-                draft_id: syncedDraft.id,
-                selected_account_id: syncedDraft.pending_account_id,
-              });
-              if (error) throw error;
-              accountsChanged = true;
-            } catch (rpcErr) {
-              console.warn('post_transaction_draft failed during queue flush, falling back to direct record:', rpcErr);
-              await this.recordTransaction({
-                type: syncedDraft.type,
-                amountPaisa: syncedDraft.amount_paisa,
-                categoryId: syncedDraft.category_id,
-                categoryName: syncedDraft.category_name,
-                accountId: syncedDraft.pending_account_id,
-                businessDate: syncedDraft.business_date,
-                note: syncedDraft.note,
-                rawText: syncedDraft.raw_text,
-                createdByName: syncedDraft.created_by_name,
-                adjustmentDir: syncedDraft.adjustment_dir,
-                idempotencyKey: `posted-${syncedDraft.id}`,
-              }, principal.id);
-              accountsChanged = true;
+            const { data, error } = await getSupabaseClient().rpc('post_transaction_draft', {
+              draft_id: syncedDraft.id,
+              selected_account_id: syncedDraft.pending_account_id,
+            });
+            if (error) throw error;
+            const postedTransaction = Array.isArray(data) ? data[0] : data;
+            if (!postedTransaction) {
+              throw new Error('The draft posting could not be confirmed. It remains queued for a safe retry.');
             }
+            accountsChanged = true;
           }
           await removeOfflineDraft(task.draft.id);
         } else {
