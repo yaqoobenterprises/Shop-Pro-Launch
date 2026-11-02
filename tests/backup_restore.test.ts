@@ -9,6 +9,7 @@ vi.mock('@supabase/supabase-js', () => ({
 }));
 
 import { runRestore } from '../scripts/restore_database';
+import { runBackup } from '../scripts/backup_database';
 import {
   BACKUP_TABLES,
   createBackupArchive,
@@ -103,6 +104,19 @@ describe('database backup archive integrity', () => {
     .toThrow('Backup tenant mismatch: transactions.category_id at row 0 references another organization');
   });
 
+  it('continues to validate existing v3 archives from the previous schema snapshot', () => {
+    const archive = createBackupArchive(emptyTables(), 'https://source.example.supabase.co');
+    const legacySchemaArchive = {
+      ...archive,
+      metadata: { ...archive.metadata, schemaVersion: '20261004007000' },
+    };
+
+    expect(validateBackupArchive(legacySchemaArchive)).toMatchObject({
+      format: archive.format,
+      metadata: { schemaVersion: '20261004007000' },
+    });
+  });
+
   it('rejects archives marked for an incompatible database schema version', () => {
     const archive = createBackupArchive(emptyTables(), 'https://source.example.supabase.co');
     const incompatible = {
@@ -124,6 +138,84 @@ describe('database backup archive integrity', () => {
       .toThrow('invalid legacy row count');
     expect(() => validateBackupArchive({ ...legacy, data: [{ idempotency_key: 'same' }, { idempotency_key: 'same' }], metadata: { ...legacy.metadata, rowCount: 2 } }))
       .toThrow('Duplicate idempotency_key');
+  });
+
+  it('exports a checksummed archive only when table row counts are stable throughout the read', async () => {
+    const previousUrl = process.env.SUPABASE_URL;
+    const previousKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const countCalls = new Map<string, number>();
+    mockFrom.mockImplementation((tableName: string) => ({
+      select: vi.fn((_columns: string, options?: { head?: boolean }) => {
+        if (options?.head) {
+          const call = countCalls.get(tableName) || 0;
+          countCalls.set(tableName, call + 1);
+          const count = tableName === 'organizations' ? 1 : 0;
+          return Promise.resolve({ count, error: null });
+        }
+        return {
+          order: vi.fn(() => ({
+            range: vi.fn(async () => ({
+              data: tableName === 'organizations' ? [{ id: 'shop-1' }] : [],
+              error: null,
+            })),
+          })),
+        };
+      }),
+    }) as never);
+    process.env.SUPABASE_URL = 'https://source.example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+    let backupFile = '';
+    try {
+      backupFile = await runBackup();
+      const archive = JSON.parse(fs.readFileSync(backupFile, 'utf8')) as ReturnType<typeof createBackupArchive>;
+      expect(archive.metadata.tableCounts.organizations).toBe(1);
+      expect(archive.metadata.tableCounts.transactions).toBe(0);
+      expect(countCalls.get('organizations')).toBe(2);
+      expect(archive.metadata.schemaVersion).toBe('20261020060229');
+    } finally {
+      if (backupFile && fs.existsSync(backupFile)) fs.unlinkSync(backupFile);
+      if (previousUrl === undefined) delete process.env.SUPABASE_URL;
+      else process.env.SUPABASE_URL = previousUrl;
+      if (previousKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+      else process.env.SUPABASE_SERVICE_ROLE_KEY = previousKey;
+      log.mockRestore();
+      mockFrom.mockReset();
+    }
+  });
+
+  it('aborts a backup if a table changes while pages are being exported', async () => {
+    const previousUrl = process.env.SUPABASE_URL;
+    const previousKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const countCalls = new Map<string, number>();
+    mockFrom.mockImplementation((tableName: string) => ({
+      select: vi.fn((_columns: string, options?: { head?: boolean }) => {
+        if (options?.head) {
+          const call = countCalls.get(tableName) || 0;
+          countCalls.set(tableName, call + 1);
+          const count = tableName === 'organizations' ? (call === 0 ? 1 : 2) : 0;
+          return Promise.resolve({ count, error: null });
+        }
+        return {
+          order: vi.fn(() => ({
+            range: vi.fn(async () => ({
+              data: tableName === 'organizations' ? [{ id: 'shop-1' }] : [],
+              error: null,
+            })),
+          })),
+        };
+      }),
+    }) as never);
+    process.env.SUPABASE_URL = 'https://source.example.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+    await expect(runBackup()).rejects.toThrow(/Concurrent change detected for organizations/);
+    if (previousUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = previousUrl;
+    if (previousKey === undefined) delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = previousKey;
+    mockFrom.mockReset();
   });
 
   it('validates a full archive in isolation without Supabase credentials', async () => {
