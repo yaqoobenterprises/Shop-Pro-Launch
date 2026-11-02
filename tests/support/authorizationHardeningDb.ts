@@ -136,6 +136,22 @@ export async function createAuthorizationHardeningDb(): Promise<PGlite> {
       GRANT SELECT, INSERT, UPDATE, DELETE ON public.transactions TO authenticated;
       GRANT SELECT, INSERT, UPDATE, DELETE ON public.transaction_drafts TO authenticated;
       GRANT ALL ON public.categories TO authenticated;
+      CREATE FUNCTION private.is_org_member(target_org UUID)
+      RETURNS BOOLEAN
+      LANGUAGE SQL
+      SECURITY DEFINER
+      SET search_path = public
+      AS $
+        SELECT EXISTS (
+          SELECT 1 FROM public.organization_members
+          WHERE organization_id = target_org
+            AND user_id = (SELECT auth.uid())
+            AND is_active = TRUE
+        );
+      $;
+      REVOKE ALL ON FUNCTION private.is_org_member(UUID) FROM PUBLIC, anon;
+      GRANT EXECUTE ON FUNCTION private.is_org_member(UUID) TO authenticated;
+
       CREATE FUNCTION private.has_permission(target_org UUID, permission_name TEXT)
       RETURNS BOOLEAN
       LANGUAGE SQL
