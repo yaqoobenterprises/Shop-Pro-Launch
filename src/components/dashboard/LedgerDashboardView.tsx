@@ -5,6 +5,7 @@ import { formatPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import { useI18n } from "../../i18n";
 import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
+import { OverviewActivityTable } from "./OverviewActivityTable";
 import "./OverviewAnalytics.css";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
@@ -26,12 +27,15 @@ export const LedgerDashboardView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
   const [rangeEnd, setRangeEnd] = useState(getKarachiBusinessDate());
+  const [accountId, setAccountId] = useState("all");
+  const [transactionType, setTransactionType] = useState<"all" | Transaction["type"]>("all");
   const [isLoading, setIsLoading] = useState(true);
 
   const [dailyData, setDailyData] = useState<DailySummary | null>(null);
   const [rangeSummary, setRangeSummary] = useState<ReturnType<typeof calculateReportTotals> | null>(null);
   const [rangeTrend, setRangeTrend] = useState<ReportTrendBucket[]>([]);
   const [breakdowns, setBreakdowns] = useState<CategoryBreakdown[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const requestId = useRef(0);
@@ -40,72 +44,66 @@ export const LedgerDashboardView: React.FC = () => {
     const currentRequestId = ++requestId.current;
     setIsLoading(true);
     setLoadError(null);
-    setDailyData(null);
-    setRangeSummary(null);
-    setRangeTrend([]);
-    setBreakdowns([]);
-    setAccounts([]);
     try {
-      const availableAccounts = await ledgerService.getPaymentAccounts();
-      if (currentRequestId !== requestId.current) return;
-      setAccounts(availableAccounts);
+      const today = getKarachiBusinessDate();
+      let startDate = currentDate;
+      let endDate = currentDate;
 
-      if (period === "day") {
-        const [daySummary, bData] = await Promise.all([
-          ledgerService.getDailySummary(currentDate),
-          ledgerService.getCategoryBreakdown(currentDate),
-        ]);
-        if (currentRequestId !== requestId.current) return;
-        setDailyData(daySummary);
-        setBreakdowns(bData || []);
+      if (period === "week") {
+        const [weekStart, weekEnd] = getWeekRangeForDate(currentDate);
+        startDate = weekStart;
+        endDate = weekEnd > today ? today : weekEnd;
       } else if (period === "month") {
-        const year = parseInt(currentDate.split("-")[0], 10);
-        const month = parseInt(currentDate.split("-")[1], 10);
-        const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-        const monthEnd = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
-        const today = getKarachiBusinessDate();
-        const endDate = monthEnd > today && startDate <= today ? today : monthEnd;
-        const records = await ledgerService.getAllFilteredTransactions({
-          startDate,
-          endDate,
-          status: "active",
-        });
-        if (currentRequestId !== requestId.current) return;
-        setRangeSummary(calculateReportTotals(records));
-        setRangeTrend(buildReportTrend(records, startDate, endDate));
-        setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
-          business_date: startDate,
-          type: item.type,
-          category_id: item.category_id || "uncategorized",
-          category_name: item.category_name,
-          total_paisa: item.total_paisa,
-          entry_count: item.entry_count,
-        })));
-      } else {
-        const [startDate, endDate] = period === "week"
-          ? getWeekRangeForDate(currentDate)
-          : [rangeStart, rangeEnd];
-        if (startDate > endDate) throw new Error("The start date must be on or before the end date.");
-        const records = await ledgerService.getAllFilteredTransactions({
-          startDate,
-          endDate,
-          status: "active",
-        });
-        if (currentRequestId !== requestId.current) return;
-        setRangeSummary(calculateReportTotals(records));
-        setRangeTrend(buildReportTrend(records, startDate, endDate));
-        setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
-          business_date: startDate,
-          type: item.type,
-          category_id: item.category_id || "uncategorized",
-          category_name: item.category_name,
-          total_paisa: item.total_paisa,
-          entry_count: item.entry_count,
-        })));
+        const year = Number(currentDate.slice(0, 4));
+        const month = Number(currentDate.slice(5, 7));
+        startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+        endDate = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
+        if (endDate > today) endDate = today;
+      } else if (period === "custom") {
+        startDate = rangeStart;
+        endDate = rangeEnd;
       }
+
+      if (startDate > endDate) {
+        throw new Error("Choose a reporting period that has started and a valid date range.");
+      }
+
+      const [availableAccounts, records] = await Promise.all([
+        ledgerService.getPaymentAccounts(),
+        ledgerService.getAllFilteredTransactions({
+          startDate,
+          endDate,
+          status: "active",
+          ...(accountId !== "all" ? { accountId } : {}),
+          ...(transactionType !== "all" ? { type: transactionType } : {}),
+        }),
+      ]);
+      if (currentRequestId !== requestId.current) return;
+
+      const totals = calculateReportTotals(records);
+      setAccounts(availableAccounts);
+      setTransactions(records);
+      if (period === "day") {
+        setDailyData({ business_date: currentDate, ...totals });
+        setRangeSummary(null);
+        setRangeTrend([]);
+      } else {
+        setDailyData(null);
+        setRangeSummary(totals);
+        setRangeTrend(buildReportTrend(records, startDate, endDate));
+      }
+      setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
+        business_date: startDate,
+        type: item.type,
+        category_id: item.category_id || "uncategorized",
+        category_name: item.category_name,
+        total_paisa: item.total_paisa,
+        entry_count: item.entry_count,
+      })));
     } catch (err) {
       console.error("Error fetching dashboard summary views:", err);
       if (currentRequestId === requestId.current) {
+        setTransactions([]);
         setLoadError(
           err instanceof Error
             ? err.message
@@ -115,7 +113,7 @@ export const LedgerDashboardView: React.FC = () => {
     } finally {
       if (currentRequestId === requestId.current) setIsLoading(false);
     }
-  }, [period, currentDate, rangeStart, rangeEnd]);
+  }, [period, currentDate, rangeStart, rangeEnd, accountId, transactionType]);
 
   useEffect(() => {
     void loadData();
@@ -130,7 +128,9 @@ export const LedgerDashboardView: React.FC = () => {
   const activeAdjIn = activeSummary?.adjustment_in_paisa || 0;
   const activeAdjOut = activeSummary?.adjustment_out_paisa || 0;
 
-  const activeAccounts = accounts.filter((account) => account.is_active);
+  const activeAccounts = accounts.filter((account) =>
+    account.is_active && (accountId === "all" || account.id === accountId),
+  );
   const totalBalancePaisa = activeAccounts.reduce(
     (sum, account) => sum + (Number(account.balance_paisa) || 0),
     0,
@@ -160,6 +160,7 @@ export const LedgerDashboardView: React.FC = () => {
       <div className="page-title">
         <div>
           <h1>Overview</h1>
+          <p className="overview-page__intro">A clear view of shop performance, account balances and transaction activity.</p>
         </div>
 
         <OverviewPeriodControls
@@ -172,6 +173,11 @@ export const LedgerDashboardView: React.FC = () => {
           rangeEnd={rangeEnd}
           setRangeEnd={setRangeEnd}
           today={getKarachiBusinessDate()}
+          accounts={accounts}
+          accountId={accountId}
+          setAccountId={setAccountId}
+          transactionType={transactionType}
+          setTransactionType={setTransactionType}
         />
       </div>
 
@@ -185,7 +191,7 @@ export const LedgerDashboardView: React.FC = () => {
       <div className="metrics">
         <article className="metric">
           <div className="metric-top">
-            <span>Total Liquidity</span>
+            <span>{accountId === "all" ? "Current account balances" : "Selected account balance"}</span>
             <Wallet className="h-4 w-4" />
           </div>
           <strong className="metric-amount">
@@ -437,6 +443,7 @@ export const LedgerDashboardView: React.FC = () => {
           </section>
         </div>
       </div>
+      <OverviewActivityTable transactions={transactions} isLoading={isLoading} />
     </div>
   );
 };
