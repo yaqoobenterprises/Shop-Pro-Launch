@@ -33,19 +33,6 @@ describe("pending authorization-hardening migration", () => {
       CREATE SCHEMA private;
       GRANT USAGE ON SCHEMA auth TO anon, authenticated;
       GRANT USAGE ON SCHEMA private TO authenticated;
-      -- PGlite does not fully emulate SECURITY DEFINER ownership changes. Grant
-      -- the underlying table privileges used by the same RPCs in production,
-      -- while retaining the RLS policies under test on organizations, categories
-      -- and transaction_drafts.
-      GRANT SELECT, INSERT, UPDATE ON auth.users TO authenticated;
-      GRANT SELECT, INSERT, UPDATE ON public.organizations TO authenticated;
-      GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
-      GRANT SELECT, INSERT, UPDATE ON public.organization_members TO authenticated;
-      GRANT SELECT, INSERT, UPDATE ON public.shop_members TO authenticated;
-      GRANT SELECT ON public.payment_accounts, public.categories TO authenticated;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON public.transactions TO authenticated;
-      GRANT SELECT, INSERT, UPDATE, DELETE ON public.transaction_drafts TO authenticated;
-      GRANT ALL ON public.categories TO authenticated;
 
       CREATE FUNCTION auth.uid() RETURNS UUID
       LANGUAGE SQL STABLE
@@ -139,6 +126,19 @@ describe("pending authorization-hardening migration", () => {
         created_by_name TEXT NOT NULL
       );
 
+      -- PGlite does not fully emulate SECURITY DEFINER ownership changes. Grant
+      -- the underlying table privileges used by the same RPCs in production,
+      -- while retaining the RLS policies under test on organizations, categories
+      -- and transaction_drafts.
+      GRANT SELECT, INSERT, UPDATE ON auth.users TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.organizations TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.organization_members TO authenticated;
+      GRANT SELECT, INSERT, UPDATE ON public.shop_members TO authenticated;
+      GRANT SELECT ON public.payment_accounts, public.categories TO authenticated;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.transactions TO authenticated;
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.transaction_drafts TO authenticated;
+      GRANT ALL ON public.categories TO authenticated;
       CREATE FUNCTION private.has_permission(target_org UUID, permission_name TEXT)
       RETURNS BOOLEAN
       LANGUAGE SQL
