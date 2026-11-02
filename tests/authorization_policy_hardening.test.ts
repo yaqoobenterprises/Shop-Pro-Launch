@@ -1,8 +1,8 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
-  createAuthorizationHardeningDb, orgA, orgB, managerId, ownerId,
-  inactiveId, cashierId, accountA, categoryA, draftA, crossShopDraft,
+  createAuthorizationHardeningDb, orgA, managerId, ownerId,
+  inactiveId, cashierId, categoryA,
 } from "./support/authorizationHardeningDb";
 
 describe("authorization policy boundaries", () => {
