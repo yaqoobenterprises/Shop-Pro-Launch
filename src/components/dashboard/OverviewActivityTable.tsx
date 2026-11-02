@@ -34,17 +34,14 @@ export const OverviewActivityTable: React.FC<OverviewActivityTableProps> = ({
   }, [transactions, search]);
 
   const sorted = useMemo(() => [...filtered].sort((left, right) => {
-    let comparison = 0;
-    if (sortKey === "date") {
-      comparison = left.business_date.localeCompare(right.business_date)
-        || left.device_entry_time.localeCompare(right.device_entry_time);
-    } else if (sortKey === "type") {
-      comparison = left.type.localeCompare(right.type);
-    } else if (sortKey === "description") {
-      comparison = (left.raw_text || "").localeCompare(right.raw_text || "");
-    } else {
-      comparison = Number(left.amount_paisa) - Number(right.amount_paisa);
-    }
+    const comparison = sortKey === "date"
+      ? left.business_date.localeCompare(right.business_date)
+        || left.device_entry_time.localeCompare(right.device_entry_time)
+      : sortKey === "type"
+        ? left.type.localeCompare(right.type)
+        : sortKey === "description"
+          ? (left.raw_text || "").localeCompare(right.raw_text || "")
+          : Number(left.amount_paisa) - Number(right.amount_paisa);
     return sortDirection === "asc" ? comparison : -comparison;
   }), [filtered, sortKey, sortDirection]);
 
