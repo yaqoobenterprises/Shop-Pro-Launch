@@ -8,6 +8,7 @@ import { Button } from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
 import { recordQuickExpense } from "../../services/quickExpenseService";
+import { ledgerService } from "../../services/ledgerService";
 import { Category, LedgerAccount } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
 import { parseLocalizedMoneyInput } from "../../regional/moneyInput";
@@ -86,7 +87,6 @@ export const QuickExpenseModal: React.FC = () => {
   }, [isQuickExpenseOpen, organization.id]);
 
   if (!isQuickExpenseOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsedAmount = parseLocalizedMoneyInput(amount);
@@ -114,7 +114,6 @@ export const QuickExpenseModal: React.FC = () => {
     if (!targetAccountId && accounts.length > 0) {
       targetAccountId = (accounts.find((a) => a.is_default) || accounts[0]).id;
     }
-
     if (!targetCategoryId || !targetAccountId) {
       showToast(
         "error",
@@ -123,7 +122,6 @@ export const QuickExpenseModal: React.FC = () => {
       );
       return;
     }
-
     setIsSubmitting(true);
     try {
       const posting = await recordQuickExpense({
@@ -139,7 +137,6 @@ export const QuickExpenseModal: React.FC = () => {
         userId: user?.id,
         createdByName: getProfileDisplayName(user),
       });
-
       showToast(
         posting.isQueuedOffline ? "warning" : "success",
         posting.isQueuedOffline ? "Expense saved offline" : "Expense recorded",
@@ -159,9 +156,7 @@ export const QuickExpenseModal: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
   const selectedAccount = accounts.find((a) => a.id === accountId);
-
   return (
     <Modal
       isOpen={isQuickExpenseOpen}
@@ -186,7 +181,6 @@ export const QuickExpenseModal: React.FC = () => {
           Add an active payment account before recording an expense.
         </p>
       )}
-
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <label className="block space-y-1 text-xs font-semibold text-secondary">
           <span>{t("expenses.category")}</span>
@@ -242,7 +236,6 @@ export const QuickExpenseModal: React.FC = () => {
               className="font-mono text-base font-bold text-danger"
             />
           </div>
-
           <div>
             <label className="block w-full space-y-1.5 text-left">
               <span className="block text-xs font-semibold text-on-surface">Expense Date</span>
@@ -274,7 +267,6 @@ export const QuickExpenseModal: React.FC = () => {
             value={referenceNumber}
             onChange={(e) => setReferenceNumber(e.target.value)}
           />
-
           <Input
             label="Additional Notes / Payee (Optional)"
             placeholder="e.g. Supplier or payee"
