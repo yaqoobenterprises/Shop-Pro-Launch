@@ -1,10 +1,6 @@
 -- Authorization hardening for the Shop Pro launch project.
 -- This migration is pending owner review. It has not been applied to Supabase.
 -- No business rows are deleted or rewritten.
-
--- organization_members is the canonical authorization source. Profiles and
--- shop_members are display/provisioning mirrors and must not reactivate an
--- explicitly inactive organization membership.
 CREATE OR REPLACE FUNCTION private.get_auth_user_org_ids()
 RETURNS TABLE (org_id UUID)
 LANGUAGE sql
@@ -17,7 +13,6 @@ AS $$
   WHERE membership.user_id = (SELECT auth.uid())
     AND membership.is_active = TRUE;
 $$;
-
 CREATE OR REPLACE FUNCTION private.get_org_role(target_org UUID)
 RETURNS TEXT
 LANGUAGE sql
@@ -31,7 +26,6 @@ AS $$
     AND membership.user_id = (SELECT auth.uid())
     AND membership.is_active = TRUE;
 $$;
-
 CREATE OR REPLACE FUNCTION private.is_org_member(target_org UUID)
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -47,7 +41,6 @@ AS $$
       AND membership.is_active = TRUE
   );
 $$;
-
 CREATE OR REPLACE FUNCTION private.is_org_owner(target_org UUID)
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -57,11 +50,6 @@ SET search_path = ''
 AS $$
   SELECT private.get_org_role(target_org) = 'OWNER';
 $$;
-
--- Avoid public-schema name shadowing in the authenticated SECURITY DEFINER RPCs.
--- These two compatibility wrappers are safe to call from RLS policies, but
--- must not elevate the caller's privileges. The private membership reader is
--- the only SECURITY DEFINER layer and is explicitly granted below.
 CREATE OR REPLACE FUNCTION public.get_auth_org_id()
 RETURNS UUID
 LANGUAGE sql
@@ -74,7 +62,6 @@ AS $$
   ORDER BY membership.org_id
   LIMIT 1;
 $$;
-
 CREATE OR REPLACE FUNCTION public.is_active_shop_member()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -86,9 +73,6 @@ AS $$
     SELECT 1 FROM private.get_auth_user_org_ids()
   );
 $$;
-
--- Preserve the existing login provisioning behavior while keeping an existing
--- inactive organization_members row inactive on subsequent sign-ins.
 CREATE OR REPLACE FUNCTION public.ensure_my_profile()
 RETURNS VOID
 LANGUAGE plpgsql
@@ -107,21 +91,17 @@ BEGIN
   IF current_user_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
-
   SELECT users.email, users.raw_user_meta_data
   INTO auth_email, metadata
   FROM auth.users AS users
   WHERE users.id = current_user_id;
-
   IF auth_email IS NULL THEN
     RAISE EXCEPTION 'Authenticated user does not exist';
   END IF;
-
   SELECT profiles.organization_id, profiles.full_name
   INTO profile_org_id, full_name_val
   FROM public.profiles AS profiles
   WHERE profiles.id = current_user_id;
-
   IF profile_org_id IS NULL THEN
     full_name_val := COALESCE(
       NULLIF(full_name_val, ''),
@@ -134,21 +114,17 @@ BEGIN
       NULLIF(metadata->>'organization_name', ''),
       full_name_val || '''s Shop'
     );
-
     INSERT INTO public.organizations (name, owner_name, currency, currency_symbol)
     VALUES (shop_name_val, full_name_val, 'PKR', 'Rs.')
     RETURNING id INTO new_org_id;
-
     INSERT INTO public.profiles (id, email, full_name, role, organization_id, is_active)
     VALUES (current_user_id, auth_email, full_name_val, 'OWNER', new_org_id, TRUE)
     ON CONFLICT (id) DO UPDATE SET
       organization_id = EXCLUDED.organization_id,
       full_name = EXCLUDED.full_name,
       is_active = TRUE;
-
     profile_org_id := new_org_id;
   END IF;
-
   INSERT INTO public.shop_members (user_id, organization_id, full_name, email, role)
   SELECT
     profiles.id,
@@ -163,7 +139,6 @@ BEGIN
     full_name = EXCLUDED.full_name,
     email = EXCLUDED.email,
     role = EXCLUDED.role;
-
   INSERT INTO public.organization_members (organization_id, user_id, role, is_active)
   SELECT profiles.organization_id, profiles.id, profiles.role, TRUE
   FROM public.profiles AS profiles
@@ -171,14 +146,9 @@ BEGIN
     AND profiles.is_active = TRUE
   ON CONFLICT (organization_id, user_id) DO UPDATE SET
     role = EXCLUDED.role;
-
   PERFORM public.seed_shop_defaults(profile_org_id);
 END;
 $$;
-
--- Private schema helpers must never inherit PostgreSQL's default
--- PUBLIC EXECUTE grant. Authenticated callers need them for RLS evaluation;
--- anonymous callers do not.
 REVOKE ALL ON FUNCTION private.get_auth_user_org_ids() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.get_auth_user_org_ids() TO authenticated;
 REVOKE ALL ON FUNCTION private.get_org_role(UUID) FROM PUBLIC, anon;
@@ -187,41 +157,27 @@ REVOKE ALL ON FUNCTION private.is_org_member(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.is_org_member(UUID) TO authenticated;
 REVOKE ALL ON FUNCTION private.is_org_owner(UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION private.is_org_owner(UUID) TO authenticated;
-
 REVOKE ALL ON FUNCTION public.get_auth_org_id() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_auth_org_id() TO authenticated;
 REVOKE ALL ON FUNCTION public.is_active_shop_member() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_active_shop_member() TO authenticated;
 REVOKE ALL ON FUNCTION public.ensure_my_profile() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.ensure_my_profile() TO authenticated;
-
--- Organization reads must use the canonical active membership. Organization
--- updates are owner-only; active managers and cashiers retain read access.
 DROP POLICY IF EXISTS org_member_select ON public.organizations;
 DROP POLICY IF EXISTS organizations_select ON public.organizations;
 DROP POLICY IF EXISTS "Members can view their organization" ON public.organizations;
 CREATE POLICY "Members can view their organization" ON public.organizations
   FOR SELECT TO authenticated
   USING (private.is_org_member(id));
-
 DROP POLICY IF EXISTS org_member_update ON public.organizations;
 DROP POLICY IF EXISTS organizations_update ON public.organizations;
 CREATE POLICY organizations_update ON public.organizations
   FOR UPDATE TO authenticated
   USING (private.is_org_owner(id))
   WITH CHECK (private.is_org_owner(id));
-
--- Remove older broad category write policies. They were permissive and
--- therefore OR-combined with categories_write, allowing any member to bypass
--- the MANAGE_INVENTORY permission check. Keep the newer role-aware policy.
 DROP POLICY IF EXISTS "Members can insert categories" ON public.categories;
 DROP POLICY IF EXISTS "Members can update categories" ON public.categories;
-
--- Drafts are only available to authenticated users under RLS.
 REVOKE ALL ON TABLE public.transaction_drafts FROM anon, PUBLIC;
-
--- Scope both normal draft posting and idempotent retries to the authenticated
--- user's active shop before any SECURITY DEFINER query can return a row.
 CREATE OR REPLACE FUNCTION public.post_transaction_draft(
   draft_id UUID,
   selected_account_id UUID
@@ -241,18 +197,15 @@ BEGIN
   IF current_user_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required to post a transaction draft';
   END IF;
-
   current_org_id := public.get_auth_org_id();
   IF current_org_id IS NULL OR NOT public.is_active_shop_member() THEN
     RAISE EXCEPTION 'An active shop membership is required to post a transaction draft';
   END IF;
-
   SELECT * INTO draft
   FROM public.transaction_drafts
   WHERE id = draft_id
     AND organization_id = current_org_id
   FOR UPDATE;
-
   IF NOT FOUND THEN
     SELECT * INTO posted_transaction
     FROM public.transactions
@@ -263,11 +216,9 @@ BEGIN
     END IF;
     RAISE EXCEPTION 'Transaction draft was not found';
   END IF;
-
   IF draft.organization_id <> current_org_id THEN
     RAISE EXCEPTION 'Transaction draft does not belong to an active shop';
   END IF;
-
   IF NOT EXISTS (
     SELECT 1
     FROM public.payment_accounts
@@ -277,7 +228,6 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'Selected account does not belong to this shop or is inactive';
   END IF;
-
   valid_category_id := NULL;
   IF draft.category_id IS NOT NULL THEN
     SELECT categories.id INTO valid_category_id
@@ -285,7 +235,6 @@ BEGIN
     WHERE categories.id = draft.category_id
       AND categories.organization_id = draft.organization_id;
   END IF;
-
   INSERT INTO public.transactions (
     organization_id, type, amount_paisa, category_id, account_id,
     adjustment_dir, business_date, device_entry_time, note, raw_text,
@@ -298,7 +247,6 @@ BEGIN
   )
   ON CONFLICT (idempotency_key) DO NOTHING
   RETURNING * INTO posted_transaction;
-
   IF NOT FOUND THEN
     SELECT * INTO posted_transaction
     FROM public.transactions
@@ -308,13 +256,11 @@ BEGIN
       RAISE EXCEPTION 'Transaction draft could not be posted';
     END IF;
   END IF;
-
   DELETE FROM public.transaction_drafts
   WHERE id = draft.id
     AND organization_id = current_org_id;
   RETURN posted_transaction;
 END;
 $$;
-
 REVOKE ALL ON FUNCTION public.post_transaction_draft(UUID, UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.post_transaction_draft(UUID, UUID) TO authenticated;
