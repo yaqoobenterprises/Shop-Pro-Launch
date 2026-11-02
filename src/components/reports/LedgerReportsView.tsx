@@ -286,11 +286,29 @@ export const LedgerReportsView: React.FC = () => {
       </div>
 
       <section className="reports-modern__table-panel reports-modern__transactions">
-        <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">AUDITABLE DETAIL</span><h2>Transaction register</h2><p>All filtered active entries are included in Excel export.</p></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
-        {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
-          {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
-        </tbody></table></div>}
-        {transactions.length > 50 && <button type="button" className="reports-modern__show-more" onClick={() => setShowAllTransactions((value) => !value)}>{showAllTransactions ? "Show latest 50 only" : `Show all ${transactions.length.toLocaleString()} records`}</button>}
+        <div className="reports-modern__section-heading">
+          <div><span className="reports-modern__section-kicker">AUDITABLE DETAIL</span><h2>Transaction register</h2><p>Every row matches the filters above and is included in the export.</p></div>
+          <span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span>
+        </div>
+        {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display. Try changing the date range or filters.</div> : <>
+          <div className="reports-modern__table-scroll"><table><thead><tr>
+            <th>{sortHeader("date", "Date")}</th><th>{sortHeader("type", "Type")}</th><th>{sortHeader("category", "Category")}</th>
+            <th>{sortHeader("description", "Description")}</th><th>{sortHeader("account", "Account")}</th><th className="is-numeric">{sortHeader("amount", "Amount")}</th>
+          </tr></thead><tbody>
+            {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={\`reports-modern__type-badge type-\${tx.type}\`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || tx.note || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={\`is-numeric \${tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}\`}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
+          </tbody></table></div>
+          <div className="reports-modern__table-footer">
+            <span>Showing {pageStart.toLocaleString()}–{pageEnd.toLocaleString()} of {sortedTransactions.length.toLocaleString()} entries</span>
+            <div>
+              <label>Rows per page <select value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(0); }}>
+                {[25, 50, 100].map((size) => <option value={size} key={size}>{size}</option>)}
+              </select></label>
+              <button type="button" onClick={() => setPage((value) => Math.max(0, value - 1))} disabled={currentPage === 0}>Previous</button>
+              <span>Page {currentPage + 1} of {pageCount}</span>
+              <button type="button" onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} disabled={currentPage >= pageCount - 1}>Next</button>
+            </div>
+          </div>
+        </>}
       </section>
       <p className="reports-modern__footer-note">Report generated from active ledger records · Date boundaries use the shop business date.</p>
     </main>
