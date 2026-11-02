@@ -7,9 +7,10 @@ import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { Button } from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import { expenseRepo, accountRepo } from "../../services";
-import { ExpenseCategory, PaymentAccount } from "../../types";
-import { formatCurrency } from "../../lib/utils";
+import { ledgerService } from "../../services/ledgerService";
+import { Category, LedgerAccount } from "../../types/ledger";
+import { formatPaisa } from "../../lib/money";
+import { parseLocalizedMoneyInput } from "../../regional/moneyInput";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { useI18n } from "../../i18n";
 import { Check, AlertCircle } from "lucide-react";
@@ -20,8 +21,8 @@ export const QuickExpenseModal: React.FC = () => {
   const { isQuickExpenseOpen, setIsQuickExpenseOpen, refreshData, showToast } =
     useApp();
 
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [accounts, setAccounts] = useState<PaymentAccount[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
 
   const [categoryId, setCategoryId] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -41,11 +42,14 @@ export const QuickExpenseModal: React.FC = () => {
         setIsLoadingMetadata(true);
         setMetadataError("");
         try {
-          const [cats, accs] = await Promise.all([
-            expenseRepo.getCategories(organization.id),
-            accountRepo.getAccounts(organization.id),
+          const [allCategories, accs] = await Promise.all([
+            ledgerService.getCategories(),
+            ledgerService.getPaymentAccounts(),
           ]);
           if (!isCurrent) return;
+          const cats = allCategories.filter(
+            (category) => category.is_active && category.kind === "expense",
+          );
           setCategories(cats);
           setAccounts(accs);
           setCategoryId((current) =>
@@ -85,12 +89,12 @@ export const QuickExpenseModal: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0) {
+    const parsedAmount = parseLocalizedMoneyInput(amount);
+    if (!parsedAmount.isValid) {
       showToast(
         "error",
         "Invalid Amount",
-        "Please enter a positive expense amount.",
+        parsedAmount.error || "Enter a valid positive expense amount.",
       );
       return;
     }
@@ -122,21 +126,50 @@ export const QuickExpenseModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const exp = await expenseRepo.createExpense(organization.id, {
-        category_id: targetCategoryId,
-        account_id: targetAccountId,
-        amount: numAmount,
-        description: description.trim(),
-        reference_number: referenceNumber.trim() || undefined,
-        date,
-        notes: notes.trim() || undefined,
-        entered_by: getProfileDisplayName(user),
-      });
+      const selectedCategory = categories.find(
+        (category) => category.id === targetCategoryId && category.kind === "expense",
+      );
+      const selectedPaymentAccount = accounts.find(
+        (account) => account.id === targetAccountId && account.is_active,
+      );
+      if (!selectedCategory || !selectedPaymentAccount) {
+        throw new Error("Choose an active expense category and payment account.");
+      }
+      if (!user?.id) {
+        throw new Error("Sign in again before recording this expense.");
+      }
+
+      const detailParts = [
+        description.trim(),
+        referenceNumber.trim() ? `Receipt reference: ${referenceNumber.trim()}` : "",
+        notes.trim() ? `Notes: ${notes.trim()}` : "",
+      ].filter(Boolean);
+      const rawText = `Quick expense: ${detailParts.join(" | ")}`;
+      const note = detailParts.slice(1).join(" | ") || null;
+
+      // Quick Expense is a normal ledger expense: save a draft first, then
+      // post it to the selected account through the same atomic database RPC.
+      const draft = await ledgerService.createTransactionDraft(
+        {
+          type: "expense",
+          amountPaisa: parsedAmount.minor,
+          categoryId: selectedCategory.id,
+          categoryName: selectedCategory.name,
+          businessDate: date,
+          rawText,
+          note,
+          createdByName: getProfileDisplayName(user),
+        },
+        user.id,
+      );
+      const posting = await ledgerService.postTransactionDraft(draft.id, targetAccountId);
 
       showToast(
-        "success",
-        "Expense Recorded",
-        `${formatCurrency(exp.amount, organization.currency_symbol)} paid from ${exp.account_name}`,
+        posting.isQueuedOffline ? "warning" : "success",
+        posting.isQueuedOffline ? "Expense saved offline" : "Expense recorded",
+        posting.isQueuedOffline
+          ? "The expense is saved on this device and will post to the selected account when synchronization succeeds."
+          : `${formatPaisa(parsedAmount.minor)} paid from ${selectedPaymentAccount.name}`,
       );
       setIsQuickExpenseOpen(false);
       refreshData();
@@ -223,8 +256,8 @@ export const QuickExpenseModal: React.FC = () => {
           <div>
             <Input
               label={`Amount (${organization.currency_symbol})`}
-              type="number"
-              step="any"
+              type="text"
+              inputMode="decimal"
               required
               autoFocus
               placeholder="0.00"
