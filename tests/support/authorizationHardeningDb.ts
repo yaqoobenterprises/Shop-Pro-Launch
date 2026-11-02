@@ -24,7 +24,6 @@ export const crossShopDraft = "77777777-7777-4777-8777-777777777777";
 export async function createAuthorizationHardeningDb(): Promise<PGlite> {
   const db = new PGlite();
   await db.exec(`
-    await db.exec(`
       CREATE ROLE anon;
       CREATE ROLE authenticated;
       CREATE SCHEMA auth;
@@ -257,11 +256,6 @@ export async function createAuthorizationHardeningDb(): Promise<PGlite> {
       VALUES ('${accountA}', '${orgA}', TRUE);
       INSERT INTO public.categories (id, organization_id, name)
       VALUES ('${categoryA}', '${orgA}', 'Supplies');
-    `);
-
-    await db.exec(migration);
-  });
-
   `);
   await db.exec(migration);
   return db;
