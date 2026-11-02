@@ -1,4 +1,4 @@
-import type { Category, Transaction } from "../../types/ledger";
+import type { Category, LedgerAccount, Transaction } from "../../types/ledger";
 import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
 import type { ReportTrendBucket, TrendGrouping } from "../../lib/reportAnalytics";
 import { calculateReportTotals, buildReportCategoryBreakdown } from "../../lib/reportAnalytics";
@@ -11,6 +11,9 @@ export interface ReportsWorkbookInput {
   toDate: string;
   type: string;
   categoryId: string;
+  accountId: string;
+  searchQuery: string;
+  accounts: LedgerAccount[];
   trend: ReportTrendBucket[];
   grouping: TrendGrouping;
 }
@@ -27,16 +30,21 @@ const typeLabel = (type: string): string => ({
 }[type] || "All transaction types");
 
 export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: WorkbookSheet[]; fileName: string } => {
-  const { transactions, categories, fromDate, toDate, type, categoryId, trend, grouping } = input;
+  const { transactions, categories, fromDate, toDate, type, categoryId, accountId, searchQuery, accounts, trend, grouping } = input;
   const totals = calculateReportTotals(transactions);
   const categoryBreakdown = buildReportCategoryBreakdown(transactions);
   const rangeLabel = `${fromDate} – ${toDate}`;
   const categoryLabel = categoryId === "all"
     ? "All categories"
     : categories.find((item) => item.id === categoryId)?.name || "Selected category";
+  const accountLabel = accountId === "all"
+    ? "All active accounts"
+    : accounts.find((item) => item.id === accountId)?.name || "Selected account";
   const metadata = [
     `Type: ${typeLabel(type)}`,
     `Category: ${categoryLabel}`,
+    `Account: ${accountLabel}`,
+    searchQuery.trim() ? `Search: ${searchQuery.trim()}` : "Search: none",
     "Active transactions only",
   ].join(" · ");
   const transactionRows = [...transactions]
