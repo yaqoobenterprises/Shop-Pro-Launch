@@ -152,7 +152,7 @@ export async function createAuthorizationHardeningDb(): Promise<PGlite> {
               OR (role = 'MANAGER' AND permission_name = 'MANAGE_INVENTORY')
             )
         );
-      $;
+      $$;
       REVOKE ALL ON FUNCTION private.has_permission(UUID, TEXT) FROM PUBLIC, anon;
       GRANT EXECUTE ON FUNCTION private.has_permission(UUID, TEXT) TO authenticated;
 
