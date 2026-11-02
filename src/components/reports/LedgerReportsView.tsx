@@ -262,7 +262,7 @@ export const LedgerReportsView: React.FC = () => {
             </label>
           </div>
           {sortedCategories.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
-            {sortedCategories.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={\`reports-modern__type-badge type-\${item.type}\`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
+            {sortedCategories.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={`reports-modern__type-badge type-\${item.type}`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
           </tbody></table></div>}
         </section>
 
@@ -295,7 +295,7 @@ export const LedgerReportsView: React.FC = () => {
             <th>{sortHeader("date", "Date")}</th><th>{sortHeader("type", "Type")}</th><th>{sortHeader("category", "Category")}</th>
             <th>{sortHeader("description", "Description")}</th><th>{sortHeader("account", "Account")}</th><th className="is-numeric">{sortHeader("amount", "Amount")}</th>
           </tr></thead><tbody>
-            {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={\`reports-modern__type-badge type-\${tx.type}\`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || tx.note || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={\`is-numeric \${tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}\`}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
+            {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-\${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || tx.note || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={`is-numeric \${tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}`}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
           </tbody></table></div>
           <div className="reports-modern__table-footer">
             <span>Showing {pageStart.toLocaleString()}–{pageEnd.toLocaleString()} of {sortedTransactions.length.toLocaleString()} entries</span>
