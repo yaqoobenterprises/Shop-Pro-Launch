@@ -253,9 +253,23 @@ export const LedgerReportsView: React.FC = () => {
 
       <div className="reports-modern__analysis-grid">
         <section className="reports-modern__table-panel">
-          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">BY CATEGORY</span><h2>Category performance</h2><p>Highest activity first</p></div></div>
-          {categoryBreakdown.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
-            {categoryBreakdown.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={`reports-modern__type-badge type-${item.type}`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
+          <div className="reports-modern__section-heading">
+            <div><span className="reports-modern__section-kicker">BY CATEGORY</span><h2>Category performance</h2><p>Compare activity across selected categories</p></div>
+            <label className="reports-modern__compact-select"><span className="sr-only">Sort categories</span>
+              <select value={categorySort} onChange={(event) => setCategorySort(event.target.value as typeof categorySort)}>
+                <option value="amount">Highest value</option><option value="entries">Most entries</option><option value="name">Category A–Z</option>
+              </select>
+            </label>
+          </div>
+          {sortedCategories.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
+            {sortedCategories.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={\`reports-modern__type-badge type-\${item.type}\`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
+          </tbody></table></div>}
+        </section>
+
+        <section className="reports-modern__table-panel">
+          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">BY ACCOUNT</span><h2>Account activity</h2><p>Recorded movement by payment account</p></div></div>
+          {accountBreakdown.length === 0 ? <div className="reports-modern__empty">No account activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Account</th><th>Entries</th><th>Movement</th></tr></thead><tbody>
+            {accountBreakdown.map((item) => <tr key={item.key}><td><strong>{item.name}</strong></td><td>{item.count}</td><td>{formatPaisa(item.total)}</td></tr>)}
           </tbody></table></div>}
         </section>
 
