@@ -38,7 +38,7 @@ interface UndoState {
 }
 
 export const ChatView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, organization, isCloudAccount } = useAuth();
   const { showToast, setCurrentView, entryMode, newEntryRequestId } = useApp();
   const { t } = useI18n();
   const currentUserId = user?.id || "offline-user";
@@ -407,7 +407,7 @@ export const ChatView: React.FC = () => {
       )}
 
       {isAiMode && aiAccountantEnabled ? (
-        <AiAccountantPanel summary={summary} />
+        <AiAccountantPanel summary={summary} userId={user?.id || ""} organizationId={organization.id} isCloudAccount={isCloudAccount} />
       ) : (
       <>
       {dayLoadError && (
