@@ -104,7 +104,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
     }
     setSyncStatus("loading");
     void loadSyncedAiAccountantHistory({ userId, organizationId }, MAX_SAVED_MESSAGES)
-      .then((history) => {
+      .then(async (history) => {
         if (cancelled) return;
         if (!history) { setSyncStatus("local"); return; }
         conversationIdRef.current = history.conversationId;
