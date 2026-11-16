@@ -407,7 +407,7 @@ export const ChatView: React.FC = () => {
       )}
 
       {isAiMode && aiAccountantEnabled ? (
-        <AiAccountantPanel />
+        <AiAccountantPanel summary={summary} />
       ) : (
       <>
       {dayLoadError && (
