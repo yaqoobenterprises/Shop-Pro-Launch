@@ -241,18 +241,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         </div>
       </header>
 
-      <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 sm:px-6">
-        Read-only Shop Pro data: daily/monthly summaries, current account balances, today's category breakdown, and up to 30 of today's transactions when asked. No transaction changes are allowed.
-      </div>
-
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-6" aria-live="polite">
-        {messages.length === 0 && (
-          <div className="mx-auto mt-8 max-w-xl rounded-2xl border border-border-standard bg-surface-bright p-5 text-center">
-            <p className="text-sm font-semibold text-on-surface">Assalam-o-alaikum! I’m your Shop Pro AI Accountant.</p>
-            <p className="mt-2 text-sm text-text-muted">Accounting, bookkeeping, debit/credit, journal entries aur finance ke sawal pooch sakte ho.</p>
-            <p className="mt-2 text-xs text-text-muted">Example: “Staff advance asset hai ya expense?”</p>
-          </div>
-        )}
         {messages.map((message, index) => (
           <div key={`${index}-${message.role}`} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[75%] ${message.role === "user" ? "bg-primary text-white" : "border border-border-standard bg-surface-bright text-on-surface"}`}>
@@ -279,7 +268,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
           placeholder="Ask an accounting question…"
           rows={2}
           maxLength={12000}
-          disabled={!isReady || sending || syncStatus === "loading"}
+          disabled={sending || syncStatus === "loading"}
           className="min-h-12 flex-1 resize-y rounded-xl border border-border-standard bg-surface px-3 py-2.5 text-sm text-on-surface outline-none focus:border-primary disabled:opacity-50"
         />
         <button type="submit" disabled={!input.trim() || !isReady || sending || syncStatus === "loading"} className="min-h-12 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
