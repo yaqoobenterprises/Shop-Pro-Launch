@@ -22,11 +22,12 @@ export async function checkLocalAiHealth(): Promise<LocalAiHealth> {
 
 export async function sendLocalAiMessage(
   messages: LocalAiMessage[],
+  context: string,
 ): Promise<{ reply: string; model: string }> {
   const response = await fetch(`${LOCAL_AI_BASE_URL}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: messages.slice(-30) }),
+    body: JSON.stringify({ messages: messages.slice(-30), context }),
     signal: AbortSignal.timeout(185000),
   });
 
