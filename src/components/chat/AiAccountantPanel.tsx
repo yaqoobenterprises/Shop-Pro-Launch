@@ -104,8 +104,12 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
     if (conversationIdRef.current && isCloudAccount) {
-      void appendSyncedAiAccountantMessage({ userId, organizationId }, conversationIdRef.current, userMessage)
-        .then(() => setSyncStatus("synced")).catch(() => setSyncStatus("error"));
+      try {
+        await appendSyncedAiAccountantMessage({ userId, organizationId }, conversationIdRef.current, userMessage);
+        setSyncStatus("synced");
+      } catch {
+        setSyncStatus("error");
+      }
     }
     setInput("");
     setSending(true);
@@ -162,8 +166,12 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
       const assistantMessage: LocalAiMessage = { role: "assistant", content: result.reply };
       setMessages((current) => [...current, assistantMessage]);
       if (conversationIdRef.current && isCloudAccount) {
-        void appendSyncedAiAccountantMessage({ userId, organizationId }, conversationIdRef.current, assistantMessage)
-          .then(() => setSyncStatus("synced")).catch(() => setSyncStatus("error"));
+        try {
+          await appendSyncedAiAccountantMessage({ userId, organizationId }, conversationIdRef.current, assistantMessage);
+          setSyncStatus("synced");
+        } catch {
+          setSyncStatus("error");
+        }
       }
       setHealth((current) => current ? { ...current, status: "ready", model: result.model } : current);
     } catch (err) {
@@ -248,10 +256,10 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
           placeholder="Ask an accounting question…"
           rows={2}
           maxLength={12000}
-          disabled={!isReady || sending}
+          disabled={!isReady || sending || syncStatus === "loading"}
           className="min-h-12 flex-1 resize-y rounded-xl border border-border-standard bg-surface px-3 py-2.5 text-sm text-on-surface outline-none focus:border-primary disabled:opacity-50"
         />
-        <button type="submit" disabled={!input.trim() || !isReady || sending} className="min-h-12 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="submit" disabled={!input.trim() || !isReady || sending || syncStatus === "loading"} className="min-h-12 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
           Send
         </button>
       </form>
