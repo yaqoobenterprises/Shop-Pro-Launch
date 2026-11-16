@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import type { DailySummary } from "../../types/ledger";
 import {
   checkLocalAiHealth,
   sendLocalAiMessage,
@@ -27,7 +28,7 @@ function readHistory(): LocalAiMessage[] {
   }
 }
 
-export const AiAccountantPanel: React.FC = () => {
+export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary }) => {
   const [messages, setMessages] = useState<LocalAiMessage[]>(readHistory);
   const [input, setInput] = useState("");
   const [health, setHealth] = useState<LocalAiHealth | null>(null);
@@ -73,7 +74,20 @@ export const AiAccountantPanel: React.FC = () => {
     setError(null);
 
     try {
-      const result = await sendLocalAiMessage(nextMessages);
+      const verifiedContext = [
+        "Verified Shop Pro daily summary. Currency: PKR. Amount fields are integer paisa; divide by 100 for rupees.",
+        `Business date: ${summary.business_date}`,
+        `Income: ${summary.income_paisa} paisa`,
+        `Expense: ${summary.expense_paisa} paisa`,
+        `Net profit (income minus expense): ${summary.net_profit_paisa} paisa`,
+        `Capital received: ${summary.capital_in_paisa} paisa`,
+        `Owner withdrawals: ${summary.withdrawal_paisa} paisa`,
+        `Adjustments in: ${summary.adjustment_in_paisa} paisa`,
+        `Adjustments out: ${summary.adjustment_out_paisa} paisa`,
+        `Transaction count: ${summary.transaction_count}`,
+        "This is only the currently loaded business-date summary. Do not present it as a monthly, yearly, cash-balance, bank-balance, or full financial statement. If asked for another date or a report not supplied here, say that data is not connected yet.",
+      ].join("\n");
+      const result = await sendLocalAiMessage(nextMessages, verifiedContext);
       setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
       setHealth((current) => current ? { ...current, status: "ready", model: result.model } : current);
     } catch (err) {
