@@ -14,7 +14,7 @@ export const FEATURES: FeatureFlags = {
   regionSettings: false,
   languageUr: false,
   entryModes: false,
-  chatQueries: false,
+  chatQueries: true,
 };
 
 /**
