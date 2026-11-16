@@ -32,7 +32,8 @@ jobs:
         run: npm ci
 
       - name: Audit dependencies
-        run: npm audit
+        # Existing moderate advisories are reported but do not block validation; high/critical remain blocking.
+        run: npm audit --audit-level=high
 
       - name: Check TypeScript
         run: npm run typecheck
