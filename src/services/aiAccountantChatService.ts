@@ -24,6 +24,30 @@ interface MessageRow {
   content: string;
 }
 
+
+export function reconcileAiAccountantHistory(
+  remote: LocalAiMessage[],
+  local: LocalAiMessage[],
+  limit = 100,
+): { messages: LocalAiMessage[]; pending: LocalAiMessage[] } {
+  const same = (a: LocalAiMessage, b: LocalAiMessage) => a.role === b.role && a.content === b.content;
+  const startsWith = (whole: LocalAiMessage[], prefix: LocalAiMessage[]) =>
+    prefix.length <= whole.length && prefix.every((item, index) => same(item, whole[index]));
+  if (local.length === 0) return { messages: remote, pending: [] };
+  if (remote.length === 0) return { messages: local.slice(-limit), pending: local };
+  if (startsWith(local, remote)) return { messages: local.slice(-limit), pending: local.slice(remote.length) };
+  if (startsWith(remote, local)) return { messages: remote.slice(-limit), pending: [] };
+  for (let overlap = Math.min(remote.length, local.length); overlap > 0; overlap -= 1) {
+    if (remote.slice(-overlap).every((item, index) => same(item, local[index]))) {
+      return {
+        messages: [...remote, ...local.slice(overlap)].slice(-limit),
+        pending: local.slice(overlap),
+      };
+    }
+  }
+  return { messages: [...remote, ...local].slice(-limit), pending: local };
+}
+
 async function getOrCreateConversation(
   scope: AiAccountantChatScope,
 ): Promise<string | null> {
