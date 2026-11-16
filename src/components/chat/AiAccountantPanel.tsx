@@ -126,7 +126,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
       </header>
 
       <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 sm:px-6">
-        Initial integration: general accounting help only. Live Shop Pro balances and transaction actions are not connected yet. Verify figures in your ledger.
+        Read-only daily summary connected: income, expenses, net result and transaction count for the current business date. Monthly reports, account balances and transaction actions are not connected yet.
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-6" aria-live="polite">
