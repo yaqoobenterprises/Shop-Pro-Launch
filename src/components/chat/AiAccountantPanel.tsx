@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { DailySummary } from "../../types/ledger";
+import { ledgerService } from "../../services/ledgerService";
 import {
   checkLocalAiHealth,
   sendLocalAiMessage,
@@ -87,7 +88,30 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
         `Transaction count: ${summary.transaction_count}`,
         "This is only the currently loaded business-date summary. Do not present it as a monthly, yearly, cash-balance, bank-balance, or full financial statement. If asked for another date or a report not supplied here, say that data is not connected yet.",
       ].join("\n");
-      const result = await sendLocalAiMessage(nextMessages, verifiedContext);
+      const [monthlyReport, paymentAccounts] = await Promise.all([
+        ledgerService.getMonthlyReport(Number(summary.business_date.slice(0, 4))),
+        ledgerService.getPaymentAccounts(),
+      ]);
+      const monthlyContext = monthlyReport.map((month) => [
+        `Month: ${month.year}-${String(month.month).padStart(2, "0")}`,
+        `Income: ${month.income_paisa} paisa`,
+        `Expense: ${month.expense_paisa} paisa`,
+        `Net result: ${month.net_profit_paisa} paisa`,
+        `Capital received: ${month.capital_in_paisa} paisa`,
+        `Owner withdrawals: ${month.withdrawal_paisa} paisa`,
+      ].join("; ")).join("\\n");
+      const accountContext = paymentAccounts.map((account) =>
+        `Account ${account.name} (${account.type}): current balance ${Math.round(Number(account.current_balance || 0) * 100)} paisa`
+      ).join("\\n");
+      const completeContext = [
+        verifiedContext,
+        "Monthly summaries for the calendar year of the current business date (only months returned by Shop Pro):",
+        monthlyContext || "No monthly report rows returned.",
+        "Payment accounts currently visible to this signed-in Shop Pro session:",
+        accountContext || "No payment account rows returned.",
+        "Do not infer missing months. Account balances are current balances, not profit. These are bookkeeping summaries, not a complete double-entry trial balance or balance sheet.",
+      ].join("\\n\\n");
+      const result = await sendLocalAiMessage(nextMessages, completeContext);
       setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
       setHealth((current) => current ? { ...current, status: "ready", model: result.model } : current);
     } catch (err) {
