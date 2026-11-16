@@ -99,10 +99,10 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
         `Net result: ${month.net_profit_paisa} paisa`,
         `Capital received: ${month.capital_in_paisa} paisa`,
         `Owner withdrawals: ${month.withdrawal_paisa} paisa`,
-      ].join("; ")).join("\\n");
+      ].join("; ")).join("\n");
       const accountContext = paymentAccounts.map((account) =>
         `Account ${account.name} (${account.type}): current balance ${Math.round(Number(account.current_balance || 0) * 100)} paisa`
-      ).join("\\n");
+      ).join("\n");
       const completeContext = [
         verifiedContext,
         "Monthly summaries for the calendar year of the current business date (only months returned by Shop Pro):",
@@ -110,7 +110,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
         "Payment accounts currently visible to this signed-in Shop Pro session:",
         accountContext || "No payment account rows returned.",
         "Do not infer missing months. Account balances are current balances, not profit. These are bookkeeping summaries, not a complete double-entry trial balance or balance sheet.",
-      ].join("\\n\\n");
+      ].join("\n\n");
       const result = await sendLocalAiMessage(nextMessages, completeContext);
       setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
       setHealth((current) => current ? { ...current, status: "ready", model: result.model } : current);
