@@ -5,6 +5,7 @@ import {
   appendSyncedAiAccountantMessage,
   clearSyncedAiAccountantHistory,
   loadSyncedAiAccountantHistory,
+  reconcileAiAccountantHistory,
 } from "../../services/aiAccountantChatService";
 import {
   checkLocalAiHealth,
@@ -32,38 +33,6 @@ function readHistory(historyKey: string): LocalAiMessage[] {
   } catch {
     return [];
   }
-}
-
-function sameMessage(a: LocalAiMessage, b: LocalAiMessage): boolean {
-  return a.role === b.role && a.content === b.content;
-}
-
-// Preserve locally cached messages and identify the suffix that still needs uploading.
-function reconcileHistory(remote: LocalAiMessage[], local: LocalAiMessage[]) {
-  if (local.length === 0) return { messages: remote, pending: [] as LocalAiMessage[] };
-  if (remote.length === 0) return { messages: local, pending: local };
-  const startsWith = (whole: LocalAiMessage[], prefix: LocalAiMessage[]) =>
-    prefix.length <= whole.length && prefix.every((item, index) => sameMessage(item, whole[index]));
-  if (startsWith(local, remote)) {
-    return { messages: local, pending: local.slice(remote.length) };
-  }
-  if (startsWith(remote, local)) {
-    return { messages: remote, pending: [] as LocalAiMessage[] };
-  }
-  for (let overlap = Math.min(remote.length, local.length); overlap > 0; overlap -= 1) {
-    const matches = remote.slice(-overlap).every((item, index) => sameMessage(item, local[index]));
-    if (matches) {
-      return {
-        messages: [...remote, ...local.slice(overlap)].slice(-MAX_SAVED_MESSAGES),
-        pending: local.slice(overlap),
-      };
-    }
-  }
-  // Histories diverged on separate devices: keep both rather than overwrite either cache.
-  return {
-    messages: [...remote, ...local].slice(-MAX_SAVED_MESSAGES),
-    pending: local,
-  };
 }
 
 export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string; organizationId: string; isCloudAccount: boolean }> = ({ summary, userId, organizationId, isCloudAccount }) => {
@@ -109,7 +78,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         if (!history) { setSyncStatus("local"); return; }
         conversationIdRef.current = history.conversationId;
         const localHistory = readHistory(historyKey);
-        const reconciled = reconcileHistory(history.messages, localHistory);
+        const reconciled = reconcileAiAccountantHistory(history.messages, localHistory, MAX_SAVED_MESSAGES);
         setMessages(reconciled.messages);
         setSyncStatus("synced");
         setError(null);
