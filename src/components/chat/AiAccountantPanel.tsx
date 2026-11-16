@@ -34,6 +34,38 @@ function readHistory(historyKey: string): LocalAiMessage[] {
   }
 }
 
+function sameMessage(a: LocalAiMessage, b: LocalAiMessage): boolean {
+  return a.role === b.role && a.content === b.content;
+}
+
+// Preserve locally cached messages and identify the suffix that still needs uploading.
+function reconcileHistory(remote: LocalAiMessage[], local: LocalAiMessage[]) {
+  if (local.length === 0) return { messages: remote, pending: [] as LocalAiMessage[] };
+  if (remote.length === 0) return { messages: local, pending: local };
+  const startsWith = (whole: LocalAiMessage[], prefix: LocalAiMessage[]) =>
+    prefix.length <= whole.length && prefix.every((item, index) => sameMessage(item, whole[index]));
+  if (startsWith(local, remote)) {
+    return { messages: local, pending: local.slice(remote.length) };
+  }
+  if (startsWith(remote, local)) {
+    return { messages: remote, pending: [] as LocalAiMessage[] };
+  }
+  for (let overlap = Math.min(remote.length, local.length); overlap > 0; overlap -= 1) {
+    const matches = remote.slice(-overlap).every((item, index) => sameMessage(item, local[index]));
+    if (matches) {
+      return {
+        messages: [...remote, ...local.slice(overlap)].slice(-MAX_SAVED_MESSAGES),
+        pending: local.slice(overlap),
+      };
+    }
+  }
+  // Histories diverged on separate devices: keep both rather than overwrite either cache.
+  return {
+    messages: [...remote, ...local].slice(-MAX_SAVED_MESSAGES),
+    pending: local,
+  };
+}
+
 export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string; organizationId: string; isCloudAccount: boolean }> = ({ summary, userId, organizationId, isCloudAccount }) => {
   const historyKey = userId && organizationId ? `${HISTORY_KEY}.${organizationId}.${userId}` : `${HISTORY_KEY}.local`;
   const [messages, setMessages] = useState<LocalAiMessage[]>(() => readHistory(historyKey));
@@ -76,9 +108,26 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         if (cancelled) return;
         if (!history) { setSyncStatus("local"); return; }
         conversationIdRef.current = history.conversationId;
-        setMessages(history.messages);
+        const localHistory = readHistory(historyKey);
+        const reconciled = reconcileHistory(history.messages, localHistory);
+        setMessages(reconciled.messages);
         setSyncStatus("synced");
         setError(null);
+        // Retry locally cached messages that were not confirmed in the cloud.
+        for (const pendingMessage of reconciled.pending) {
+          try {
+            await appendSyncedAiAccountantMessage(
+              { userId, organizationId },
+              history.conversationId,
+              pendingMessage,
+            );
+          } catch (syncError) {
+            if (cancelled) return;
+            setSyncStatus("error");
+            setError(syncError instanceof Error ? syncError.message : "Some local chat messages still need syncing.");
+            return;
+          }
+        }
       })
       .catch((err) => {
         if (cancelled) return;
