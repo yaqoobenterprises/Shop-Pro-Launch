@@ -2,6 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { DailySummary } from "../../types/ledger";
 import { ledgerService } from "../../services/ledgerService";
 import {
+  appendSyncedAiAccountantMessage,
+  clearSyncedAiAccountantHistory,
+  loadSyncedAiAccountantHistory,
+} from "../../services/aiAccountantChatService";
+import {
   checkLocalAiHealth,
   sendLocalAiMessage,
   type LocalAiHealth,
@@ -29,13 +34,15 @@ function readHistory(): LocalAiMessage[] {
   }
 }
 
-export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary }) => {
+export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string; organizationId: string; isCloudAccount: boolean }> = ({ summary, userId, organizationId, isCloudAccount }) => {
   const [messages, setMessages] = useState<LocalAiMessage[]>(readHistory);
   const [input, setInput] = useState("");
   const [health, setHealth] = useState<LocalAiHealth | null>(null);
   const [checking, setChecking] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [syncStatus, setSyncStatus] = useState<"loading" | "synced" | "local" | "error">("loading");
+  const conversationIdRef = useRef<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const refreshHealth = useCallback(async () => {
@@ -55,6 +62,31 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
   }, [refreshHealth]);
 
   useEffect(() => {
+    let cancelled = false;
+    conversationIdRef.current = null;
+    if (!isCloudAccount || !userId || !organizationId) {
+      setSyncStatus("local");
+      return () => { cancelled = true; };
+    }
+    setSyncStatus("loading");
+    void loadSyncedAiAccountantHistory({ userId, organizationId }, MAX_SAVED_MESSAGES)
+      .then((history) => {
+        if (cancelled) return;
+        if (!history) { setSyncStatus("local"); return; }
+        conversationIdRef.current = history.conversationId;
+        setMessages(history.messages);
+        setSyncStatus("synced");
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setSyncStatus("error");
+        setError(err instanceof Error ? err.message : "Cloud chat history could not be loaded.");
+      });
+    return () => { cancelled = true; };
+  }, [isCloudAccount, userId, organizationId]);
+
+  useEffect(() => {
     try {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-MAX_SAVED_MESSAGES)));
     } catch {
@@ -68,8 +100,13 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
     const content = input.trim();
     if (!content || sending) return;
 
-    const nextMessages = [...messages, { role: "user" as const, content }];
+    const userMessage: LocalAiMessage = { role: "user", content };
+    const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
+    if (conversationIdRef.current && isCloudAccount) {
+      void appendSyncedAiAccountantMessage({ userId, organizationId }, conversationIdRef.current, userMessage)
+        .then(() => setSyncStatus("synced")).catch(() => setSyncStatus("error"));
+    }
     setInput("");
     setSending(true);
     setError(null);
@@ -122,7 +159,12 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
         "Do not infer missing months or records beyond the supplied 30. Account balances are current balances, not profit. These are bookkeeping summaries, not a complete double-entry trial balance or balance sheet.",
       ].join("\n\n");
       const result = await sendLocalAiMessage(nextMessages, completeContext);
-      setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
+      const assistantMessage: LocalAiMessage = { role: "assistant", content: result.reply };
+      setMessages((current) => [...current, assistantMessage]);
+      if (conversationIdRef.current && isCloudAccount) {
+        void appendSyncedAiAccountantMessage({ userId, organizationId }, conversationIdRef.current, assistantMessage)
+          .then(() => setSyncStatus("synced")).catch(() => setSyncStatus("error"));
+      }
       setHealth((current) => current ? { ...current, status: "ready", model: result.model } : current);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not reach the local AI.");
@@ -131,10 +173,19 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
     }
   };
 
-  const clearHistory = () => {
-    if (!window.confirm("Clear saved AI chat history on this device?")) return;
-    setMessages([]);
-    setError(null);
+  const clearHistory = async () => {
+    if (!window.confirm("Clear AI Accountant chat history from all synced devices?")) return;
+    try {
+      if (conversationIdRef.current && isCloudAccount) {
+        await clearSyncedAiAccountantHistory({ userId, organizationId }, conversationIdRef.current);
+      }
+      setMessages([]);
+      setError(null);
+      setSyncStatus(conversationIdRef.current ? "synced" : "local");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not clear synced chat history.");
+      setSyncStatus("error");
+    }
   };
 
   const isReady = health?.status === "ready";
@@ -144,7 +195,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-standard px-4 py-3 sm:px-6">
         <div>
           <h2 className="text-sm font-bold text-on-surface">AI Accountant</h2>
-          <p className="mt-0.5 text-xs text-text-muted">Local AI · Chat history saved on this device</p>
+          <p className="mt-0.5 text-xs text-text-muted">Local AI · {syncStatus === "loading" ? "Loading cloud history…" : syncStatus === "synced" ? "Chat synced across your devices" : syncStatus === "error" ? "Cloud sync needs attention" : "Chat saved on this device only"}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${isReady ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
@@ -153,7 +204,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
           <button type="button" onClick={() => void refreshHealth()} className="min-h-9 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-bright">
             Retry
           </button>
-          <button type="button" onClick={clearHistory} className="min-h-9 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-bright">
+          <button type="button" onClick={() => void clearHistory()} className="min-h-9 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-bright">
             Clear chat
           </button>
         </div>
