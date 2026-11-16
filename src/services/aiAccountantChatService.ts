@@ -90,7 +90,7 @@ export async function loadSyncedAiAccountantHistory(
     .eq("conversation_id", conversationId)
     .eq("organization_id", scope.organizationId)
     .eq("user_id", scope.userId)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(Math.min(Math.max(limit, 1), 100));
 
   if (error) throw error;
@@ -102,7 +102,7 @@ export async function loadSyncedAiAccountantHistory(
     )
     .map((message) => ({ role: message.role, content: message.content }));
 
-  return { conversationId, messages };
+  return { conversationId, messages: messages.reverse() };
 }
 
 export async function appendSyncedAiAccountantMessage(
