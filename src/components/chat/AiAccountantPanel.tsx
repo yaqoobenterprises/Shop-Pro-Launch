@@ -16,9 +16,9 @@ import {
 const HISTORY_KEY = "shop-pro.ai-accountant.chat.v1";
 const MAX_SAVED_MESSAGES = 100;
 
-function readHistory(): LocalAiMessage[] {
+function readHistory(historyKey: string): LocalAiMessage[] {
   try {
-    const value = localStorage.getItem(HISTORY_KEY);
+    const value = localStorage.getItem(historyKey);
     if (!value) return [];
     const parsed: unknown = JSON.parse(value);
     if (!Array.isArray(parsed)) return [];
@@ -35,7 +35,8 @@ function readHistory(): LocalAiMessage[] {
 }
 
 export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string; organizationId: string; isCloudAccount: boolean }> = ({ summary, userId, organizationId, isCloudAccount }) => {
-  const [messages, setMessages] = useState<LocalAiMessage[]>(readHistory);
+  const historyKey = userId && organizationId ? `${HISTORY_KEY}.${organizationId}.${userId}` : `${HISTORY_KEY}.local`;
+  const [messages, setMessages] = useState<LocalAiMessage[]>(() => readHistory(historyKey));
   const [input, setInput] = useState("");
   const [health, setHealth] = useState<LocalAiHealth | null>(null);
   const [checking, setChecking] = useState(true);
@@ -64,6 +65,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
   useEffect(() => {
     let cancelled = false;
     conversationIdRef.current = null;
+    setMessages(readHistory(historyKey));
     if (!isCloudAccount || !userId || !organizationId) {
       setSyncStatus("local");
       return () => { cancelled = true; };
@@ -84,16 +86,16 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         setError(err instanceof Error ? err.message : "Cloud chat history could not be loaded.");
       });
     return () => { cancelled = true; };
-  }, [isCloudAccount, userId, organizationId]);
+  }, [isCloudAccount, userId, organizationId, historyKey]);
 
   useEffect(() => {
     try {
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-MAX_SAVED_MESSAGES)));
+      localStorage.setItem(historyKey, JSON.stringify(messages.slice(-MAX_SAVED_MESSAGES)));
     } catch {
       setError("Chat history could not be saved in this browser.");
     }
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+  }, [messages, historyKey]);
 
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
