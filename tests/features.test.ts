@@ -13,7 +13,7 @@ describe('Feature Flags Configuration', () => {
     regionSettings: false,
     languageUr: false,
     entryModes: false,
-    chatQueries: false,
+    chatQueries: true,
   };
 
   it('declares all expected feature flags with the intended release state', () => {

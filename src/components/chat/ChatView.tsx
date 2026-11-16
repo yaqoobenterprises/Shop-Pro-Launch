@@ -27,6 +27,8 @@ import { getKarachiBusinessDate } from "../../lib/dates";
 import { hasPermission } from "../../lib/permissions";
 import { useI18n } from "../../i18n";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
+import { isFeatureEnabled } from "../../config/features";
+import { AiAccountantPanel } from "./AiAccountantPanel";
 
 interface UndoState {
   transactionId: string;
@@ -36,12 +38,14 @@ interface UndoState {
 }
 
 export const ChatView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, organization, isCloudAccount } = useAuth();
   const { showToast, setCurrentView, entryMode, newEntryRequestId } = useApp();
   const { t } = useI18n();
   const currentUserId = user?.id || "offline-user";
   const currentUserName = getProfileDisplayName(user, "Shop Brother");
   const canManageTransactions = hasPermission(user?.role, "VOID_EXPENSE");
+  const aiAccountantEnabled = isFeatureEnabled("chatQueries");
+  const [isAiMode, setIsAiMode] = useState(false);
 
   // State
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -391,6 +395,21 @@ export const ChatView: React.FC = () => {
         onOpenInstallHelp={() => setShowInstallHelp(true)}
       />
 
+      {aiAccountantEnabled && (
+        <div className="flex items-center gap-2 border-b border-border-standard bg-surface-bright px-3 py-2 sm:px-5">
+          <button type="button" onClick={() => setIsAiMode(false)} aria-pressed={!isAiMode} className={`min-h-9 rounded-lg px-4 text-xs font-semibold ${!isAiMode ? "bg-primary text-white" : "border border-border-standard text-secondary"}`}>
+            Ledger
+          </button>
+          <button type="button" onClick={() => setIsAiMode(true)} aria-pressed={isAiMode} className={`min-h-9 rounded-lg px-4 text-xs font-semibold ${isAiMode ? "bg-primary text-white" : "border border-border-standard text-secondary"}`}>
+            AI Accountant
+          </button>
+        </div>
+      )}
+
+      {isAiMode && aiAccountantEnabled ? (
+        <AiAccountantPanel summary={summary} userId={user?.id || ""} organizationId={organization.id} isCloudAccount={isCloudAccount} />
+      ) : (
+      <>
       {dayLoadError && (
         <div
           role="alert"
@@ -508,6 +527,8 @@ export const ChatView: React.FC = () => {
       {/* 8. Install Help Modal */}
       {showInstallHelp && (
         <InstallHelpModal onClose={() => setShowInstallHelp(false)} />
+      )}
+      </>
       )}
     </div>
   );
