@@ -235,6 +235,9 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
   const clearHistory = async () => {
     if (!window.confirm("Clear AI Accountant chat history from all synced devices?")) return;
     try {
+      if (isCloudAccount && !conversationIdRef.current) {
+        throw new Error("Cloud history is not confirmed as loaded. Retry sync before clearing so no remote messages are left behind.");
+      }
       if (conversationIdRef.current && isCloudAccount) {
         await clearSyncedAiAccountantHistory({ userId, organizationId }, conversationIdRef.current);
       }
