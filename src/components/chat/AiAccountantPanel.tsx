@@ -88,9 +88,14 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
         `Transaction count: ${summary.transaction_count}`,
         "This is only the currently loaded business-date summary. Do not present it as a monthly, yearly, cash-balance, bank-balance, or full financial statement. If asked for another date or a report not supplied here, say that data is not connected yet.",
       ].join("\n");
-      const [monthlyReport, paymentAccounts] = await Promise.all([
+      const asksAboutEntries = /transaction|transactions|entry|entries|payment|record|hisab|len.?den/i.test(content);
+      const [monthlyReport, paymentAccounts, categoryBreakdown, recentTransactions] = await Promise.all([
         ledgerService.getMonthlyReport(Number(summary.business_date.slice(0, 4))),
         ledgerService.getPaymentAccounts(),
+        ledgerService.getCategoryBreakdown(summary.business_date),
+        asksAboutEntries
+          ? ledgerService.getFilteredTransactions({ startDate: summary.business_date, endDate: summary.business_date, status: "active", limit: 30, offset: 0 })
+          : Promise.resolve({ transactions: [], count: 0 }),
       ]);
       const monthlyContext = monthlyReport.map((month) => [
         `Month: ${month.year}-${String(month.month).padStart(2, "0")}`,
@@ -101,15 +106,20 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
         `Owner withdrawals: ${month.withdrawal_paisa} paisa`,
       ].join("; ")).join("\n");
       const accountContext = paymentAccounts.map((account) =>
-        `Account ${account.name} (${account.type}): current balance ${Math.round(Number(account.current_balance || 0) * 100)} paisa`
+        `Account ${account.name} (${account.type}): current balance ${account.balance_paisa} paisa`
       ).join("\n");
+      const categoryContext = categoryBreakdown.map((item) => `${item.type}: ${item.category_name}; total ${item.total_paisa} paisa; entries ${item.entry_count}`).join("\n");
+      const transactionContext = recentTransactions.transactions.map((tx) => `Date: ${tx.business_date}; type: ${tx.type}; amount: ${tx.amount_paisa} paisa; category: ${tx.category_name || "Uncategorised"}; account: ${tx.account_name || "Unknown"}; note: ${tx.note || tx.raw_text || "No note"}; status: ${tx.status}`).join("\n");
       const completeContext = [
         verifiedContext,
         "Monthly summaries for the calendar year of the current business date (only months returned by Shop Pro):",
         monthlyContext || "No monthly report rows returned.",
-        "Payment accounts currently visible to this signed-in Shop Pro session:",
+        "Payment accounts currently visible to this signed-in Shop Pro session (balance_paisa is integer paisa):",
         accountContext || "No payment account rows returned.",
-        "Do not infer missing months. Account balances are current balances, not profit. These are bookkeeping summaries, not a complete double-entry trial balance or balance sheet.",
+        `Category breakdown for ${summary.business_date}:`,
+        categoryContext || "No category rows returned for this date.",
+        asksAboutEntries ? `Up to 30 active transactions for ${summary.business_date} (${recentTransactions.count} matching records total):\n${transactionContext || "No matching transactions found."}` : "Transaction-level records were not requested and are not included.",
+        "Do not infer missing months or records beyond the supplied 30. Account balances are current balances, not profit. These are bookkeeping summaries, not a complete double-entry trial balance or balance sheet.",
       ].join("\n\n");
       const result = await sendLocalAiMessage(nextMessages, completeContext);
       setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
@@ -150,7 +160,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary }> = ({ summary
       </header>
 
       <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 sm:px-6">
-        Read-only daily summary connected: income, expenses, net result and transaction count for the current business date. Monthly reports, account balances and transaction actions are not connected yet.
+        Read-only Shop Pro data: daily/monthly summaries, current account balances, today's category breakdown, and up to 30 of today's transactions when asked. No transaction changes are allowed.
       </div>
 
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-6" aria-live="polite">
