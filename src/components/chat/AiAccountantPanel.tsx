@@ -485,10 +485,10 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
           placeholder="Ask an accounting question…"
           rows={2}
           maxLength={12000}
-          disabled={sending || syncStatus === "loading"}
+          disabled={sending || syncStatus === "loading" || Boolean(pendingAction)}
           className="min-h-12 flex-1 resize-y rounded-xl border border-border-standard bg-surface px-3 py-2.5 text-sm text-on-surface outline-none focus:border-primary disabled:opacity-50"
         />
-        <button type="submit" disabled={!input.trim() || !isReady || sending || syncStatus === "loading"} className="min-h-12 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
+        <button type="submit" disabled={!input.trim() || !isReady || sending || syncStatus === "loading" || Boolean(pendingAction)} className="min-h-12 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50">
           Send
         </button>
       </form>
