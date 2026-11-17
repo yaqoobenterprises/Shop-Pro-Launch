@@ -20,20 +20,38 @@ const MAX_SAVED_MESSAGES = 100;
 function getRequestedBusinessDate(question: string, currentDate: string): string | null {
   const q = question.toLowerCase();
   const shiftDate = (date: string, days: number) => {
-    const value = new Date(`${date}T12:00:00Z`);
+    const value = new Date(date + "T12:00:00Z");
     value.setUTCDate(value.getUTCDate() + days);
     return value.toISOString().slice(0, 10);
   };
+  const validDate = (year: number, month: number, day: number): string | null => {
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day
+      ? parsed.toISOString().slice(0, 10)
+      : null;
+  };
   if (/\b(yesterday|kal|guzishta kal)\b/.test(q)) return shiftDate(currentDate, -1);
   if (/\b(today|aaj|aj)\b/.test(q)) return currentDate;
+
   const iso = q.match(/\b(20\d{2})-(0[1-9]|1[0-2])-([0-2]\d|3[01])\b/);
-  if (iso) return iso[0];
-  const dmy = q.match(/\b([0-2]?\d|3[01])[-/.]([01]?\d)[-/.](20\d{2})\b/);
-  if (dmy) {
-    const day = Number(dmy[1]); const month = Number(dmy[2]);
-    const parsed = new Date(Date.UTC(Number(dmy[3]), month - 1, day));
-    if (parsed.getUTCFullYear() === Number(dmy[3]) && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day) return parsed.toISOString().slice(0, 10);
-  }
+  if (iso) return validDate(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+
+  // Numeric dates: 1/12/2026, 1-12-2026, or "1 12 2026".
+  const dmy = q.match(/\b([0-2]?\d|3[01])[-\/.\s]([01]?\d)[-\/.\s](20\d{2})\b/);
+  if (dmy) return validDate(Number(dmy[3]), Number(dmy[2]), Number(dmy[1]));
+
+  const months: Record<string, number> = {
+    jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3,
+    apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7,
+    aug: 8, august: 8, sep: 9, sept: 9, september: 9,
+    oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12,
+  };
+  const namedDmy = q.match(/\b([0-2]?\d|3[01])\s+(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?[,]?\s+(20\d{2})\b/);
+  if (namedDmy) return validDate(Number(namedDmy[3]), months[namedDmy[2].replace(/\.$/, "")], Number(namedDmy[1]));
+
+  const namedMdy = q.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?\s+([0-2]?\d|3[01])[,]?\s+(20\d{2})\b/);
+  if (namedMdy) return validDate(Number(namedMdy[3]), months[namedMdy[1].replace(/\.$/, "")], Number(namedMdy[2]));
+
   return null;
 }
 
