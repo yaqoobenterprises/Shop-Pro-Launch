@@ -8,15 +8,17 @@ import {
   LogOut,
   Sun,
   Moon,
+  Search,
 } from "lucide-react";
 import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import { APP_NAME } from "../../config/app";
+import "./WorkspaceChrome.css";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();
-  const { setCurrentView } = useApp();
+  const { currentView, setCurrentView, setIsCommandPaletteOpen } = useApp();
   const { t, dir } = useI18n();
 
   const [theme, setTheme] = useState<ThemePreference>(() => getSavedTheme());
@@ -27,6 +29,14 @@ export const Header: React.FC = () => {
   const displayName = getProfileDisplayName(user, organization.owner_name, t("header.owner"));
   const menuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
+
+  const pageTitle = currentView === "dashboard" ? t("nav.overview")
+    : currentView === "sales" ? t("nav.entries")
+    : currentView === "chat" ? t("nav.ledger")
+    : currentView === "ai" ? "LedgerMate AI"
+    : currentView === "reports" ? t("nav.reports")
+    : currentView === "accounts" ? t("nav.accounts")
+    : t("nav.settings");
 
   const toggleTheme = () => {
     const nextTheme: ThemePreference = theme === "dark" ? "light" : "dark";
@@ -65,18 +75,49 @@ export const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className="app-header" dir={dir}>
-      <div className="workspace-name">
-        <span className="workspace-brand md:hidden">{APP_NAME}</span>
-        <span
-          className={`network-status-dot ${isOnline ? "network-status-dot--online" : "network-status-dot--offline"}`}
-          role="status"
-          aria-label={isOnline ? "Online" : "Offline"}
-          title={isOnline ? "Online" : "Offline"}
-        />
+    <header className="app-header workspace-header" dir={dir}>
+      <div className="workspace-context">
+        <div className="workspace-context__copy">
+          <span className="workspace-context__eyebrow">{APP_NAME} <span aria-hidden="true">/</span> WORKSPACE</span>
+          <span className="workspace-context__title">{pageTitle}</span>
+        </div>
       </div>
 
-      <div className="header-actions">
+      <div className="header-actions workspace-header__actions">
+        <div
+          className={`connection-pill ${isOnline ? "connection-pill--online" : "connection-pill--offline"}`}
+          role="status"
+          aria-label={isOnline ? "Online" : "Offline"}
+          title={isOnline ? "Internet connection available" : "Working offline"}
+        >
+          <span className={`network-status-dot ${isOnline ? "network-status-dot--online" : "network-status-dot--offline"}`} aria-hidden="true" />
+          <span>{isOnline ? "Online" : "Offline"}</span>
+        </div>
+
+        <button
+          type="button"
+          className="header-search-trigger"
+          onClick={() => setIsCommandPaletteOpen(true)}
+          aria-label="Search workspace"
+          title="Search workspace (Ctrl+K)"
+        >
+          <Search className="h-4 w-4" aria-hidden="true" />
+          <span>Search</span>
+          <kbd>Ctrl K</kbd>
+        </button>
+
+        <button
+          type="button"
+          className="header-icon-button"
+          onClick={toggleTheme}
+          aria-label={t("landing.switchTheme")}
+          title={t("landing.switchTheme")}
+        >
+          {theme === "dark"
+            ? <Sun className="h-4 w-4" aria-hidden="true" />
+            : <Moon className="h-4 w-4" aria-hidden="true" />}
+        </button>
+
         <div className="relative" ref={menuRef}>
           <button
             ref={profileButtonRef}
@@ -85,7 +126,7 @@ export const Header: React.FC = () => {
             aria-expanded={isMenuOpen}
             aria-controls="profile-menu"
             aria-label={t("header.openAccountMenu")}
-            className="profile-trigger"
+            className="profile-trigger workspace-profile-trigger"
           >
             <UserAvatar
               src={user?.avatar_url}
@@ -98,39 +139,23 @@ export const Header: React.FC = () => {
           {isMenuOpen && (
             <div
               id="profile-menu"
-              className="absolute end-0 z-50 mt-2 w-56 rounded-xl border border-line bg-surface p-1.5 shadow-lg"
+              className="header-profile-menu absolute end-0 z-50 mt-2 w-56 rounded-xl border border-line bg-surface p-1.5 shadow-lg"
             >
-              <div className="border-b border-line px-3 py-2">
-                <p className="truncate text-xs font-bold text-ink">
-                  {displayName}
-                </p>
+              <div className="header-profile-menu__identity">
+                <strong className="truncate">{displayName}</strong>
+                <span className="truncate">{user?.email || organization.name || APP_NAME}</span>
               </div>
 
               <div className="py-1">
                 <button
                   type="button"
                   onClick={() => {
-                    toggleTheme();
-                    setIsMenuOpen(false);
-                  }}
-                  className="profile-menu-action"
-                >
-                  {theme === "dark" ? (
-                    <Sun className="h-4 w-4 text-muted" aria-hidden="true" />
-                  ) : (
-                    <Moon className="h-4 w-4 text-muted" aria-hidden="true" />
-                  )}
-                  <span>{t("landing.switchTheme")}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
                     setIsMenuOpen(false);
                     setCurrentView("settings");
                   }}
-                  className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-ink transition hover:bg-surface-2"
+                  className="profile-menu-action"
                 >
-                  <Settings className="h-3.5 w-3.5 text-muted" />
+                  <Settings className="h-4 w-4" aria-hidden="true" />
                   <span>{t("header.profileSettings")}</span>
                 </button>
 
@@ -141,15 +166,15 @@ export const Header: React.FC = () => {
                       setIsMenuOpen(false);
                       lock();
                     }}
-                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-ink transition hover:bg-surface-2"
+                    className="profile-menu-action"
                   >
-                    <LockKeyhole className="h-3.5 w-3.5 text-muted" />
+                    <LockKeyhole className="h-4 w-4" aria-hidden="true" />
                     <span>{t("header.lockRegister")}</span>
                   </button>
                 )}
               </div>
 
-              <div className="border-t border-line pt-1">
+              <div className="header-profile-menu__footer">
                 {isDemoMode ? (
                   <button
                     type="button"
@@ -157,9 +182,9 @@ export const Header: React.FC = () => {
                       setIsMenuOpen(false);
                       void exitDemoMode();
                     }}
-                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-forest transition hover:bg-good-bg"
+                    className="profile-menu-action profile-menu-action--success"
                   >
-                    <LogOut className="h-3.5 w-3.5 text-forest" />
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
                     <span>{t("header.exitDemoSandbox")}</span>
                   </button>
                 ) : (
@@ -169,9 +194,9 @@ export const Header: React.FC = () => {
                       setIsMenuOpen(false);
                       void signOut();
                     }}
-                    className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-danger transition hover:bg-danger-bg"
+                    className="profile-menu-action profile-menu-action--danger"
                   >
-                    <LogOut className="h-3.5 w-3.5 text-danger" />
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
                     <span>{t("header.signOut")}</span>
                   </button>
                 )}

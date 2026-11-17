@@ -13,6 +13,7 @@ import {
   RefreshCw,
   Eye,
   Ban,
+  Search,
 } from "lucide-react";
 import { VoidModal } from "../chat/VoidModal";
 import { TransactionDetailModal } from "../common/TransactionDetailModal";
@@ -161,8 +162,10 @@ export const TransactionsExplorerView: React.FC = () => {
     <main className="page-content entries-page">
       {/* Page Title */}
       <div className="page-title">
-        <div>
+        <div className="entries-page-heading">
+          <span className="kicker">TRANSACTION REGISTER</span>
           <h1>Entries</h1>
+          <p>Review, filter and export your recorded shop transactions.</p>
         </div>
 
         <div className="title-actions">
@@ -193,7 +196,7 @@ export const TransactionsExplorerView: React.FC = () => {
       {/* Filter Panel */}
       <section className="panel filter-panel">
         <form onSubmit={handleSearchSubmit} className="search-field">
-          <span>⌕</span>
+          <Search className="h-4 w-4" aria-hidden="true" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

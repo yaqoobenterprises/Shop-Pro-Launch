@@ -14,6 +14,7 @@ import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
 import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
 import "./ReportsAnalytics.css";
+import { ReportInsightCharts } from "./ReportInsightCharts";
 
 export const LedgerReportsView: React.FC = () => {
   const today = getKarachiBusinessDate();
@@ -79,6 +80,11 @@ export const LedgerReportsView: React.FC = () => {
   );
   const chartMax = Math.max(1, ...trend.map((bucket) => Math.max(bucket.income_paisa, bucket.expense_paisa)));
   const grouping = getTrendGrouping(filters.fromDate, filters.toDate);
+
+  const expenseCategories = useMemo(
+    () => categoryBreakdown.filter((item) => item.type === "expense" && item.total_paisa > 0),
+    [categoryBreakdown],
+  );
   const handleExport = () => {
     setIsExporting(true);
     try {
@@ -169,6 +175,8 @@ export const LedgerReportsView: React.FC = () => {
           </div>
         )}
       </section>
+
+      <ReportInsightCharts trend={trend} expenseCategories={expenseCategories} />
 
       <div className="reports-modern__analysis-grid">
         <section className="reports-modern__table-panel">

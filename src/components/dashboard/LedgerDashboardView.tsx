@@ -20,6 +20,8 @@ import {
   ArrowDownLeft,
 } from "lucide-react";
 
+const EXPENSE_CHART_PALETTE = ["#14765e", "#5688a0", "#b96d45", "#809b77", "#7c78a8", "#8a9ba8"];
+
 export const LedgerDashboardView: React.FC = () => {
   const { t } = useI18n();
   const [period, setPeriod] = useState<OverviewPeriod>("day");
@@ -143,6 +145,17 @@ export const LedgerDashboardView: React.FC = () => {
     () => breakdowns.filter((b) => b.type === "expense" && b.total_paisa > 0),
     [breakdowns],
   );
+  const expenseBreakdownTotal = expenseBreakdowns.reduce((sum, item) => sum + item.total_paisa, 0);
+  const expenseDonutBackground = useMemo(() => {
+    if (expenseBreakdownTotal <= 0) return "conic-gradient(var(--line) 0deg 360deg)";
+    let cumulative = 0;
+    const stops = expenseBreakdowns.map((item, index) => {
+      const start = cumulative;
+      cumulative += (item.total_paisa / expenseBreakdownTotal) * 100;
+      return `${EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length]} ${start}% ${cumulative}%`;
+    });
+    return `conic-gradient(${stops.join(", ")})`;
+  }, [expenseBreakdowns, expenseBreakdownTotal]);
 
   const trendRows: ReportTrendBucket[] = rangeTrend;
   const selectedRangeLabel = period === "day"
@@ -158,8 +171,10 @@ export const LedgerDashboardView: React.FC = () => {
     <div className="page-content overview-page">
       {/* Page Title */}
       <div className="page-title">
-        <div>
+        <div className="overview-page-heading">
+          <span className="kicker">BUSINESS SNAPSHOT</span>
           <h1>Overview</h1>
+          <p>Track income, outflows and the money available in your shop.</p>
         </div>
 
         <OverviewPeriodControls
@@ -332,30 +347,39 @@ export const LedgerDashboardView: React.FC = () => {
                     No active expenses for this date. Recorded expenses will appear here.
                   </p>
                 ) : (
-                  <>
+                  <div className="expense-breakdown-layout">
+                    <div
+                      className="expense-donut"
+                      role="img"
+                      aria-label={`Expense category distribution. Total ${formatPaisa(expenseBreakdownTotal)}`}
+                      style={{ background: expenseDonutBackground }}
+                    >
+                      <div className="expense-donut__center">
+                        <strong>{formatPaisa(expenseBreakdownTotal)}</strong>
+                        <span>Total spend</span>
+                      </div>
+                    </div>
                     <ul
                       aria-label="Expense totals by category"
-                      style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 8 }}
+                      className="expense-category-list"
                     >
-                      {expenseBreakdowns.map((b) => (
-                        <li
-                          key={b.category_id || b.category_name}
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            fontSize: "var(--type-label)",
-                            padding: "6px 0",
-                            borderBottom: "1px solid var(--line)",
-                          }}
-                        >
-                          <span style={{ color: "var(--ink)" }}>{b.category_name}</span>
-                          <span style={{ fontFamily: "DM Mono", color: "var(--orange)" }}>
-                            {formatPaisa(b.total_paisa)}
+                      {expenseBreakdowns.map((b, index) => (
+                        <li key={b.category_id || b.category_name}>
+                          <span className="expense-category-label">
+                            <i
+                              style={{ background: EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length] }}
+                              aria-hidden="true"
+                            />
+                            <span>{b.category_name}</span>
+                          </span>
+                          <span className="expense-category-amount">
+                            <small>{Math.round((b.total_paisa / expenseBreakdownTotal) * 100)}%</small>
+                            <strong>{formatPaisa(b.total_paisa)}</strong>
                           </span>
                         </li>
                       ))}
                     </ul>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
