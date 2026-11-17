@@ -14,6 +14,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  Sparkles,
   Settings,
   Wallet,
 } from "lucide-react";
@@ -69,6 +70,7 @@ export const Sidebar: React.FC = () => {
   const navItems: { id: AppView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "dashboard", label: t("nav.overview"), icon: LayoutDashboard },
     { id: "sales", label: t("nav.entries"), icon: Receipt },
+    { id: "ai", label: "LedgerMate AI", icon: Sparkles },
     { id: "chat", label: t("nav.ledger"), icon: MessageSquare },
     { id: "reports", label: t("nav.reports"), icon: BarChart3 },
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
@@ -200,7 +202,7 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               type="button"
-              className={isActive ? "active" : ""}
+              className={`${isActive ? "active" : ""}${item.id === "ai" ? " nav-item-ledgermate" : ""}`}
               aria-current={isActive ? "page" : undefined}
               aria-label={item.label}
               title={isCollapsed ? item.label : undefined}

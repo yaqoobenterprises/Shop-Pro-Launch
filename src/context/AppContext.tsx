@@ -11,6 +11,7 @@ import { isFeatureEnabled } from "../config/features";
 
 export type AppView =
   | "chat"
+  | "ai"
   | "dashboard"
   | "sales"
   | "accounts"

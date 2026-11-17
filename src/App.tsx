@@ -27,6 +27,9 @@ import { getUserPreferences } from "./services/userPreferencesService";
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
 );
+const LedgerMateView = lazy(() =>
+  import("./components/chat/LedgerMateView").then((module) => ({ default: module.LedgerMateView })),
+);
 const LedgerDashboardView = lazy(() =>
   import("./components/dashboard/LedgerDashboardView").then((module) => ({ default: module.LedgerDashboardView })),
 );
@@ -110,6 +113,8 @@ const MainShell: React.FC = () => {
     switch (currentView) {
       case "chat":
         return <ChatView />;
+      case "ai":
+        return <LedgerMateView />;
       case "dashboard":
         return <LedgerDashboardView />;
       case "sales":

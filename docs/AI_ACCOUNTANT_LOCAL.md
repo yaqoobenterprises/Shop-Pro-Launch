@@ -1,4 +1,8 @@
-# AI Accountant — Local-First Architecture
+# Legacy proposal: local AI runtime
+
+This document describes an older local-inference proposal. It is not the current Shop Pro runtime. LedgerMate AI uses Groq Cloud through the authenticated Vercel function at `/api/ai-chat`; its browser integration is `src/services/ledgerMateAiService.ts`. The `local-ai/` Python bridge is retained as historical code and is not called by the React application.
+
+For the current provider setup, request privacy, chat sync, and rollout requirements, see [`GROQ_AI_SETUP.md`](GROQ_AI_SETUP.md) and [`ARCHITECTURE.md`](../ARCHITECTURE.md).
 
 ## Agreed operating model
 

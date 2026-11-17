@@ -1,5 +1,10 @@
 {
   "framework": "vite",
+  "functions": {
+    "api/ai-chat.js": {
+      "maxDuration": 90
+    }
+  },
   "rewrites": [
     {
       "source": "/((?!assets/|sw.js|manifest.json|favicon.ico|.*\\..*).*)",

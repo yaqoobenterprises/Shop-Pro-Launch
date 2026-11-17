@@ -30,11 +30,11 @@ npm run dev
 
 The development server listens at `http://localhost:3000`.
 
-## AI Accountant
+## LedgerMate AI
 
-The AI Accountant uses Groq Cloud through the authenticated Vercel serverless endpoint at `/api/ai-chat`. It defaults to `openai/gpt-oss-20b`. Configure `GROQ_API_KEY` as a server-only Vercel environment variable; never use a `VITE_GROQ_API_KEY` variable. See [docs/GROQ_AI_SETUP.md](docs/GROQ_AI_SETUP.md) for setup, privacy, and free-tier behavior.
+LedgerMate AI uses Groq Cloud through the authenticated Vercel function at `/api/ai-chat`. It defaults to `openai/gpt-oss-20b`. Configure `GROQ_API_KEY` as a server-only Vercel environment variable; never use a `VITE_GROQ_API_KEY` variable. Its accounting context comes from the signed-in user's existing organization-scoped Shop Pro ledger services. See [docs/GROQ_AI_SETUP.md](docs/GROQ_AI_SETUP.md) for setup, privacy, chat history, and database rollout details.
 
-Cloud AI sends the selected Shop Pro context and chat messages to Groq for inference. The model has no database connection and cannot mutate the ledger. Groq's Free plan has rate limits and is not unlimited.
+Cloud AI sends the retrieved ledger context and chat messages to Groq for inference. The model has no database connection; transaction actions are handled separately by Shop Pro after an explicit user preview and confirmation. Groq's Free plan has rate limits and is not unlimited.
 
 ## Checks
 

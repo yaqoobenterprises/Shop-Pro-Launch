@@ -46,6 +46,8 @@ import {
 } from './offlineDraftStore';
 import { sqliteRepository } from './sqliteRepository';
 import { subscribeToLiveTransactionsForUser } from './ledgerRealtime';
+import { getMonthlyLedgerSummary, getYearlyLedgerSummary } from './ledgerSummaryService';
+import { isDemoOrganization, isOnline, requireAuthoritativeCloudRead, type LedgerReadOptions } from './ledgerReadPolicy';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function isValidUUID(value: unknown): value is string {
@@ -114,14 +116,6 @@ function queuedTransactionToLedgerTransaction(item: QueuedTransaction): Transact
     created_at: '',
     updated_at: '',
   };
-}
-
-function isOnline(): boolean {
-  return typeof navigator === 'undefined' || navigator.onLine;
-}
-
-function isDemoOrganization(organizationId?: string): boolean {
-  return organizationId === DEMO_ORGANIZATION_ID || isDemoSessionActive();
 }
 
 function isNetworkFailure(error: unknown): boolean {
@@ -947,11 +941,15 @@ export class LedgerService {
     ).length;
   }
 
-  async getPaymentAccounts(): Promise<LedgerAccount[]> {
+  async getPaymentAccounts(options: LedgerReadOptions = {}): Promise<LedgerAccount[]> {
     const principal = getSecurityPrincipal();
+    if (options.requireCloudSource) await requireAuthoritativeCloudRead(principal, 'payment account balances');
     if (!principal) return [];
 
     if (isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) {
+      if (options.requireCloudSource) {
+        throw new Error('Shop Pro could not verify payment account balances from the cloud. No cached balance was used.');
+      }
       return this.getLocalPaymentAccounts(principal.organizationId);
     }
 
@@ -965,6 +963,7 @@ export class LedgerService {
         .order('name', { ascending: true });
 
       if (error) {
+        if (options.requireCloudSource) throw error;
         if (isUnavailableOrUnauthorized(error)) {
           return this.getLocalPaymentAccounts(principal.organizationId);
         }
@@ -973,8 +972,12 @@ export class LedgerService {
 
       const serverAccounts = (data || []).map(normalizeAccount);
       await replaceCachedAccounts(principal.organizationId, serverAccounts);
+      if (options.requireCloudSource) return serverAccounts;
       return this.mergeWithOfflineAccountOperations(principal.organizationId, serverAccounts);
     } catch (err) {
+      if (options.requireCloudSource) {
+        throw new Error('Shop Pro could not verify payment account balances from the cloud. No cached balance was used.', { cause: err });
+      }
       if (!isUnavailableOrUnauthorized(err)) {
         console.warn('Could not fetch cloud payment accounts, falling back to local accounts:', err);
       }
@@ -1320,160 +1323,33 @@ export class LedgerService {
     }));
   }
 
-  async getMonthlySummary(year: number, month: number): Promise<MonthlySummary | null> {
-    const principal = getSecurityPrincipal();
-    const isDemo = isDemoOrganization(principal?.organizationId);
-    if (!isDemo && principal && await hasConfiguredCloudSession(principal.id)) {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from('view_monthly_summary')
-          .select('*')
-          .eq('year', year)
-          .eq('month', month)
-          .maybeSingle();
-        if (!error && data) {
-          return {
-            month_start: data.month_start,
-            year: data.year,
-            month: data.month,
-            income_paisa: Number(data.income_paisa || 0),
-            expense_paisa: Number(data.expense_paisa || 0),
-            net_profit_paisa: Number(data.net_profit_paisa || 0),
-            capital_in_paisa: Number(data.capital_in_paisa || 0),
-            withdrawal_paisa: Number(data.withdrawal_paisa || 0),
-            adjustment_in_paisa: Number(data.adjustment_in_paisa || 0),
-            adjustment_out_paisa: Number(data.adjustment_out_paisa || 0),
-          };
-        }
-      } catch {
-        // Fall back
-      }
-    }
 
-    const queue = (await getOfflineQueue()).filter((tx) =>
-      !principal ||
-      (tx.organizationId === principal.organizationId && tx.createdBy === principal.id),
-    );
-    const prefix = `${year}-${String(month).padStart(2, '0')}`;
-    const monthlyTxs = queue.filter((tx) => tx.businessDate.startsWith(prefix));
-    if (!monthlyTxs.length) return null;
-
-    let income = 0;
-    let expense = 0;
-    let capitalIn = 0;
-    let withdrawal = 0;
-    let adjIn = 0;
-    let adjOut = 0;
-    for (const tx of monthlyTxs) {
-      if (tx.type === 'income') income += tx.amountPaisa;
-      else if (tx.type === 'expense') expense += tx.amountPaisa;
-      else if (tx.type === 'capital_in') capitalIn += tx.amountPaisa;
-      else if (tx.type === 'withdrawal') withdrawal += tx.amountPaisa;
-      else if (tx.type === 'adjustment' && tx.adjustmentDir === 'in') adjIn += tx.amountPaisa;
-      else if (tx.type === 'adjustment' && tx.adjustmentDir === 'out') adjOut += tx.amountPaisa;
-    }
-    return {
-      month_start: `${prefix}-01`,
-      year,
-      month,
-      income_paisa: income,
-      expense_paisa: expense,
-      net_profit_paisa: income - expense,
-      capital_in_paisa: capitalIn,
-      withdrawal_paisa: withdrawal,
-      adjustment_in_paisa: adjIn,
-      adjustment_out_paisa: adjOut,
-    };
+  async getMonthlySummary(year: number, month: number, options: LedgerReadOptions = {}): Promise<MonthlySummary | null> {
+    return getMonthlyLedgerSummary(year, month, options);
   }
 
-  async getMonthlyReport(year: number): Promise<MonthlySummary[]> {
-    const principal = getSecurityPrincipal();
-    const isDemo = isDemoOrganization(principal?.organizationId);
-    if (!isDemo && principal && await hasConfiguredCloudSession(principal.id)) {
-      try {
-        const supabase = getSupabaseClient();
-        const { data, error } = await supabase
-          .from('view_monthly_summary')
-          .select('*')
-          .eq('year', year)
-          .order('month', { ascending: true });
-        if (!error && data && data.length > 0) {
-          return data.map((row: any) => ({
-            month_start: row.month_start,
-            year: row.year,
-            month: row.month,
-            income_paisa: Number(row.income_paisa || 0),
-            expense_paisa: Number(row.expense_paisa || 0),
-            net_profit_paisa: Number(row.net_profit_paisa || 0),
-            capital_in_paisa: Number(row.capital_in_paisa || 0),
-            withdrawal_paisa: Number(row.withdrawal_paisa || 0),
-            adjustment_in_paisa: Number(row.adjustment_in_paisa || 0),
-            adjustment_out_paisa: Number(row.adjustment_out_paisa || 0),
-          }));
-        }
-      } catch {
-        // Fall back
-      }
-    }
-    if (isDemo && principal) {
-      const queue = (await getOfflineQueue()).filter((transaction) =>
-        transaction.organizationId === principal.organizationId &&
-        transaction.createdBy === principal.id &&
-        transaction.businessDate.startsWith(`${year}-`),
-      );
-      const months = new Map<number, MonthlySummary>();
-      for (const transaction of queue) {
-        const month = Number(transaction.businessDate.slice(5, 7));
-        let summary = months.get(month);
-        if (!summary) {
-          summary = {
-            month_start: `${year}-${String(month).padStart(2, '0')}-01`,
-            year,
-            month,
-            income_paisa: 0,
-            expense_paisa: 0,
-            net_profit_paisa: 0,
-            capital_in_paisa: 0,
-            withdrawal_paisa: 0,
-            adjustment_in_paisa: 0,
-            adjustment_out_paisa: 0,
-          };
-          months.set(month, summary);
-        }
-        if (transaction.type === 'income') {
-          summary.income_paisa += transaction.amountPaisa;
-          summary.net_profit_paisa += transaction.amountPaisa;
-        } else if (transaction.type === 'expense') {
-          summary.expense_paisa += transaction.amountPaisa;
-          summary.net_profit_paisa -= transaction.amountPaisa;
-        } else if (transaction.type === 'capital_in') {
-          summary.capital_in_paisa += transaction.amountPaisa;
-        } else if (transaction.type === 'withdrawal') {
-          summary.withdrawal_paisa += transaction.amountPaisa;
-        } else if (transaction.type === 'adjustment' && transaction.adjustmentDir === 'in') {
-          summary.adjustment_in_paisa += transaction.amountPaisa;
-        } else if (transaction.type === 'adjustment' && transaction.adjustmentDir === 'out') {
-          summary.adjustment_out_paisa += transaction.amountPaisa;
-        }
-      }
-      return [...months.values()].sort((left, right) => left.month - right.month);
-    }
-    return [];
+  async getMonthlyReport(year: number, options: LedgerReadOptions = {}): Promise<MonthlySummary[]> {
+    return getYearlyLedgerSummary(year, options);
   }
 
   /**
    * Fetches historical transactions with filtering and pagination
    */
-  async getFilteredTransactions(filter: TransactionFilter = {}): Promise<{ transactions: Transaction[]; count: number }> {
+  async getFilteredTransactions(
+    filter: TransactionFilter = {},
+    options: LedgerReadOptions = {},
+  ): Promise<{ transactions: Transaction[]; count: number }> {
     const principal = getSecurityPrincipal();
     const isDemo = isDemoOrganization(principal?.organizationId);
     let accounts: LedgerAccount[] = [];
     try {
-      accounts = await this.getPaymentAccounts();
+      accounts = await this.getPaymentAccounts(options);
     } catch (err) {
+      if (options.requireCloudSource) throw err;
       console.warn('Could not load account names for filtered transactions:', err);
     }
+
+    if (options.requireCloudSource) await requireAuthoritativeCloudRead(principal, 'Shop Pro transactions');
 
     if (!isDemo && isOnline() && isSupabaseConfigured()) {
       if (!(await hasConfiguredCloudSession(principal?.id))) throw new SupabaseSessionRequiredError();
@@ -1533,6 +1409,7 @@ export class LedgerService {
         }
 
         if (error) {
+          if (options.requireCloudSource) throw error;
           if (!isUnavailableOrUnauthorized(error)) {
             console.error('Error fetching filtered transactions:', error);
             throw error;
@@ -1547,11 +1424,18 @@ export class LedgerService {
           return { transactions, count: count || 0 };
         }
       } catch (err) {
+        if (options.requireCloudSource) {
+          throw new Error('Shop Pro could not retrieve complete transaction history from the cloud. No cached totals were used.', { cause: err });
+        }
         if (!isUnavailableOrUnauthorized(err)) {
           console.error('Error fetching filtered transactions:', err);
           throw err;
         }
       }
+    }
+
+    if (options.requireCloudSource) {
+      throw new Error('Shop Pro could not retrieve complete transaction history from the cloud. No cached totals were used.');
     }
 
     const queue = await getOfflineQueue();
@@ -1579,7 +1463,8 @@ export class LedgerService {
   }
 
   async getAllFilteredTransactions(
-    filter: Omit<TransactionFilter, 'limit' | 'offset'> = {}
+    filter: Omit<TransactionFilter, 'limit' | 'offset'> = {},
+    options?: LedgerReadOptions,
   ): Promise<Transaction[]> {
     const pageSize = 1000;
     const transactions: Transaction[] = [];
@@ -1587,7 +1472,10 @@ export class LedgerService {
     let count: number;
 
     do {
-      const page = await this.getFilteredTransactions({ ...filter, limit: pageSize, offset });
+      const pageFilter = { ...filter, limit: pageSize, offset };
+      const page = options
+        ? await this.getFilteredTransactions(pageFilter, options)
+        : await this.getFilteredTransactions(pageFilter);
       count = page.count;
       if (page.transactions.length === 0 && offset < count) {
         throw new Error('The export stopped before all matching records were retrieved.');
@@ -1848,8 +1736,9 @@ export class LedgerService {
   /**
    * Categories: Fetch all active categories
    */
-  async getCategories(): Promise<Category[]> {
+  async getCategories(options: LedgerReadOptions = {}): Promise<Category[]> {
     const principal = getSecurityPrincipal();
+    if (options.requireCloudSource) await requireAuthoritativeCloudRead(principal, 'transaction categories');
     if (!principal) throw new Error('Sign in to this shop before loading categories.');
     if (isDemoOrganization(principal.organizationId)) {
       return SEED_CATEGORIES.map((category, index) => ({
