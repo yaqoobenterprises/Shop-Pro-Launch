@@ -188,21 +188,21 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
           : Promise.resolve([]),
       ]);
       const monthlyContext = monthlyReport.map((month) => [
-        `Month: ${month.year}-${String(month.month).padStart(2, "0")}`,
-        `Income: ${month.income_paisa} paisa`,
-        `Expense: ${month.expense_paisa} paisa`,
-        `Net result: ${month.net_profit_paisa} paisa`,
-        `Capital received: ${month.capital_in_paisa} paisa`,
-        `Owner withdrawals: ${month.withdrawal_paisa} paisa`,
-      ].join("; ")).join("\n");
+        \`Month: \${month.year}-\${String(month.month).padStart(2, "0")}\`,
+        \`Income: \${month.income_paisa} paisa\`,
+        \`Expense: \${month.expense_paisa} paisa\`,
+        \`Net result: \${month.net_profit_paisa} paisa\`,
+        \`Capital received: \${month.capital_in_paisa} paisa\`,
+        \`Owner withdrawals: \${month.withdrawal_paisa} paisa\`,
+      ].join("; ")).join("\\n");
       const accountContext = paymentAccounts.map((account) =>
-        `Account ${account.name} (${account.type}): current balance ${account.balance_paisa} paisa`
-      ).join("\n");
-      const categoryContext = categoryBreakdown.map((item) => `${item.type}: ${item.category_name}; total ${item.total_paisa} paisa; entries ${item.entry_count}`).join("\n");
+        \`Account \${account.name} (\${account.type}): current balance \${account.balance_paisa} paisa\`
+      ).join("\\n");
+      const categoryContext = categoryBreakdown.map((item) => \`\${item.type}: \${item.category_name}; total \${item.total_paisa} paisa; entries \${item.entry_count}\`).join("\\n");
       const transactionContext = formatLedgerTransactions(requestedTransactions);
-      const serviceTerm = content.toLowerCase().match(/stamp(?:\\s*paper)?|black\\s*(?:and|&)\\s*white|b\\/?w|colour(?:ed)?\\s*print(?:ing)?|photocopy|spiral\\s*binding|lamination|printing/i)?.[0];
+      const serviceTerm = content.toLowerCase().match(/stamp(?:\\s*paper)?|black\\s*(?:and|&|n)\\s*white|b\\/?w|colour(?:ed)?\\s*print(?:ing)?|photocopy|spiral\\s*binding|lamination|printing/i)?.[0];
       const matchingServiceTransactions = serviceTerm
-        ? requestedTransactions.filter((tx) => `${tx.category_name || ""} ${tx.note || ""} ${tx.raw_text || ""}`.toLowerCase().includes(serviceTerm.toLowerCase()))
+        ? requestedTransactions.filter((tx) => \`\${tx.category_name || ""} \${tx.note || ""} \${tx.raw_text || ""}\`.toLowerCase().includes(serviceTerm.toLowerCase()))
         : requestedTransactions;
       const serviceIncomePaisa = matchingServiceTransactions.filter((tx) => tx.type === "income").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
       const serviceExpensePaisa = matchingServiceTransactions.filter((tx) => tx.type === "expense").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
@@ -212,12 +212,18 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         monthlyContext || "No monthly report rows returned.",
         "Payment accounts currently visible to this signed-in Shop Pro session (balance_paisa is integer paisa):",
         accountContext || "No payment account rows returned.",
-        `Category breakdown for ${summary.business_date}:`,
+        \`Category breakdown for \${summary.business_date}:\`,
         categoryContext || "No category rows returned for this date.",
-        asksAboutEntries && requestedDate ? `All active transactions retrieved for ${requestedDate} (${requestedTransactions.length} records; context displays up to 250):\\n${transactionContext || "No active transactions found for this date."}` : asksAboutEntries ? "The us        "Never claim a transaction is missing unless the requested date was queried and the returned record count is zero. If more than 250 records exist, say the context is capped and avoid claiming a complete listing. Amounts are paisa. Account balances are current balances, not profit. These summaries are not a complete double-entry trial balance or balance sheet.",
-        serviceTerm ? `Service keyword matched: ${serviceTerm}. Matching active records: ${matchingServiceTransactions.length}; income total: ${serviceIncomePaisa} paisa; expense total: ${serviceExpensePaisa} paisa.` : "No specific service keyword was detected.",
-        "Do not infer missing months or records beyond the supplied 30. Account balances are current balances, not profit. These are bookkeeping summaries, not a complete double-entry trial balance or balance sheet.",
-      ].join("\n\n");
+        asksAboutEntries && requestedDate
+          ? \`All active transactions retrieved for \${requestedDate} (\${requestedTransactions.length} records; context displays up to 250):\\n\${transactionContext || "No active transactions found for this date."}\`
+          : asksAboutEntries
+            ? "Transaction-level records were requested but no date could be resolved. Ask the user which date they mean; do not guess."
+            : "Transaction-level records were not requested and are not included.",
+        serviceTerm
+          ? \`Service keyword detected: \${serviceTerm}. Matching active records: \${matchingServiceTransactions.length}; income total: \${serviceIncomePaisa} paisa; expense total: \${serviceExpensePaisa} paisa.\`
+          : "No specific service keyword was detected.",
+        "Never claim a transaction is missing unless the requested date was queried and returned zero active records. If more than 250 records exist, say the context display is capped. Amounts are paisa. Account balances are current balances, not profit. These summaries are not a complete double-entry trial balance or balance sheet.",
+      ].join("\\n\\n");
       const result = await sendLocalAiMessage(nextMessages, completeContext);
       const assistantMessage: LocalAiMessage = { role: "assistant", content: result.reply };
       setMessages((current) => [...current, assistantMessage]);
