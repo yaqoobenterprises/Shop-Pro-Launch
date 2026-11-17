@@ -166,7 +166,7 @@
 }
 
 /* Refined top bar with clear page context and fast workspace actions. */
-.app-shell .workspace-header {
+.app-shell .app-header.workspace-header {
   position: sticky;
   z-index: 30;
   display: flex;
@@ -223,7 +223,7 @@
   white-space: nowrap;
 }
 
-.app-shell .workspace-header__actions {
+.app-shell .app-header.workspace-header__actions {
   flex: 0 0 auto;
   gap: 0.6rem;
 }
@@ -387,7 +387,7 @@
 
 /* A quieter floating mobile dock that mirrors the desktop active state. */
 @media (max-width: 767px) {
-  .app-shell .workspace-header {
+  .app-shell .app-header.workspace-header {
     min-height: 3.75rem;
     height: 3.75rem;
     flex-basis: 3.75rem;
@@ -402,7 +402,7 @@
     font-size: 0.9rem;
   }
 
-  .app-shell .workspace-header__actions {
+  .app-shell .app-header.workspace-header__actions {
     gap: 0.35rem;
   }
 
