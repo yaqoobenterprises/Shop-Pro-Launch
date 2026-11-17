@@ -612,3 +612,228 @@
   --kpi-accent: var(--danger);
   --kpi-wash: var(--danger-bg);
 }
+
+
+/* Data-driven insight charts: net profit trend and expense composition. */
+.app-shell .reports-modern__insight-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+  align-items: stretch;
+  gap: 1rem;
+}
+
+.app-shell .reports-modern__insight-grid > section {
+  min-width: 0;
+}
+
+.app-shell .reports-modern__chart-unit {
+  padding: 0.28rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+.app-shell .reports-modern__profit-chart {
+  position: relative;
+  height: 15rem;
+  min-height: 12rem;
+  margin-top: 0.6rem;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--good-bg) 25%, transparent), transparent 75%);
+}
+
+.app-shell .reports-modern__profit-chart svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.app-shell .reports-modern__profit-gridline {
+  stroke: var(--line);
+  stroke-width: 0.45;
+  vector-effect: non-scaling-stroke;
+}
+
+.app-shell .reports-modern__profit-zero {
+  stroke: var(--muted);
+  stroke-width: 0.7;
+  stroke-dasharray: 3 3;
+  opacity: 0.8;
+  vector-effect: non-scaling-stroke;
+}
+
+.app-shell .reports-modern__profit-line {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.app-shell .reports-modern__profit-point {
+  fill: var(--surface-card);
+  stroke: var(--green);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.app-shell .reports-modern__profit-axis {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.1rem 0;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.app-shell .reports-modern__profit-axis span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .reports-modern__expense-layout {
+  display: grid;
+  grid-template-columns: minmax(7rem, 9rem) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.8rem, 1.6vw, 1.2rem);
+  padding-top: 0.55rem;
+}
+
+.app-shell .reports-modern__expense-donut {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 0.7rem;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(23, 38, 56, 0.04);
+}
+
+.app-shell .reports-modern__expense-donut > div {
+  display: grid;
+  width: 73%;
+  height: 73%;
+  align-content: center;
+  justify-items: center;
+  gap: 0.2rem;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-card);
+  text-align: center;
+}
+
+.app-shell .reports-modern__expense-donut strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: clamp(0.7rem, 1.2vw, 0.92rem);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .reports-modern__expense-donut span {
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+}
+
+.app-shell .reports-modern__expense-legend {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.app-shell .reports-modern__expense-legend li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.app-shell .reports-modern__expense-legend li:last-child {
+  border-bottom: 0;
+}
+
+.app-shell .reports-modern__expense-legend li > span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.45rem;
+  overflow: hidden;
+  color: var(--ink-2);
+  font-size: 0.69rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-shell .reports-modern__expense-legend i {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 0.5rem;
+  border-radius: 2px;
+}
+
+.app-shell .reports-modern__expense-legend strong {
+  flex: 0 0 auto;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.67rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 1050px) {
+  .app-shell .reports-modern__insight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell .reports-modern__expense-layout {
+    grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell .reports-modern__profit-chart {
+    height: 12rem;
+    min-height: 10rem;
+  }
+
+  .app-shell .reports-modern__expense-layout {
+    grid-template-columns: minmax(6rem, 7.5rem) minmax(0, 1fr);
+    gap: 0.75rem;
+  }
+
+  .app-shell .reports-modern__expense-legend li > span {
+    font-size: 0.64rem;
+  }
+
+  .app-shell .reports-modern__expense-legend strong {
+    font-size: 0.61rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .reports-modern__profit-line {
+    transition: none;
+  }
+}
