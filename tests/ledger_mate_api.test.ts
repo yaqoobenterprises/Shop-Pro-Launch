@@ -77,7 +77,7 @@ describe("LedgerMate Groq API boundary", () => {
     expect(res.statusCode).toBe(200);
     expect(res.headers["Content-Type"]).toContain("text/event-stream");
     expect(res.output).toContain('event: delta\ndata: {"delta":"Rs 1,250.00"}');
-    expect(res.output).toContain('event: done\ndata: {"model":"openai/gpt-oss-20b"}');
+    expect(res.output).toContain('event: done\ndata: {"done":true,"model":"openai/gpt-oss-20b"}');
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const providerRequest = fetchMock.mock.calls[1][1] as RequestInit;
     expect((providerRequest.headers as Record<string, string>).Authorization).toBe("Bearer server-only-key");
