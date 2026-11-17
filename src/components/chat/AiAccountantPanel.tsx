@@ -20,7 +20,7 @@ const MAX_SAVED_MESSAGES = 100;
 function getRequestedBusinessDate(question: string, currentDate: string): string | null {
   const q = question.toLowerCase();
   const shiftDate = (date: string, days: number) => {
-    const value = new Date(\`\${date}T12:00:00Z\`);
+    const value = new Date(`${date}T12:00:00Z`);
     value.setUTCDate(value.getUTCDate() + days);
     return value.toISOString().slice(0, 10);
   };
@@ -39,10 +39,10 @@ function getRequestedBusinessDate(question: string, currentDate: string): string
 
 function formatLedgerTransactions(transactions: Awaited<ReturnType<typeof ledgerService.getAllFilteredTransactions>>): string {
   return transactions.slice(0, 250).map((tx) => [
-    \`Date: \${tx.business_date}\`, \`Type: \${tx.type}\`, \`Amount: \${tx.amount_paisa} paisa\`,
-    \`Category: \${tx.category_name || "Uncategorised"}\`, \`Account: \${tx.account_name || "Unknown"}\`,
-    \`Note: \${tx.note || tx.raw_text || "No note"}\`, \`Status: \${tx.status}\`, \`ID: \${tx.id}\`,
-    \`Updated: \${tx.updated_at || "unknown"}\`,
+    `Date: ${tx.business_date}`, `Type: ${tx.type}`, `Amount: ${tx.amount_paisa} paisa`,
+    `Category: ${tx.category_name || "Uncategorised"}`, `Account: ${tx.account_name || "Unknown"}`,
+    `Note: ${tx.note || tx.raw_text || "No note"}`, `Status: ${tx.status}`, `ID: ${tx.id}`,
+    `Updated: ${tx.updated_at || "unknown"}`,
   ].join("; ")).join("\n");
 }
 
@@ -188,21 +188,21 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
           : Promise.resolve([]),
       ]);
       const monthlyContext = monthlyReport.map((month) => [
-        \`Month: \${month.year}-\${String(month.month).padStart(2, "0")}\`,
-        \`Income: \${month.income_paisa} paisa\`,
-        \`Expense: \${month.expense_paisa} paisa\`,
-        \`Net result: \${month.net_profit_paisa} paisa\`,
-        \`Capital received: \${month.capital_in_paisa} paisa\`,
-        \`Owner withdrawals: \${month.withdrawal_paisa} paisa\`,
-      ].join("; ")).join("\\n");
+        `Month: ${month.year}-${String(month.month).padStart(2, "0")}`,
+        `Income: ${month.income_paisa} paisa`,
+        `Expense: ${month.expense_paisa} paisa`,
+        `Net result: ${month.net_profit_paisa} paisa`,
+        `Capital received: ${month.capital_in_paisa} paisa`,
+        `Owner withdrawals: ${month.withdrawal_paisa} paisa`,
+      ].join("; ")).join("\n");
       const accountContext = paymentAccounts.map((account) =>
-        \`Account \${account.name} (\${account.type}): current balance \${account.balance_paisa} paisa\`
-      ).join("\\n");
-      const categoryContext = categoryBreakdown.map((item) => \`\${item.type}: \${item.category_name}; total \${item.total_paisa} paisa; entries \${item.entry_count}\`).join("\\n");
+        `Account ${account.name} (${account.type}): current balance ${account.balance_paisa} paisa`
+      ).join("\n");
+      const categoryContext = categoryBreakdown.map((item) => `${item.type}: ${item.category_name}; total ${item.total_paisa} paisa; entries ${item.entry_count}`).join("\n");
       const transactionContext = formatLedgerTransactions(requestedTransactions);
-      const serviceTerm = content.toLowerCase().match(/stamp(?:\\s*paper)?|black\\s*(?:and|&|n)\\s*white|b\\/?w|colour(?:ed)?\\s*print(?:ing)?|photocopy|spiral\\s*binding|lamination|printing/i)?.[0];
+      const serviceTerm = content.toLowerCase().match(/stamp(?:\s*paper)?|black\s*(?:and|&|n)\s*white|b\/?w|colour(?:ed)?\s*print(?:ing)?|photocopy|spiral\s*binding|lamination|printing/i)?.[0];
       const matchingServiceTransactions = serviceTerm
-        ? requestedTransactions.filter((tx) => \`\${tx.category_name || ""} \${tx.note || ""} \${tx.raw_text || ""}\`.toLowerCase().includes(serviceTerm.toLowerCase()))
+        ? requestedTransactions.filter((tx) => `${tx.category_name || ""} ${tx.note || ""} ${tx.raw_text || ""}`.toLowerCase().includes(serviceTerm.toLowerCase()))
         : requestedTransactions;
       const serviceIncomePaisa = matchingServiceTransactions.filter((tx) => tx.type === "income").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
       const serviceExpensePaisa = matchingServiceTransactions.filter((tx) => tx.type === "expense").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
@@ -212,18 +212,18 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         monthlyContext || "No monthly report rows returned.",
         "Payment accounts currently visible to this signed-in Shop Pro session (balance_paisa is integer paisa):",
         accountContext || "No payment account rows returned.",
-        \`Category breakdown for \${summary.business_date}:\`,
+        `Category breakdown for ${summary.business_date}:`,
         categoryContext || "No category rows returned for this date.",
         asksAboutEntries && requestedDate
-          ? \`All active transactions retrieved for \${requestedDate} (\${requestedTransactions.length} records; context displays up to 250):\\n\${transactionContext || "No active transactions found for this date."}\`
+          ? `All active transactions retrieved for ${requestedDate} (${requestedTransactions.length} records; context displays up to 250):\n${transactionContext || "No active transactions found for this date."}`
           : asksAboutEntries
             ? "Transaction-level records were requested but no date could be resolved. Ask the user which date they mean; do not guess."
             : "Transaction-level records were not requested and are not included.",
         serviceTerm
-          ? \`Service keyword detected: \${serviceTerm}. Matching active records: \${matchingServiceTransactions.length}; income total: \${serviceIncomePaisa} paisa; expense total: \${serviceExpensePaisa} paisa.\`
+          ? `Service keyword detected: ${serviceTerm}. Matching active records: ${matchingServiceTransactions.length}; income total: ${serviceIncomePaisa} paisa; expense total: ${serviceExpensePaisa} paisa.`
           : "No specific service keyword was detected.",
         "Never claim a transaction is missing unless the requested date was queried and returned zero active records. If more than 250 records exist, say the context display is capped. Amounts are paisa. Account balances are current balances, not profit. These summaries are not a complete double-entry trial balance or balance sheet.",
-      ].join("\\n\\n");
+      ].join("\n\n");
       const result = await sendLocalAiMessage(nextMessages, completeContext);
       const assistantMessage: LocalAiMessage = { role: "assistant", content: result.reply };
       setMessages((current) => [...current, assistantMessage]);
