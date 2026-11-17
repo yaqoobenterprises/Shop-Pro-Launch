@@ -153,6 +153,16 @@ describe("LedgerMate transaction confirmation gate", () => {
     expect(result).toEqual({ clarification: expect.stringContaining("choose the payment account") });
   });
 
+  it("keeps a read-only void question out of the transaction action flow", async () => {
+    const result = await prepareLedgerMateAction("kuch void hua?", [
+      { role: "user", content: "Aaj ki total sale kitni hai?", createdAt: "2026-11-17T10:00:00Z" },
+    ], testSummary);
+
+    expect(result).toBeNull();
+    expect(mockLedger.getAllFilteredTransactions).not.toHaveBeenCalled();
+    expect(mockLedger.voidTransaction).not.toHaveBeenCalled();
+  });
+
   it("uses the named category to distinguish same-date, same-amount edit targets", async () => {
     const candidates = [transaction("stamp-sale", "Stamp Paper"), transaction("print-sale", "Printing")];
     mockLedger.getAllFilteredTransactions.mockResolvedValue(candidates);

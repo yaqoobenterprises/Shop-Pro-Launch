@@ -3,7 +3,7 @@ import type { DailySummary } from "../../types/ledger";
 import { useApp } from "../../context/AppContext";
 import { ledgerService } from "../../services/ledgerService";
 import { updateSyncedAiAccountantMessage } from "../../services/aiAccountantChatService";
-import { buildLedgerMateContext } from "../../services/ledgerMateContext";
+import { buildLedgerMateAnalysis } from "../../services/ledgerMateContext";
 import { prepareLedgerMateAction, type PendingAction } from "../../services/ledgerMateActionService";
 import { useLedgerMateChatHistory } from "../../services/useLedgerMateChatHistory";
 import { makeLocalId, now, type ChatMessage, type LocalThread } from "../../services/ledgerMateChatUtils";
@@ -114,26 +114,31 @@ export const AiAccountantPanel: React.FC<{
     else chat.setMessages((current) => current.map((item, index) => index === replaceIndex ? { ...previousMessage!, content: "" } : item));
 
     try {
-      const context = await buildLedgerMateContext(question, baseMessages.slice(0, -1), summary.business_date);
+      const analysis = await buildLedgerMateAnalysis(question, baseMessages.slice(0, -1), summary.business_date);
       let result: Awaited<ReturnType<typeof sendLedgerMateMessage>>;
-      try {
-        result = await sendLedgerMateMessage(baseMessages, context, (delta) => {
-          if (activeThreadRef.current !== threadId) return;
-          chat.setMessages((current) => {
-            if (replaceIndex !== undefined) return current.map((item, index) => index === replaceIndex ? { ...item, content: item.content + delta } : item);
-            const exists = current.some((item) => item.id === assistantId);
-            return exists ? current.map((item) => item.id === assistantId ? { ...item, content: item.content + delta } : item) : [...current, { ...draftMessage, content: delta }];
+      if (analysis.directAnswer) {
+        result = { reply: analysis.directAnswer, model: health?.model || "Shop Pro ledger" };
+      } else {
+        try {
+          result = await sendLedgerMateMessage(baseMessages, analysis.context, (delta) => {
+            if (activeThreadRef.current !== threadId) return;
+            chat.setMessages((current) => {
+              if (replaceIndex !== undefined) return current.map((item, index) => index === replaceIndex ? { ...item, content: item.content + delta } : item);
+              const exists = current.some((item) => item.id === assistantId);
+              return exists ? current.map((item) => item.id === assistantId ? { ...item, content: item.content + delta } : item) : [...current, { ...draftMessage, content: delta }];
+            });
           });
-        });
-      } catch (providerError) {
-        setHealth((current) => ({ status: "offline", provider: "Groq", model: current?.model || "openai/gpt-oss-20b" }));
-        throw providerError;
+        } catch (providerError) {
+          setHealth((current) => ({ status: "offline", provider: "Groq", model: current?.model || "openai/gpt-oss-20b" }));
+          throw providerError;
+        }
       }
       if (activeThreadRef.current !== threadId) return;
-      setHealth({ status: "ready", provider: "Groq", model: result.model });
+      if (!analysis.directAnswer) setHealth({ status: "ready", provider: "Groq", model: result.model });
+      const content = [result.reply.trim(), analysis.reportMarkdown].filter(Boolean).join("\n\n");
       const finalMessage: ChatMessage = replaceIndex === undefined
-        ? { ...draftMessage, content: result.reply }
-        : { ...previousMessage!, content: result.reply, createdAt: now() };
+        ? { ...draftMessage, content }
+        : { ...previousMessage!, content, createdAt: now() };
       if (replaceIndex !== undefined && finalMessage.id && !finalMessage.id.startsWith("local-")) {
         try {
           await updateSyncedAiAccountantMessage({ userId, organizationId }, threadId!, finalMessage.id, finalMessage.content);
