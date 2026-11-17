@@ -7,7 +7,7 @@ import { buildLedgerMateContext } from "../../services/ledgerMateContext";
 import { prepareLedgerMateAction, type PendingAction } from "../../services/ledgerMateActionService";
 import { useLedgerMateChatHistory } from "../../services/useLedgerMateChatHistory";
 import { makeLocalId, now, type ChatMessage, type LocalThread } from "../../services/ledgerMateChatUtils";
-import { checkLedgerMateHealth, sendLedgerMateMessage, type LocalAiHealth } from "../../services/localAiService";
+import { checkLedgerMateHealth, sendLedgerMateMessage, type LedgerMateAiHealth } from "../../services/ledgerMateAiService";
 import { LedgerMateSurface } from "./LedgerMateSurface";
 import "./LedgerMate.css";
 
@@ -20,7 +20,7 @@ export const AiAccountantPanel: React.FC<{
   const { showToast } = useApp();
   const chat = useLedgerMateChatHistory({ userId, organizationId, isCloudAccount });
   const [input, setInput] = useState("");
-  const [health, setHealth] = useState<LocalAiHealth | null>(null);
+  const [health, setHealth] = useState<LedgerMateAiHealth | null>(null);
   const [checking, setChecking] = useState(true);
   const [sending, setSending] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
@@ -87,7 +87,7 @@ export const AiAccountantPanel: React.FC<{
         response = "Transaction update ho gayi hai. Audit history bhi record ho gayi.";
       } else {
         await ledgerService.voidTransaction(pendingAction.transaction.id, "Voided by user through LedgerMate AI", pendingAction.transaction.updated_at);
-        response = "Transaction void ho gayi hai. Permanent delete nahi ki; audit history محفوظ hai.";
+        response = "Transaction void ho gayi hai. Permanent delete nahi ki; audit history record rahegi.";
       }
       const synced = await chat.syncMessage({ role: "assistant", content: response, createdAt: now() });
       chat.setMessages((current) => [...current, synced]);

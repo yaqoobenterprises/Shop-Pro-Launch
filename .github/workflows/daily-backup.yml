@@ -1,4 +1,4 @@
-name: Daily Database Backup
+name: On-demand Database Backup
 
 on:
   workflow_dispatch:

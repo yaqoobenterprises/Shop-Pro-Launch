@@ -1,12 +1,12 @@
 import { getSupabaseClient } from "../lib/supabase";
 
-export interface LocalAiMessage {
+export interface LedgerMateAiMessage {
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
 }
 
-export interface LocalAiHealth {
+export interface LedgerMateAiHealth {
   status: "ready" | "offline" | string;
   model: string;
   provider: "Groq" | string;
@@ -21,7 +21,7 @@ async function getAccessToken(): Promise<string> {
   return token;
 }
 
-export async function checkLedgerMateHealth(): Promise<LocalAiHealth> {
+export async function checkLedgerMateHealth(): Promise<LedgerMateAiHealth> {
   const token = await getAccessToken();
   const response = await fetch("/api/ai-chat", {
     method: "GET",
@@ -33,7 +33,7 @@ export async function checkLedgerMateHealth(): Promise<LocalAiHealth> {
     const body = await response.json().catch(() => ({})) as { error?: string };
     throw new Error(body.error || "Cloud AI service is not available.");
   }
-  return response.json() as Promise<LocalAiHealth>;
+  return response.json() as Promise<LedgerMateAiHealth>;
 }
 
 function applyEvent(
@@ -64,7 +64,7 @@ function applyEvent(
 }
 
 export async function sendLedgerMateMessage(
-  messages: LocalAiMessage[],
+  messages: LedgerMateAiMessage[],
   context: string,
   onDelta: (delta: string) => void,
 ): Promise<{ reply: string; model: string }> {

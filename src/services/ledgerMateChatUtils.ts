@@ -1,10 +1,10 @@
 import type { AiAccountantConversation } from "./aiAccountantChatService";
-import type { LocalAiMessage } from "./localAiService";
+import type { LedgerMateAiMessage } from "./ledgerMateAiService";
 
 export const CHAT_HISTORY_LIMIT = 100;
 export const LOCAL_THREADS_LIMIT = 30;
 
-export interface ChatMessage extends LocalAiMessage {
+export interface ChatMessage extends LedgerMateAiMessage {
   id?: string;
   createdAt: string;
 }

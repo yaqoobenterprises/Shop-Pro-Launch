@@ -83,6 +83,43 @@ describe("LedgerMate Groq API boundary", () => {
     expect((providerRequest.headers as Record<string, string>).Authorization).toBe("Bearer server-only-key");
   });
 
+  it("reports ready only when the configured model is available", async () => {
+    vi.stubEnv("SUPABASE_URL", "https://tenant.supabase.co");
+    vi.stubEnv("SUPABASE_ANON_KEY", "public-key");
+    vi.stubEnv("GROQ_API_KEY", "server-only-key");
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith("/auth/v1/user")) return new Response("{}", { status: 200 });
+      return new Response(JSON.stringify({ data: [{ id: "openai/gpt-oss-20b", active: true }] }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const res = responseStub();
+
+    await handler({ method: "GET", headers: { authorization: "Bearer valid" } } as never, res as never);
+
+    expect(res.statusCode).toBe(200);
+    expect(JSON.parse(res.output)).toMatchObject({ status: "ready", model: "openai/gpt-oss-20b", provider: "Groq" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[1][0]).toBe("https://api.groq.com/openai/v1/models");
+    expect((fetchMock.mock.calls[1][1] as RequestInit).headers).toMatchObject({ Authorization: "Bearer server-only-key" });
+  });
+
+  it("reports offline when Groq does not list the configured model", async () => {
+    vi.stubEnv("SUPABASE_URL", "https://tenant.supabase.co");
+    vi.stubEnv("SUPABASE_ANON_KEY", "public-key");
+    vi.stubEnv("GROQ_API_KEY", "server-only-key");
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith("/auth/v1/user")) return new Response("{}", { status: 200 });
+      return new Response(JSON.stringify({ data: [{ id: "openai/gpt-oss-120b", active: true }] }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const res = responseStub();
+
+    await handler({ method: "GET", headers: { authorization: "Bearer valid" } } as never, res as never);
+
+    expect(res.statusCode).toBe(503);
+    expect(JSON.parse(res.output).error).toContain("configured model");
+  });
+
   it("returns a clear temporary rate-limit error without claiming a response", async () => {
     vi.stubEnv("SUPABASE_URL", "https://tenant.supabase.co");
     vi.stubEnv("SUPABASE_ANON_KEY", "public-key");

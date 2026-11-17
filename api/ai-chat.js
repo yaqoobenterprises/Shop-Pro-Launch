@@ -46,6 +46,22 @@ function getModel() {
   return configured;
 }
 
+async function isGroqModelAvailable(apiKey, model) {
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!response.ok) return false;
+    const catalog = await response.json();
+    return Array.isArray(catalog.data) && catalog.data.some((item) =>
+      item && item.id === model && item.active !== false,
+    );
+  } catch {
+    return false;
+  }
+}
+
 function validateMessages(body) {
   if (!body || typeof body.context !== "string" || !Array.isArray(body.messages) || body.messages.length < 1) {
     throw new HttpError(400, "Invalid AI request.");
@@ -169,6 +185,9 @@ export default async function handler(req, res) {
 
     const model = getModel();
     if (req.method === "GET") {
+      if (!(await isGroqModelAvailable(apiKey, model))) {
+        return sendJson(res, 503, { error: "Groq AI is currently unavailable for the configured model. Please try again later." });
+      }
       return sendJson(res, 200, { status: "ready", model, provider: "Groq" });
     }
 

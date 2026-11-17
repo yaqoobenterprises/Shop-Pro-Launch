@@ -3,7 +3,7 @@ import {
   hasActiveSupabaseSession,
   isSupabaseConfigured,
 } from "../lib/supabase";
-import type { LocalAiMessage } from "./localAiService";
+import type { LedgerMateAiMessage } from "./ledgerMateAiService";
 
 export interface AiAccountantChatScope {
   userId: string;
@@ -17,14 +17,14 @@ export interface AiAccountantConversation {
   updated_at: string;
 }
 
-export interface SyncedAiAccountantMessage extends LocalAiMessage {
+export interface SyncedAiAccountantMessage extends LedgerMateAiMessage {
   id?: string;
   created_at?: string;
 }
 
 export interface SyncedAiAccountantHistory {
   conversationId: string;
-  messages: LocalAiMessage[];
+  messages: LedgerMateAiMessage[];
 }
 
 interface MessageRow {
@@ -43,12 +43,12 @@ function hasValidScope(scope: AiAccountantChatScope): boolean {
 }
 
 export function reconcileAiAccountantHistory(
-  remote: LocalAiMessage[],
-  local: LocalAiMessage[],
+  remote: LedgerMateAiMessage[],
+  local: LedgerMateAiMessage[],
   limit = 100,
-): { messages: LocalAiMessage[]; pending: LocalAiMessage[] } {
-  const same = (a: LocalAiMessage, b: LocalAiMessage) => a.role === b.role && a.content === b.content;
-  const startsWith = (whole: LocalAiMessage[], prefix: LocalAiMessage[]) =>
+): { messages: LedgerMateAiMessage[]; pending: LedgerMateAiMessage[] } {
+  const same = (a: LedgerMateAiMessage, b: LedgerMateAiMessage) => a.role === b.role && a.content === b.content;
+  const startsWith = (whole: LedgerMateAiMessage[], prefix: LedgerMateAiMessage[]) =>
     prefix.length <= whole.length && prefix.every((item, index) => same(item, whole[index]));
   if (local.length === 0) return { messages: remote, pending: [] };
   if (remote.length === 0) return { messages: local.slice(-limit), pending: local };
@@ -135,7 +135,7 @@ export async function loadSyncedAiAccountantHistory(
 export async function appendSyncedAiAccountantMessage(
   scope: AiAccountantChatScope,
   conversationId: string,
-  message: LocalAiMessage,
+  message: LedgerMateAiMessage,
 ): Promise<string> {
   if (!message.content.trim() || message.content.length > 12000) {
     throw new Error("Chat message must contain 1–12,000 characters.");

@@ -3,6 +3,8 @@ import { ledgerService } from "./ledgerService";
 import type { LedgerMatePeriod } from "./ledgerMateDateResolver";
 import { resolveLedgerMatePeriods } from "./ledgerMateDateResolver";
 
+const VERIFIED_CLOUD_READ = { requireCloudSource: true } as const;
+
 export interface LedgerMateHistoryMessage {
   role: "user" | "assistant";
   content: string;
@@ -97,7 +99,7 @@ export async function buildLedgerMateContext(
   const needsAllTimeServiceSearch = (serviceTerms.length > 0 || asksTopService) && resolution.periods.length === 0;
   const needsAccounts = asksBalances || /\b(account|cash|bank)\b/i.test(question);
 
-  const accountRequest = needsAccounts ? ledgerService.getPaymentAccounts() : Promise.resolve([]);
+  const accountRequest = needsAccounts ? ledgerService.getPaymentAccounts(VERIFIED_CLOUD_READ) : Promise.resolve([]);
   const periods = resolution.periods;
   const shouldLoadPeriodTransactions = periods.some((period) => period.kind === "day") ||
     (asksTransactions && (asksTransactionDetails || serviceTerms.length > 0 || asksTopService));
@@ -106,10 +108,10 @@ export async function buildLedgerMateContext(
       startDate: period.startDate,
       endDate: period.endDate,
       status: "active",
-    }))
+    }, VERIFIED_CLOUD_READ))
     : [];
   const allTimeRequest = needsAllTimeServiceSearch
-    ? ledgerService.getAllFilteredTransactions({ status: "active" })
+      ? ledgerService.getAllFilteredTransactions({ status: "active" }, VERIFIED_CLOUD_READ)
     : Promise.resolve([] as Transaction[]);
 
   const [accounts, periodTransactionSets, allTimeTransactions] = await Promise.all([
@@ -157,21 +159,28 @@ export async function buildLedgerMateContext(
         lines.push(...transactions.slice(0, detailLimit).map(formatTransaction));
       }
     } else if (period.kind === "month") {
-      const summary = await ledgerService.getMonthlySummary(Number(period.startDate.slice(0, 4)), Number(period.startDate.slice(5, 7)));
+      const summary = await ledgerService.getMonthlySummary(
+        Number(period.startDate.slice(0, 4)),
+        Number(period.startDate.slice(5, 7)),
+        VERIFIED_CLOUD_READ,
+      );
       if (summary) {
         const income = BigInt(Math.trunc(Number(summary.income_paisa)));
         const expense = BigInt(Math.trunc(Number(summary.expense_paisa)));
         calculatedPeriods.push({ label: period.label, income, expense, net: income - expense });
         lines.push(`Period ${period.label} (${period.startDate} through ${period.endDate}); Shop Pro monthly summary: income ${summary.income_paisa} paisa; expenses ${summary.expense_paisa} paisa; net result ${summary.net_profit_paisa} paisa; capital received ${summary.capital_in_paisa} paisa; owner withdrawals ${summary.withdrawal_paisa} paisa. Capital and withdrawals are excluded from income and profit.`);
       } else {
-        const transactions = await ledgerService.getAllFilteredTransactions({ startDate: period.startDate, endDate: period.endDate, status: "active" });
+        const transactions = await ledgerService.getAllFilteredTransactions(
+          { startDate: period.startDate, endDate: period.endDate, status: "active" },
+          VERIFIED_CLOUD_READ,
+        );
         const income = BigInt(sumPaisa(transactions, "income"));
         const expense = BigInt(sumPaisa(transactions, "expense"));
         calculatedPeriods.push({ label: period.label, income, expense, net: income - expense });
         lines.push(summarizePeriod(period, transactions));
       }
     } else if (period.kind === "year") {
-      const monthly = await ledgerService.getMonthlyReport(Number(period.startDate.slice(0, 4)));
+      const monthly = await ledgerService.getMonthlyReport(Number(period.startDate.slice(0, 4)), VERIFIED_CLOUD_READ);
       const income = monthly.reduce((sum, item) => sum + BigInt(Math.trunc(Number(item.income_paisa))), 0n);
       const expense = monthly.reduce((sum, item) => sum + BigInt(Math.trunc(Number(item.expense_paisa))), 0n);
       calculatedPeriods.push({ label: period.label, income, expense, net: income - expense });

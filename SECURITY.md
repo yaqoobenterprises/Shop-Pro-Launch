@@ -10,17 +10,13 @@ The backup scripts use `SUPABASE_SERVICE_ROLE_KEY` only in a server-side process
 
 ## Authorization
 
-Supabase PostgreSQL RLS is the authorization boundary for cloud data. The read-only review on 2026-10-17 found RLS enabled on all 26 public application tables and `security_invoker` enabled on the three public views inspected.
+Supabase PostgreSQL RLS is the authorization boundary for cloud data. The read-only review on 2026-11-17 found RLS enabled on all 28 public application tables. The current security advisor reports four authenticated-callable `SECURITY DEFINER` functions and disabled leaked-password protection.
 
-The review found these authorization defects in the connected project:
+The review found unresolved tenant-authorization and transaction-draft boundary defects. These are release blockers. Detailed live findings were shared with the repository owner; do not reproduce exploit details in public issue comments.
 
-- Managers and cashiers can update organization rows because the current update policy checks membership, not role.
-- `post_transaction_draft` can return an idempotent retry row from another shop when the draft is missing.
-- Membership helpers also trust profile and `shop_members` mirrors, so an explicitly inactive `organization_members` row does not reliably revoke access.
-- `ensure_my_profile` changes an existing inactive organization membership back to active on sign-in.
-- Anonymous users have unused `INSERT` and `UPDATE` grants on `transaction_drafts`.
+The proposed fix is in pending migration `supabase/migrations/20261017062800_launch_authorization_hardening.sql`; it is not in the connected project's migration ledger. It changes the organization authorization source and tightens transaction-draft access and authenticated security-definer functions. Review and test the exact SQL on an isolated project before approving it for production.
 
-The proposed fix is in the pending migration listed in `docs/ROLLOUT.md`; it has not been applied to the live database. The migration uses `organization_members` as the authorization source, scopes draft retries, restricts organization updates to owners, preserves inactive memberships, narrows anonymous grants, and fixes `search_path` on authenticated security-definer RPCs. Review and test that SQL on an isolated project before approving it for production.
+The multi-conversation history migration `supabase/migrations/20261117054753_ledgermate_multi_conversation_history.sql` is also absent from the connected project's migration ledger. The live table still has a unique constraint allowing only one conversation per organization/user, so additional chats cannot reliably sync across devices until this additive migration is reviewed and applied.
 
 The Supabase security advisor also reports leaked-password protection is disabled. Supabase currently offers this setting on Pro and higher plans; check the project's plan and enable it before public launch if available. See [Supabase password security](https://supabase.com/docs/guides/auth/password-security).
 

@@ -62,7 +62,7 @@ describe("LedgerMate verified Shop Pro context", () => {
 
     expect(mockLedger.getAllFilteredTransactions).toHaveBeenCalledWith({
       startDate: "2026-11-05", endDate: "2026-11-05", status: "active",
-    });
+    }, { requireCloudSource: true });
     expect(context).toContain("Income: 125001 paisa");
     expect(context).toContain("Expenses: 30001 paisa");
     expect(context).toContain("Net result (income minus expenses): 95000 paisa");
@@ -78,7 +78,10 @@ describe("LedgerMate verified Shop Pro context", () => {
 
     const context = await buildLedgerMateContext("Stamp paper se kitni earning hui?", [], "2026-11-17");
 
-    expect(mockLedger.getAllFilteredTransactions).toHaveBeenCalledWith({ status: "active" });
+    expect(mockLedger.getAllFilteredTransactions).toHaveBeenCalledWith(
+      { status: "active" },
+      { requireCloudSource: true },
+    );
     expect(context).toContain("Keyword-matched service records: 2; income 200000 paisa; expenses 20000 paisa");
     expect(context).toContain("Income categories among matching service records: Stamp Paper 200000 paisa");
   });
@@ -99,8 +102,8 @@ describe("LedgerMate verified Shop Pro context", () => {
 
     const context = await buildLedgerMateContext("Last month ke comparison mein sales kitni increase hui?", [], "2026-11-17");
 
-    expect(mockLedger.getMonthlySummary).toHaveBeenNthCalledWith(1, 2026, 10);
-    expect(mockLedger.getMonthlySummary).toHaveBeenNthCalledWith(2, 2026, 11);
+    expect(mockLedger.getMonthlySummary).toHaveBeenNthCalledWith(1, 2026, 10, { requireCloudSource: true });
+    expect(mockLedger.getMonthlySummary).toHaveBeenNthCalledWith(2, 2026, 11, { requireCloudSource: true });
     expect(context).toContain("Income: 2026-10 100000 paisa; 2026-11 150000 paisa; increase 50000 paisa (50.00%)");
     expect(context).toContain("Net result: 2026-10 80000 paisa; 2026-11 120000 paisa; increase 40000 paisa (50.00%)");
   });
@@ -115,5 +118,14 @@ describe("LedgerMate verified Shop Pro context", () => {
 
     expect(context).toContain("total cash 125000 paisa; total bank 75000 paisa");
     expect(context).toContain("these are balances, not profit");
+  });
+
+  it("does not answer historical totals from a cached fallback when the cloud read fails", async () => {
+    mockLedger.getAllFilteredTransactions.mockRejectedValueOnce(
+      new Error("Shop Pro could not retrieve complete transaction history from the cloud. No cached totals were used."),
+    );
+
+    await expect(buildLedgerMateContext("5 Nov 2026 ki sale kitni thi?", [], "2026-11-17"))
+      .rejects.toThrow("No cached totals were used");
   });
 });
