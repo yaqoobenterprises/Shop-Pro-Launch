@@ -343,3 +343,67 @@
     transition: none;
   }
 }
+
+
+/* A compact segmented switch keeps Ledger and AI Accountant in one workspace. */
+.app-shell .ledger-mode-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 3.25rem;
+  padding: 0.55rem clamp(0.875rem, 2.4vw, 1.5rem);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-card);
+}
+
+.app-shell .ledger-mode-switcher__button {
+  display: inline-flex;
+  min-height: 2.2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+
+.app-shell .ledger-mode-switcher__button:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.app-shell .ledger-mode-switcher__button.is-active {
+  border-color: var(--good-line);
+  background: var(--good-bg);
+  color: var(--forest);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 5%, transparent);
+}
+
+.app-shell .ledger-mode-switcher__button:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 2px;
+}
+
+@media (max-width: 639px) {
+  .app-shell .ledger-mode-switcher {
+    min-height: 3rem;
+    padding-block: 0.45rem;
+  }
+
+  .app-shell .ledger-mode-switcher__button {
+    min-height: 2.1rem;
+    flex: 1 1 0;
+    padding-inline: 0.7rem;
+    font-size: 0.72rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .ledger-mode-switcher__button {
+    transition: none;
+  }
+}
