@@ -10,6 +10,7 @@ import {
   Receipt,
   Search,
   Settings,
+  Sparkles,
   X,
 } from "lucide-react";
 
@@ -36,6 +37,7 @@ export const CommandPalette: React.FC = () => {
     icon: React.ComponentType<{ className?: string }>;
   }> = [
     { label: t("nav.ledger"), view: "chat", icon: MessageSquare },
+    { label: "LedgerMate AI", view: "ai", icon: Sparkles },
     { label: t("nav.overview"), view: "dashboard", icon: LayoutDashboard },
     { label: t("nav.entries"), view: "sales", icon: Receipt },
     { label: t("nav.reports"), view: "reports", icon: BarChart3 },

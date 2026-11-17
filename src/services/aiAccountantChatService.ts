@@ -10,20 +10,37 @@ export interface AiAccountantChatScope {
   organizationId: string;
 }
 
+export interface AiAccountantConversation {
+  id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SyncedAiAccountantMessage extends LocalAiMessage {
+  id?: string;
+  created_at?: string;
+}
+
 export interface SyncedAiAccountantHistory {
   conversationId: string;
   messages: LocalAiMessage[];
 }
 
-interface ConversationRow {
-  id: string;
-}
-
 interface MessageRow {
+  id: string;
   role: "user" | "assistant";
   content: string;
+  created_at: string;
 }
 
+function hasValidScope(scope: AiAccountantChatScope): boolean {
+  return Boolean(
+    scope.userId &&
+    scope.organizationId &&
+    isSupabaseConfigured(),
+  );
+}
 
 export function reconcileAiAccountantHistory(
   remote: LocalAiMessage[],
@@ -48,84 +65,70 @@ export function reconcileAiAccountantHistory(
   return { messages: [...remote, ...local].slice(-limit), pending: local };
 }
 
-async function getOrCreateConversation(
+export async function listSyncedAiAccountantConversations(
   scope: AiAccountantChatScope,
-): Promise<string | null> {
-  if (
-    !scope.userId ||
-    !scope.organizationId ||
-    !isSupabaseConfigured() ||
-    !(await hasActiveSupabaseSession(scope.userId))
-  ) {
-    return null;
-  }
-
-  const client = getSupabaseClient();
-  const findConversation = async () => client
+  limit = 50,
+): Promise<AiAccountantConversation[]> {
+  if (!hasValidScope(scope) || !(await hasActiveSupabaseSession(scope.userId))) return [];
+  const { data, error } = await getSupabaseClient()
     .from("ai_accountant_conversations")
-    .select("id")
+    .select("id, title, created_at, updated_at")
     .eq("organization_id", scope.organizationId)
     .eq("user_id", scope.userId)
-    .maybeSingle();
+    .order("updated_at", { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 100));
+  if (error) throw error;
+  return (data || []) as AiAccountantConversation[];
+}
 
-  const { data: existing, error: findError } = await findConversation();
-  if (findError) throw findError;
-  if ((existing as ConversationRow | null)?.id) {
-    return (existing as ConversationRow).id;
+export async function createSyncedAiAccountantConversation(
+  scope: AiAccountantChatScope,
+  title = "New chat",
+): Promise<AiAccountantConversation> {
+  if (!hasValidScope(scope) || !(await hasActiveSupabaseSession(scope.userId))) {
+    throw new Error("Sign in to your Shop Pro account to create a synced chat.");
   }
-
-  const { data: created, error: createError } = await client
+  const { data, error } = await getSupabaseClient()
     .from("ai_accountant_conversations")
     .insert({
       organization_id: scope.organizationId,
       user_id: scope.userId,
-      title: "AI Accountant",
+      title: title.slice(0, 80),
     })
-    .select("id")
+    .select("id, title, created_at, updated_at")
     .single();
-
-  if (!createError && (created as ConversationRow | null)?.id) {
-    return (created as ConversationRow).id;
-  }
-
-  // Another signed-in device may have created the unique conversation first.
-  if (createError && (createError as { code?: string }).code === "23505") {
-    const { data: raced, error: raceError } = await findConversation();
-    if (raceError) throw raceError;
-    if ((raced as ConversationRow | null)?.id) {
-      return (raced as ConversationRow).id;
-    }
-  }
-
-  if (createError) throw createError;
-  throw new Error("Could not create the AI Accountant conversation.");
+  if (error) throw error;
+  return data as AiAccountantConversation;
 }
 
 export async function loadSyncedAiAccountantHistory(
   scope: AiAccountantChatScope,
+  conversationId: string,
   limit = 100,
-): Promise<SyncedAiAccountantHistory | null> {
-  const conversationId = await getOrCreateConversation(scope);
-  if (!conversationId) return null;
-
+): Promise<SyncedAiAccountantHistory> {
+  if (!hasValidScope(scope) || !(await hasActiveSupabaseSession(scope.userId))) {
+    throw new Error("Your cloud session is missing or expired. Sign in again to load chat history.");
+  }
   const { data, error } = await getSupabaseClient()
     .from("ai_accountant_messages")
-    .select("role, content")
+    .select("id, role, content, created_at")
     .eq("conversation_id", conversationId)
     .eq("organization_id", scope.organizationId)
     .eq("user_id", scope.userId)
     .order("created_at", { ascending: false })
     .limit(Math.min(Math.max(limit, 1), 100));
-
   if (error) throw error;
-
   const messages = ((data || []) as MessageRow[])
     .filter((message) =>
       (message.role === "user" || message.role === "assistant") &&
       typeof message.content === "string",
     )
-    .map((message) => ({ role: message.role, content: message.content }));
-
+    .map((message) => ({
+      id: message.id,
+      role: message.role,
+      content: message.content,
+      createdAt: message.created_at,
+    }));
   return { conversationId, messages: messages.reverse() };
 }
 
@@ -133,16 +136,16 @@ export async function appendSyncedAiAccountantMessage(
   scope: AiAccountantChatScope,
   conversationId: string,
   message: LocalAiMessage,
-): Promise<void> {
+): Promise<string> {
   if (!message.content.trim() || message.content.length > 12000) {
     throw new Error("Chat message must contain 1–12,000 characters.");
   }
-  if (!(await hasActiveSupabaseSession(scope.userId))) {
+  if (!hasValidScope(scope) || !(await hasActiveSupabaseSession(scope.userId))) {
     throw new Error("Cloud session expired. Sign in again to sync chat history.");
   }
 
   const client = getSupabaseClient();
-  const { error: insertError } = await client
+  const { data: inserted, error: insertError } = await client
     .from("ai_accountant_messages")
     .insert({
       conversation_id: conversationId,
@@ -150,26 +153,60 @@ export async function appendSyncedAiAccountantMessage(
       user_id: scope.userId,
       role: message.role,
       content: message.content,
-    });
+    })
+    .select("id")
+    .single();
   if (insertError) throw insertError;
+  if (!inserted || typeof inserted.id !== "string") throw new Error("Chat message could not be verified after saving.");
 
-  const { error: updateError } = await client
+  const update: { updated_at: string; title?: string } = { updated_at: new Date().toISOString() };
+  if (message.role === "user") {
+    const title = message.content.replace(/\s+/g, " ").trim().slice(0, 80);
+    if (title) update.title = title;
+  }
+  const { data, error: updateError } = await client
     .from("ai_accountant_conversations")
-    .update({ updated_at: new Date().toISOString() })
+    .update(update)
     .eq("id", conversationId)
     .eq("organization_id", scope.organizationId)
-    .eq("user_id", scope.userId);
+    .eq("user_id", scope.userId)
+    .select("id")
+    .maybeSingle();
   if (updateError) throw updateError;
+  if (!data) throw new Error("The selected chat no longer belongs to this Shop Pro account.");
+  return (inserted as { id: string }).id;
+}
+
+export async function updateSyncedAiAccountantMessage(
+  scope: AiAccountantChatScope,
+  conversationId: string,
+  messageId: string,
+  content: string,
+): Promise<void> {
+  if (!content.trim() || content.length > 12000) throw new Error("Chat message must contain 1–12,000 characters.");
+  if (!hasValidScope(scope) || !(await hasActiveSupabaseSession(scope.userId))) {
+    throw new Error("Cloud session expired. Sign in again to sync chat history.");
+  }
+  const { data, error } = await getSupabaseClient()
+    .from("ai_accountant_messages")
+    .update({ content })
+    .eq("id", messageId)
+    .eq("conversation_id", conversationId)
+    .eq("organization_id", scope.organizationId)
+    .eq("user_id", scope.userId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("The selected chat response could not be updated.");
 }
 
 export async function clearSyncedAiAccountantHistory(
   scope: AiAccountantChatScope,
   conversationId: string,
 ): Promise<void> {
-  if (!(await hasActiveSupabaseSession(scope.userId))) {
+  if (!hasValidScope(scope) || !(await hasActiveSupabaseSession(scope.userId))) {
     throw new Error("Cloud session expired. Sign in again to clear synced history.");
   }
-
   const { error } = await getSupabaseClient()
     .from("ai_accountant_messages")
     .delete()

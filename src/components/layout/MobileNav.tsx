@@ -6,6 +6,7 @@ import {
   LockKeyhole,
   MoreHorizontal,
   Receipt,
+  Sparkles,
   Settings,
   Wallet,
 } from "lucide-react";
@@ -18,6 +19,7 @@ const primaryItems: Array<{
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
+  { id: "ai", label: "LedgerMate AI", icon: Sparkles },
   { id: "chat", label: "Ledger", icon: Receipt },
   { id: "dashboard", label: "Overview", icon: LayoutDashboard },
   { id: "sales", label: "Entries", icon: List },
@@ -47,10 +49,11 @@ export const MobileNav: React.FC = () => {
   return (
     <nav
       aria-label="Main navigation"
-      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border-standard bg-surface-bright px-2 pt-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-border-standard bg-surface-bright px-1 pt-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       {primaryItems.map(({ id, icon: Icon }) => {
-        const label = id === "chat" ? t("nav.ledger")
+        const label = id === "ai" ? "LedgerMate AI"
+          : id === "chat" ? t("nav.ledger")
           : id === "dashboard" ? t("nav.overview")
           : id === "sales" ? t("nav.entries")
           : t("nav.reports");
