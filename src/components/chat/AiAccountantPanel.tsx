@@ -198,11 +198,22 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         ledgerService.getCategories(),
         ledgerService.getPaymentAccounts(),
       ]);
-      const category = categories.find((item) => item.kind === type && item.is_default)
+      const categoryHint = q.includes("stamp") ? "stamp"
+        : q.includes("lamination") ? "lamination"
+          : q.includes("paper") ? "paper"
+            : q.includes("print") || q.includes("copy") || q.includes("photocopy") || q.includes("b/w") ? "print"
+              : "";
+      const category = (categoryHint
+        ? categories.find((item) => item.kind === type && item.name.toLowerCase().includes(categoryHint))
+        : undefined)
+        || categories.find((item) => item.kind === type && item.is_default)
         || categories.find((item) => item.kind === type);
       const account = accounts.find((item) => item.is_default) || accounts[0];
       if (!category) return { clarification: "Is type ki active category nahi mili. Pehle Shop Pro mein category add/select karo." };
       if (!account) return { clarification: "Koi active payment account nahi mila. Pehle Cash/Bank account set karo." };
+      if (!date && /\\b20\\d{2}\\b/.test(q)) {
+        return { clarification: "Date ka format samajh nahi aaya. 21 Nov 2025 ya 21/11/2025 likh do." };
+      }
       const businessDate = date || summary.business_date;
       const payload = {
         type,
