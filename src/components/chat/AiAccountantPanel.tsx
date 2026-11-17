@@ -232,9 +232,9 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
     if (!date) return { clarification: "Kis date wali transaction? Date likho, jaise 21 Nov 2025." };
     if (isEdit) {
       const change = content.match(/(?:rs\.?|pkr)?\s*([\d,]+(?:\.\d{1,2})?)\s*(?:to|se|ko)\s*(?:rs\.?|pkr)?\s*([\d,]+(?:\.\d{1,2})?)/i);
-      if (!change) return { clarification: "Edit ke liye old amount aur new amount likho. Example: 21 Nov 2025 ki Rs. 500 wali entry Rs. 700 kar do." };
-      const oldPaisa = Math.round(Number(change[1].replace(/,/g, "")) * 100);
-      const newPaisa = Math.round(Number(change[2].replace(/,/g, "")) * 100);
+      const oldPaisa = moneyValues.length >= 2 ? moneyValues[0] : change ? Math.round(Number(change[1].replace(/,/g, "")) * 100) : 0;
+      const newPaisa = moneyValues.length >= 2 ? moneyValues[1] : change ? Math.round(Number(change[2].replace(/,/g, "")) * 100) : 0;
+      if (!oldPaisa || !newPaisa) return { clarification: "Edit ke liye old amount aur new amount likho. Example: 21 Nov 2025 ki Rs. 500 wali entry Rs. 700 kar do." };
       if (!Number.isSafeInteger(oldPaisa) || !Number.isSafeInteger(newPaisa) || oldPaisa <= 0 || newPaisa <= 0) {
         return { clarification: "Amounts valid nahi lag rahe. Old aur new amount dobara likho." };
       }
