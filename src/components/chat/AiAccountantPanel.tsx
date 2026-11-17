@@ -177,7 +177,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         `Transaction count: ${summary.transaction_count}`,
         "This is only the currently loaded business-date summary. Do not present it as a monthly, yearly, cash-balance, bank-balance, or full financial statement. If asked for another date or a report not supplied here, say that data is not connected yet.",
       ].join("\n");
-      const asksAboutEntries = /transaction|transactions|entry|entries|payment|record|hisab|len.?den|sale|sales|income|earning|kamai|stamp|copy|printing|expense|kharcha|balance/i.test(content);
+      const asksAboutEntries = /transaction|transactions|entry|entries|payment|record|hisab|len.?den|sale|sales|income|earning|kamai|stamp|copy|printing|expense|kharcha/i.test(content);
       const requestedDate = getRequestedBusinessDate(content, summary.business_date);
       const [monthlyReport, paymentAccounts, categoryBreakdown, requestedTransactions] = await Promise.all([
         ledgerService.getMonthlyReport(Number(summary.business_date.slice(0, 4))),
@@ -206,6 +206,8 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         : requestedTransactions;
       const serviceIncomePaisa = matchingServiceTransactions.filter((tx) => tx.type === "income").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
       const serviceExpensePaisa = matchingServiceTransactions.filter((tx) => tx.type === "expense").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
+      const dayIncomePaisa = requestedTransactions.filter((tx) => tx.type === "income").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
+      const dayExpensePaisa = requestedTransactions.filter((tx) => tx.type === "expense").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
       const completeContext = [
         verifiedContext,
         "Monthly summaries for the calendar year of the current business date (only months returned by Shop Pro):",
@@ -222,6 +224,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         serviceTerm
           ? `Service keyword detected: ${serviceTerm}. Matching active records: ${matchingServiceTransactions.length}; income total: ${serviceIncomePaisa} paisa; expense total: ${serviceExpensePaisa} paisa.`
           : "No specific service keyword was detected.",
+        asksAboutEntries && requestedDate ? `Verified date totals across all ${requestedTransactions.length} active records: income ${dayIncomePaisa} paisa; expenses ${dayExpensePaisa} paisa.` : "No date-specific transaction totals were calculated.",
         "Never claim a transaction is missing unless the requested date was queried and returned zero active records. If more than 250 records exist, say the context display is capped. Amounts are paisa. Account balances are current balances, not profit. These summaries are not a complete double-entry trial balance or balance sheet.",
       ].join("\n\n");
       const result = await sendLocalAiMessage(nextMessages, completeContext);
