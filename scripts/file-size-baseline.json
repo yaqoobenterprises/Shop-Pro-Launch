@@ -32,5 +32,6 @@
   "supabase/migrations/20261004000000_shop_ledger_foundation.sql": 670,
   "supabase/migrations/20261004002000_repair_shop_member_provisioning.sql": 379,
   "supabase/migrations/20261004003000_account_balances_and_postings.sql": 324,
-  "supabase/migrations/20261004006000_repair_shop_provisioning.sql": 331
+  "supabase/migrations/20261004006000_repair_shop_provisioning.sql": 331,
+  "src/components/chat/AiAccountantPanel.tsx": 498
 }
