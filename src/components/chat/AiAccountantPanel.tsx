@@ -17,6 +17,12 @@ import {
 const HISTORY_KEY = "shop-pro.ai-accountant.chat.v1";
 const MAX_SAVED_MESSAGES = 100;
 
+type AiActionTransaction = Awaited<ReturnType<typeof ledgerService.getAllFilteredTransactions>>[number];
+type PendingAiAction =
+  | { kind: "create"; payload: Parameters<typeof ledgerService.createTransactionDraft>[0]; accountId: string; preview: string }
+  | { kind: "edit"; transaction: AiActionTransaction; amountPaisa: number; preview: string }
+  | { kind: "void"; transaction: AiActionTransaction; preview: string };
+
 function getRequestedBusinessDate(question: string, currentDate: string): string | null {
   const q = question.toLowerCase();
   const shiftDate = (date: string, days: number) => {
@@ -91,6 +97,8 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncStatus, setSyncStatus] = useState<"loading" | "synced" | "local" | "error">("loading");
+  const [pendingAction, setPendingAction] = useState<PendingAiAction | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
   const conversationIdRef = useRef<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -161,6 +169,116 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, historyKey]);
 
+  const preparePendingAction = async (content: string): Promise<{ pending: PendingAiAction } | { clarification: string } | null> => {
+    const q = content.toLowerCase();
+    const isCreate = /\b(add|record|enter|save|jama|likh\s*do|kr\s*do|kardo|kar\s*do)\b/.test(q);
+    const isEdit = /\b(edit|change|update|correct|tabdeel|theek\s*kar)\b/.test(q);
+    const isVoid = /\b(delete|remove|void|hata|hatao|cancel|mita)\b/.test(q);
+    if (!isCreate && !isEdit && !isVoid) return null;
+
+    const date = getRequestedBusinessDate(content, summary.business_date);
+    const moneyPattern = /(?:rs\.?|pkr|rupees?)\s*([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:rs\.?|pkr|rupees?)/gi;
+    const moneyValues = [...content.matchAll(moneyPattern)]
+      .map((match) => Number((match[1] || match[2]).replace(/,/g, "")))
+      .filter((value) => Number.isFinite(value) && value > 0)
+      .map((value) => Math.round(value * 100));
+
+    if (isCreate) {
+      const amountPaisa = moneyValues[0];
+      if (!amountPaisa) {
+        return { clarification: "Entry add kar dunga — lekin amount missing hai. 20 copies quantity hai; total Rs. kitne hue?" };
+      }
+      const type = /\b(expense|kharcha|kharch|purchase|bought|buy)\b/.test(q)
+        ? "expense"
+        : /\b(income|sale|sales|earning|kamai|bikri|received|copy|photocopy|printing|print|stamp)\b/.test(q)
+          ? "income"
+          : null;
+      if (!type) return { clarification: "Ye income/sale hai ya expense? Confirm kar do." };
+      const [categories, accounts] = await Promise.all([
+        ledgerService.getCategories(),
+        ledgerService.getPaymentAccounts(),
+      ]);
+      const category = categories.find((item) => item.kind === type && item.is_default)
+        || categories.find((item) => item.kind === type);
+      const account = accounts.find((item) => item.is_default) || accounts[0];
+      if (!category) return { clarification: "Is type ki active category nahi mili. Pehle Shop Pro mein category add/select karo." };
+      if (!account) return { clarification: "Koi active payment account nahi mila. Pehle Cash/Bank account set karo." };
+      const businessDate = date || summary.business_date;
+      const payload = {
+        type,
+        amountPaisa,
+        categoryId: category.id,
+        categoryName: category.name,
+        businessDate,
+        note: content.trim(),
+        rawText: content.trim(),
+        createdByName: "AI Accountant",
+      };
+      const amount = (amountPaisa / 100).toLocaleString("en-PK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return { pending: { kind: "create", payload, accountId: account.id, preview: "New " + type + " · Rs. " + amount + " · " + category.name + " · " + businessDate + " · " + account.name } };
+    }
+
+    if (!date) return { clarification: "Kis date wali transaction? Date likho, jaise 21 Nov 2025." };
+    if (isEdit) {
+      const change = content.match(/(?:rs\.?|pkr)?\s*([\d,]+(?:\.\d{1,2})?)\s*(?:to|se|ko)\s*(?:rs\.?|pkr)?\s*([\d,]+(?:\.\d{1,2})?)/i);
+      if (!change) return { clarification: "Edit ke liye old amount aur new amount likho. Example: 21 Nov 2025 ki Rs. 500 wali entry Rs. 700 kar do." };
+      const oldPaisa = Math.round(Number(change[1].replace(/,/g, "")) * 100);
+      const newPaisa = Math.round(Number(change[2].replace(/,/g, "")) * 100);
+      if (!Number.isSafeInteger(oldPaisa) || !Number.isSafeInteger(newPaisa) || oldPaisa <= 0 || newPaisa <= 0) {
+        return { clarification: "Amounts valid nahi lag rahe. Old aur new amount dobara likho." };
+      }
+      const transactions = await ledgerService.getAllFilteredTransactions({ startDate: date, endDate: date, status: "active" });
+      const matches = transactions.filter((tx) => Number(tx.amount_paisa) === oldPaisa);
+      if (matches.length !== 1) return { clarification: matches.length ? "Is date par same amount ki multiple entries hain. Category ya note bhi bata do." : "Is date par ye old amount wali active transaction nahi mili." };
+      const transaction = matches[0];
+      return { pending: { kind: "edit", transaction, amountPaisa: newPaisa, preview: "Edit " + transaction.type + " · " + transaction.business_date + " · " + (transaction.category_name || "Uncategorised") + " · Rs. " + (oldPaisa / 100).toLocaleString("en-PK") + " → Rs. " + (newPaisa / 100).toLocaleString("en-PK") } };
+    }
+
+    const amount = moneyValues[0] || (() => {
+      const loose = content.match(/\b([\d,]+)\s*(?:wali|ka|ki)\s*(?:transaction|entry|sale|expense)\b/i);
+      return loose ? Math.round(Number(loose[1].replace(/,/g, "")) * 100) : undefined;
+    })();
+    const transactions = await ledgerService.getAllFilteredTransactions({ startDate: date, endDate: date, status: "active" });
+    const matches = amount ? transactions.filter((tx) => Number(tx.amount_paisa) === amount) : transactions;
+    if (matches.length !== 1) return { clarification: matches.length ? "Is date par multiple transactions hain. Amount ya category/note bata do taake ghalat entry remove na ho." : "Is date par matching active transaction nahi mili." };
+    const transaction = matches[0];
+    return { pending: { kind: "void", transaction, preview: "Remove (void) " + transaction.type + " · " + transaction.business_date + " · " + (transaction.category_name || "Uncategorised") + " · Rs. " + (Number(transaction.amount_paisa) / 100).toLocaleString("en-PK") } };
+  };
+
+  const confirmPendingAction = async () => {
+    if (!pendingAction || actionBusy) return;
+    setActionBusy(true);
+    try {
+      if (pendingAction.kind === "create") {
+        const draft = await ledgerService.createTransactionDraft(pendingAction.payload, userId);
+        const posted = await ledgerService.postTransactionDraft(draft.id, pendingAction.accountId);
+        if (!posted.transaction && !posted.isQueuedOffline) throw new Error("Transaction could not be verified after posting.");
+        setMessages((current) => [...current, { role: "assistant", content: posted.isQueuedOffline
+          ? "Entry offline queue mein save ho gayi hai. Internet aane par sync hogi."
+          : "Transaction database mein successfully save ho gayi hai." }]);
+      } else if (pendingAction.kind === "edit") {
+        await ledgerService.editTransaction(
+          pendingAction.transaction.id,
+          { amount_paisa: pendingAction.amountPaisa },
+          pendingAction.transaction.updated_at,
+        );
+        setMessages((current) => [...current, { role: "assistant", content: "Transaction database mein update ho gayi hai. Audit history bhi record ho gayi." }]);
+      } else {
+        await ledgerService.voidTransaction(
+          pendingAction.transaction.id,
+          "Voided by user through AI Accountant",
+          pendingAction.transaction.updated_at,
+        );
+        setMessages((current) => [...current, { role: "assistant", content: "Transaction void ho gayi hai. Permanent delete nahi ki; audit history محفوظ hai." }]);
+      }
+      setPendingAction(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ledger action failed. No success was reported.");
+    } finally {
+      setActionBusy(false);
+    }
+  };
+
   const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
     const content = input.trim();
@@ -182,6 +300,17 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
     setError(null);
 
     try {
+      const actionPreparation = await preparePendingAction(content);
+      if (actionPreparation && "clarification" in actionPreparation) {
+        setMessages((current) => [...current, { role: "assistant", content: actionPreparation.clarification }]);
+        return;
+      }
+      if (actionPreparation && "pending" in actionPreparation) {
+        setPendingAction(actionPreparation.pending);
+        setMessages((current) => [...current, { role: "assistant", content: "Action preview ready hai. Details check karo, phir Confirm dabao. Bina confirmation database change nahi hoga." }]);
+        return;
+      }
+
       const verifiedContext = [
         "Verified Shop Pro daily summary. Currency: PKR. Amount fields are integer paisa; divide by 100 for rupees.",
         `Business date: ${summary.business_date}`,
@@ -312,6 +441,20 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
             </div>
           </div>
         ))}
+        {pendingAction && (
+          <div className="mx-auto w-full max-w-[88%] rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-slate-900 sm:max-w-[75%]">
+            <p className="font-semibold">Confirm ledger change</p>
+            <p className="mt-1">{pendingAction.preview}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => void confirmPendingAction()} disabled={actionBusy} className="rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white disabled:opacity-50">
+                {actionBusy ? "Saving…" : "Confirm"}
+              </button>
+              <button type="button" onClick={() => setPendingAction(null)} disabled={actionBusy} className="rounded-lg border border-border-standard px-4 py-2 text-xs font-semibold text-secondary disabled:opacity-50">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         {sending && <p className="text-xs text-text-muted">AI is thinking…</p>}
         <div ref={endRef} />
       </div>
