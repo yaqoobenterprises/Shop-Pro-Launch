@@ -14,8 +14,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
-  Sparkles,
   Settings,
+  Sparkles,
   Wallet,
 } from "lucide-react";
 
@@ -178,6 +178,7 @@ export const Sidebar: React.FC = () => {
           </div>
           <div className="brand-copy min-w-0" data-sidebar-label>
             <strong className="truncate">{APP_NAME}</strong>
+            <span data-sidebar-label>FINANCIAL WORKSPACE</span>
           </div>
         </div>
         <button
@@ -195,6 +196,7 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav id="primary-navigation" aria-label="Main navigation">
+        <div className="sidebar-section-label" data-sidebar-label>WORKSPACE</div>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -202,7 +204,7 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               type="button"
-              className={`${isActive ? "active" : ""}${item.id === "ai" ? " nav-item-ledgermate" : ""}`}
+              className={isActive ? "active" : ""}
               aria-current={isActive ? "page" : undefined}
               aria-label={item.label}
               title={isCollapsed ? item.label : undefined}
@@ -216,6 +218,7 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       <div className="sidebar-bottom">
+        <div className="sidebar-section-label sidebar-section-label--bottom" data-sidebar-label>ACCOUNT</div>
         <button
           type="button"
           className={currentView === "settings" ? "active" : ""}
@@ -252,11 +255,10 @@ export const Sidebar: React.FC = () => {
             size="md"
             showBorder
           />
-          {isDemoMode && !isCollapsed && (
-            <span className="user-card-copy" data-sidebar-label>
-              <strong>Jamal Yaqoob</strong>
-            </span>
-          )}
+          <span className="user-card-copy" data-sidebar-label>
+            <strong>{displayName}</strong>
+            <span>{isDemoMode ? "DEMO WORKSPACE" : user?.email || "SHOP ACCOUNT"}</span>
+          </span>
         </button>
       </div>
 
