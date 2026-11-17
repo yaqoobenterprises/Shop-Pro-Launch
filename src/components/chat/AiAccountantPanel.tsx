@@ -188,7 +188,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
       if (!amountPaisa) {
         return { clarification: "Entry add kar dunga — lekin amount missing hai. 20 copies quantity hai; total Rs. kitne hue?" };
       }
-      const type = /\b(expense|kharcha|kharch|purchase|bought|buy)\b/.test(q)
+      const type: "income" | "expense" | null = /\b(expense|kharcha|kharch|purchase|bought|buy)\b/.test(q)
         ? "expense"
         : /\b(income|sale|sales|earning|kamai|bikri|received|copy|photocopy|printing|print|stamp)\b/.test(q)
           ? "income"
