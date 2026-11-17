@@ -199,8 +199,10 @@ export const AccountsView: React.FC = () => {
     <main className="page-content accounts-page">
       {/* Page Title */}
       <div className="page-title">
-        <div>
+        <div className="accounts-page-heading">
+          <span className="kicker">CASH & BANK MANAGEMENT</span>
           <h1>Accounts</h1>
+          <p>Monitor cash, bank and digital wallet balances in one place.</p>
         </div>
 
         <div className="title-actions">
