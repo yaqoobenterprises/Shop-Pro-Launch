@@ -43,7 +43,7 @@ function getRequestedBusinessDate(question: string, currentDate: string): string
   if (iso) return validDate(Number(iso[1]), Number(iso[2]), Number(iso[3]));
 
   // Numeric dates: 1/12/2026, 1-12-2026, or "1 12 2026".
-  const dmy = q.match(/\b([0-2]?\d|3[01])[-\/.\s]([01]?\d)[-\/.\s](20\d{2})\b/);
+  const dmy = q.match(/\b([0-2]?\d|3[01])[-/.\s]([01]?\d)[-/.\s](20\d{2})\b/);
   if (dmy) return validDate(Number(dmy[3]), Number(dmy[2]), Number(dmy[1]));
 
   const months: Record<string, number> = {
