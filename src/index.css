@@ -8,7 +8,7 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-mono: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-2);
@@ -104,6 +104,8 @@
   select:focus-visible {
     outline: none !important;
     outline-offset: 0 !important;
+    border-color: var(--forest) !important;
+    box-shadow: 0 0 0 3px var(--focus-ring) !important;
   }
 
   button,
@@ -139,109 +141,133 @@
    ========================================================================== */
 :root {
   color-scheme: light;
-  --ink: #14211d;
-  --ink-2: #43524c;
-  --muted: #697771;
-  --faint: #929e98;
-  --logo: #78847f;
-  --forest: #0f5d4b;
-  --forest-hover: #0b4d3e;
-  --green: #19745c;
-  --accent-ink: #0f5d4b;
-  --mint: #dcece5;
-  --mint-2: #d7e7e1;
-  --tint: #e7f0ec;
-  --tint-2: #e0eee8;
-  --good-bg: #e5f3ec;
-  --good-line: #c9e5d9;
-  --insight-bg: #eaf3ef;
-  --insight-ring: rgba(25, 116, 92, 0.05);
-  --hero-glow: #e6f2ed;
-  --soft: #f5f7f4;
-  --paper: #fbfcfa;
+
+  /* Brand and content */
+  --ink: #172638;
+  --ink-2: #3b4e62;
+  --muted: #66788a;
+  --faint: #94a3b2;
+  --logo: #8394a4;
+  --forest: #14765e;
+  --forest-hover: #0f624d;
+  --green: #178567;
+  --accent-ink: #11624e;
+
+  /* Surfaces */
+  --mint: #e2f0ea;
+  --mint-2: #d7e9e1;
+  --tint: #edf4f1;
+  --tint-2: #e5efeb;
+  --good-bg: #e9f5ef;
+  --good-line: #cbe7d8;
+  --insight-bg: #eef5f1;
+  --insight-ring: rgba(20, 118, 94, 0.06);
+  --hero-glow: #eaf4ef;
+  --soft: #f5f7f8;
+  --paper: #f5f7f8;
   --surface: #ffffff;
-  --surface-2: #f1f4f2;
+  --surface-2: #f0f3f5;
   --surface-card: #ffffff;
-  --input-bg: #fdfefd;
-  --line: #dfe5e1;
-  --line-strong: #d8e2dd;
-  --accent-line: #a5c5b9;
-  --accent-line-2: #8fbaaa;
-  --orange: #b86736;
-  --warn-bg: #f7eee8;
-  --danger: #c45d4b;
-  --danger-bg: #faece8;
-  --dot: #2a9d75;
-  --bar-muted: #c5cdc9;
-  --track: #e4e9e6;
-  --chart-line: #1d8066;
-  --chart-stroke: #18725b;
-  --report-tint-1: #f0f8f4;
-  --report-tint-2: #fbf4f0;
-  --report-tint-3: #eef5f7;
+  --input-bg: #fbfcfd;
+
+  /* Borders and chart colours */
+  --line: #e3e9ee;
+  --line-strong: #d8e1e8;
+  --accent-line: #a8cbbb;
+  --accent-line-2: #8fbaa8;
+  --orange: #9e5636;
+  --warn-bg: #fbf2e9;
+  --danger: #b44843;
+  --danger-bg: #fcedec;
+  --dot: #299c75;
+  --bar-muted: #cbd5de;
+  --track: #e8edf1;
+  --chart-line: #14765e;
+  --chart-stroke: #0f624d;
+  --report-tint-1: #eff7f2;
+  --report-tint-2: #fbf3ee;
+  --report-tint-3: #eef4f8;
+
+  /* Chrome, focus, and elevation */
   --glass: rgba(255, 255, 255, 0.94);
   --glass-soft: rgba(255, 255, 255, 0.72);
-  --header-bg: rgba(255, 255, 255, 0.88);
-  --dock-bg: rgba(251, 252, 250, 0.94);
-  --featured: #153e35;
-  --focus-ring: rgba(25, 116, 92, 0.2);
-  --backdrop: rgba(16, 32, 27, 0.48);
-  --shadow: 0 24px 70px rgba(29, 57, 48, 0.13);
-  --shadow-sm: 0 15px 35px rgba(24, 49, 41, 0.14);
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --dock-bg: rgba(245, 247, 248, 0.96);
+  --featured: #172638;
+  --focus-ring: rgba(20, 118, 94, 0.18);
+  --backdrop: rgba(13, 25, 37, 0.5);
+  --shadow: 0 20px 56px rgba(23, 38, 56, 0.12);
+  --shadow-sm: 0 1px 2px rgba(23, 38, 56, 0.04), 0 8px 24px rgba(23, 38, 56, 0.045);
+
+  /* Shared shape and icon tokens */
+  --radius-control-sm: 0.625rem;
+  --radius-control: 0.75rem;
+  --radius-card: 0.875rem;
+  --radius-panel: 1rem;
+  --radius-dialog: 1.25rem;
+  --icon-stroke: 1.85;
 }
 
 :root[data-theme="dark"],
 html.dark {
   color-scheme: dark;
-  --ink: #e6eeea;
-  --ink-2: #b7c7c0;
-  --muted: #9aaea6;
-  --faint: #7f948b;
-  --logo: #8aa097;
-  --forest: #15755f;
-  --forest-hover: #1a8a71;
-  --green: #3fb68f;
-  --accent-ink: #8bd8bf;
-  --mint: #1b3a31;
-  --mint-2: #25473c;
-  --tint: #1a3a31;
-  --tint-2: #1d4036;
-  --good-bg: rgba(63, 182, 143, 0.15);
-  --good-line: #2a5a4a;
-  --insight-bg: #143329;
-  --insight-ring: rgba(63, 182, 143, 0.08);
-  --hero-glow: #12332b;
-  --soft: #0a1612;
-  --paper: #0d1b17;
-  --surface: #132620;
-  --surface-2: #1a2f27;
-  --surface-card: #132620;
-  --input-bg: #0f201b;
-  --line: #243b33;
-  --line-strong: #2b453b;
-  --accent-line: #35604f;
-  --accent-line-2: #3f7562;
-  --orange: #e0a070;
-  --warn-bg: rgba(224, 160, 112, 0.15);
-  --danger: #ee8b7b;
-  --danger-bg: rgba(238, 139, 123, 0.15);
-  --dot: #3fbf93;
-  --bar-muted: #4b665c;
-  --track: #26403a;
-  --chart-line: #3fb68f;
-  --chart-stroke: #4cc9a0;
-  --report-tint-1: #153229;
-  --report-tint-2: #2a2924;
-  --report-tint-3: #152f36;
-  --glass: rgba(19, 38, 32, 0.92);
-  --glass-soft: rgba(19, 38, 32, 0.72);
-  --header-bg: rgba(13, 27, 23, 0.88);
-  --dock-bg: rgba(13, 27, 23, 0.94);
-  --featured: #174a3e;
-  --focus-ring: rgba(63, 182, 143, 0.35);
-  --backdrop: rgba(0, 0, 0, 0.62);
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 15px 35px rgba(0, 0, 0, 0.4);
+
+  /* Brand and content */
+  --ink: #e7eef4;
+  --ink-2: #c4d0db;
+  --muted: #9aabba;
+  --faint: #748899;
+  --logo: #8da0b0;
+  --forest: #31a783;
+  --forest-hover: #46bc96;
+  --green: #57c89f;
+  --accent-ink: #91e0c3;
+
+  /* Surfaces */
+  --mint: #18392f;
+  --mint-2: #214739;
+  --tint: #1b342d;
+  --tint-2: #213d34;
+  --good-bg: rgba(49, 167, 131, 0.16);
+  --good-line: #2d5c4a;
+  --insight-bg: #172f2a;
+  --insight-ring: rgba(87, 200, 159, 0.08);
+  --hero-glow: #18342e;
+  --soft: #0d1722;
+  --paper: #0d1722;
+  --surface: #142231;
+  --surface-2: #1b2d3d;
+  --surface-card: #142231;
+  --input-bg: #101f2d;
+
+  /* Borders and chart colours */
+  --line: #2a3e50;
+  --line-strong: #354b5e;
+  --accent-line: #386b59;
+  --accent-line-2: #477e69;
+  --orange: #e6ab7d;
+  --warn-bg: rgba(230, 171, 125, 0.14);
+  --danger: #ef918a;
+  --danger-bg: rgba(239, 145, 138, 0.15);
+  --dot: #4bbd91;
+  --bar-muted: #536879;
+  --track: #293e4f;
+  --chart-line: #57c89f;
+  --chart-stroke: #3bb58d;
+  --report-tint-1: #18342b;
+  --report-tint-2: #3a2a26;
+  --report-tint-3: #1b2f3d;
+
+  /* Chrome, focus, and elevation */
+  --glass: rgba(20, 34, 49, 0.94);
+  --glass-soft: rgba(20, 34, 49, 0.74);
+  --header-bg: rgba(15, 26, 38, 0.9);
+  --dock-bg: rgba(13, 23, 34, 0.96);
+  --featured: #1d4539;
+  --focus-ring: rgba(87, 200, 159, 0.32);
+  --backdrop: rgba(0, 0, 0, 0.64);
+  --shadow: 0 20px 56px rgba(0, 0, 0, 0.36);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.14);
 }
 
 /* ==========================================================================
@@ -287,6 +313,12 @@ input:focus-visible {
 
 .icon {
   flex: none;
+}
+
+/* Lucide outline icons share one quiet, consistent visual weight. */
+svg.lucide {
+  flex: none;
+  stroke-width: var(--icon-stroke, 1.85);
 }
 
 /* ==========================================================================
@@ -349,6 +381,7 @@ input:focus-visible {
    BUTTONS & CONTROLS
    ========================================================================== */
 .button {
+  border-radius: var(--radius-control);
   min-height: 40px;
   border: 0;
   border-radius: 10px;
@@ -404,6 +437,7 @@ input:focus-visible {
 }
 
 .icon-button {
+  border-radius: var(--radius-control-sm);
   border: 0;
   background: transparent;
   width: 36px;
@@ -484,6 +518,7 @@ input:focus-visible {
 
 .sidebar nav button,
 .sidebar-bottom > button {
+  border-radius: var(--radius-control-sm);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -692,6 +727,7 @@ input:focus-visible {
 }
 
 .metric {
+  border-radius: var(--radius-card);
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -779,6 +815,7 @@ input:focus-visible {
 }
 
 .panel {
+  border-radius: var(--radius-panel);
   border: 1px solid var(--line);
   background: var(--surface);
   border-radius: 12px;
