@@ -12,9 +12,9 @@ function sendJson(res, status, body) {
 
 function redactSensitiveText(value) {
   return value
-    .replace(/\\b\\d{5}-?\\d{7}-?\\d\\b/g, "[CNIC redacted]")
-    .replace(/\\b(?:\\+?92|0)?3\\d{2}[- ]?\\d{7}\\b/g, "[phone redacted]")
-    .replace(/\\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}\\b/gi, "[email redacted]");
+    .replace(/\b\d{5}-?\d{7}-?\d\b/g, "[CNIC redacted]")
+    .replace(/\b(?:\+?92|0)?3\d{2}[- ]?\d{7}\b/g, "[phone redacted]")
+    .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[email redacted]");
 }
 
 function readBody(req) {
