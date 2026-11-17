@@ -137,7 +137,7 @@ async function streamGroqReply(res, response, model) {
           if (!receivedContent) {
             sendEvent(res, "error", { error: "AI returned an empty response. Please try again." });
           } else {
-            sendEvent(res, "done", { model });
+            sendEvent(res, "done", { done: true, model });
           }
           res.end();
           return;

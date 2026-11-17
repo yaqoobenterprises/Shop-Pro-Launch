@@ -59,7 +59,7 @@ function applyEvent(
   if (typeof payload.delta === "string") onDelta(payload.delta);
   return {
     model: typeof payload.model === "string" ? payload.model : undefined,
-    complete: payload.done === true,
+    complete: eventName === "done" || payload.done === true,
   };
 }
 
