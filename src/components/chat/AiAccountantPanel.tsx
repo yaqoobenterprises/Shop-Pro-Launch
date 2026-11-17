@@ -17,6 +17,35 @@ import {
 const HISTORY_KEY = "shop-pro.ai-accountant.chat.v1";
 const MAX_SAVED_MESSAGES = 100;
 
+function getRequestedBusinessDate(question: string, currentDate: string): string | null {
+  const q = question.toLowerCase();
+  const shiftDate = (date: string, days: number) => {
+    const value = new Date(`${date}T12:00:00Z`);
+    value.setUTCDate(value.getUTCDate() + days);
+    return value.toISOString().slice(0, 10);
+  };
+  if (/\\b(yesterday|kal|guzishta kal)\\b/.test(q)) return shiftDate(currentDate, -1);
+  if (/\\b(today|aaj|aj)\\b/.test(q)) return currentDate;
+  const iso = q.match(/\\b(20\\d{2})-(0[1-9]|1[0-2])-([0-2]\\d|3[01])\\b/);
+  if (iso) return iso[0];
+  const dmy = q.match(/\\b([0-2]?\\d|3[01])[-/.]([01]?\\d)[-/.](20\\d{2})\\b/);
+  if (dmy) {
+    const day = Number(dmy[1]); const month = Number(dmy[2]);
+    const parsed = new Date(Date.UTC(Number(dmy[3]), month - 1, day));
+    if (parsed.getUTCFullYear() === Number(dmy[3]) && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day) return parsed.toISOString().slice(0, 10);
+  }
+  return null;
+}
+
+function formatLedgerTransactions(transactions: Awaited<ReturnType<typeof ledgerService.getAllFilteredTransactions>>): string {
+  return transactions.slice(0, 250).map((tx) => [
+    `Date: ${tx.business_date}`, `Type: ${tx.type}`, `Amount: ${tx.amount_paisa} paisa`,
+    `Category: ${tx.category_name || "Uncategorised"}`, `Account: ${tx.account_name || "Unknown"}`,
+    `Note: ${tx.note || tx.raw_text || "No note"}`, `Status: ${tx.status}`, `ID: ${tx.id}`,
+    `Updated: ${tx.updated_at || "unknown"}`,
+  ].join("; ")).join("\\n");
+}
+
 function readHistory(historyKey: string): LocalAiMessage[] {
   try {
     const value = localStorage.getItem(historyKey);
@@ -148,14 +177,15 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         `Transaction count: ${summary.transaction_count}`,
         "This is only the currently loaded business-date summary. Do not present it as a monthly, yearly, cash-balance, bank-balance, or full financial statement. If asked for another date or a report not supplied here, say that data is not connected yet.",
       ].join("\n");
-      const asksAboutEntries = /transaction|transactions|entry|entries|payment|record|hisab|len.?den/i.test(content);
-      const [monthlyReport, paymentAccounts, categoryBreakdown, recentTransactions] = await Promise.all([
+      const asksAboutEntries = /transaction|transactions|entry|entries|payment|record|hisab|len.?den|sale|sales|income|earning|kamai|stamp|copy|printing|expense|kharcha|balance/i.test(content);
+      const requestedDate = getRequestedBusinessDate(content, summary.business_date);
+      const [monthlyReport, paymentAccounts, categoryBreakdown, requestedTransactions] = await Promise.all([
         ledgerService.getMonthlyReport(Number(summary.business_date.slice(0, 4))),
         ledgerService.getPaymentAccounts(),
-        ledgerService.getCategoryBreakdown(summary.business_date),
-        asksAboutEntries
-          ? ledgerService.getFilteredTransactions({ startDate: summary.business_date, endDate: summary.business_date, status: "active", limit: 30, offset: 0 })
-          : Promise.resolve({ transactions: [], count: 0 }),
+        requestedDate === summary.business_date ? ledgerService.getCategoryBreakdown(summary.business_date) : Promise.resolve([]),
+        asksAboutEntries && requestedDate
+          ? ledgerService.getAllFilteredTransactions({ startDate: requestedDate, endDate: requestedDate, status: "active" })
+          : Promise.resolve([]),
       ]);
       const monthlyContext = monthlyReport.map((month) => [
         `Month: ${month.year}-${String(month.month).padStart(2, "0")}`,
@@ -169,7 +199,13 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         `Account ${account.name} (${account.type}): current balance ${account.balance_paisa} paisa`
       ).join("\n");
       const categoryContext = categoryBreakdown.map((item) => `${item.type}: ${item.category_name}; total ${item.total_paisa} paisa; entries ${item.entry_count}`).join("\n");
-      const transactionContext = recentTransactions.transactions.map((tx) => `Date: ${tx.business_date}; type: ${tx.type}; amount: ${tx.amount_paisa} paisa; category: ${tx.category_name || "Uncategorised"}; account: ${tx.account_name || "Unknown"}; note: ${tx.note || tx.raw_text || "No note"}; status: ${tx.status}`).join("\n");
+      const transactionContext = formatLedgerTransactions(requestedTransactions);
+      const serviceTerm = content.toLowerCase().match(/stamp(?:\\s*paper)?|black\\s*(?:and|&)\\s*white|b\\/?w|colour(?:ed)?\\s*print(?:ing)?|photocopy|spiral\\s*binding|lamination|printing/i)?.[0];
+      const matchingServiceTransactions = serviceTerm
+        ? requestedTransactions.filter((tx) => `${tx.category_name || ""} ${tx.note || ""} ${tx.raw_text || ""}`.toLowerCase().includes(serviceTerm.toLowerCase()))
+        : requestedTransactions;
+      const serviceIncomePaisa = matchingServiceTransactions.filter((tx) => tx.type === "income").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
+      const serviceExpensePaisa = matchingServiceTransactions.filter((tx) => tx.type === "expense").reduce((sum, tx) => sum + Number(tx.amount_paisa || 0), 0);
       const completeContext = [
         verifiedContext,
         "Monthly summaries for the calendar year of the current business date (only months returned by Shop Pro):",
@@ -178,7 +214,8 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         accountContext || "No payment account rows returned.",
         `Category breakdown for ${summary.business_date}:`,
         categoryContext || "No category rows returned for this date.",
-        asksAboutEntries ? `Up to 30 active transactions for ${summary.business_date} (${recentTransactions.count} matching records total):\n${transactionContext || "No matching transactions found."}` : "Transaction-level records were not requested and are not included.",
+        asksAboutEntries && requestedDate ? `All active transactions retrieved for ${requestedDate} (${requestedTransactions.length} records; context displays up to 250):\\n${transactionContext || "No active transactions found for this date."}` : asksAboutEntries ? "The us        "Never claim a transaction is missing unless the requested date was queried and the returned record count is zero. If more than 250 records exist, say the context is capped and avoid claiming a complete listing. Amounts are paisa. Account balances are current balances, not profit. These summaries are not a complete double-entry trial balance or balance sheet.",
+        serviceTerm ? `Service keyword matched: ${serviceTerm}. Matching active records: ${matchingServiceTransactions.length}; income total: ${serviceIncomePaisa} paisa; expense total: ${serviceExpensePaisa} paisa.` : "No specific service keyword was detected.",
         "Do not infer missing months or records beyond the supplied 30. Account balances are current balances, not profit. These are bookkeeping summaries, not a complete double-entry trial balance or balance sheet.",
       ].join("\n\n");
       const result = await sendLocalAiMessage(nextMessages, completeContext);
