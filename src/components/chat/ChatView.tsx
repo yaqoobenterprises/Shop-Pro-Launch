@@ -396,11 +396,21 @@ export const ChatView: React.FC = () => {
       />
 
       {aiAccountantEnabled && (
-        <div className="flex items-center gap-2 border-b border-border-standard bg-surface-bright px-3 py-2 sm:px-5">
-          <button type="button" onClick={() => setIsAiMode(false)} aria-pressed={!isAiMode} className={`min-h-9 rounded-lg px-4 text-xs font-semibold ${!isAiMode ? "bg-primary text-white" : "border border-border-standard text-secondary"}`}>
+        <div className="ledger-mode-switcher" role="group" aria-label="Ledger workspace mode">
+          <button
+            type="button"
+            onClick={() => setIsAiMode(false)}
+            aria-pressed={!isAiMode}
+            className={`ledger-mode-switcher__button${!isAiMode ? " is-active" : ""}`}
+          >
             Ledger
           </button>
-          <button type="button" onClick={() => setIsAiMode(true)} aria-pressed={isAiMode} className={`min-h-9 rounded-lg px-4 text-xs font-semibold ${isAiMode ? "bg-primary text-white" : "border border-border-standard text-secondary"}`}>
+          <button
+            type="button"
+            onClick={() => setIsAiMode(true)}
+            aria-pressed={isAiMode}
+            className={`ledger-mode-switcher__button${isAiMode ? " is-active" : ""}`}
+          >
             AI Accountant
           </button>
         </div>
