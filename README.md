@@ -30,6 +30,12 @@ npm run dev
 
 The development server listens at `http://localhost:3000`.
 
+## AI Accountant
+
+The AI Accountant uses Groq Cloud through the authenticated Vercel serverless endpoint at `/api/ai-chat`. It defaults to `openai/gpt-oss-20b`. Configure `GROQ_API_KEY` as a server-only Vercel environment variable; never use a `VITE_GROQ_API_KEY` variable. See [docs/GROQ_AI_SETUP.md](docs/GROQ_AI_SETUP.md) for setup, privacy, and free-tier behavior.
+
+Cloud AI sends the selected Shop Pro context and chat messages to Groq for inference. The model has no database connection and cannot mutate the ledger. Groq's Free plan has rate limits and is not unlimited.
+
 ## Checks
 
 ```sh
@@ -49,10 +55,9 @@ The GitHub Actions workflow runs the dependency audit, lint, TypeScript checks, 
 1. Import [`yaqoobenterprises/Shop-Pro-Launch`](https://github.com/yaqoobenterprises/Shop-Pro-Launch) and select `main`.
 2. Use the Vite framework preset, `npm run build` as the build command, and `dist` as the output directory. `vercel.json` already contains the SPA rewrite and asset cache rules.
 3. Add these environment variables for each Vercel environment you intend to use:
-
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
-
+   - `GROQ_API_KEY` (server-only; not prefixed with `VITE_`)
 4. After Vercel assigns the production domain, add that domain to Supabase Auth's Site URL and redirect URL allow-list.
 5. Importing and configuring the project does not apply database migrations. Review `docs/ROLLOUT.md` and the pending SQL migration before changing Supabase.
 
@@ -69,11 +74,11 @@ The restore command supports offline archive validation. It does not apply an ar
 - `src/components/` — screens and UI components, grouped by area
 - `src/services/` — ledger, authentication support, offline storage, and synchronization
 - `src/lib/`, `src/parser/`, `src/regional/`, `src/i18n/` — shared logic
+- `api/` — authenticated Vercel serverless API routes, including the Groq AI proxy
 - `supabase/migrations/` — active, ordered database migrations
 - `supabase/migration-history/` — original migrations retained for audit and local database tests; do not apply these as new migrations
 - `tests/` — unit, component, and local PostgreSQL behavior checks
 - `docs/` — architecture, database, rollout, and compatibility notes
 
 See [`docs/cleanup.md`](docs/cleanup.md) for the verified file cleanup and migration-history reorganization.
-
 Feature flags live in `src/config/features.ts`. Keep incomplete or unverified features disabled until their rollout checks are complete.
