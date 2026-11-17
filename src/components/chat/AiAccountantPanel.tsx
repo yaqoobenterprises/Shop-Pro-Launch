@@ -172,7 +172,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
   const preparePendingAction = async (content: string): Promise<{ pending: PendingAiAction } | { clarification: string } | null> => {
     const q = content.toLowerCase();
     const isCreate = /\b(add|record|enter|save|jama|likh\s*do)\b/.test(q);
-    const isEdit = /\b(edit|change|update|correct|tabdeel|theek\s*kar)\b/.test(q) || /\b[\d,]+(?:\.\d{1,2})?\s*(?:to|se|ko)\s*[\d,]+(?:\.\d{1,2})?\s*(?:kar\s*do)?\b/.test(q);
+    const isEdit = /\b(edit|change|update|correct|tabdeel|theek\s*kar)\b/.test(q) || /\b[\d,]+(?:\.\d{1,2})?\s*(?:to|se|ko)\s*[\d,]+(?:\.\d{1,2})?\s*(?:kar\s*do)?\b/.test(q) || ((q.match(/\b(?:rs\.?|pkr|rupees?)\s*[\d,]+/g) || []).length >= 2 && /\bkar\s*do\b/.test(q));
     const isVoid = /\b(delete|remove|void|hata|hatao|cancel|mita)\b/.test(q);
     if (!isCreate && !isEdit && !isVoid) return null;
 
