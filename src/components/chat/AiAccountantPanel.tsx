@@ -20,15 +20,15 @@ const MAX_SAVED_MESSAGES = 100;
 function getRequestedBusinessDate(question: string, currentDate: string): string | null {
   const q = question.toLowerCase();
   const shiftDate = (date: string, days: number) => {
-    const value = new Date(`${date}T12:00:00Z`);
+    const value = new Date(\`\${date}T12:00:00Z\`);
     value.setUTCDate(value.getUTCDate() + days);
     return value.toISOString().slice(0, 10);
   };
-  if (/\\b(yesterday|kal|guzishta kal)\\b/.test(q)) return shiftDate(currentDate, -1);
-  if (/\\b(today|aaj|aj)\\b/.test(q)) return currentDate;
-  const iso = q.match(/\\b(20\\d{2})-(0[1-9]|1[0-2])-([0-2]\\d|3[01])\\b/);
+  if (/\b(yesterday|kal|guzishta kal)\b/.test(q)) return shiftDate(currentDate, -1);
+  if (/\b(today|aaj|aj)\b/.test(q)) return currentDate;
+  const iso = q.match(/\b(20\d{2})-(0[1-9]|1[0-2])-([0-2]\d|3[01])\b/);
   if (iso) return iso[0];
-  const dmy = q.match(/\\b([0-2]?\\d|3[01])[-/.]([01]?\\d)[-/.](20\\d{2})\\b/);
+  const dmy = q.match(/\b([0-2]?\d|3[01])[-/.]([01]?\d)[-/.](20\d{2})\b/);
   if (dmy) {
     const day = Number(dmy[1]); const month = Number(dmy[2]);
     const parsed = new Date(Date.UTC(Number(dmy[3]), month - 1, day));
@@ -39,11 +39,11 @@ function getRequestedBusinessDate(question: string, currentDate: string): string
 
 function formatLedgerTransactions(transactions: Awaited<ReturnType<typeof ledgerService.getAllFilteredTransactions>>): string {
   return transactions.slice(0, 250).map((tx) => [
-    `Date: ${tx.business_date}`, `Type: ${tx.type}`, `Amount: ${tx.amount_paisa} paisa`,
-    `Category: ${tx.category_name || "Uncategorised"}`, `Account: ${tx.account_name || "Unknown"}`,
-    `Note: ${tx.note || tx.raw_text || "No note"}`, `Status: ${tx.status}`, `ID: ${tx.id}`,
-    `Updated: ${tx.updated_at || "unknown"}`,
-  ].join("; ")).join("\\n");
+    \`Date: \${tx.business_date}\`, \`Type: \${tx.type}\`, \`Amount: \${tx.amount_paisa} paisa\`,
+    \`Category: \${tx.category_name || "Uncategorised"}\`, \`Account: \${tx.account_name || "Unknown"}\`,
+    \`Note: \${tx.note || tx.raw_text || "No note"}\`, \`Status: \${tx.status}\`, \`ID: \${tx.id}\`,
+    \`Updated: \${tx.updated_at || "unknown"}\`,
+  ].join("; ")).join("\n");
 }
 
 function readHistory(historyKey: string): LocalAiMessage[] {
