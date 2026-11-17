@@ -53,7 +53,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
       const result = await checkLocalAiHealth();
       setHealth(result);
     } catch {
-      setHealth({ status: "offline", model: "Local model", ollama_reachable: false });
+      setHealth({ status: "offline", model: "Groq", provider: "Groq" });
     } finally {
       setChecking(false);
     }
@@ -82,7 +82,6 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
         setMessages(reconciled.messages);
         setSyncStatus("synced");
         setError(null);
-        // Retry locally cached messages that were not confirmed in the cloud.
         for (const pendingMessage of reconciled.pending) {
           try {
             await appendSyncedAiAccountantMessage(
@@ -195,7 +194,7 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
       }
       setHealth((current) => current ? { ...current, status: "ready", model: result.model } : current);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not reach the local AI.");
+      setError(err instanceof Error ? err.message : "Could not reach Cloud AI.");
     } finally {
       setSending(false);
     }
@@ -226,11 +225,11 @@ export const AiAccountantPanel: React.FC<{ summary: DailySummary; userId: string
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-standard px-4 py-3 sm:px-6">
         <div>
           <h2 className="text-sm font-bold text-on-surface">AI Accountant</h2>
-          <p className="mt-0.5 text-xs text-text-muted">Local AI · {syncStatus === "loading" ? "Loading cloud history…" : syncStatus === "synced" ? "Chat synced across your devices" : syncStatus === "error" ? "Cloud sync needs attention" : "Chat saved on this device only"}</p>
+          <p className="mt-0.5 text-xs text-text-muted">Cloud AI · Selected ledger data is sent to Groq · {syncStatus === "loading" ? "Loading cloud history…" : syncStatus === "synced" ? "Chat synced across your devices" : syncStatus === "error" ? "Cloud sync needs attention" : "Chat saved on this device only"}</p>
         </div>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${isReady ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-            {checking ? "Checking…" : isReady ? `Online · ${health?.model}` : health?.status === "model_missing" ? "Model not installed" : "Local AI offline"}
+            {checking ? "Checking…" : isReady ? `Online · ${health?.model}` : "Cloud AI offline"}
           </span>
           <button type="button" onClick={() => void refreshHealth()} className="min-h-9 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-bright">
             Retry

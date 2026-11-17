@@ -1,22 +1,37 @@
+import { getSupabaseClient } from "../lib/supabase";
+
 export interface LocalAiMessage {
   role: "user" | "assistant";
   content: string;
 }
 
 export interface LocalAiHealth {
-  status: "ready" | "model_missing" | "offline" | string;
+  status: "ready" | "offline" | string;
   model: string;
-  ollama_reachable: boolean;
+  provider: "Groq" | string;
 }
 
-const LOCAL_AI_BASE_URL = "http://127.0.0.1:8765";
+async function getAccessToken(): Promise<string> {
+  const { data, error } = await getSupabaseClient().auth.getSession();
+  const token = data.session?.access_token;
+  if (error || !token) {
+    throw new Error("Your cloud session is missing or expired. Sign in again.");
+  }
+  return token;
+}
 
 export async function checkLocalAiHealth(): Promise<LocalAiHealth> {
-  const response = await fetch(`${LOCAL_AI_BASE_URL}/health`, {
+  const token = await getAccessToken();
+  const response = await fetch("/api/ai-chat", {
     method: "GET",
-    signal: AbortSignal.timeout(5000),
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(10000),
   });
-  if (!response.ok) throw new Error("Local AI service is not responding.");
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error || "Cloud AI service is not available.");
+  }
   return response.json() as Promise<LocalAiHealth>;
 }
 
@@ -24,22 +39,20 @@ export async function sendLocalAiMessage(
   messages: LocalAiMessage[],
   context: string,
 ): Promise<{ reply: string; model: string }> {
-  const response = await fetch(`${LOCAL_AI_BASE_URL}/chat`, {
+  const token = await getAccessToken();
+  const response = await fetch("/api/ai-chat", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ messages: messages.slice(-30), context }),
-    signal: AbortSignal.timeout(185000),
+    signal: AbortSignal.timeout(90000),
   });
 
   if (!response.ok) {
-    let detail = "Local AI request failed.";
-    try {
-      const body = (await response.json()) as { detail?: string };
-      if (body.detail) detail = body.detail;
-    } catch {
-      // Keep the safe fallback message when the response is not JSON.
-    }
-    throw new Error(detail);
+    const body = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error || "Cloud AI request failed.");
   }
 
   return response.json() as Promise<{ reply: string; model: string }>;
