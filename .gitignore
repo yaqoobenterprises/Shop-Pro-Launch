@@ -16,6 +16,9 @@ export_*.json
 export_*.csv
 supabase/.temp/
 
+# Local editor preferences (keep shared .vscode/tasks.json tracked)
+.vscode/settings.json
+
 # Local platform state and credentials
 .vercel/
 *.pem
