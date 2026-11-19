@@ -1,3 +1,5 @@
+> **Historical delivery snapshot — not current release certification.** This report describes an older repository, feature set, and test baseline. Its statements that implementation is complete, all tests pass, or features are deployed do not describe the current Shop Pro revision. Consult [README.md](README.md), [ARCHITECTURE.md](ARCHITECTURE.md), [SECURITY.md](SECURITY.md), [docs/ROLLOUT.md](docs/ROLLOUT.md), and current CI results for the current state. Kept for historical reference.
+
 # Shop Pro — Final Engineering & Product Delivery Report
 
 **Project:** Modern Zero-Operating-Cost Shop Ledger System
