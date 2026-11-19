@@ -1,3 +1,5 @@
+> **Historical planning document — not the current Shop Pro specification.** This plan was written for the earlier Yaqoob Enterprises Manager cashbook and contains assumptions about cost, scope, roles and implementation that must not be treated as verified current behavior. For the shipped application, use [README.md](README.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DATABASE.md](DATABASE.md), [SECURITY.md](SECURITY.md), and [docs/ROLLOUT.md](docs/ROLLOUT.md). Preserve this file as design history only.
+
 # Yaqoob Enterprises Manager — Modern Shop Ledger
 ## Master Architectural Blueprint & Implementation Plan (Updated & Approved)
 

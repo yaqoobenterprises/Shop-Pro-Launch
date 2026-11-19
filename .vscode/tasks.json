@@ -16,13 +16,6 @@
 			"problemMatcher": []
 		},
 		{
-			"label": "Verify size ratchet after fix",
-			"type": "shell",
-			"command": "npm run check:size",
-			"isBackground": false,
-			"problemMatcher": []
-		},
-		{
 			"label": "Verify final production build",
 			"type": "shell",
 			"command": "npm run build",
