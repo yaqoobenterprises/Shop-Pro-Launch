@@ -842,7 +842,7 @@ describe('ledger mutation concurrency', () => {
       .toBe(9000);
 
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
-    const postedTransaction = { id: 'draft-posted-tx', account_id: account.id, amount_paisa: 2500 };
+    const postedTransaction = { id: 'draft-posted-tx', organization_id: organizationId, account_id: account.id, idempotency_key: `draft-${draft.id}`, amount_paisa: 2500 };
     const draftQuery = {
       upsert: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
