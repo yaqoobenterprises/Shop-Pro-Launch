@@ -43,3 +43,11 @@ The project's database ledger records a squashed baseline at `20261016094952`, b
 - `20261014000000_regional_settings.sql`
 
 The owner-only update proposal was moved to `supabase/migration-history/proposals/`; it was not applied to the connected project. Its policy change is incorporated into the pending launch authorization migration.
+
+## 2026-11-19: Retire standalone Figma Make prototype
+
+The separate `design-reference/` Figma Make scaffold (25 tracked files) and root `metadata.json` (stale Gemini capability metadata) are not part of the shipped Shop Pro runtime. The root package scripts, Vite app entry, TypeScript config, Vercel config, file-size checker, and CI do not import or execute the Figma project. It had its own Vite config, pnpm lockfile, and mock UI.
+
+Remove those obsolete artifacts from the active tree, together with their ESLint ignore entry. All content remains recoverable in Git history. The active `DESIGN.md` and production styling, tests, database migrations, accounting services, local AI files, and historical audit documents remain unchanged.
+
+This is repository housekeeping only; it does not establish that accounting, AI, offline, or authorization workflows are fixed. No production behavior, dependency versions, database migrations, or live data are changed.
