@@ -61,8 +61,8 @@ describe('worked cashbook in PostgreSQL and the report reader', () => {
   }
 
   async function post(draftId: string, accountId = cash) {
-    const result = await db.query<{ id: string; account_id: string; idempotency_key: string }>(
-      'SELECT id, account_id, idempotency_key FROM post_transaction_draft($1, $2)', [draftId, accountId],
+    const result = await db.query<{ id: string; organization_id: string; account_id: string; idempotency_key: string }>(
+      'SELECT id, organization_id, account_id, idempotency_key FROM post_transaction_draft($1, $2)', [draftId, accountId],
     );
     return result.rows[0];
   }
