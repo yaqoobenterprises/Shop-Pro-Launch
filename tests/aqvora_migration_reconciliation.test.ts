@@ -7,6 +7,8 @@ import { assertDisposablePostgres } from "./support/assertDisposablePostgres";
 import { readMigrations } from "./support/aqvoraReadFixture";
 import { salesMigrations } from "./support/aqvoraSalesFixture";
 import { seedRecoverySales,verifyRestoredSales } from "./support/aqvoraSalesRecovery";
+import { receiptMigrations } from "./support/aqvoraReceiptFixture";
+import { seedRecoveryReceipt,verifyRestoredReceipt } from "./support/aqvoraReceiptRecovery";
 import type { TrialBalancePage } from "../src/accounting/readContracts";
 
 const databaseUrl = process.env.AQVORA_TEST_DATABASE_URL;
@@ -30,6 +32,7 @@ const deployedOrder = [
   "20261120103805_aqvora_admin_period_api.sql",
   ...readMigrations,
   ...salesMigrations,
+  ...receiptMigrations,
 ];
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const actor = "11111111-1111-4111-8111-111111111111";
@@ -125,6 +128,7 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
         );
         expect(enrollment.rows[0].n).toBe(0);
         expect((await client.query("SELECT * FROM private.aqvora_sales_policies")).rows).toEqual([]);
+        expect((await client.query("SELECT * FROM private.aqvora_receipt_policies")).rows).toEqual([]);
         const roleFunction = await client.query<{ definition: string }>(
           "SELECT pg_get_functiondef('private.get_org_role(uuid)'::regprocedure) AS definition",
         );
@@ -160,6 +164,7 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
         expect(report.rows[0].report.totals.debit_minor).toBe("1");
         await client.query("COMMIT");
         expect((await seedRecoverySales(client)).face_minor).toBe("101");
+        expect((await seedRecoveryReceipt(client)).amount_minor).toBe("40");
       } finally {
         await client.end();
       }
@@ -194,8 +199,8 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           [org, period.rows[0].id]);
         await source.query("COMMIT");
         const before = await snapshot(source);
-        expect(before).toMatchObject({ journals: 2, lines: 4, receipts: 2, audit: 2,
-          debit: "102", credit: "102" });
+        expect(before).toMatchObject({ journals: 3, lines: 6, receipts: 3, audit: 3,
+          debit: "142", credit: "142" });
         const dump = execFileSync("docker", ["exec", container, "pg_dump", "-U", "postgres",
           "-Fc", databases[0]], { maxBuffer: 64 * 1024 * 1024 });
         expect(dump.length).toBeGreaterThan(1000);
@@ -227,7 +232,7 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           expect(retry.rows[0].receipt.journal_id).toBe(recovered.rows[0].receipt.journal_id);
           const report = await target.query<{ report: TrialBalancePage }>(
             "SELECT public.read_aqvora_trial_balance($1,'2026-11-01','2026-11-30','PKR') AS report",[org]);
-          expect(report.rows[0].report.totals).toMatchObject({ debit_minor: "102",credit_minor: "102" });
+          expect(report.rows[0].report.totals).toMatchObject({ debit_minor: "142",credit_minor: "142" });
           await expect(target.query("SELECT public.post_aqvora_journal($1,'new-after-close','2026-11-20',$2::jsonb)",
             [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
               { account_id: sales, debit_minor: "0", credit_minor: "1" }])])).rejects.toThrow("closed");
@@ -235,6 +240,16 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           const restoredSales = await verifyRestoredSales(target);
           expect(restoredSales.receipt).toEqual(restoredSales.replay);
           expect(restoredSales.source.reconciliation).toMatchObject({face_minor:"101",ar_debit_minor:"101",revenue_credit_minor:"101"});
+          const settlement=await verifyRestoredReceipt(target);
+          expect(settlement.receipt).toEqual(settlement.replay);
+          expect(settlement.balance).toMatchObject({face_minor:"101",allocated_minor:"40",outstanding_minor:"61"});
+          expect(settlement.balance.allocations[0].allocation_id).toBe(settlement.receipt.allocations[0].allocation_id);
+          expect(settlement.recon).toMatchObject({allocated_minor:"40",outstanding_minor:"61",ar_control_minor:"61"});
+          expect((await target.query("SELECT kind,last_number::text n FROM private.aqvora_receipt_numbers WHERE organization_id=$1 ORDER BY kind",[org])).rows)
+            .toEqual([{kind:"collection",n:"1"},{kind:"receipt",n:"1"}]);
+          expect((await target.query(`SELECT has_table_privilege('authenticated','public.aqvora_receipt_allocations','INSERT') can_write,
+            (SELECT count(*)::int FROM public.aqvora_receipt_audit) events,
+            (SELECT count(*)::int FROM public.aqvora_receipt_allocations) allocations`)).rows[0]).toEqual({can_write:false,events:6,allocations:1});
           expect((await target.query("SELECT last_number::text n FROM private.aqvora_sales_numbers WHERE organization_id=$1",[org])).rows[0].n).toBe("1");
           expect(await snapshot(target)).toEqual(before);
           const grants = await target.query<{ direct_write: boolean }>(

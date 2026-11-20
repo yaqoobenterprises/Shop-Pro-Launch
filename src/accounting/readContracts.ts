@@ -56,7 +56,7 @@ export interface AccountingReadPage<T> {
   next_cursor: ReadCursor | null;
 }
 export interface GeneralLedgerLine {
-  source_kind?: "sales_invoice" | null;
+  source_kind?: "sales_invoice" | "customer_receipt" | null;
   source_id?: string | null;
   source_revision?: string | null;
   source_fingerprint?: string | null;

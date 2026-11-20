@@ -33,7 +33,8 @@ export interface SalesInvoice {
   issue_receipt?:SalesIssueReceipt;
   reconciliation?:{
     source_complete:true;face_minor:ExactMinor;ar_debit_minor:ExactMinor;revenue_credit_minor:ExactMinor;
-    settlements_supported:false;basis:"unsettled_issued_service_invoice";
+    allocated_minor:ExactMinor;outstanding_minor:ExactMinor;
+    settlements_supported:true;basis:"v2_posted_receipt_allocations";
   };
 }
 export interface CreateSalesDraftRequest {
