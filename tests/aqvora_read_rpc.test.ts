@@ -214,6 +214,26 @@ describe("AQVORA certified immutable journal readers", () => {
       VALUES ($1,$2,'REVERSE',$3,'{}')`,[i.org,receipt.journal_id,i.owner]);
     await user(); await expect(tb()).rejects.toThrow("incomplete");
   });
+  it.each(["missing","numeric"])("rejects a balanced source with a %s canonical payload amount", async (kind) => {
+    const original = await post("healthy");
+    await db.exec("RESET ROLE");
+    const journal = await query<{ id: string }>(`INSERT INTO public.aqvora_journals
+      (organization_id,intent_key,business_date,currency,period_id,payload,total_minor,posted_by)
+      SELECT organization_id,'corrupt-payload',business_date,currency,period_id,
+        CASE WHEN $2='missing' THEN payload #- '{lines,0,debit_minor}'
+          ELSE jsonb_set(payload,'{lines,0,debit_minor}','101'::jsonb) END,
+        total_minor,posted_by FROM public.aqvora_journals WHERE organization_id=$3 AND id=$1 RETURNING id`,
+    [original.journal_id,kind,i.org]);
+    const id = journal.rows[0].id;
+    await query(`INSERT INTO public.aqvora_journal_lines
+      SELECT organization_id,$2,line_no,account_id,debit_minor,credit_minor,party_id,open_item_id,stock_movement_id
+      FROM public.aqvora_journal_lines WHERE organization_id=$3 AND journal_id=$1`,[original.journal_id,id,i.org]);
+    await query(`INSERT INTO public.aqvora_posting_receipts(organization_id,intent_key,journal_id,payload)
+      SELECT organization_id,intent_key,id,payload FROM public.aqvora_journals WHERE organization_id=$1 AND id=$2`,[i.org,id]);
+    await query(`INSERT INTO public.aqvora_journal_audit(organization_id,journal_id,action,actor_id,details)
+      VALUES ($1,$2,'POST',$3,'{"reason":null,"reversal_of":null}')`,[i.org,id,i.owner]);
+    await user(); await expect(tb()).rejects.toThrow("incomplete");
+  });
   it("fails closed on company-currency drift rather than aggregating different units", async () => {
     await post("currency");
     await db.exec("RESET ROLE");

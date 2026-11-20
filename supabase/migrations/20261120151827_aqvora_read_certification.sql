@@ -77,13 +77,16 @@ BEGIN
       SELECT count(*) AS n, coalesce(sum(line.debit_minor),0) AS dr,
         coalesce(sum(line.credit_minor),0) AS cr,
         min(line.line_no) = 1 AND max(line.line_no) = count(*)
-          AND bool_and(coalesce(a.is_posting,false)
+          AND bool_and(coalesce(a.is_posting
+            AND jsonb_typeof(j.payload->'lines'->(line.line_no-1)->'account_id') = 'string'
+            AND jsonb_typeof(j.payload->'lines'->(line.line_no-1)->'debit_minor') = 'string'
+            AND jsonb_typeof(j.payload->'lines'->(line.line_no-1)->'credit_minor') = 'string'
             AND (j.payload->'lines'->(line.line_no-1)->>'account_id') = line.account_id::text
             AND (j.payload->'lines'->(line.line_no-1)->>'debit_minor') = line.debit_minor::text
             AND (j.payload->'lines'->(line.line_no-1)->>'credit_minor') = line.credit_minor::text
             AND (j.payload->'lines'->(line.line_no-1)->>'party_id') IS NOT DISTINCT FROM line.party_id
             AND (j.payload->'lines'->(line.line_no-1)->>'open_item_id') IS NOT DISTINCT FROM line.open_item_id
-            AND (j.payload->'lines'->(line.line_no-1)->>'stock_movement_id') IS NOT DISTINCT FROM line.stock_movement_id)
+            AND (j.payload->'lines'->(line.line_no-1)->>'stock_movement_id') IS NOT DISTINCT FROM line.stock_movement_id,false))
           AS lines_valid,
         jsonb_agg(to_jsonb(line) ORDER BY line.line_no)::text AS contents
       FROM public.aqvora_journal_lines line

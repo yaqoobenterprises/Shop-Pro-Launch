@@ -38,7 +38,7 @@ describe.skipIf(!databaseUrl)("AQVORA certified readers on independent PostgreSQ
     // CREATE fails if the fixed disposable fixture already exists; never reuse it.
     await controller.query("CREATE DATABASE aqvora_read_fixture"); created = true;
     admin = await open();
-    await admin.query(readFixtureSql().replace("CREATE ROLE anon; CREATE ROLE authenticated;", `
+    await admin.query(readFixtureSql().replace("CREATE ROLE anon; CREATE ROLE authenticated;", () => `
       DO $$ BEGIN CREATE ROLE anon; EXCEPTION WHEN duplicate_object THEN NULL; END $$;
       DO $$ BEGIN CREATE ROLE authenticated; EXCEPTION WHEN duplicate_object THEN NULL; END $$;`));
     const poster = await asUser();
