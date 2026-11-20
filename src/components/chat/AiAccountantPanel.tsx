@@ -10,6 +10,7 @@ import { makeLocalId, now, type ChatMessage, type LocalThread } from "../../serv
 import { checkLedgerMateHealth, sendLedgerMateMessage, type LedgerMateAiHealth } from "../../services/ledgerMateAiService";
 import { LedgerMateSurface } from "./LedgerMateSurface";
 import "./LedgerMate.css";
+import "./LedgerMateReferenceFinish.css";
 
 export const AiAccountantPanel: React.FC<{
   summary: DailySummary;
