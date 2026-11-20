@@ -1,3 +1,5 @@
+> **Final UI finishing decision — 20 November 2026:** The founder's supplied **Poital.flow Sales Overview screenshot** is the primary layout, spacing, card, header, sidebar, chart and visual-density benchmark for AQVORA. Earlier generated AQVORA enterprise mockups were **too crowded**, so they are conceptual only and **do not override** this reference. Keep one main job per route, no more than four top dashboard KPIs, spacious white chart panels on cool lavender-grey, and place AI in a dedicated route or on-demand contextual drawer rather than an always-open right rail. Full implementation/review checklist: [AQVORA UI Finishing Reference Lock](docs/AQVORA_UI_FINISHING_REFERENCE_LOCK_2026-11-20.md). Preserve AQVORA branding and verified-finance rules.
+
 # AQVORA workspace visual system
 
 ## Reference and design contract
