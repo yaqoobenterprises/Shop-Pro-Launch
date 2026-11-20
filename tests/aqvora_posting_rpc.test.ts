@@ -84,6 +84,9 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
       "20261120010000_aqvora_journal_schema.sql",
       "20261120010100_aqvora_posting_rpc.sql",
       "20261120010200_aqvora_reversal_rpc.sql",
+      "20261120103750_aqvora_admin_schema.sql",
+      "20261120103757_aqvora_admin_account_api.sql",
+      "20261120103805_aqvora_admin_period_api.sql",
     ]) {
       await db.exec(readFileSync(new URL(`../supabase/migrations/${filename}`, import.meta.url), "utf8"));
     }
@@ -309,5 +312,62 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
     )).rejects.toThrow();
     await asAdmin();
     await db.query("UPDATE public.aqvora_accounts SET is_active=true WHERE organization_id=$1 AND id=$2", [org, cash]);
+  });
+
+  it("administers accounts and periods through audited owner-only RPCs", async () => {
+    await asUser(manager);
+    expect((await db.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org])).rows).toEqual([]);
+    await asAdmin();
+    await db.query("DELETE FROM auth.sessions WHERE id=$1", [manager]);
+    await asUser(manager);
+    await expect(db.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org]))
+      .rejects.toThrow("revoked or missing");
+    await asAdmin();
+    await db.query("INSERT INTO auth.sessions(id,user_id) VALUES ($1,$1)", [manager]);
+    await asUser(manager);
+    await expect(db.query("SELECT public.create_aqvora_period($1,'2026-12-01','2026-12-31')", [org]))
+      .rejects.toThrow("active owner");
+    await asUser(owner, "aal1");
+    await expect(db.query("SELECT public.create_aqvora_account($1,'3000','Equity','equity','credit',null,true)", [org]))
+      .rejects.toThrow("MFA");
+    await asUser(owner);
+    await expect(db.query(
+      "SELECT public.archive_aqvora_account($1,$2,1,'Remove control')", [org, receivable],
+    )).rejects.toThrow("Control accounts are protected");
+    const account = await db.query<{ id: string; revision: string }>(
+      "SELECT id,revision FROM public.create_aqvora_account($1,'3000','Equity','equity','credit',null,true)", [org]);
+    const accountId = account.rows[0].id;
+    const renamed = await db.query<{ revision: string }>(
+      "SELECT revision FROM public.edit_aqvora_account($1,$2,1,'3000','Owner equity',null)",
+      [org, accountId]);
+    expect(Number(renamed.rows[0].revision)).toBe(2);
+    await expect(db.query("SELECT * FROM public.edit_aqvora_account($1,$2,1,'3000','Stale',null)",
+      [org, accountId])).rejects.toThrow("stale");
+    const period = await db.query<{ id: string }>(
+      "SELECT id FROM public.create_aqvora_period($1,'2026-12-01','2026-12-31')", [org]);
+    const periodId = period.rows[0].id;
+    const closed = await db.query<{ state: string }>(
+      "SELECT state FROM public.close_aqvora_period($1,$2,1,'Year end')", [org, periodId]);
+    expect(closed.rows[0].state).toBe("closed");
+    const reopened = await db.query<{ reopen_count: number }>(
+      "SELECT reopen_count FROM public.reopen_aqvora_period($1,$2,2,'Adjustment')", [org, periodId]);
+    expect(reopened.rows[0].reopen_count).toBe(1);
+    const archived = await db.query<{ is_active: boolean }>(
+      "SELECT is_active FROM public.archive_aqvora_account($1,$2,2,'No longer used')",
+      [org, accountId]);
+    expect(archived.rows[0].is_active).toBe(false);
+    const audit = await db.query<{ action: string }>(
+      "SELECT action FROM public.list_aqvora_admin_events($1)", [org]);
+    expect(audit.rows.map((row) => row.action)).toContain("PERIOD_REOPEN");
+    await asAdmin();
+    const retiredHeading = await db.query<{ id: string }>(`
+      INSERT INTO public.aqvora_accounts
+        (organization_id,code,name,account_class,normal_side,is_posting,is_active)
+      VALUES ($1,'3100','Retired heading','equity','credit',false,false) RETURNING id`, [org]);
+    await asUser(owner);
+    await expect(db.query(
+      "SELECT public.create_aqvora_account($1,'3101','Invalid child','equity','credit',$2,true)",
+      [org, retiredHeading.rows[0].id])).rejects.toThrow("parent must be active");
+    await asAdmin();
   });
 });

@@ -13,6 +13,51 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  supabase-real:
+    name: Verify real local Supabase Auth and PostgREST
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start disposable local Supabase services
+        timeout-minutes: 20
+        run: |
+          npx supabase init
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('supabase/config.toml')
+          current = config.read_text()
+          disabled = '[auth.mfa.totp]\nenroll_enabled = false\nverify_enabled = false'
+          assert disabled in current, 'Supabase CLI TOTP config changed'
+          config.write_text(current.replace(disabled,
+              '[auth.mfa.totp]\nenroll_enabled = true\nverify_enabled = true'))
+          PY
+          npx supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
+          npx supabase status -o json > "$RUNNER_TEMP/aqvora-status.json"
+          echo "AQVORA_LOCAL_SUPABASE_STATUS=$RUNNER_TEMP/aqvora-status.json" >> "$GITHUB_ENV"
+
+      - name: Exercise issued JWTs through PostgREST
+        timeout-minutes: 5
+        env:
+          AQVORA_DISPOSABLE_STACK: '1'
+        run: npx vitest run tests/aqvora_real_supabase.test.ts
+
+      - name: Stop disposable stack
+        if: always()
+        run: npx supabase stop || true
+
   postgres-concurrency:
     name: Verify isolated PostgreSQL migrations and sessions
     runs-on: ubuntu-latest
@@ -53,7 +98,10 @@ jobs:
         env:
           AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/aqvora_test
           AQVORA_DISPOSABLE_DB: '1'
-        run: npx vitest run tests/aqvora_migration_reconciliation.test.ts
+        run: |
+          pg_container=$(docker ps --filter ancestor=postgres:17 --format '{{.ID}}' | head -n 1)
+          test -n "$pg_container"
+          AQVORA_TEST_PG_DOCKER_CONTAINER="$pg_container" npx vitest run tests/aqvora_migration_reconciliation.test.ts
 
   verify:
     name: Verify application
