@@ -88,14 +88,14 @@ export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
         <path d={model.expense} stroke="var(--chart-teal)" fill="none" strokeWidth="2.6" strokeLinecap="round" />
         {model.positions.map((point, i) => (
           <g key={rows[i].key}>
-            <circle cx={point.x} cy={point.yIncome} r={active === i ? 5 : 2} fill="var(--chart-lavender)" title={`Income: ${formatPaisa(rows[i].income_paisa)}`} tabIndex={0}
+            <circle cx={point.x} cy={point.yIncome} r={active === i ? 5 : 2} fill="var(--chart-lavender)" tabIndex={0}
               aria-label={`${rows[i].title} income: ${formatPaisa(rows[i].income_paisa)}`}
               onFocus={() => setActive(i)} onBlur={() => setActive(null)}
-              onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)} />
-            <circle cx={point.x} cy={point.yExpense} r={active === i ? 5 : 2} fill="var(--chart-teal)" title={`Expenses: ${formatPaisa(rows[i].expense_paisa)}`} tabIndex={0}
+              onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}><title>{`Income: ${formatPaisa(rows[i].income_paisa)}`}</title></circle>
+            <circle cx={point.x} cy={point.yExpense} r={active === i ? 5 : 2} fill="var(--chart-teal)" tabIndex={0}
               aria-label={`${rows[i].title} expenses: ${formatPaisa(rows[i].expense_paisa)}`}
               onFocus={() => setActive(i)} onBlur={() => setActive(null)}
-              onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)} />
+              onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}><title>{`Expenses: ${formatPaisa(rows[i].expense_paisa)}`}</title></circle>
           </g>
         ))}
         {model.positions.map((point, i) => i % Math.max(1, Math.ceil(rows.length / 6)) === 0 || i === rows.length - 1 ? (
