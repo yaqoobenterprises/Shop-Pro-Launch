@@ -1,149 +1,99 @@
-import React, { useState } from "react";
-import {
-  BarChart3,
-  LayoutDashboard,
-  List,
-  LockKeyhole,
-  MoreHorizontal,
-  Receipt,
-  Sparkles,
-  Settings,
-  Wallet,
-} from "lucide-react";
-import { useApp, AppView } from "../../context/AppContext";
+import React, { useEffect, useRef, useState } from "react";
+import { BarChart3, LayoutDashboard, LockKeyhole, MoreHorizontal, Plus, ReceiptText, Settings, Sparkles, WalletCards } from "lucide-react";
+import { useApp, type AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
+import "./NavigationPremium.css";
 
-const primaryItems: Array<{
-  id: AppView;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { id: "ai", label: "LedgerMate AI", icon: Sparkles },
-  { id: "chat", label: "Ledger", icon: Receipt },
-  { id: "dashboard", label: "Overview", icon: LayoutDashboard },
-  { id: "sales", label: "Entries", icon: List },
-  { id: "reports", label: "Reports", icon: BarChart3 },
-];
-
-const secondaryItems: Array<{
-  id: AppView;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}> = [
-  { id: "accounts", label: "Accounts", icon: Wallet },
-  { id: "settings", label: "Settings", icon: Settings },
-];
+const dockItems = [
+  { id: "dashboard", key: "nav.overview", icon: LayoutDashboard },
+  { id: "sales", key: "nav.entries", icon: ReceiptText },
+  { id: "new", key: null, icon: Plus },
+  { id: "reports", key: "nav.reports", icon: BarChart3 },
+] as const;
 
 export const MobileNav: React.FC = () => {
-  const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup } = useAuth();
+  const { currentView, setCurrentView, startNewEntry } = useApp();
+  const { lock, hasPinSetup, isDemoMode } = useAuth();
   const { t } = useI18n();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isMoreOpen) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMoreOpen(false);
+        moreRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", escape);
+    return () => window.removeEventListener("keydown", escape);
+  }, [isMoreOpen]);
 
   const navigate = (view: AppView) => {
     setCurrentView(view);
     setIsMoreOpen(false);
   };
 
+  const moreActive = currentView === "accounts" || currentView === "ai" || currentView === "settings";
   return (
-    <nav
-      aria-label="Main navigation"
-      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-border-standard bg-surface-bright px-1 pt-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
-    >
-      {primaryItems.map(({ id, icon: Icon }) => {
-        const label = id === "ai" ? "LedgerMate AI"
-          : id === "chat" ? t("nav.ledger")
-          : id === "dashboard" ? t("nav.overview")
-          : id === "sales" ? t("nav.entries")
-          : t("nav.reports");
-        const isActive = currentView === id;
+    <nav aria-label="Mobile navigation" className="mobile-bottom-nav aq-mobile-nav fixed inset-x-0 bottom-0 z-40 grid border-t md:hidden">
+      {dockItems.map(({ id, key, icon: Icon }) => {
+        const isNew = id === "new";
+        const active = currentView === (isNew ? "chat" : id);
+        const label = isNew ? "New entry" : t(key!);
         return (
           <button
             key={id}
             type="button"
-            aria-current={isActive ? "page" : undefined}
-            onClick={() => navigate(id)}
-            className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors ${
-              isActive ? "bg-primary/[0.07] text-primary" : (
-                "text-text-muted hover:bg-surface-container-low"
-              )
-            }`}
+            aria-label={label}
+            aria-current={active ? "page" : undefined}
+            className={`aq-mobile-nav__item ${isNew ? "aq-mobile-nav__item--new" : ""}`}
+            onClick={() => {
+              if (isNew) {
+                startNewEntry();
+                setIsMoreOpen(false);
+              } else {
+                navigate(id);
+              }
+            }}
           >
-            <Icon className="h-5 w-5" aria-hidden="true" />
-            <span className="truncate">{label}</span>
+            <span className="aq-mobile-nav__icon"><Icon size={20} strokeWidth={1.85} aria-hidden="true" /></span>
+            <span className="aq-mobile-nav__label">{isNew ? "New" : label}</span>
           </button>
         );
       })}
-
-      <div className="relative flex justify-center">
+      <div className="aq-mobile-nav__more-wrap">
         {isMoreOpen && (
           <>
-            <button
-              type="button"
-              aria-label="Close navigation menu"
-              className="fixed inset-0 z-0 cursor-default"
-              onClick={() => setIsMoreOpen(false)}
-            />
-            <div
-              id="mobile-more-menu"
-              className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
-            >
-              {secondaryItems.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : t("nav.settings");
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => navigate(id)}
-                    className={`flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm transition-colors ${
-                      currentView === id ?
-                        "bg-primary/[0.07] font-semibold text-primary"
-                      : "text-on-surface hover:bg-surface-container-low"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
-                    {label}
-                  </button>
-                );
-              })}
-              {hasPinSetup && (
-                <>
-                  <div className="my-1 border-t border-border-standard" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMoreOpen(false);
-                      lock();
-                    }}
-                    className="flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm text-on-surface transition-colors hover:bg-surface-container-low"
-                  >
-                    <LockKeyhole className="h-4 w-4" aria-hidden="true" />
-                    {t("nav.lockRegister")}
-                  </button>
-                </>
+            <button type="button" className="aq-mobile-nav__backdrop" aria-label="Close navigation menu"
+              onClick={() => { setIsMoreOpen(false); moreRef.current?.focus(); }} />
+            <div id="aq-mobile-more" className="aq-mobile-nav__menu" aria-label="More workspace pages">
+              {([
+                { id: "accounts", label: t("nav.accounts"), icon: WalletCards },
+                { id: "ai", label: "LedgerMate AI", icon: Sparkles },
+                { id: "settings", label: t("nav.settings"), icon: Settings },
+              ] as const).map(({ id, label, icon: Icon }) => (
+                <button type="button" key={id} aria-current={currentView === id ? "page" : undefined}
+                  onClick={() => navigate(id)}>
+                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" /><span>{label}</span>
+                </button>
+              ))}
+              {hasPinSetup && !isDemoMode && (
+                <button type="button" onClick={() => { setIsMoreOpen(false); lock(); }}>
+                  <LockKeyhole size={18} aria-hidden="true" />{t("nav.lockRegister")}
+                </button>
               )}
             </div>
           </>
         )}
-        <button
-          type="button"
-          aria-expanded={isMoreOpen}
-          aria-controls={isMoreOpen ? "mobile-more-menu" : undefined}
-          aria-label="More navigation options"
-          onClick={() => setIsMoreOpen((open) => !open)}
-          className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors ${
-            (
-              isMoreOpen ||
-              currentView === "settings" ||
-              currentView === "accounts"
-            ) ?
-              "bg-primary/[0.07] text-primary"
-            : "text-text-muted hover:bg-surface-container-low"
-          }`}
-        >
-          <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
-          <span>{t("nav.more")}</span>
+        <button ref={moreRef} type="button" className="aq-mobile-nav__item" aria-label="More navigation options"
+          aria-expanded={isMoreOpen} aria-controls={isMoreOpen ? "aq-mobile-more" : undefined}
+          aria-current={moreActive ? "page" : undefined}
+          onClick={() => setIsMoreOpen((open) => !open)}>
+          <span className="aq-mobile-nav__icon"><MoreHorizontal size={20} aria-hidden="true" /></span>
+          <span className="aq-mobile-nav__label">{t("nav.more")}</span>
         </button>
       </div>
     </nav>
