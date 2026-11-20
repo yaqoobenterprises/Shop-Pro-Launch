@@ -268,7 +268,7 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
       ["SELECT public.create_aqvora_account($1,'1101','Duplicate','asset','debit',null,true)", [org], "duplicate key"],
       ["SELECT public.create_aqvora_account($1,'1102','Bad parent','expense','debit',$2,true)", [org, headingId], "Invalid chart parent"],
       ["SELECT public.create_aqvora_account($1,'1103','Foreign parent','asset','debit',$2,true)",
-        [org, "55555555-5555-4555-8555-555555555555"], "Invalid chart parent"],
+        [org, "55555555-5555-4555-8555-555555555555"], "Chart parent must be active"],
       ["SELECT public.edit_aqvora_account($1,$2,1,'1100','Cycle',$3)", [org, headingId, leafId], "Invalid chart parent"],
       ["SELECT public.create_aqvora_period($1,'2026-11-15','2026-12-15')", [org], "Fiscal periods cannot overlap"],
     ] as const) {
