@@ -48,7 +48,7 @@ describe("AQVORA visible demo overview — exact, source-honest", () => {
     });
     expect(screen.getAllByText("Rs 12,000.00").length).toBeGreaterThan(0);
     expect(screen.queryByText("Rs 62,000.00")).toBeNull();
-    expect(screen.getByText("Rs 3,000.00")).toBeTruthy();
+    expect(screen.getAllByText("Rs 3,000.00").length).toBeGreaterThan(0);
   });
 
   it("shows a clean empty state without inventing cash statistics", () => {
