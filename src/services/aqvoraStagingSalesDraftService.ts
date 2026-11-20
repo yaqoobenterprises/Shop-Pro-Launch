@@ -41,6 +41,9 @@ function obj(value:unknown,label:string):Record<string,unknown>{
 }
 
 function checkedMoney(value:unknown,label:string,positive=false):bigint{
+  if(typeof value!=="string" || value.length>19) {
+    throw new Error(`Invalid oversized ${label} numeric input.`);
+  }
   const n=money(value,label,true);
   if (n>BIGINT_MAX || (positive && n<=0n)) {
     throw new Error(`Invalid ${label} signed-BIGINT monetary value.`);
@@ -118,7 +121,7 @@ export async function createIsolatedServiceInvoiceDraft(
   });
   if (total<=0n) throw new Error("Invoice face must be positive.");
 
-  const row=obj(await guardedDraftRpc(context,"create_aqvora_sales_draft",request),"invoice");
+  const row=obj(await guardedDraftRpc(context,"create_aqvora_sales_draft",{...request}),"invoice");
   uuid(row.id,"created invoice");
   if (row.organization_id!==context.organizationId ||
       row.created_by!==context.userId ||
