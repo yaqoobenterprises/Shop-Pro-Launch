@@ -1,0 +1,39 @@
+/* Purposeful read-only Chart and Fiscal admin controls; inherits locked Poital.flow palette. */
+.aq-admin__row-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.aq-admin__link { min-height:36px; padding:5px 2px; border:0; background:transparent; color:var(--forest,#176b54); font-weight:650; font-size:12px; }
+.aq-admin__link:hover { text-decoration:underline; }
+.aq-admin__link:focus-visible, .aq-admin__page-controls button:focus-visible,
+.aq-admin__modal button:focus-visible { outline:3px solid #9189df; outline-offset:2px; }
+.aq-admin__source { display:flex; gap:9px; align-items:center; margin-top:16px; font-size:11px; color:var(--muted,#666a75); line-height:1.5; }
+.aq-finance__revision { font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+.aq-admin__pagination { align-items:center; }
+.aq-admin__page-controls { display:flex; align-items:center; gap:12px; }
+.aq-admin__page-controls button { display:grid; place-items:center; min-height:38px; min-width:38px;
+  background:var(--surface-card,#fff); border:1px solid var(--line,#dcdde3); border-radius:8px;
+  color:var(--ink,#35383e); }
+.aq-admin__page-controls button:disabled { opacity:.4; cursor:not-allowed; }
+.aq-admin__backdrop { position:fixed; inset:0; z-index:120; background:#151621a3; display:flex; justify-content:center;
+  align-items:center; padding:20px; }
+.aq-admin__modal { width:min(100%,480px); max-height:min(90vh,680px); overflow:auto; position:relative;
+  background:var(--surface-card,#fff); color:var(--ink,#35383e); border:1px solid var(--line,#dcdde3);
+  box-shadow:0 24px 72px #12121e30; border-radius:14px; padding:26px; }
+.aq-admin__modal h3 { margin:0 40px 14px 0; font-size:20px; letter-spacing:-.03em; font-weight:680; }
+.aq-admin__modal p { font-size:13px; color:var(--muted,#666a75); line-height:1.7; }
+.aq-admin__modal-close { position:absolute; top:16px; right:16px; min-width:40px; min-height:40px;
+  display:grid; place-items:center; border:0; background:var(--surface-2,#f2f1f5); color:var(--ink,#35383e); border-radius:8px; }
+.aq-admin__modal dl { display:grid; grid-template-columns:minmax(95px,1fr) 2fr; gap:12px; margin:20px 0; font-size:12px; }
+.aq-admin__modal dt { color:var(--muted,#666a75); }
+.aq-admin__modal dd { margin:0; font-weight:650; }
+.aq-admin__modal-footer { display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap; margin-top:24px; }
+.aq-admin__modal-action { border:1px solid var(--line,#dcdde3); background:var(--surface-2,#f2f1f5); color:var(--ink,#35383e);
+  border-radius:8px; min-height:44px; padding:10px 17px; font-size:12px; font-weight:650; }
+.aq-admin__modal-action:hover { filter:brightness(.97); }
+@media(max-width:600px) {
+  .aq-admin__row-actions { gap:8px; }
+  .aq-admin__modal { padding:20px; }
+  .aq-admin__pagination { align-items:flex-start; }
+  .aq-admin__modal-footer { justify-content:stretch; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .aq-admin__modal, .aq-admin__backdrop { transition:none; }
+}
