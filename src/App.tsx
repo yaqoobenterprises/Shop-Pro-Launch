@@ -46,6 +46,10 @@ const AccountsView = lazy(() =>
   import("./components/accounts/AccountsView").then((module) => ({ default: module.AccountsView })),
 );
 
+const FinanceDesignPreview = lazy(() =>
+  import("./components/accounting/FinanceDesignPreview").then((module) => ({ default: module.FinanceDesignPreview })),
+);
+
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
   const { setLanguage } = useI18n();
@@ -71,6 +75,8 @@ const MainShell: React.FC = () => {
   const { t } = useI18n();
   const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
+  const [showFinancePreview, setShowFinancePreview] = React.useState(false);
+  const financePreviewEnabled = import.meta.env.VITE_ENABLE_FINANCE_UI_PREVIEW === "true";
 
   useEffect(() => {
     // A real owner sees the mandatory setup only when verified account setup is unfinished.
@@ -142,6 +148,12 @@ const MainShell: React.FC = () => {
         >
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-text-muted">Sample workspace · no live company data</span>
+            {financePreviewEnabled && (
+              <button type="button" onClick={() => setShowFinancePreview(true)}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-container-low px-3 text-xs font-semibold text-on-surface hover:bg-surface-bright">
+                Preview finance UI
+              </button>
+            )}
             {companySetupEnabled && (
               <button
                 type="button"
@@ -203,6 +215,11 @@ const MainShell: React.FC = () => {
         isOpen={showRegionalSetup}
         onClose={() => setShowRegionalSetup(false)}
       />
+      {financePreviewEnabled && isDemoMode && showFinancePreview && (
+        <Suspense fallback={<div role="status">Loading finance design preview…</div>}>
+          <FinanceDesignPreview onClose={() => setShowFinancePreview(false)} />
+        </Suspense>
+      )}
     </div>
   );
 };
