@@ -3,6 +3,7 @@ import { TodayStrip } from "./TodayStrip";
 import { ChatFeed } from "./ChatFeed";
 import { ChatComposer } from "./ChatComposer";
 import "./CashbookSurface.css";
+import "./CashbookPoitalFinish.css";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { UndoToast } from "./UndoToast";
 import { VoidModal } from "./VoidModal";
