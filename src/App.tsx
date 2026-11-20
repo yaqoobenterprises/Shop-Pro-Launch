@@ -13,7 +13,6 @@ import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
 
-// Modern Shop Ledger Views
 import {
   ledgerService,
   OFFLINE_SYNC_COMPLETE_EVENT,
@@ -177,10 +176,8 @@ const MainShell: React.FC = () => {
         >
           Skip to main content
         </a>
-        {/* Sidebar Navigation */}
         <Sidebar />
 
-        {/* Main Content Area */}
         <div className="workspace flex flex-1 flex-col overflow-hidden min-w-0">
           <Header />
           <main
@@ -203,7 +200,6 @@ const MainShell: React.FC = () => {
         <MobileNav />
       </div>
 
-      {/* Global Modals & Overlays */}
       <QuickExpenseModal />
       <CommandPalette />
       <ShortcutsHelpModal />
