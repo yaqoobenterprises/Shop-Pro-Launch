@@ -30,7 +30,9 @@ export const Header: React.FC = () => {
   );
   const displayName = getProfileDisplayName(user, organization.owner_name, t("header.owner"));
   const menuRef = useRef<HTMLDivElement>(null);
-    const pageTitle = workspaceNavLabel(currentView, t);
+  const profileButtonRef = useRef<HTMLButtonElement>(null);
+
+  const pageTitle = workspaceNavLabel(currentView, t);
 
   const toggleTheme = () => {
     const nextTheme: ThemePreference = theme === "dark" ? "light" : "dark";
