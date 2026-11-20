@@ -38,7 +38,7 @@ const mocks = vi.hoisted(() => {
       if (sql.includes('COUNT(*)')) return [{ count: 1 }];
       return [];
     }),
-    execute: vi.fn(async () => undefined),
+    execute: vi.fn(async (_sql: string, _params?: unknown[]) => undefined),
   };
   return { db, supabase, accountUpsert };
 });
