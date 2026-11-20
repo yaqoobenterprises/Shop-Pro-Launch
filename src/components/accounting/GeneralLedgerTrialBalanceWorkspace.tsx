@@ -41,7 +41,8 @@ export function GeneralLedgerTrialBalanceWorkspace(){
   const [loading,setLoading]=useState(false);
   const [error,setError]=useState("");
   const [result,setResult]=useState<Result|null>(null);
-  const generation=useRef(0);
+  const accountGeneration=useRef(0);
+  const reportGeneration=useRef(0);
   const requestKey=[organization.id,userId,organization.currency,from,to,mode,accountId].join("|");
   const displayed=result?.key===requestKey?result:null;
 
@@ -50,31 +51,32 @@ export function GeneralLedgerTrialBalanceWorkspace(){
     setAccounts([]);setAccountId("");setAccountsError("");setError("");
     setResult(null);setFrom(companyToday(organization.timezone).slice(0,7)+"-01");
     setTo(companyToday(organization.timezone));
-    const token=++generation.current;
+    const token=++accountGeneration.current;
+    ++reportGeneration.current;
     if(!enabled)return()=>{alive=false;};
     setAccountsLoading(true);
     void listIsolatedPostingAccounts({
       organizationId:organization.id,userId,isCloudAccount,
     }).then(value=>{
-      if(alive&&generation.current===token)setAccounts(value);
+      if(alive&&accountGeneration.current===token)setAccounts(value);
     }).catch(reason=>{
-      if(alive&&generation.current===token) {
+      if(alive&&accountGeneration.current===token) {
         setAccountsError(reason instanceof Error?reason.message:"Chart of Accounts unavailable.");
       }
     }).finally(()=>{
-      if(alive&&generation.current===token)setAccountsLoading(false);
+      if(alive&&accountGeneration.current===token)setAccountsLoading(false);
     });
     return()=>{alive=false;};
   },[enabled,organization.id,organization.currency,organization.timezone,userId,isCloudAccount]);
 
   const invalidate=()=>{
-    ++generation.current;
+    ++reportGeneration.current;
     setResult(null);setError("");setLoading(false);
   };
 
   const run=async()=>{
     if(!enabled||!userId)return;
-    const current=++generation.current;
+    const current=++reportGeneration.current;
     setResult(null);setError("");setLoading(true);
     const key=requestKey;
     const context={
@@ -87,12 +89,12 @@ export function GeneralLedgerTrialBalanceWorkspace(){
         :await loadIsolatedVerifiedGeneralLedger({
           ...context,accountId,
         },{pageSize:100,maxPages:100});
-      if(current===generation.current)setResult({key,mode,data});
+      if(current===reportGeneration.current)setResult({key,mode,data});
     }catch(reason){
-      if(current===generation.current)setError(reason instanceof Error
+      if(current===reportGeneration.current)setError(reason instanceof Error
         ?reason.message:"Verified finance source unavailable.");
     }finally{
-      if(current===generation.current)setLoading(false);
+      if(current===reportGeneration.current)setLoading(false);
     }
   };
 
