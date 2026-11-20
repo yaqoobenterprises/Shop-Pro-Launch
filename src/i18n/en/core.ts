@@ -1,9 +1,9 @@
 export const english = {
-  "nav.ledger": "Cashbook",
+  "nav.ledger": "Quick Entry",
   "nav.overview": "Overview",
-  "nav.entries": "Entries",
-  "nav.reports": "Reports",
-  "nav.accounts": "Accounts",
+  "nav.entries": "Transactions",
+  "nav.reports": "Cashbook Reports",
+  "nav.accounts": "Cash & Bank",
   "nav.settings": "Settings",
   "nav.lockRegister": "Lock Register",
   "nav.profileSettings": "Profile & Settings",
