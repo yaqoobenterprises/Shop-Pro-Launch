@@ -187,7 +187,7 @@ describe("AQVORA default-off isolated financial RPC transport", () => {
   it("rejects an error/malformed payload without falling back to sample balances", async () => {
     fake.rpc.mockResolvedValueOnce({ data: { rows: [] }, error: null });
     await expect(loadIsolatedVerifiedTrialBalance(request))
-      .rejects.toThrow(/complete certified V2 read/);
+      .rejects.toThrow(/Invalid certified source object/);
     expect(fake.rpc).toHaveBeenCalledTimes(1);
   });
 });
