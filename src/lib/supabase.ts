@@ -11,10 +11,12 @@ export function normalizeSupabaseUrl(rawUrl?: string): string {
   return url;
 }
 
+function isCombinedReviewSandbox(): boolean { return true; } // REVIEW ONLY, remove before release
+
 export function getSupabaseConfig(): { url: string; anonKey: string } {
-  // PREVIEW-ONLY: never connect this integration review branch to a cloud project.
-  // Remove this fail-closed isolation before any production merge.
-  return { url: '', anonKey: '' };
+  // PREVIEW-ONLY: fail closed regardless of inherited deployment variables.
+  // Never merge this review-only isolation into the production application.
+  if (isCombinedReviewSandbox()) return { url: '', anonKey: '' };
   const rawUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   const candidateKey =
     (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
