@@ -12,18 +12,15 @@ import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
-
 import {
   ledgerService,
   OFFLINE_SYNC_COMPLETE_EVENT,
 } from "./services/ledgerService";
-
 import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
-import { isAqvoraIsolatedStagingReadEnabled } from "./services/aqvoraAdminStagingGuard";
-
+import { AqvoraStagingAdminRoute } from "./components/accounting/AqvoraStagingAdminRoute";
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
 );
@@ -45,11 +42,9 @@ const LedgerSettingsView = lazy(() =>
 const AccountsView = lazy(() =>
   import("./components/accounts/AccountsView").then((module) => ({ default: module.AccountsView })),
 );
-
 const FinanceDesignPreview = lazy(() => import("./components/accounting/FinanceDesignPreview")
   .then((module) => ({ default: module.FinanceDesignPreview })));
-const AqvoraStagingAdminView = lazy(() => import("./components/accounting/AqvoraStagingAdminView")
-  .then((module) => ({ default: module.AqvoraStagingAdminView })));
+
 
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
@@ -72,7 +67,7 @@ const I18nPreferenceSync: React.FC = () => {
 
 const MainShell: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { isDemoMode, isCloudAccount, exitDemoMode, organization, user } = useAuth();
+  const { isDemoMode, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
@@ -133,12 +128,7 @@ const MainShell: React.FC = () => {
         return <LedgerReportsView />;
       case "accounts":
         return <AccountsView />;
-      case "aqvora-admin":
-        return isAqvoraIsolatedStagingReadEnabled() && !isDemoMode && isCloudAccount
-          ? <AqvoraStagingAdminView key={organization.id + ":" + (user?.id || "")}
-              organizationId={organization.id} userId={user?.id}
-              isCloudAccount={isCloudAccount} isDemoMode={isDemoMode} />
-          : <div role="alert" className="p-6 text-sm text-text-muted">AQVORA V2 staging access is unavailable.</div>;
+      case "aqvora-admin": return <AqvoraStagingAdminRoute />;
       case "settings":
         return <LedgerSettingsView />;
       default:
