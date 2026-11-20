@@ -123,7 +123,7 @@ export function verifyCustomerReceiptDetail(
   }
   for (const [index, allocation] of issue.allocations.entries()) {
     const item = object(allocation, "issued allocation");
-    const expected = normalized[index];
+    const expected = normalized[index]!;
     uuid(item.allocation_id, "allocation ID");
     match(item,"invoice_id",expected.invoiceId);
     match(item,"amount_minor",expected.amount.toString());
