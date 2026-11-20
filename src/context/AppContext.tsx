@@ -15,6 +15,7 @@ export type AppView =
   | "dashboard"
   | "sales"
   | "accounts"
+  | "aqvora-admin"
   | "reports"
   | "settings";
 
