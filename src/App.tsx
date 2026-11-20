@@ -22,6 +22,7 @@ import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
+import { isAqvoraIsolatedStagingReadEnabled } from "./services/aqvoraAdminStagingGuard";
 
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
@@ -47,6 +48,8 @@ const AccountsView = lazy(() =>
 
 const FinanceDesignPreview = lazy(() => import("./components/accounting/FinanceDesignPreview")
   .then((module) => ({ default: module.FinanceDesignPreview })));
+const AqvoraStagingAdminView = lazy(() => import("./components/accounting/AqvoraStagingAdminView")
+  .then((module) => ({ default: module.AqvoraStagingAdminView })));
 
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
@@ -69,7 +72,7 @@ const I18nPreferenceSync: React.FC = () => {
 
 const MainShell: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { isDemoMode, exitDemoMode, organization, user } = useAuth();
+  const { isDemoMode, isCloudAccount, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
@@ -130,6 +133,12 @@ const MainShell: React.FC = () => {
         return <LedgerReportsView />;
       case "accounts":
         return <AccountsView />;
+      case "aqvora-admin":
+        return isAqvoraIsolatedStagingReadEnabled() && !isDemoMode && isCloudAccount
+          ? <AqvoraStagingAdminView key={organization.id + ":" + (user?.id || "")}
+              organizationId={organization.id} userId={user?.id}
+              isCloudAccount={isCloudAccount} isDemoMode={isDemoMode} />
+          : <div role="alert" className="p-6 text-sm text-text-muted">AQVORA V2 staging access is unavailable.</div>;
       case "settings":
         return <LedgerSettingsView />;
       default:
