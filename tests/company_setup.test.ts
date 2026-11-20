@@ -25,7 +25,7 @@ function fakeClient(role = "OWNER", updateRow: Record<string, unknown> | null = 
   currency: "PKR", currency_symbol: "Rs", country: "Pakistan",
   timezone: "Asia/Karachi", region_configured: true,
 }) {
-  const update = vi.fn((values: Record<string, unknown>) => ({
+  const update = vi.fn((_values: Record<string, unknown>) => ({
     eq: () => ({
       select: () => ({
         maybeSingle: async () => ({ data: updateRow, error: null }),
