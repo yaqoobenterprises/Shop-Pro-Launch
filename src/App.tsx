@@ -46,6 +46,12 @@ const AccountsView = lazy(() =>
   import("./components/accounts/AccountsView").then((module) => ({ default: module.AccountsView })),
 );
 
+const ReceivablesWorkspace = lazy(() =>
+  import("./components/accounting/ReceivablesWorkspace").then(
+    (module) => ({ default: module.ReceivablesWorkspace }),
+  ),
+);
+
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
   const { setLanguage } = useI18n();
@@ -126,6 +132,8 @@ const MainShell: React.FC = () => {
         return <LedgerReportsView />;
       case "accounts":
         return <AccountsView />;
+      case "aqvora-receivables":
+        return <ReceivablesWorkspace />;
       case "settings":
         return <LedgerSettingsView />;
       default:
