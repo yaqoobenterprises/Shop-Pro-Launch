@@ -11,7 +11,7 @@
 - `ReceivablesReportPanel`: 3 correct V2 only AR totals, responsive plain table with invoice drilldown, explicit limitations.
 - `InvoiceEvidencePanel`: actual authenticated `get_aqvora_invoice_open_balance` RPC, exact source links and posted allocation drilldowns.
 - `ReceiptEvidencePanel`: actual authenticated `get_aqvora_customer_receipt` and `get_aqvora_cash_collection` proof via existing PR #66, showing exact Cash debit / AR credit and **manual cash dual-control, not bank-cleared**.
-- `formatExactCurrencyMinor`: ISO-based decimal scale using BigInt only; never parseFloat or Number the financial amount. Individual currency scale from Intl, no guessed PKR-specific formatting.
+- `formatExactCurrencyMinor`: raw integer source minor units clearly labeled and grouped using BigInt only; never parseFloat, JS Number, or infer major-unit currency decimals from Intl. The backend does not expose a trusted company currency exponent, so major-unit formatting is explicitly blocked until that contract is approved.
 - Meaningful UI error/loading/auth/empty/filter-change tests, plus customer source/amount parsing tests.
 
 ## Functional workflow (on a future approved disposable staging project)
@@ -19,13 +19,13 @@
 1. OWNER/MANAGER cloud account signs in and completes server-verified MFA. Company has isolated V2 test data.
 2. Enable the two explicit staging flags and isolated project host/ref, not an existing business project.
 3. Select sidebar **Receivables** or mobile More > Receivables, choose company/customer/date and Load verified AR.
-4. Company control balance is exact and certified from V2; customer open invoice list is **fully collected under a matching snapshot token** and must reconcile exactly to the same customer's AR control.
+4. Company control balance is exact and certified in **minor units** from V2; customer open invoice list is **fully collected under a matching snapshot token** and must reconcile exactly to the same customer's AR control.
 5. Inspect one invoice; drill into actual receipt evidence and original dual-controlled cash count.
 6. A missing/denied/corrupt/revoked-source or `40001` response displays an error and never silently displays a false zero or an incomplete "complete" report.
 
 ## Explicit limitations
 
-- This UI is **read-only**. Creating customers/drafts, invoice approval/issue, cash confirmation, receipts posting and refunds are NOT enabled from this route. The backend has those guarded RPCs in PR #59/#63, but they need separate functional form/controller integration with source/revision/idempotency receipts.
+- A verified company currency minor-unit exponent/scale is not included in the RPC; all money is displayed as `PKR 123 minor units` instead of potentially wrong rupee/paisa decimals. This needs a signed-off server source before major-unit presentation.\n- This UI is **read-only**. Creating customers/drafts, invoice approval/issue, cash confirmation, receipts posting and refunds are NOT enabled from this route. The backend has those guarded RPCs in PR #59/#63, but they need separate functional form/controller integration with source/revision/idempotency receipts.
 - Only verified V2 source data is included: `legacy_included:false`, `opening_migration_verified:false`. Legacy Shop Pro books and queues are NOT migrated or silently combined. An empty V2 report is not evidence that a real company has zero receivables.
 - The backend proves two-person **manual cash attestation**, not independent bank payment evidence. Bank reconciliation, true receivable aging, refunds/unapplied cash, tax/GST and non-service sales remain unsupported.
 - Company list RPC uses live keyset pagination; it is NOT a certified complete customer directory snapshot.
