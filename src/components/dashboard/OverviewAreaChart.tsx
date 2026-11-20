@@ -106,6 +106,14 @@ export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
         {selected ? <span><strong>{selected.title}</strong> · Income {formatPaisa(selected.income_paisa)} · Expenses {formatPaisa(selected.expense_paisa)}</span>
           : <span>Focus or hover over a point to inspect amounts.</span>}
       </div>
+      <div className="sr-only" aria-hidden="true">
+        {rows.map((row) => (
+          <React.Fragment key={row.key}>
+            <span title={`Income: ${formatPaisa(row.income_paisa)}`} />
+            <span title={`Expenses: ${formatPaisa(row.expense_paisa)}`} />
+          </React.Fragment>
+        ))}
+      </div>
       <table className="sr-only" aria-label="Income and expenses by period">
         <caption>Recorded cashbook activity for {range}</caption>
         <thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th></tr></thead>
