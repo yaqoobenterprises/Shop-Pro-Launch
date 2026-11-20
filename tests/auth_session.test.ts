@@ -18,6 +18,17 @@ describe("cloud session restoration after PIN unlock", () => {
     expect(activateLocally).not.toHaveBeenCalled();
   });
 
+  it("does not bypass a rejected cloud membership with a cached local role", async () => {
+    const hasMatchingSession = vi.fn().mockResolvedValue(true);
+    const activateSession = vi.fn().mockResolvedValue("failed");
+    const activateLocally = vi.fn();
+
+    await expect(
+      activateProfileAfterPinUnlock(profile, organization, hasMatchingSession, activateSession, activateLocally),
+    ).resolves.toBe(false);
+    expect(activateLocally).not.toHaveBeenCalled();
+  });
+
   it("keeps PIN unlock local when there is no matching Supabase session", async () => {
     const hasMatchingSession = vi.fn().mockResolvedValue(false);
     const activateSession = vi.fn();
