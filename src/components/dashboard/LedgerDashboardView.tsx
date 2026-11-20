@@ -3,7 +3,6 @@ import { ledgerService } from "../../services/ledgerService";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
 import { formatPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
-import { useI18n } from "../../i18n";
 import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
 import "./OverviewAnalytics.css";
 import "./OverviewPremium.css";
@@ -25,7 +24,6 @@ import {
 const EXPENSE_CHART_PALETTE = ["#14765e", "#5688a0", "#b96d45", "#809b77", "#7c78a8", "#8a9ba8"];
 
 export const LedgerDashboardView: React.FC = () => {
-  const { t } = useI18n();
   const [period, setPeriod] = useState<OverviewPeriod>("day");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
