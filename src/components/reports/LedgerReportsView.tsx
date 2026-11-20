@@ -14,6 +14,7 @@ import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
 import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
 import "./ReportsAnalytics.css";
+import "./ReportsRealFinish.css";
 import { ReportInsightCharts } from "./ReportInsightCharts";
 
 export const LedgerReportsView: React.FC = () => {
@@ -134,9 +135,9 @@ export const LedgerReportsView: React.FC = () => {
 
       <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
         <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
-          <span>NET PROFIT</span><TrendingUp size={18} aria-hidden="true" />
+          <span>OPERATING RESULT</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.net_profit_paisa)}</strong>
-          <small>Income less operating expenses</small>
+          <small>Cashbook basis · not accrual P&L</small>
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--income">
           <span>TOTAL INCOME</span><TrendingUp size={18} aria-hidden="true" />
@@ -194,7 +195,7 @@ export const LedgerReportsView: React.FC = () => {
             <div><span>Cash adjustments in</span><strong>{formatPaisa(totals.adjustment_in_paisa)}</strong></div>
             <div><span>Cash adjustments out</span><strong>{formatPaisa(totals.adjustment_out_paisa)}</strong></div>
           </div>
-          <p className="reports-modern__footnote">Net profit is calculated from income minus operating expenses. Capital, drawings and cash adjustments remain separately visible.</p>
+          <p className="reports-modern__footnote">Operating result equals recorded income less operating expenses on the selected cashbook basis. Capital, drawings and adjustments are excluded; this is not an accrual P&L.</p>
         </section>
       </div>
 
