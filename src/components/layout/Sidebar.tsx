@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
+import { isIsolatedVerifiedFinancialReadEnabled } from "../../services/aqvoraVerifiedFinancialReadService";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
@@ -17,6 +18,7 @@ import {
   Receipt,
   FileText,
   FilePlus2,
+  BookOpenCheck,
   Settings,
   Sparkles,
   Wallet,
@@ -89,6 +91,8 @@ export const Sidebar: React.FC = () => {
     navItems.push({ id: "aqvora-sales-drafts", label: "Service drafts", icon: FilePlus2 });
   }
 
+  if (isIsolatedVerifiedFinancialReadEnabled() && !isDemoMode && isCloudAccount && (user?.role === "OWNER" || user?.role === "MANAGER"))
+    navItems.push({ id: "aqvora-gl-tb", label: "GL & Trial Balance", icon: BookOpenCheck });
   const displayName = getProfileDisplayName(user, organization.owner_name);
   const toggleLabel = isCollapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar");
 

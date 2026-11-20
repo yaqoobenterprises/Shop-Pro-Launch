@@ -23,6 +23,9 @@ import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
+import {
+  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace,
+} from "./components/accounting/FinanceLazyRoutes";
 
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
@@ -45,12 +48,6 @@ const LedgerSettingsView = lazy(() =>
 const AccountsView = lazy(() =>
   import("./components/accounts/AccountsView").then((module) => ({ default: module.AccountsView })),
 );
-
-const ReceivablesWorkspace = lazy(() =>
-  import("./components/accounting/ReceivablesWorkspace").then(m => ({ default: m.ReceivablesWorkspace })));
-
-const SalesDraftsWorkspace = lazy(() =>
-  import("./components/accounting/SalesDraftsWorkspace").then(m => ({ default: m.SalesDraftsWorkspace })));
 
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
@@ -136,6 +133,8 @@ const MainShell: React.FC = () => {
         return <ReceivablesWorkspace />;
       case "aqvora-sales-drafts":
         return <SalesDraftsWorkspace />;
+      case "aqvora-gl-tb":
+        return <GeneralLedgerTrialBalanceWorkspace />;
       case "settings":
         return <LedgerSettingsView />;
       default:
