@@ -212,6 +212,9 @@ Tests exercise PGlite arithmetic/security/lifecycle, independent PostgreSQL race
 real Auth-issued AAL1/AAL2 JWTs through local PostgREST, all migrations in fresh
 and known deployed orders, rollback injection, full-schema restore including a
 real issued invoice/receipts/sequence and post-close replay, and source query plans.
+The source point-read plan is tested after creating 1,000 same-company and 1,000
+foreign-company drafts through the guarded APIs; it must use the company/ID
+primary-key index. This synthetic plan check is not a hosted load benchmark.
 The fixture helpers reject nonlocal databases and require disposable markers.
 
 PR #52/#54/#55 were reviewed without merging. Deliberate differences: service-only

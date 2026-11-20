@@ -91,10 +91,21 @@ describe.skipIf(!databaseUrl)("Verified sales on independent PostgreSQL sessions
   });
   it("records a company-scoped invoice query plan and verifies source reads across independent sessions",async()=>{
     const d=await prepare();const issuer=await user();await issue(issuer,d,key());await commit(issuer);
+    // Populate both tenants through guarded APIs; the point read must remain
+    // indexed rather than inspecting unrelated companies' source rows.
+    for(const [actor,org] of [[i.manager,i.org],[i.outsider,i.otherOrg]]){
+      const loader=await user(actor);const customer=(await loader.query<{r:{id:string}}>(
+        "SELECT public.create_aqvora_customer($1,'SCALE','Synthetic scale customer') r",[org])).rows[0].r.id;
+      await loader.query(`SELECT public.create_aqvora_sales_draft($1,'scale-' || n,$2,
+        '2026-11-20','2026-12-20','PKR',$3::jsonb) FROM generate_series(1,1000) n`,[org,customer,JSON.stringify(serviceLines)]);
+      await commit(loader);
+    }
     await admin.query("ANALYZE public.aqvora_sales_invoices");
     const plan=await admin.query("EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) SELECT * FROM public.aqvora_sales_invoices WHERE organization_id=$1 AND id=$2",[i.org,d.id]);
-    expect(JSON.stringify(plan.rows[0])).toContain("organization_id");console.info("AQVORA sales source plan",JSON.stringify(plan.rows[0]));
+    expect(JSON.stringify(plan.rows[0])).toContain("organization_id");
+    expect(JSON.stringify(plan.rows[0])).toContain("aqvora_sales_invoices_pkey");
+    console.info("AQVORA sales source plan",JSON.stringify(plan.rows[0]));
     const reader=await user(i.owner);const invoice=await reader.query<{r:SalesDocument}>("SELECT public.get_aqvora_sales_invoice($1,$2) r",[i.org,d.id]);
     expect(invoice.rows[0].r.reconciliation?.ar_debit_minor).toBe("101");await commit(reader);
-  });
+  },60000);
 });
