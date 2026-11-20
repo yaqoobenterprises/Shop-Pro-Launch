@@ -1,9 +1,9 @@
 export const urdu = {
-  "nav.ledger": "روزنامچہ",
+  "nav.ledger": "فوری اندراج",
   "nav.overview": "خلاصہ",
-  "nav.entries": "اندراجات",
-  "nav.reports": "رپورٹس",
-  "nav.accounts": "اکاؤنٹس",
+  "nav.entries": "ٹرانزیکشنز",
+  "nav.reports": "روزنامچہ رپورٹس",
+  "nav.accounts": "نقد اور بینک",
   "nav.settings": "سیٹنگز",
   "nav.lockRegister": "رجسٹر لاک کریں",
   "nav.profileSettings": "پروفائل اور سیٹنگز",
