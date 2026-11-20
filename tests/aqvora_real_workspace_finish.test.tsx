@@ -38,7 +38,7 @@ describe("AQVORA visible legacy workspace improvements (no ledger service mutati
       onVoid={emptyHandler} onRestore={emptyHandler}
       onAssignDraft={async () => {}} />);
     expect(screen.getByRole("heading", { name: "Today's activity" })).toBeTruthy();
-    expect(screen.getByLabelText("1 recorded entries")).toBeTruthy();
+    expect(screen.getByLabelText("1 recorded entry")).toBeTruthy();
     expect(screen.getByText("Sale")).toBeTruthy();
     expect(screen.getByLabelText("Today's cashbook activity")).toBeTruthy();
   });
