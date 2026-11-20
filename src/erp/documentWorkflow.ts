@@ -92,6 +92,15 @@ function assertRecord(record: DocumentWorkflowRecord): void {
   } else if (hasPosting) {
     throw new Error("Unissued document cannot claim a posted financial receipt.");
   }
+  if (record.state === "draft" &&
+      (record.submittedBy !== undefined || record.approvedBy !== undefined ||
+       record.approvedFingerprint !== undefined)) {
+    throw new Error("A draft cannot retain submission or approval claims.");
+  }
+  if (record.state === "submitted" &&
+      (record.approvedBy !== undefined || record.approvedFingerprint !== undefined)) {
+    throw new Error("A submitted document cannot claim prior approval.");
+  }
   if (record.state === "submitted" || record.state === "approved" ||
       record.state === "issued") {
     required(record.submittedBy, "Original submitter");
