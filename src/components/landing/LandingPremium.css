@@ -242,3 +242,6 @@
 @media (prefers-reduced-motion: reduce) {
   .aq-landing__button, .aq-landing__navlinks a { transition: none; }
 }
+
+/* The supplied approved mark is a vector asset, not a placeholder letter. */
+.aq-landing .aq-landing__brandmark { display: block; padding: 0; background: transparent; border-radius: 0; object-fit: contain; }
