@@ -12,6 +12,9 @@ export function normalizeSupabaseUrl(rawUrl?: string): string {
 }
 
 export function getSupabaseConfig(): { url: string; anonKey: string } {
+  // PREVIEW-ONLY: never connect this integration review branch to a cloud project.
+  // Remove this fail-closed isolation before any production merge.
+  return { url: '', anonKey: '' };
   const rawUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   const candidateKey =
     (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ||
