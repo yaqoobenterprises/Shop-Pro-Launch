@@ -8,6 +8,7 @@ import "./OverviewAnalytics.css";
 import "./OverviewPremium.css";
 import "./OverviewReference.css";
 import "./OverviewFinish.css";
+import "./OverviewRealFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
 import { OverviewAreaChart } from "./OverviewAreaChart";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
@@ -210,7 +211,7 @@ export const LedgerDashboardView: React.FC = () => {
       </div>
 
       <div className="aq-overview__visuals">
-        <section className="panel cash-panel">
+        <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""}`}>
           <div className="panel-heading">
             <div>
               <h2>Income & expenses</h2>
@@ -237,6 +238,18 @@ export const LedgerDashboardView: React.FC = () => {
                         <div className="aq-day-compare__track"><i style={{ width: `${activeExpense > 0 ? 100 * activeExpense / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
                       </div>
                       {activeIncome === 0 && activeExpense === 0 && <p className="aq-overview__empty">No income or expenses recorded for this date.</p>}
+                      <div className="aq-day-insights" aria-label="Selected day summary">
+                        <div className="aq-day-insights__metric">
+                          <span>Day operating result</span>
+                          <strong>{formatPaisa(activeProfit)}</strong>
+                          <small>Income less expenses · cashbook basis</small>
+                        </div>
+                        <div className="aq-day-insights__metric">
+                          <span>Recorded entries</span>
+                          <strong>{dailyData?.transaction_count ?? 0}</strong>
+                          <small>Selected business date</small>
+                        </div>
+                      </div>
                     </div>
                   )}
               <p className="aq-overview__note">Select Week, Month or Custom to explore a time-series chart.</p>
