@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Select } from "../common/Select";
+import "./SettingsRealFinish.css";
 import {
   getSupabaseClient,
   hasConfiguredCloudSession,
