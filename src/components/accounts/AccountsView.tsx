@@ -17,6 +17,7 @@ import {
 } from "../../services/ledgerService";
 import { formatPaisa, parseInputToPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
+import "./AccountsPoitalFinish.css";
 import { LedgerAccount } from "../../types/ledger";
 import {
   findAccountProvider,
@@ -30,6 +31,7 @@ export const AccountsView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [editingAccountId, setEditingAccountId] = useState("");
   const [editingName, setEditingName] = useState("");
+  const [activeTool, setActiveTool] = useState<"add" | "transfer" | null>(null);
 
   // Create form state
   const [accountName, setAccountName] = useState("");
@@ -229,6 +231,17 @@ export const AccountsView: React.FC = () => {
         </div>
       )}
 
+      <div className="accounts-quick-actions" role="group" aria-label="Account management">
+        <button type="button" aria-expanded={activeTool === "add"} aria-controls="aq-account-create"
+          onClick={() => setActiveTool((current) => current === "add" ? null : "add")}>
+          <Plus className="h-4 w-4" aria-hidden="true"/> New account
+        </button>
+        <button type="button" aria-expanded={activeTool === "transfer"} aria-controls="aq-account-transfer"
+          onClick={() => setActiveTool((current) => current === "transfer" ? null : "transfer")}>
+          <ArrowLeftRight className="h-4 w-4" aria-hidden="true"/> Move money
+        </button>
+        <span>Payment accounts are separate from the Chart of Accounts.</span>
+      </div>
       {/* Account Grid */}
       <div className="account-grid">
         {isLoading && accounts.length === 0 && (
@@ -344,8 +357,8 @@ export const AccountsView: React.FC = () => {
         })}
       </div>
 
-      <div className="account-tools">
-        <section className="panel account-tool-panel">
+      {activeTool && <div className="account-tools accounts-tools--focused">
+        {activeTool === "add" && <section id="aq-account-create" className="panel account-tool-panel">
           <div className="panel-heading account-tool-heading">
             <span className="account-tool-icon" aria-hidden="true">
               <Plus className="h-4 w-4" />
@@ -401,9 +414,9 @@ export const AccountsView: React.FC = () => {
               </button>
             </div>
           </form>
-        </section>
+        </section>}
 
-        <section className="panel account-tool-panel">
+        {activeTool === "transfer" && <section id="aq-account-transfer" className="panel account-tool-panel">
           <div className="panel-heading account-tool-heading">
             <span className="account-tool-icon" aria-hidden="true">
               <ArrowLeftRight className="h-4 w-4" />
@@ -478,8 +491,8 @@ export const AccountsView: React.FC = () => {
               </button>
             </div>
           </form>
-        </section>
-      </div>
+        </section>}
+      </div>}
     </main>
   );
 };
