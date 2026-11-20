@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   Receipt,
   FileText,
+  FilePlus2,
   Sparkles,
   Settings,
   Wallet,
@@ -15,6 +16,7 @@ import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
+import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
 
 const primaryItems: Array<{
   id: AppView;
@@ -45,9 +47,13 @@ export const MobileNav: React.FC = () => {
   const showReceivables = isIsolatedReceivablesReadEnabled() &&
     isCloudAccount && !isDemoMode &&
     (user?.role === "OWNER" || user?.role === "MANAGER");
-  const availableSecondary: typeof secondaryItems = showReceivables
-    ? [...secondaryItems, {id:"aqvora-receivables",label:"Receivables",icon:FileText}]
-    : secondaryItems;
+  const showDrafts = isIsolatedSalesDraftCreationEnabled() && isCloudAccount &&
+    !isDemoMode && (user?.role === "OWNER" || user?.role === "MANAGER");
+  const availableSecondary: typeof secondaryItems = [
+    ...secondaryItems,
+    ...(showReceivables ? [{id:"aqvora-receivables" as AppView,label:"Receivables",icon:FileText}] : []),
+    ...(showDrafts ? [{id:"aqvora-sales-drafts" as AppView,label:"Service drafts",icon:FilePlus2}] : []),
+  ];
 
   const navigate = (view: AppView) => {
     setCurrentView(view);
@@ -98,7 +104,7 @@ export const MobileNav: React.FC = () => {
               className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
             >
               {availableSecondary.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : "Receivables";
+                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : id === "aqvora-receivables" ? "Receivables" : "Service drafts";
                 return (
                   <button
                     key={id}
@@ -145,7 +151,8 @@ export const MobileNav: React.FC = () => {
               isMoreOpen ||
               currentView === "settings" ||
               currentView === "accounts" ||
-              currentView === "aqvora-receivables"
+              currentView === "aqvora-receivables" ||
+              currentView === "aqvora-sales-drafts"
             ) ?
               "bg-primary/[0.07] text-primary"
             : "text-text-muted hover:bg-surface-container-low"

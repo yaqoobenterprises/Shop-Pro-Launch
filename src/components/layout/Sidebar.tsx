@@ -3,6 +3,7 @@ import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
+import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
@@ -15,6 +16,7 @@ import {
   PanelLeftOpen,
   Receipt,
   FileText,
+  FilePlus2,
   Settings,
   Sparkles,
   Wallet,
@@ -80,6 +82,11 @@ export const Sidebar: React.FC = () => {
   if (isIsolatedReceivablesReadEnabled() && !isDemoMode && isCloudAccount &&
       (user?.role === "OWNER" || user?.role === "MANAGER")) {
     navItems.push({ id: "aqvora-receivables", label: "Receivables", icon: FileText });
+  }
+
+  if (isIsolatedSalesDraftCreationEnabled() && !isDemoMode && isCloudAccount &&
+      (user?.role === "OWNER" || user?.role === "MANAGER")) {
+    navItems.push({ id: "aqvora-sales-drafts", label: "Service drafts", icon: FilePlus2 });
   }
 
   const displayName = getProfileDisplayName(user, organization.owner_name);
