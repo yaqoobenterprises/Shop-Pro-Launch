@@ -131,6 +131,9 @@ export function projectOpenItem(source: OpenItemSource): OpenItemProjection {
           reversed.has(original.intentId)) {
         throw new Error("Invalid, changed, duplicated or already reversed allocation.");
       }
+      if (event.businessDate < original.businessDate) {
+        throw new Error("A reversal cannot predate its original settlement.");
+      }
       reversed.add(original.intentId);
       if (expectedKind === "payment") paid = addExact(paid, -amount);
       else credited = addExact(credited, -amount);
