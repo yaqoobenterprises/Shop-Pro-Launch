@@ -16,6 +16,7 @@ import { UserAvatar } from "../common/UserAvatar";
 import { APP_NAME } from "../../config/app";
 import "./WorkspaceChrome.css";
 import "./WorkspacePastel.css";
+import { workspaceNavLabel } from "./workspaceNavigation";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();
@@ -31,13 +32,7 @@ export const Header: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
-  const pageTitle = currentView === "dashboard" ? t("nav.overview")
-    : currentView === "sales" ? t("nav.entries")
-    : currentView === "chat" ? t("nav.ledger")
-    : currentView === "ai" ? "LedgerMate AI"
-    : currentView === "reports" ? t("nav.reports")
-    : currentView === "accounts" ? t("nav.accounts")
-    : t("nav.settings");
+  const pageTitle = workspaceNavLabel(currentView, t);
 
   const toggleTheme = () => {
     const nextTheme: ThemePreference = theme === "dark" ? "light" : "dark";
@@ -79,7 +74,7 @@ export const Header: React.FC = () => {
     <header className="app-header workspace-header" dir={dir}>
       <div className="workspace-context">
         <div className="workspace-context__copy">
-          <span className="workspace-context__eyebrow">AQVORA <span aria-hidden="true">/</span> WORKSPACE</span>
+          <span className="workspace-context__eyebrow">{organization.name || "AQVORA"}</span>
           <span className="workspace-context__title">{pageTitle}</span>
         </div>
       </div>
