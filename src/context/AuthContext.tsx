@@ -337,7 +337,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const client = getSupabaseClient();
 
     // 1. Verify user exists in Supabase auth.users (critical if user accounts were deleted in Supabase)
-    let authUser: any = null;
+    let authUser: any;
     try {
       const { data: authUserData, error: userError } = await client.auth.getUser();
       if (userError || !authUserData?.user) {
