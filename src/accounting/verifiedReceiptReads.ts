@@ -29,7 +29,7 @@ export function verifyInvoiceOpenBalance(
   if (invoiceDate > context.asOfDate || dueDate < invoiceDate) {
     throw new Error("Invoice date is inconsistent with the selected cutoff.");
   }
-  if (typeof item.fingerprint !== "string" || !SHA.test(item.fingerprint)) {
+  if (typeof item.fingerprint !== "string" || !/^[0-9a-f]{64}$/.test(item.fingerprint)) {
     throw new Error("AQVORA open invoice fingerprint is invalid.");
   }
   const face = money(item.face_minor, "invoice face", true);
