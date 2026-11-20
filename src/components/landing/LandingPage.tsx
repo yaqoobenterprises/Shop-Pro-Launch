@@ -75,7 +75,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
       <header className="aq-landing__header">
         <div className="aq-landing__nav aq-landing__container">
           <a href="#top" className="aq-landing__brand" aria-label="AQVORA home">
-            <span className="aq-landing__brandmark" aria-hidden="true">A</span>
+            <img className="aq-landing__brandmark" src="/assets/aqvora-symbol.svg" alt="" aria-hidden="true" />
             <span>AQVORA</span>
           </a>
 
