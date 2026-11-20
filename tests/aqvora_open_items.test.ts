@@ -173,6 +173,18 @@ describe("AQVORA sales AR and purchase AP complete-source open items", () => {
     ]))).toThrow(/already reversed/);
   });
 
+  it("refuses a reversal whose business date predates the original payment", () => {
+    const original = event({businessDate: "2026-11-21"});
+    const reversal = event({
+      intentId: "reverse-1", sourceRef: "reversal-source",
+      kind: "payment_reversal", sequence: 2,
+      reversesIntentId: "intent-1", amountMinor: "600",
+      businessDate: "2026-11-20",
+    });
+    expect(() => projectOpenItem(source([original, reversal])))
+      .toThrow(/cannot predate its original settlement/);
+  });
+
   it("rejects duplicated posted events even if idempotent parameters look identical", () => {
     expect(() => projectOpenItem(source([event(), event({sequence: 2})]))).toThrow(/Duplicate/);
   });
