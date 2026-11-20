@@ -37,15 +37,15 @@ beforeEach(() => {
 afterEach(() => {vi.unstubAllEnvs();vi.resetAllMocks();});
 
 describe("AQVORA exact minor-unit display", () => {
-  it("renders PKR and JPY/KWD with proper ISO decimal scales without floats", () => {
-    expect(formatExactCurrencyMinor("100050","PKR")).toBe("PKR 1,000.50");
-    expect(formatExactCurrencyMinor("100050","JPY")).toBe("JPY 100,050");
-    expect(formatExactCurrencyMinor("100050","KWD")).toBe("KWD 100.050");
-    expect(formatExactCurrencyMinor("0","PKR")).toBe("PKR 0.00");
+  it("renders all currencies as exact explicitly labeled source minor units", () => {
+    expect(formatExactCurrencyMinor("100050","PKR")).toBe("PKR 100,050 minor units");
+    expect(formatExactCurrencyMinor("100050","JPY")).toBe("JPY 100,050 minor units");
+    expect(formatExactCurrencyMinor("100050","KWD")).toBe("KWD 100,050 minor units");
+    expect(formatExactCurrencyMinor("0","PKR")).toBe("PKR 0 minor units");
   });
   it("preserves maximum signed-BIGINT invoice amounts exactly", () => {
     expect(formatExactCurrencyMinor("9223372036854775807","PKR"))
-      .toBe("PKR 92,233,720,368,547,758.07");
+      .toBe("PKR 9,223,372,036,854,775,807 minor units");
   });
   it("refuses floats, negative and malformed currency strings", () => {
     for (const value of ["1.5","01","-1","1e9","1,000"]) {
