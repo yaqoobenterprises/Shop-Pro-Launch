@@ -203,7 +203,7 @@ export const LedgerDashboardView: React.FC = () => {
         <OverviewMetricCard label="Expenses" scope="Selected cashbook period" icon={ArrowDownLeft}
           amountPaisa={activeExpense}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Operating result" scope="Cashbook basis, not accrual P&L" icon={ArrowUpRight}
+        <OverviewMetricCard label="Operating result" scope="Cashbook basis · not accrual P&L" icon={ArrowUpRight}
           amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "positive"}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
@@ -226,7 +226,7 @@ export const LedgerDashboardView: React.FC = () => {
               {isLoading ? <p role="status">Loading activity…</p>
                 : !activeSummary || loadError ? <p>Activity unavailable.</p>
                   : (
-                    <div className="aq-day-compare" role="group" aria-label="Income and expenses today">
+                    <div className="aq-day-compare" role="group" aria-label="Income and expenses for selected date">
                       <div className="aq-day-compare__row">
                         <div><span>Income</span><strong>{formatPaisa(activeIncome)}</strong></div>
                         <div className="aq-day-compare__track"><i style={{ width: `${activeIncome > 0 ? 100 * activeIncome / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
