@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   BarChart3,
+  BookOpen,
   LayoutDashboard,
   List,
   LockKeyhole,
@@ -13,6 +14,7 @@ import {
 import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
+import { isAqvoraIsolatedStagingReadEnabled } from "../../services/aqvoraAdminStagingGuard";
 
 const primaryItems: Array<{
   id: AppView;
@@ -37,7 +39,10 @@ const secondaryItems: Array<{
 
 export const MobileNav: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup } = useAuth();
+  const { lock, hasPinSetup, isCloudAccount, isDemoMode } = useAuth();
+  const visibleSecondaryItems = isCloudAccount && !isDemoMode && isAqvoraIsolatedStagingReadEnabled()
+    ? [...secondaryItems, { id: "aqvora-admin" as AppView, label: "Company books · staging", icon: BookOpen }]
+    : secondaryItems;
   const { t } = useI18n();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
@@ -89,8 +94,9 @@ export const MobileNav: React.FC = () => {
               id="mobile-more-menu"
               className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
             >
-              {secondaryItems.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : t("nav.settings");
+              {visibleSecondaryItems.map(({ id, icon: Icon }) => {
+                const label = id === "accounts" ? t("nav.accounts")
+                  : id === "aqvora-admin" ? "Company books · staging" : t("nav.settings");
                 return (
                   <button
                     key={id}
@@ -136,7 +142,8 @@ export const MobileNav: React.FC = () => {
             (
               isMoreOpen ||
               currentView === "settings" ||
-              currentView === "accounts"
+              currentView === "accounts" ||
+              currentView === "aqvora-admin"
             ) ?
               "bg-primary/[0.07] text-primary"
             : "text-text-muted hover:bg-surface-container-low"
