@@ -46,6 +46,7 @@ interface AppContextType {
   isShortcutsHelpOpen: boolean;
   setIsShortcutsHelpOpen: (open: boolean) => void;
   newEntryRequestId: number;
+  startNewEntry: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -180,6 +181,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         isShortcutsHelpOpen,
         setIsShortcutsHelpOpen,
         newEntryRequestId,
+        startNewEntry,
       }}
     >
       {children}
