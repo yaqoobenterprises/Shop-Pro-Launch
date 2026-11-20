@@ -34,13 +34,13 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
   let admin: Client;
   let serial = 0;
   const key = () => `pg-race-${++serial}`;
-  const asUser = async (user = owner) => {
+  const asUser = async (user = owner, aal = "aal2") => {
     const client = await open();
     await client.query("BEGIN");
     await client.query("SET LOCAL ROLE authenticated");
     await client.query(`SELECT set_config('request.jwt.claim.sub',$1,true),
-      set_config('request.jwt.claim.aal','aal2',true),
-      set_config('request.jwt.claim.session_id',$1,true)`, [user]);
+      set_config('request.jwt.claim.aal',$2,true),
+      set_config('request.jwt.claim.session_id',$1,true)`, [user, aal]);
     return client;
   };
   const post = async (client: Client, intent: string, payload: unknown = lines, company = org) => {
@@ -97,6 +97,9 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
       "20261120010000_aqvora_journal_schema.sql",
       "20261120010100_aqvora_posting_rpc.sql",
       "20261120010200_aqvora_reversal_rpc.sql",
+      "20261120103750_aqvora_admin_schema.sql",
+      "20261120103757_aqvora_admin_account_api.sql",
+      "20261120103805_aqvora_admin_period_api.sql",
     ]) {
       await admin.query(readFileSync(new URL(`../supabase/migrations/${file}`, import.meta.url), "utf8"));
     }
@@ -250,5 +253,115 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
     );
     expect(count.rows[0].n).toBe(1);
     expect(reversal.journal_id).toBeTruthy();
+  }, 30000);
+
+  it("validates chart hierarchy, owner authority, MFA, tenant readers and audit", async () => {
+    const ownerSession = await asUser();
+    const heading = await ownerSession.query<{ id: string }>(
+      "SELECT id FROM public.create_aqvora_account($1,'1100','Bank heading','asset','debit',null,false)", [org]);
+    const headingId = heading.rows[0].id;
+    const leaf = await ownerSession.query<{ id: string }>(
+      "SELECT id FROM public.create_aqvora_account($1,'1101','Bank','asset','debit',$2,true)",
+      [org, headingId]);
+    const leafId = leaf.rows[0].id;
+    for (const [sql, args, message] of [
+      ["SELECT public.create_aqvora_account($1,'1101','Duplicate','asset','debit',null,true)", [org], "duplicate key"],
+      ["SELECT public.create_aqvora_account($1,'1102','Bad parent','expense','debit',$2,true)", [org, headingId], "Invalid chart parent"],
+      ["SELECT public.create_aqvora_account($1,'1103','Foreign parent','asset','debit',$2,true)",
+        [org, "55555555-5555-4555-8555-555555555555"], "Invalid chart parent"],
+      ["SELECT public.edit_aqvora_account($1,$2,1,'1100','Cycle',$3)", [org, headingId, leafId], "Invalid chart parent"],
+      ["SELECT public.create_aqvora_period($1,'2026-11-15','2026-12-15')", [org], "Fiscal periods cannot overlap"],
+    ] as const) {
+      await ownerSession.query("SAVEPOINT invalid_admin_request");
+      await expect(ownerSession.query(sql, [...args])).rejects.toThrow(message);
+      await ownerSession.query("ROLLBACK TO SAVEPOINT invalid_admin_request");
+    }
+    await post(ownerSession, key(), [
+      { account_id: leafId, debit_minor: "1", credit_minor: "0" },
+      { account_id: sales, debit_minor: "0", credit_minor: "1" },
+    ]);
+    await ownerSession.query("SAVEPOINT posted_heading_edit");
+    await expect(ownerSession.query(
+      "SELECT public.edit_aqvora_account($1,$2,1,'1199','Changed heading',null)",
+      [org, headingId])).rejects.toThrow("immutable");
+    await ownerSession.query("ROLLBACK TO SAVEPOINT posted_heading_edit");
+    const rows = await ownerSession.query("SELECT * FROM public.list_aqvora_accounts($1)", [org]);
+    expect(rows.rows.some((row) => row.id === leafId)).toBe(true);
+    const audit = await ownerSession.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org]);
+    expect(audit.rows.filter((row) => row.action === "ACCOUNT_CREATE").length).toBe(2);
+    await ownerSession.query("COMMIT"); await close(ownerSession);
+
+    const foreign = await asUser(otherOwner);
+    await expect(foreign.query("SELECT * FROM public.list_aqvora_accounts($1)", [org]))
+      .rejects.toThrow("not authorized");
+    await close(foreign);
+    const foreignOwn = await asUser(otherOwner);
+    const hidden = await foreignOwn.query("SELECT * FROM public.get_aqvora_account($1,$2)",
+      [otherOrg, leafId]);
+    expect(hidden.rows[0]?.id ?? null).toBeNull();
+    expect((await foreignOwn.query("SELECT * FROM public.aqvora_admin_audit WHERE organization_id=$1", [org])).rows).toEqual([]);
+    await close(foreignOwn);
+
+    const weak = await asUser(owner, "aal1");
+    await expect(weak.query("SELECT * FROM public.list_aqvora_periods($1)", [org]))
+      .rejects.toThrow("MFA");
+    await close(weak);
+    await admin.query("UPDATE public.organization_members SET role='MANAGER' WHERE organization_id=$1", [org]);
+    const demoted = await asUser();
+    await expect(demoted.query("SELECT public.create_aqvora_period($1,'2026-12-01','2026-12-31')", [org]))
+      .rejects.toThrow("active owner");
+    await close(demoted);
+    await admin.query("UPDATE public.organization_members SET is_active=false WHERE organization_id=$1", [org]);
+    const inactive = await asUser();
+    await expect(inactive.query("SELECT * FROM public.list_aqvora_accounts($1)", [org]))
+      .rejects.toThrow("not authorized");
+    await close(inactive);
+    await admin.query("UPDATE public.organization_members SET role='OWNER',is_active=true WHERE organization_id=$1", [org]);
+    const grants = await admin.query<{ direct_write: boolean; anon_rpc: boolean }>(`
+      SELECT has_table_privilege('authenticated','public.aqvora_admin_audit','INSERT') AS direct_write,
+      has_function_privilege('anon','public.archive_aqvora_account(uuid,uuid,bigint,text)','EXECUTE') AS anon_rpc`);
+    expect(grants.rows[0]).toEqual({ direct_write: false, anon_rpc: false });
+  }, 30000);
+
+  it("serializes close and archive against posting and preserves posted history", async () => {
+    const period = await admin.query<{ id: string }>(
+      "SELECT id FROM public.aqvora_periods WHERE organization_id=$1", [org]);
+    const periodId = period.rows[0].id;
+    const poster = await asUser();
+    const receipt = await post(poster, key());
+    const closer = await asUser();
+    const closing = closer.query("SELECT * FROM public.close_aqvora_period($1,$2,1,'Month close')",
+      [org, periodId]);
+    await waitUntilBlocked(closer);
+    await poster.query("COMMIT");
+    expect((await closing).rows[0].state).toBe("closed");
+    await closer.query("COMMIT"); await close(poster); await close(closer);
+    const denied = await asUser();
+    await expect(post(denied, key())).rejects.toThrow("closed");
+    await close(denied);
+    const reopened = await asUser();
+    const openPeriod = await reopened.query<{ reopen_count: number }>(
+      "SELECT * FROM public.reopen_aqvora_period($1,$2,2,'Approved correction')", [org, periodId]);
+    expect(openPeriod.rows[0].reopen_count).toBe(1);
+    await reopened.query("COMMIT"); await close(reopened);
+
+    const secondPoster = await asUser();
+    await post(secondPoster, key());
+    const archiver = await asUser();
+    const archiving = archiver.query(
+      "SELECT * FROM public.archive_aqvora_account($1,$2,1,'Cash account retired')", [org, cash]);
+    await waitUntilBlocked(archiver);
+    await secondPoster.query("COMMIT");
+    expect((await archiving).rows[0].is_active).toBe(false);
+    await archiver.query("COMMIT"); await close(secondPoster); await close(archiver);
+    const archived = await asUser();
+    await expect(post(archived, key())).rejects.toThrow("archived");
+    await close(archived);
+    await expect(admin.query("UPDATE public.aqvora_accounts SET code='9999' WHERE organization_id=$1 AND id=$2",
+      [org, cash])).rejects.toThrow("immutable");
+    const history = await admin.query<{ n: number }>(
+      "SELECT count(*)::int AS n FROM public.aqvora_journals WHERE organization_id=$1 AND id=$2",
+      [org, receipt.journal_id]);
+    expect(history.rows[0].n).toBe(1);
   }, 30000);
 });

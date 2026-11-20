@@ -20,6 +20,9 @@ const deployedOrder = [
   "20261120010100_aqvora_posting_rpc.sql",
   "20261120010200_aqvora_reversal_rpc.sql",
   "20261120054717_close_financial_authorization_gaps.sql",
+  "20261120103750_aqvora_admin_schema.sql",
+  "20261120103757_aqvora_admin_account_api.sql",
+  "20261120103805_aqvora_admin_period_api.sql",
 ];
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const actor = "11111111-1111-4111-8111-111111111111";
