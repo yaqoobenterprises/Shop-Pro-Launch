@@ -5,6 +5,8 @@ import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assertDisposablePostgres } from "./support/assertDisposablePostgres";
 import { readMigrations } from "./support/aqvoraReadFixture";
+import { salesMigrations } from "./support/aqvoraSalesFixture";
+import { seedRecoverySales,verifyRestoredSales } from "./support/aqvoraSalesRecovery";
 import type { TrialBalancePage } from "../src/accounting/readContracts";
 
 const databaseUrl = process.env.AQVORA_TEST_DATABASE_URL;
@@ -27,6 +29,7 @@ const deployedOrder = [
   "20261120103757_aqvora_admin_account_api.sql",
   "20261120103805_aqvora_admin_period_api.sql",
   ...readMigrations,
+  ...salesMigrations,
 ];
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const actor = "11111111-1111-4111-8111-111111111111";
@@ -121,6 +124,7 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           "SELECT count(*)::int AS n FROM public.aqvora_enabled_companies",
         );
         expect(enrollment.rows[0].n).toBe(0);
+        expect((await client.query("SELECT * FROM private.aqvora_sales_policies")).rows).toEqual([]);
         const roleFunction = await client.query<{ definition: string }>(
           "SELECT pg_get_functiondef('private.get_org_role(uuid)'::regprocedure) AS definition",
         );
@@ -155,6 +159,7 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           "SELECT public.read_aqvora_trial_balance($1,'2026-11-01','2026-11-30','PKR') AS report",[org]);
         expect(report.rows[0].report.totals.debit_minor).toBe("1");
         await client.query("COMMIT");
+        expect((await seedRecoverySales(client)).face_minor).toBe("101");
       } finally {
         await client.end();
       }
@@ -189,8 +194,8 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           [org, period.rows[0].id]);
         await source.query("COMMIT");
         const before = await snapshot(source);
-        expect(before).toMatchObject({ journals: 1, lines: 2, receipts: 1, audit: 1,
-          debit: "1", credit: "1" });
+        expect(before).toMatchObject({ journals: 2, lines: 4, receipts: 2, audit: 2,
+          debit: "102", credit: "102" });
         const dump = execFileSync("docker", ["exec", container, "pg_dump", "-U", "postgres",
           "-Fc", databases[0]], { maxBuffer: 64 * 1024 * 1024 });
         expect(dump.length).toBeGreaterThan(1000);
@@ -222,11 +227,15 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           expect(retry.rows[0].receipt.journal_id).toBe(recovered.rows[0].receipt.journal_id);
           const report = await target.query<{ report: TrialBalancePage }>(
             "SELECT public.read_aqvora_trial_balance($1,'2026-11-01','2026-11-30','PKR') AS report",[org]);
-          expect(report.rows[0].report.totals).toMatchObject({ debit_minor: "1",credit_minor: "1" });
+          expect(report.rows[0].report.totals).toMatchObject({ debit_minor: "102",credit_minor: "102" });
           await expect(target.query("SELECT public.post_aqvora_journal($1,'new-after-close','2026-11-20',$2::jsonb)",
             [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
               { account_id: sales, debit_minor: "0", credit_minor: "1" }])])).rejects.toThrow("closed");
           await target.query("ROLLBACK");
+          const restoredSales = await verifyRestoredSales(target);
+          expect(restoredSales.receipt).toEqual(restoredSales.replay);
+          expect(restoredSales.source.reconciliation).toMatchObject({face_minor:"101",ar_debit_minor:"101",revenue_credit_minor:"101"});
+          expect((await target.query("SELECT last_number::text n FROM private.aqvora_sales_numbers WHERE organization_id=$1",[org])).rows[0].n).toBe("1");
           expect(await snapshot(target)).toEqual(before);
           const grants = await target.query<{ direct_write: boolean }>(
             "SELECT has_table_privilege('authenticated','public.aqvora_journals','INSERT') AS direct_write");

@@ -52,7 +52,7 @@ jobs:
         timeout-minutes: 5
         env:
           AQVORA_DISPOSABLE_STACK: '1'
-        run: npx vitest run tests/aqvora_real_supabase.test.ts
+        run: npx vitest run tests/aqvora_real_supabase.test.ts tests/aqvora_sales_real_supabase.test.ts
 
       - name: Inspect disposable database security advisors
         run: npx supabase db advisors --local --type security --fail-on error
@@ -111,6 +111,12 @@ jobs:
           AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/aqvora_test
           AQVORA_DISPOSABLE_DB: '1'
         run: npx vitest run tests/aqvora_read_postgres.test.ts
+
+      - name: Verify source-backed sales transactions and races
+        env:
+          AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/aqvora_test
+          AQVORA_DISPOSABLE_DB: '1'
+        run: npx vitest run tests/aqvora_sales_postgres.test.ts
 
   verify:
     name: Verify application
