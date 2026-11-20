@@ -251,6 +251,7 @@ export const LedgerDashboardView: React.FC = () => {
           {period !== "day" ? (
             <div>
               {trendRows.length > 0 ? (
+                <>
                 <div className="cash-chart">
                   <div className="y-labels">
                     <span>{formatPaisa(trendMax)}</span>
@@ -294,6 +295,7 @@ export const LedgerDashboardView: React.FC = () => {
                       ))}
                     </tbody>
                   </table>
+                </>
               ) : (
                 <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "20px 0", textAlign: "center" }}>
                   No entries recorded for this range.
