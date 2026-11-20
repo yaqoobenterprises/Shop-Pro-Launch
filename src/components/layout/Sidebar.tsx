@@ -91,11 +91,8 @@ export const Sidebar: React.FC = () => {
     navItems.push({ id: "aqvora-sales-drafts", label: "Service drafts", icon: FilePlus2 });
   }
 
-  if (isIsolatedVerifiedFinancialReadEnabled() && !isDemoMode && isCloudAccount &&
-      (user?.role === "OWNER" || user?.role === "MANAGER")) {
+  if (isIsolatedVerifiedFinancialReadEnabled() && !isDemoMode && isCloudAccount && (user?.role === "OWNER" || user?.role === "MANAGER"))
     navItems.push({ id: "aqvora-gl-tb", label: "GL & Trial Balance", icon: BookOpenCheck });
-  }
-
   const displayName = getProfileDisplayName(user, organization.owner_name);
   const toggleLabel = isCollapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar");
 
