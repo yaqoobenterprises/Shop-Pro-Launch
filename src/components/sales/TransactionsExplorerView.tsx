@@ -164,8 +164,8 @@ export const TransactionsExplorerView: React.FC = () => {
       <div className="page-title">
         <div className="entries-page-heading">
           <span className="kicker">TRANSACTION REGISTER</span>
-          <h1>Entries</h1>
-          <p>Review, filter and export your recorded shop transactions.</p>
+          <h1>Transactions</h1>
+          <p>Search, review and export recorded cashbook entries.</p>
         </div>
 
         <div className="title-actions">
@@ -200,8 +200,8 @@ export const TransactionsExplorerView: React.FC = () => {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search description, payee, or note..."
-            aria-label="Search entries"
+            placeholder="Search descriptions or notes"
+            aria-label="Search transactions"
           />
         </form>
 
@@ -213,7 +213,7 @@ export const TransactionsExplorerView: React.FC = () => {
           }}
           aria-label="Filter by type"
         >
-          <option value="all">All Types</option>
+          <option value="all">All types</option>
           <option value="income">Income</option>
           <option value="expense">Expenses</option>
           <option value="capital_in">Capital Introduced</option>
@@ -229,7 +229,7 @@ export const TransactionsExplorerView: React.FC = () => {
           }}
           aria-label="Filter by category"
         >
-          <option value="all">All Categories</option>
+          <option value="all">All categories</option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name} ({c.kind})
@@ -245,7 +245,7 @@ export const TransactionsExplorerView: React.FC = () => {
           }}
           aria-label="Filter by status"
         >
-          <option value="all">All Status</option>
+          <option value="all">All statuses</option>
           <option value="active">Active Only</option>
           <option value="voided">Voided Only</option>
         </Select>
