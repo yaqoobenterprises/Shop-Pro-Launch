@@ -2,6 +2,7 @@ import React from "react";
 import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
+import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
@@ -13,6 +14,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Receipt,
+  FileText,
   Settings,
   Sparkles,
   Wallet,
@@ -53,7 +55,7 @@ const readSidebarCollapsed = () => {
 
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup, isDemoMode, organization, user } = useAuth();
+  const { lock, hasPinSetup, isDemoMode, isCloudAccount, organization, user } = useAuth();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
   const [isCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
@@ -74,6 +76,11 @@ export const Sidebar: React.FC = () => {
     { id: "reports", label: t("nav.reports"), icon: BarChart3 },
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
   ];
+
+  if (isIsolatedReceivablesReadEnabled() && !isDemoMode && isCloudAccount &&
+      (user?.role === "OWNER" || user?.role === "MANAGER")) {
+    navItems.push({ id: "aqvora-receivables", label: "Receivables", icon: FileText });
+  }
 
   const displayName = getProfileDisplayName(user, organization.owner_name);
   const toggleLabel = isCollapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar");
