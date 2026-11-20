@@ -48,13 +48,8 @@ export const QuickExpenseModal: React.FC = () => {
             ledgerService.getPaymentAccounts(),
           ]);
           if (!isCurrent) return;
-          // Only offer active payment accounts owned by the selected shop.
-          const accs = loadedAccounts.filter(
-            (account) => account.is_active && account.organization_id === organization.id,
-          );
-          const cats = allCategories.filter(
-            (category) => category.is_active && category.kind === "expense",
-          );
+          const accs = loadedAccounts.filter((a) => a.is_active && a.organization_id === organization.id);
+          const cats = allCategories.filter((c) => c.is_active && c.kind === "expense");
           setCategories(cats);
           setAccounts(accs);
           setCategoryId((current) =>
