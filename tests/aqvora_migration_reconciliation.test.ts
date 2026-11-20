@@ -232,9 +232,9 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
             [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
               { account_id: sales, debit_minor: "0", credit_minor: "1" }])])).rejects.toThrow("closed");
           await target.query("ROLLBACK");
-          const sales = await verifyRestoredSales(target);
-          expect(sales.receipt).toEqual(sales.replay);
-          expect(sales.source.reconciliation).toMatchObject({face_minor:"101",ar_debit_minor:"101",revenue_credit_minor:"101"});
+          const restoredSales = await verifyRestoredSales(target);
+          expect(restoredSales.receipt).toEqual(restoredSales.replay);
+          expect(restoredSales.source.reconciliation).toMatchObject({face_minor:"101",ar_debit_minor:"101",revenue_credit_minor:"101"});
           expect((await target.query("SELECT last_number::text n FROM private.aqvora_sales_numbers WHERE organization_id=$1",[org])).rows[0].n).toBe("1");
           expect(await snapshot(target)).toEqual(before);
           const grants = await target.query<{ direct_write: boolean }>(
