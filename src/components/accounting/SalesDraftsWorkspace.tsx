@@ -3,6 +3,7 @@ import type {
   CreateSalesDraftRequest, SalesCustomer, SalesInvoice,
 } from "../../accounting/salesContracts";
 import { formatExactCurrencyMinor } from "../../accounting/formatExactCurrencyMinor";
+import { validBusinessDate } from "../../accounting/minorUnits";
 import { useAuth } from "../../context/AuthContext";
 import { loadIsolatedSalesCustomers } from "../../services/aqvoraSalesCustomersReadService";
 import {
@@ -78,6 +79,10 @@ export function SalesDraftsWorkspace() {
     if(operationInFlight.current)return;
     const previous=pendingCustomer;
     const request=previous??{code:code.trim(),name:name.trim()};
+    if (!previous && (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/.test(request.code) ||
+        !request.name || request.name.length>160)) {
+      setError("Enter a valid code and customer name.");return;
+    }
     const identity=generation.current;
     operationInFlight.current=true;
     setPendingCustomer(request);setCustomerBusy(true);setError("");setNotice("");
@@ -101,6 +106,23 @@ export function SalesDraftsWorkspace() {
     if(operationInFlight.current)return;
     let request=pendingDraft;
     if(!request) {
+      const canonical=/^(0|[1-9][0-9]*)$/;
+      if(!validBusinessDate(values.businessDate) ||
+          !validBusinessDate(values.dueDate) ||
+          values.dueDate<values.businessDate ||
+          !/^[1-9][0-9]*$/.test(values.quantityMillionths) ||
+          !/^[1-9][0-9]*$/.test(values.unitPriceMinor) ||
+          !canonical.test(values.discountMinor) ||
+          !values.description || values.description.length>500) {
+        setError("Correct invoice dates, description, quantities and exact minor-unit amounts.");
+        return;
+      }
+      const gross=(BigInt(values.quantityMillionths)*BigInt(values.unitPriceMinor)+500000n)/1000000n;
+      if(gross<=0n || gross>9223372036854775807n ||
+         BigInt(values.discountMinor)>=gross) {
+        setError("Discount must be below line gross, and amount within signed BIGINT.");
+        return;
+      }
       if(typeof crypto==="undefined"||typeof crypto.randomUUID!=="function") {
         setError("Secure idempotency-key generation is unavailable.");return;
       }
@@ -122,7 +144,7 @@ export function SalesDraftsWorkspace() {
       if(identity!==generation.current)return;
       setPendingDraft(null);
       setSavedDraft(saved);
-      setNotice("Service invoice draft saved. No financial journal was posted.");
+      setNotice(`Source returned in ${saved.state} state. The draft creation RPC does not post journals.`);
     }catch(reason) {
       if(identity===generation.current)setError(reason instanceof Error
         ? reason.message:"Draft request uncertain; retry original intent.");
