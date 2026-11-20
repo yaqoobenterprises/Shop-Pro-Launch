@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   postgres-concurrency:
-    name: Verify independent PostgreSQL sessions
+    name: Verify isolated PostgreSQL migrations and sessions
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -22,6 +22,7 @@ jobs:
         image: postgres:17
         env:
           POSTGRES_PASSWORD: aqvora_test
+          POSTGRES_DB: aqvora_test
         ports:
           - 5432:5432
         options: >-
@@ -44,8 +45,15 @@ jobs:
 
       - name: Test financial races across independent connections
         env:
-          AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/postgres
+          AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/aqvora_test
+          AQVORA_DISPOSABLE_DB: '1'
         run: npx vitest run tests/aqvora_postgres_concurrency.test.ts
+
+      - name: Rehearse fresh and deployed migration orders
+        env:
+          AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/aqvora_test
+          AQVORA_DISPOSABLE_DB: '1'
+        run: npx vitest run tests/aqvora_migration_reconciliation.test.ts
 
   verify:
     name: Verify application

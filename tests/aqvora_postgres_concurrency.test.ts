@@ -2,6 +2,7 @@
 import { readFileSync } from "node:fs";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { assertDisposablePostgres } from "./support/assertDisposablePostgres";
 
 const databaseUrl = process.env.AQVORA_TEST_DATABASE_URL;
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -68,6 +69,7 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
   };
 
   beforeAll(async () => {
+    assertDisposablePostgres(databaseUrl);
     admin = await open();
     await admin.query(`
       CREATE ROLE anon; CREATE ROLE authenticated;
