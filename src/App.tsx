@@ -224,7 +224,7 @@ const WorkspaceGate: React.FC = () => {
   if (!user && !isDemoMode) {
     if (authMode) {
       return (
-        <AuthScreen initialMode={authMode} />
+        <AuthScreen initialMode={authMode} onBack={() => setAuthMode(null)} />
       );
     }
     return (
