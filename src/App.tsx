@@ -68,7 +68,7 @@ const I18nPreferenceSync: React.FC = () => {
 };
 
 const MainShell: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, setCurrentView } = useApp();
   const { isDemoMode, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const companySetupEnabled = isFeatureEnabled("companySetupWizard");
@@ -210,7 +210,8 @@ const MainShell: React.FC = () => {
       />
       {financePreviewEnabled && isDemoMode && showFinancePreview &&
         <Suspense fallback={<div role="status">Loading finance design preview…</div>}>
-          <FinanceDesignPreview onClose={() => setShowFinancePreview(false)} />
+          <FinanceDesignPreview onClose={() => setShowFinancePreview(false)}
+            onOpenAi={() => { setShowFinancePreview(false); setCurrentView("ai"); }} />
         </Suspense>}
     </div>
   );
