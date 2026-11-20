@@ -4,6 +4,8 @@ import { execFileSync } from "node:child_process";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assertDisposablePostgres } from "./support/assertDisposablePostgres";
+import { readMigrations } from "./support/aqvoraReadFixture";
+import type { TrialBalancePage } from "../src/accounting/readContracts";
 
 const databaseUrl = process.env.AQVORA_TEST_DATABASE_URL;
 const migrationRoot = new URL("../supabase/migrations/", import.meta.url);
@@ -24,6 +26,7 @@ const deployedOrder = [
   "20261120103750_aqvora_admin_schema.sql",
   "20261120103757_aqvora_admin_account_api.sql",
   "20261120103805_aqvora_admin_period_api.sql",
+  ...readMigrations,
 ];
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const actor = "11111111-1111-4111-8111-111111111111";
@@ -148,6 +151,9 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           { account_id: sales, debit_minor: "0", credit_minor: "1" },
         ])]);
         expect(receipt.rows[0].journal_id).toBeTruthy();
+        const report = await client.query<{ report: TrialBalancePage }>(
+          "SELECT public.read_aqvora_trial_balance($1,'2026-11-01','2026-11-30','PKR') AS report",[org]);
+        expect(report.rows[0].report.totals.debit_minor).toBe("1");
         await client.query("COMMIT");
       } finally {
         await client.end();
@@ -214,6 +220,9 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
             [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
               { account_id: sales, debit_minor: "0", credit_minor: "1" }])]);
           expect(retry.rows[0].receipt.journal_id).toBe(recovered.rows[0].receipt.journal_id);
+          const report = await target.query<{ report: TrialBalancePage }>(
+            "SELECT public.read_aqvora_trial_balance($1,'2026-11-01','2026-11-30','PKR') AS report",[org]);
+          expect(report.rows[0].report.totals).toMatchObject({ debit_minor: "1",credit_minor: "1" });
           await expect(target.query("SELECT public.post_aqvora_journal($1,'new-after-close','2026-11-20',$2::jsonb)",
             [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
               { account_id: sales, debit_minor: "0", credit_minor: "1" }])])).rejects.toThrow("closed");
