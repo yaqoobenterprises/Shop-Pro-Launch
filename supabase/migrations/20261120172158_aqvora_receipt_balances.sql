@@ -1,6 +1,6 @@
 CREATE FUNCTION private.aqvora_invoice_allocation_state(p_org uuid,p_invoice uuid,p_asof date) RETURNS jsonb
 LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path='' AS $$
-DECLARE d public.aqvora_sales_invoices;total numeric;dated numeric;refs jsonb;fingerprint text;
+DECLARE d public.aqvora_sales_invoices;total numeric;dated numeric;control numeric;refs jsonb;fingerprint text;
 BEGIN
   SELECT * INTO d FROM public.aqvora_sales_invoices WHERE organization_id=p_org AND id=p_invoice AND state='issued';
   IF NOT FOUND OR NOT private.aqvora_sales_source_valid(p_org,p_invoice) THEN RAISE EXCEPTION 'Invoice source is unavailable or inconsistent'; END IF;
@@ -21,6 +21,11 @@ BEGIN
     FROM public.aqvora_receipt_allocations a JOIN public.aqvora_customer_receipts r
       ON r.organization_id=p_org AND r.id=a.receipt_id WHERE a.organization_id=p_org AND a.invoice_id=p_invoice;
   IF total>d.face_minor OR dated>d.face_minor THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Invoice is over-allocated'; END IF;
+  -- Independent GL dimension check also detects a missing receipt AND allocation
+  -- while its AR journal survives. This stays indexed to the touched open item.
+  SELECT coalesce(sum(l.debit_minor::numeric-l.credit_minor),0) INTO control FROM public.aqvora_journal_lines l
+    WHERE l.organization_id=p_org AND l.open_item_id=p_invoice::text AND l.account_id=(d.policy_snapshot->>'ar_account_id')::uuid;
+  IF control<>d.face_minor-total THEN RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Invoice allocation and AR control are inconsistent'; END IF;
   fingerprint:=encode(sha256(convert_to(jsonb_build_array('invoice-open-v1',p_org,d.id,d.revision::text,d.fingerprint,p_asof,refs)::text,'UTF8')),'hex');
   RETURN jsonb_build_object('organization_id',p_org,'invoice_id',d.id,'customer_id',d.customer_id,'currency',d.currency,
     'business_date',d.business_date,'due_date',d.due_date,'as_of_date',p_asof,'face_minor',d.face_minor::text,

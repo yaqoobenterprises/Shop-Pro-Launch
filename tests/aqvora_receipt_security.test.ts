@@ -142,4 +142,13 @@ describe("Receipt source and allocation security boundaries",()=>{
     await expect(h.postReceipt(r)).rejects.toThrow("approval audit");
     await h.db.exec("RESET ROLE");expect((await h.query("SELECT count(*)::int n FROM public.aqvora_journals WHERE source_kind='customer_receipt'")).rows[0].n).toBe(0);
   });
+  it("detects a missing receipt and allocation even when its surviving journal remains balanced",async()=>{
+    const invoice=await h.invoice(customer);const c=await h.confirm(await h.cash(customer,"1"));
+    await h.postReceipt(await h.approveReceipt(await h.draftReceipt(c,[{invoice_id:invoice.id,amount_minor:"1"}])));
+    await h.db.exec("RESET ROLE");
+    for(const table of ["aqvora_receipt_allocations","aqvora_receipt_issues","aqvora_customer_receipts"]){
+      await h.db.exec(`ALTER TABLE public.${table} DISABLE TRIGGER ALL`);await h.query(`DELETE FROM public.${table}`);
+      await h.db.exec(`ALTER TABLE public.${table} ENABLE TRIGGER ALL`);}
+    await h.user();await expect(h.openBalance(invoice.id)).rejects.toThrow("AR control are inconsistent");
+  });
 });
