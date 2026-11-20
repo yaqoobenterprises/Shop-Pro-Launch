@@ -133,6 +133,13 @@ describe("AQVORA V2 verified service invoice source — no fictitious payment st
     }
   });
 
+  it("rejects a forged issued source with the same maker and checker", () => {
+    const v = issued();
+    expect(() => verifyServiceInvoiceSource({
+      ...v, approved_by: v.created_by,
+    }, context)).toThrow(/maker-checker separation/);
+  });
+
   it("rejects unissued docs pretending to have an AR posting or receipt", () => {
     const draft = unissued();
     for (const modified of [
