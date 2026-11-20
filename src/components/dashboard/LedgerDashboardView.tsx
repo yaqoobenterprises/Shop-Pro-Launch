@@ -3,9 +3,10 @@ import { ledgerService } from "../../services/ledgerService";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
 import { formatPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
-import { useI18n } from "../../i18n";
 import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
 import "./OverviewAnalytics.css";
+import "./OverviewPremium.css";
+import { OverviewMetricCard } from "./OverviewMetricCard";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import {
@@ -23,7 +24,6 @@ import {
 const EXPENSE_CHART_PALETTE = ["#14765e", "#5688a0", "#b96d45", "#809b77", "#7c78a8", "#8a9ba8"];
 
 export const LedgerDashboardView: React.FC = () => {
-  const { t } = useI18n();
   const [period, setPeriod] = useState<OverviewPeriod>("day");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
@@ -138,9 +138,6 @@ export const LedgerDashboardView: React.FC = () => {
     0,
   );
 
-  const formatMetric = (amountPaisa: number) =>
-    isLoading ? "Loading…" : loadError ? "—" : formatPaisa(amountPaisa);
-
   const expenseBreakdowns = useMemo(
     () => breakdowns.filter((b) => b.type === "expense" && b.total_paisa > 0),
     [breakdowns],
@@ -172,9 +169,9 @@ export const LedgerDashboardView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div className="overview-page-heading">
-          <span className="kicker">BUSINESS SNAPSHOT</span>
+          <span className="kicker">CASHBOOK</span>
           <h1>Overview</h1>
-          <p>Track income, outflows and the money available in your shop.</p>
+          <p>Recorded activity and account balances.</p>
         </div>
 
         <OverviewPeriodControls
@@ -196,47 +193,36 @@ export const LedgerDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* 4-Up Metric Cards */}
-      <div className="metrics">
-        <article className="metric">
-          <div className="metric-top">
-            <span>Total Liquidity</span>
-            <Wallet className="h-4 w-4" />
-          </div>
-          <strong className="metric-amount">
-            <AnimatedAmount amountPaisa={totalBalancePaisa} loading={isLoading} error={Boolean(loadError)} />
-          </strong>
-        </article>
-
-        <article className="metric">
-          <div className="metric-top">
-            <span>{t("dashboard.income")}</span>
-            <TrendingUp className="h-4 w-4" />
-          </div>
-          <strong className="metric-amount">
-            <AnimatedAmount amountPaisa={activeIncome} loading={isLoading} error={Boolean(loadError)} />
-          </strong>
-        </article>
-
-        <article className="metric">
-          <div className="metric-top">
-            <span>{t("dashboard.expenses")}</span>
-            <ArrowDownLeft className="h-4 w-4" />
-          </div>
-          <strong className="metric-amount">
-            <AnimatedAmount amountPaisa={activeExpense} loading={isLoading} error={Boolean(loadError)} />
-          </strong>
-        </article>
-
-        <article className="metric">
-          <div className="metric-top">
-            <span>{t("dashboard.netProfit")}</span>
-            <ArrowUpRight className="h-4 w-4" />
-          </div>
-          <strong className="metric-amount" style={{ color: activeProfit >= 0 ? "var(--green)" : "var(--danger)" }}>
-            <AnimatedAmount amountPaisa={activeProfit} loading={isLoading} error={Boolean(loadError)} />
-          </strong>
-        </article>
+      <div className="metrics" aria-label="Business overview">
+        <OverviewMetricCard
+          label="Cash & bank"
+          scope="Latest loaded account balances"
+          icon={Wallet}
+          amountPaisa={totalBalancePaisa}
+          state={isLoading ? "loading" : loadError || activeAccounts.length === 0 ? "unavailable" : "ready"}
+        />
+        <OverviewMetricCard
+          label="Income"
+          scope="Selected cashbook period"
+          icon={TrendingUp}
+          amountPaisa={activeIncome}
+          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"}
+        />
+        <OverviewMetricCard
+          label="Expenses"
+          scope="Selected cashbook period"
+          icon={ArrowDownLeft}
+          amountPaisa={activeExpense}
+          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"}
+        />
+        <OverviewMetricCard
+          label="Operating result"
+          scope="Cashbook basis · not accrual P&L"
+          icon={ArrowUpRight}
+          amountPaisa={activeProfit}
+          tone={activeProfit < 0 ? "negative" : "positive"}
+          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"}
+        />
       </div>
 
       {/* Overview Grid: Cash Flow Panel + Reserves & Accounts */}
@@ -245,7 +231,7 @@ export const LedgerDashboardView: React.FC = () => {
         <section className="panel cash-panel">
           <div className="panel-heading">
             <div>
-              <h2>Cash flow</h2>
+              <h2>Income & expenses</h2>
               <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
             <div className="chart-legend">
@@ -263,6 +249,7 @@ export const LedgerDashboardView: React.FC = () => {
           {period !== "day" ? (
             <div>
               {trendRows.length > 0 ? (
+                <>
                 <div className="cash-chart">
                   <div className="y-labels">
                     <span>{formatPaisa(trendMax)}</span>
@@ -292,53 +279,30 @@ export const LedgerDashboardView: React.FC = () => {
                     })}
                   </div>
                 </div>
+
+                  <table className="sr-only" aria-label="Income and expenses by period">
+                    <caption>Recorded cashbook activity for {selectedRangeLabel}</caption>
+                    <thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th></tr></thead>
+                    <tbody>
+                      {trendRows.map((row) => (
+                        <tr key={row.key}>
+                          <th scope="row">{row.title}</th>
+                          <td>{formatPaisa(row.income_paisa)}</td>
+                          <td>{formatPaisa(row.expense_paisa)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </>
               ) : (
                 <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "20px 0", textAlign: "center" }}>
-                  No monthly trends recorded.
+                  No entries recorded for this range.
                 </p>
               )}
             </div>
           ) : (
             <div style={{ padding: "16px 0" }}>
-              <div style={{ display: "grid", gap: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--type-label)" }}>
-                  <span>Recorded Income</span>
-                  <strong className="positive" style={{ fontFamily: "DM Mono" }}>
-                    {formatMetric(activeIncome)}
-                  </strong>
-                </div>
-                <div style={{ height: 8, background: "var(--line)", borderRadius: 4, overflow: "hidden" }}>
-                  <div
-                    className="cash-progress-fill"
-                    style={{
-                      height: "100%",
-                      width: `${Math.min(100, activeIncome > 0 ? 100 : 0)}%`,
-                      background: "var(--green)",
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--type-label)", marginTop: 8 }}>
-                  <span>Operating Expenses</span>
-                  <strong style={{ fontFamily: "DM Mono", color: "var(--orange)" }}>
-                    {formatMetric(activeExpense)}
-                  </strong>
-                </div>
-                <div style={{ height: 8, background: "var(--line)", borderRadius: 4, overflow: "hidden" }}>
-                  <div
-                    className="cash-progress-fill"
-                    style={{
-                      height: "100%",
-                      width: `${activeIncome > 0 ? Math.min(100, (activeExpense / activeIncome) * 100) : activeExpense > 0 ? 100 : 0}%`,
-                      background: "var(--orange)",
-                      borderRadius: 4,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: 24 }}>
+              <div>
                 <p style={{ fontSize: "var(--type-caption)", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
                   Expense totals by category
                 </p>
