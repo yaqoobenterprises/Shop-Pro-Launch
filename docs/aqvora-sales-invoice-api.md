@@ -5,6 +5,11 @@ This implements persisted operational sources and atomic journal issuance. It is
 an isolated Draft implementation, with no production migration, customer enrollment,
 writer activation, frontend change or claim of production readiness.
 
+Issue #60 extends this backend with the [customer receipt contract](aqvora-customer-receipt-api.md).
+On that stack, issued invoice detail adds allocated/outstanding minor units,
+`settlements_supported:true` and basis `v2_posted_receipt_allocations`;
+the unsettled-only reconciliation below describes the original #59 contract.
+
 ## Supported scope and policy gates
 
 Only service invoices in company base currency are supported. These records do
