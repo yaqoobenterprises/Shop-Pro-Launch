@@ -89,7 +89,13 @@ export async function createIsolatedServiceInvoiceDraft(
   }
   uuid(request.p_customer_id,"invoice customer");
   let total=0n;
+  let grossSum=0n;
+  let discountSum=0n;
   const expected=request.p_lines.map((line,index)=>{
+    const known=new Set(["description","quantity_millionths","unit_price_minor","discount_minor"]);
+    if (Object.keys(line).some(key=>!known.has(key))) {
+      throw new Error("Unsupported service invoice line property.");
+    }
     if (typeof line.description!=="string" ||
         !line.description.trim() || line.description.length>500) {
       throw new Error("Invoice line description is missing or too long.");
@@ -102,6 +108,8 @@ export async function createIsolatedServiceInvoiceDraft(
       throw new Error("Invoice line exceeds verified amount/discount limits.");
     }
     const net=gross-discount;
+    grossSum+=gross;
+    discountSum+=discount;
     total+=net;
     if (total>BIGINT_MAX) throw new Error("Invoice total exceeds signed BIGINT.");
     return {line_no:index+1,description:line.description,quantity_millionths:line.quantity_millionths,
@@ -130,6 +138,8 @@ export async function createIsolatedServiceInvoiceDraft(
     }
   }
   if (checkedMoney(row.face_minor,"source invoice face")!==total ||
+      checkedMoney(row.gross_minor,"source gross")!==grossSum ||
+      checkedMoney(row.discount_minor,"source discount")!==discountSum ||
       checkedMoney(row.revision,"source revision")<1n) {
     throw new Error("Server invoice face/revision does not reconcile.");
   }
