@@ -1,0 +1,79 @@
+/* AQVORA AI remains an on-demand route. No permanent oversized assistant rail. */
+.app-shell .ledgermate {
+  background: var(--soft, #e8e7ec);
+}
+.app-shell .ledgermate .lm-header {
+  min-height: 72px;
+  background: var(--surface-card, #fff);
+  border-bottom: 1px solid var(--line, #dcdde3);
+}
+.app-shell .ledgermate .lm-conversation-meta {
+  background: var(--surface-card, #fff);
+  border-bottom: 1px solid var(--line, #dcdde3);
+}
+.app-shell .ledgermate .lm-offline-state {
+  align-self: center;
+  width: min(100%, 480px);
+  margin: auto;
+  padding: clamp(24px, 3vw, 37px);
+  border-radius: 13px;
+  background: var(--surface-card, #fff);
+  box-shadow: 0 3px 14px #18182b0b;
+  text-align: center;
+}
+.app-shell .ledgermate .lm-offline-state__icon {
+  display: grid;
+  place-items: center;
+  width: 49px;
+  height: 49px;
+  margin: 0 auto 19px;
+  border-radius: 13px;
+  color: var(--forest, #176b54);
+  background: var(--good-bg, #e5f8f3);
+}
+.app-shell .ledgermate .lm-offline-state__icon svg { width: 21px; height: 21px; }
+.app-shell .ledgermate .lm-offline-state h2 {
+  margin: 2px 0 11px;
+  font-size: clamp(19px, 2vw, 24px);
+  font-weight: 690;
+  letter-spacing: -.04em;
+}
+.app-shell .ledgermate .lm-offline-state p:not(.lm-eyebrow) {
+  margin: 0 auto 19px;
+  color: var(--muted, #737782);
+  font-size: 12px;
+  line-height: 1.75;
+}
+.app-shell .ledgermate .lm-offline-state button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 17px;
+  background: var(--forest, #176b54);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 670;
+}
+.app-shell .ledgermate .lm-offline-state button:hover { filter: brightness(.96); }
+.app-shell .ledgermate .lm-offline-state button:focus-visible {
+  outline: 3px solid var(--chart-lavender, #9189df);
+  outline-offset: 3px;
+}
+.app-shell .ledgermate .lm-offline-state small {
+  display: block;
+  margin-top: 15px;
+  color: var(--muted, #737782);
+  font-size: 10px;
+}
+.app-shell .ledgermate .lm-composer-wrap {
+  width: min(100%, 1000px);
+  background: transparent;
+}
+@media (max-width: 650px) {
+  .app-shell .ledgermate .lm-messages { padding: 17px 12px; }
+  .app-shell .ledgermate .lm-offline-state { padding: 25px 18px; }
+}
