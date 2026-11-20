@@ -7,6 +7,7 @@ import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodCon
 import "./OverviewAnalytics.css";
 import "./OverviewPremium.css";
 import "./OverviewReference.css";
+import "./OverviewFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
 import { OverviewAreaChart } from "./OverviewAreaChart";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
@@ -194,7 +195,7 @@ export const LedgerDashboardView: React.FC = () => {
       )}
 
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Cash & bank" scope="Latest loaded account balances" icon={Wallet}
+        <OverviewMetricCard label="Cash & bank" scope="Current account balances" icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Income" scope="Selected cashbook period" icon={TrendingUp}
