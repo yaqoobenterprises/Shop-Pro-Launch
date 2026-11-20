@@ -57,7 +57,7 @@ afterEach(() => {
 describe("AQVORA V2 administration read adapter (PR #44 contract)", () => {
   it("maps a company-scoped chart and period with exact bigint revisions", async () => {
     const snapshot = await loadAqvoraAdminReadSnapshot(request);
-    expect(snapshot.source).toBe("verified-cloud-rpc");
+    expect(snapshot.source).toBe("authenticated-admin-rpc");
     expect(snapshot.accounts).toEqual([{
       organizationId,
       id: "a1",
