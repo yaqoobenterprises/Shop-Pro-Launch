@@ -1,0 +1,166 @@
+/* AQVORA payment account insights — live cashbook balances, never fictional KPIs. */
+.app-shell .accounts-page .aq-accounts-insights {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(300px, .95fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+.app-shell .accounts-page .aq-accounts-insights__panel {
+  min-width: 0;
+  min-height: 290px;
+  padding: clamp(19px, 1.85vw, 27px);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+}
+.app-shell .accounts-page .aq-accounts-insights__heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.app-shell .accounts-page .aq-accounts-insights__heading > div > span,
+.app-shell .accounts-page .aq-accounts-insights__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--forest);
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: .09em;
+}
+.app-shell .accounts-page .aq-accounts-insights__heading h2,
+.app-shell .accounts-page .aq-accounts-insights__status h2 {
+  margin: 7px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -.025em;
+}
+.app-shell .accounts-page .aq-accounts-insights__heading p,
+.app-shell .accounts-page .aq-accounts-insights__status > div > p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.app-shell .accounts-page .aq-accounts-insights__heading button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 640;
+}
+.app-shell .accounts-page .aq-accounts-insights__heading button:focus-visible {
+  outline: 3px solid var(--chart-lavender); outline-offset: 2px;
+}
+.app-shell .accounts-page .aq-accounts-insights__bars {
+  display: grid;
+  gap: 22px;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.app-shell .accounts-page .aq-accounts-insights__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 9px;
+}
+.app-shell .accounts-page .aq-accounts-insights__row > span {
+  display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.app-shell .accounts-page .aq-accounts-insights__row > span:last-child {
+  margin-inline-start: auto; justify-content: end;
+}
+.app-shell .accounts-page .aq-accounts-insights__row strong {
+  font-size: 12px; font-weight: 660; color: var(--ink);
+}
+.app-shell .accounts-page .aq-accounts-insights__row small {
+  font-size: 10px; color: var(--muted);
+}
+.app-shell .accounts-page .aq-accounts-insights__row i {
+  display: block; width: 8px; height: 8px;
+  background: var(--chart-teal); border-radius: 100%;
+}
+.app-shell .accounts-page .aq-accounts-insights__track {
+  height: 9px; overflow: hidden; border-radius: 30px;
+  background: var(--surface-2);
+}
+.app-shell .accounts-page .aq-accounts-insights__track > div {
+  height: 100%; border-radius: inherit;
+  background: linear-gradient(90deg, var(--chart-lavender), var(--chart-teal));
+  transition: width 230ms ease;
+}
+.app-shell .accounts-page .aq-accounts-insights__empty {
+  margin: 22px 0 0;
+  padding: 22px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 12px;
+  color: var(--muted);
+}
+.app-shell .accounts-page .aq-accounts-insights__status {
+  display: flex; flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+}
+.app-shell .accounts-page .aq-accounts-insights__status dl {
+  margin: 0;
+  display: grid;
+}
+.app-shell .accounts-page .aq-accounts-insights__status dl > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .accounts-page .aq-accounts-insights__status dl > div:last-child { border-bottom: 0; }
+.app-shell .accounts-page .aq-accounts-insights__status dt {
+  color: var(--muted); font-size: 12px;
+}
+.app-shell .accounts-page .aq-accounts-insights__status dd {
+  margin: 0;
+  max-width: 65%;
+  text-align: end;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+.app-shell .accounts-page .aq-accounts-insights__scope {
+  display: flex; align-items: start; gap: 10px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: var(--good-bg);
+  color: var(--forest);
+}
+.app-shell .accounts-page .aq-accounts-insights__scope svg { flex: 0 0 17px; }
+.app-shell .accounts-page .aq-accounts-insights__scope p {
+  margin: 0; font-size: 11px; line-height: 1.65;
+}
+@media (max-width: 1040px) {
+  .app-shell .accounts-page .aq-accounts-insights { grid-template-columns: minmax(0,1fr); }
+  .app-shell .accounts-page .aq-accounts-insights__panel { min-height: 0; }
+}
+@media (max-width: 580px) {
+  .app-shell .accounts-page .aq-accounts-insights { margin-top: 12px; }
+  .app-shell .accounts-page .aq-accounts-insights__panel { padding: 17px 14px; }
+  .app-shell .accounts-page .aq-accounts-insights__row { align-items: start; }
+  .app-shell .accounts-page .aq-accounts-insights__heading { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .accounts-page .aq-accounts-insights__track > div { transition: none; }
+}

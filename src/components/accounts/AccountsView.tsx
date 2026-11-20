@@ -18,6 +18,8 @@ import {
 import { formatPaisa, parseInputToPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import "./AccountsPoitalFinish.css";
+import "./AccountInsights.css";
+import { PaymentAccountInsights } from "./PaymentAccountInsights";
 import { LedgerAccount } from "../../types/ledger";
 import {
   findAccountProvider,
@@ -356,6 +358,9 @@ export const AccountsView: React.FC = () => {
           );
         })}
       </div>
+
+      {!error && !isLoading && accounts.length > 0 &&
+        <PaymentAccountInsights accounts={accounts} onRefresh={() => { void loadAccounts(); }} isRefreshing={isLoading} />}
 
       {activeTool && <div className="account-tools accounts-tools--focused">
         {activeTool === "add" && <section id="aq-account-create" className="panel account-tool-panel">

@@ -385,7 +385,7 @@ export const ChatView: React.FC = () => {
   };
 
   return (
-    <div className="ledger-page relative flex h-full flex-col overflow-hidden bg-surface">
+    <div className="ledger-page ledger-page--workspace relative flex h-full min-h-0 flex-col overflow-y-auto bg-surface">
       {/* 1. Today Strip with Income, Expense, Net */}
       <TodayStrip
         summary={summary}
@@ -421,6 +421,7 @@ export const ChatView: React.FC = () => {
         onVoid={(tx) => setVoidingTransaction(tx)}
         onRestore={handleRestore}
         onAssignDraft={handleAssignDraft}
+        onStartEntry={activeEntryInput === "chat" ? () => document.getElementById("ledger-entry")?.focus() : undefined}
       />
 
       {entryMode === "both" && (

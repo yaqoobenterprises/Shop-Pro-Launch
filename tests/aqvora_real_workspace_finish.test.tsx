@@ -43,6 +43,19 @@ describe("AQVORA visible legacy workspace improvements (no ledger service mutati
     expect(screen.getByLabelText("Today's cashbook activity")).toBeTruthy();
   });
 
+  it("shows the same real activity surface for an empty day with a working focus action", () => {
+    const onStartEntry = vi.fn();
+    render(<ChatFeed transactions={[]} drafts={[]} accounts={[]}
+      canManageTransactions={false} onEdit={emptyHandler}
+      onVoid={emptyHandler} onRestore={emptyHandler}
+      onAssignDraft={async () => {}} onStartEntry={onStartEntry} />);
+    expect(screen.getByRole("heading", { name: "Today's activity" })).toBeTruthy();
+    expect(screen.getByRole("status", { name: "No cashbook entries today" })).toBeTruthy();
+    expect(screen.getByText("No entries today")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Record an entry/ }));
+    expect(onStartEntry).toHaveBeenCalledOnce();
+  });
+
   it("honestly replaces disabled AI suggestions with a working connection retry when offline", () => {
     const onRefresh = vi.fn();
     render(<LedgerMateSurface {...assistantProps} onRefresh={onRefresh} />);
