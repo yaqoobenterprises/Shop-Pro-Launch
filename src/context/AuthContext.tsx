@@ -11,6 +11,7 @@ import { isPlaceholderProfileName } from "../lib/profileDisplay";
 import { hashPassword, hashPin, MIN_PIN_LENGTH, verifyPassword, verifyPin } from "../lib/authCredentials";
 import { getErrorMessage } from "../lib/authErrors";
 import { resolveCloudWorkspace } from "../lib/cloudWorkspaceGuard";
+import { cacheVerifiedCloudWorkspace } from "../services/cloudWorkspaceCache";
 import { saveProfileUpdates } from "../services/profileService";
 
 const ACTIVE_PROFILE_KEY = "yaqoob_active_profile";
@@ -510,14 +511,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // Cache to local SQLite so offline queries, transactions, and POS checkout always work
     let hasCachedPassword = false;
     try {
-      const existingOrg = await sqliteRepository.getOrganization(organizationData.id);
-      if (!existingOrg) {
-        await sqliteRepository.createLocalOwnerAccount(
-          organizationData,
-          profileData as UserProfile,
-        );
-      }
-      StorageEngine.ensureOrganizationDefaults(organizationData.id);
+      // Only verified company metadata belongs in the local cache.
+      // Never manufacture a cash opening or promote a member to OWNER.
+      await cacheVerifiedCloudWorkspace(organizationData, profileData as UserProfile);
 
       const localAcc = await sqliteRepository.getLocalAuthAccount(profileData.id);
       await sqliteRepository.upsertLocalAuthAccount(
