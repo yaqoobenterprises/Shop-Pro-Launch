@@ -10,6 +10,7 @@ import { setupDemoWorkspace, cleanupDemoWorkspace } from "../services/demoModeSe
 import { isPlaceholderProfileName } from "../lib/profileDisplay";
 import { hashPassword, hashPin, MIN_PIN_LENGTH, verifyPassword, verifyPin } from "../lib/authCredentials";
 import { getErrorMessage } from "../lib/authErrors";
+import { resolveCloudWorkspace } from "../lib/cloudWorkspaceGuard";
 import { saveProfileUpdates } from "../services/profileService";
 
 const ACTIVE_PROFILE_KEY = "yaqoob_active_profile";
@@ -400,6 +401,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         .select("*")
         .eq("id", profileId)
         .maybeSingle();
+      if (response.error) throw response.error;
       profileData = response.data;
     } catch (err) {
       console.warn("Could not query profiles table:", err);
@@ -407,12 +409,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     if (!profileData?.organization_id) {
       try {
-        await client.rpc("ensure_my_profile");
+        const provisioning = await client.rpc("ensure_my_profile");
+        if (provisioning.error) throw provisioning.error;
         const refreshed = await client
           .from("profiles")
           .select("*")
           .eq("id", profileId)
           .maybeSingle();
+        if (refreshed.error) throw refreshed.error;
         profileData = refreshed.data;
       } catch (e) {
         console.warn("Auto-provision Supabase profile RPC note:", e);
@@ -465,57 +469,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.warn("Could not sync user metadata:", metaErr);
     }
 
+    // A cloud workspace is only valid when the authenticated user has a real
+    // profile, persisted organization and active canonical membership.
+    // Never invent a shop UUID or OWNER role from untrusted signup metadata.
     let organizationData: Organization | null = null;
-    if (profileData?.organization_id) {
-      try {
-        const { data: orgData } = await client
-          .from("organizations")
-          .select("*")
-          .eq("id", profileData.organization_id)
-          .maybeSingle();
-        organizationData = orgData as Organization;
-      } catch (orgErr) {
-        console.warn("Could not query organization:", orgErr);
+    let membershipData: any = null;
+    try {
+      if (profileData?.organization_id) {
+        const [organizationResult, membershipResult] = await Promise.all([
+          client.from("organizations").select("*")
+            .eq("id", profileData.organization_id).maybeSingle(),
+          client.from("organization_members").select("user_id, organization_id, role, is_active")
+            .eq("user_id", profileId)
+            .eq("organization_id", profileData.organization_id).maybeSingle(),
+        ]);
+        if (organizationResult.error) throw organizationResult.error;
+        if (membershipResult.error) throw membershipResult.error;
+        organizationData = organizationResult.data as Organization | null;
+        membershipData = membershipResult.data;
       }
+    } catch (workspaceError) {
+      console.warn("Could not verify cloud company membership:", workspaceError);
     }
 
-    // Fallback: If organization was not fetched directly via Supabase query, construct safe defaults
-    if (!organizationData) {
-      const meta = authUser?.user_metadata || {};
-      const shopName =
-        meta.shop_name ||
-        meta.organization_name ||
-        "Shop Pro";
-      const profileName = isPlaceholderProfileName(profileData?.full_name, profileData?.email)
-        ? ""
-        : profileData?.full_name;
-      const metadataName = [meta.full_name, meta.name].find(
-        (name: unknown) => typeof name === "string" && !isPlaceholderProfileName(name, authUser?.email),
-      );
-      const ownerName = profileName || metadataName || "Shop Owner";
-
-      organizationData = {
-        ...EMPTY_ORGANIZATION,
-        id: profileData?.organization_id || crypto.randomUUID(),
-        name: shopName,
-        owner_name: ownerName,
-        email: profileData?.email || authUser?.email,
-        created_at: new Date().toISOString(),
-      };
+    const verifiedWorkspace = resolveCloudWorkspace(
+      profileId, profileData, organizationData, membershipData,
+    );
+    if (!verifiedWorkspace.ok) {
+      setError("Company setup or membership could not be verified. Check your connection or contact your company administrator.");
+      setUser(null);
+      setRole(null);
+      setIsCloudAccount(false);
+      setIsLocked(true);
+      setSecurityPrincipal(null);
+      return "failed";
     }
-
-    if (!profileData) {
-      profileData = {
-        id: profileId,
-        email: authUser?.email || "",
-        full_name: organizationData.owner_name,
-        avatar_url: authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture,
-        role: "OWNER",
-        organization_id: organizationData.id,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      };
-    }
+    profileData = verifiedWorkspace.profile;
+    organizationData = verifiedWorkspace.organization;
 
     // Cache to local SQLite so offline queries, transactions, and POS checkout always work
     let hasCachedPassword = false;
@@ -881,39 +871,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               error: "Invalid email or password. Please verify your credentials.",
             };
           } else if (msg.includes("email not confirmed")) {
-            let localProf =
-              await sqliteRepository.findLocalProfileByEmail(normalizedEmail);
-            if (!localProf) {
-              const storageProf =
-                StorageEngine.findLocalProfileByEmail(normalizedEmail);
-              if (storageProf && storageProf.password_hash) {
-                localProf = storageProf;
-              }
-            }
-            if (
-              localProf &&
-              localProf.password_hash &&
-              (await verifyPassword(pass, localProf.password_hash))
-            ) {
-              const localOrg =
-                (await sqliteRepository.getOrganization(localProf.organization_id)) ||
-                StorageEngine.getOrganization(localProf.organization_id);
-              if (localOrg) {
-                if (typeof window !== "undefined") {
-                  localStorage.removeItem("yaqoob_signed_out");
-                }
-                const account = await sqliteRepository.getLocalAuthAccount(localProf.id);
-                setLocalAccount(account);
-                setHasLocalAccount(true);
-                setHasPasswordAccount(true);
-                setHasPinSetup(Boolean(account?.pin_hash));
-                activate(localProf, localOrg);
-                return {};
-              }
-            }
             return {
-              error:
-                "Your email has not been confirmed yet in Supabase. Please check your inbox for the confirmation email, or ask the admin to turn off 'Confirm email' in Supabase Dashboard (Authentication -> Providers -> Email).",
+              error: "Please confirm your email before signing in. Check your inbox or request a new confirmation email.",
             };
           } else if (
             msg.includes("too many requests") ||
@@ -1039,15 +998,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             response.error.status === 429 ||
             (response.error as any).code === "over_email_send_rate_limit"
           ) {
-            console.warn(
-              "Supabase email confirmation rate limit reached during signUp. Continuing with local account creation...",
-            );
-            // Fall through to local account creation so the user is never blocked!
-          } else {
             return {
-              error: response.error.message || "Could not create your account.",
+              error: "Email confirmation is temporarily rate-limited. Please retry later; no offline company was created.",
+              rateLimitExceeded: true,
             };
           }
+          return { error: response.error.message || "Could not create your company account." };
+
         } else {
           // Supabase returns an empty identities list when email already exists to prevent enumeration
           if (
@@ -1065,51 +1022,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
           // If email confirmation is enabled on the Supabase project
           if (response.data.user && !response.data.session) {
-            try {
-              const now = new Date().toISOString();
-              const org: Organization = {
-                ...EMPTY_ORGANIZATION,
-                id: crypto.randomUUID(),
-                name: cleanOrg,
-                owner_name: cleanName,
-                email: normalizedEmail,
-                created_at: now,
-                updated_at: now,
-              };
-              const profile: UserProfile = {
-                id: response.data.user.id || crypto.randomUUID(),
-                email: normalizedEmail,
-                full_name: cleanName,
-                role: "OWNER",
-                organization_id: org.id,
-                is_active: true,
-                password_hash: await hashPassword(pass),
-                created_at: now,
-              };
-              await sqliteRepository.createLocalAuthAccount(org, profile, "", "", true);
-              StorageEngine.createLocalOwnerAccount(org, profile);
-            } catch (cacheErr) {
-              console.warn("Could not pre-cache local profile during signUp:", cacheErr);
-            }
-
-            return {
-              emailConfirmationRequired: true,
-            };
+            // Confirmation is pending on the server. Do not create a locally
+            // authenticated OWNER or a second, fictional organization.
+            return { emailConfirmationRequired: true };
           }
 
           // If user is auto-confirmed or session is immediately available
           if (response.data.session && response.data.user) {
-            await activateSupabaseSession(response.data.user.id);
-            setHasPinSetup(false);
+            const status = await activateSupabaseSession(response.data.user.id);
+            if (status === "failed") {
+              return { error: "Your account was created, but your company is not ready. Sign in again to finish verified setup." };
+            }
+            if (status === "ready") setHasPinSetup(false);
             return {};
           }
         }
       } catch (networkErr: any) {
         console.warn("Supabase network error during signUp:", networkErr);
+        return { error: "Cloud registration could not be confirmed. Check your connection before retrying; no offline company was created." };
       }
+      return { error: "Company registration could not be confirmed. Please retry or sign in." };
     }
 
-    // Offline / Local SQLite account fallback
+    // Explicit local-only mode: never silently change a configured cloud signup
+    // into a second, disconnected company on the device.
     const existingSqliteProfile =
       await sqliteRepository.findLocalProfileByEmail(normalizedEmail);
     const existingStorageProfile =
