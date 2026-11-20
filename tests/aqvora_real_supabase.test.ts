@@ -53,7 +53,8 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
   const readTb = (identity: Identity | null, extra: object = {}) =>
     rpc(identity,"read_aqvora_trial_balance",{ ...readRequest(),...extra });
   const readGl = (identity: Identity | null, extra: object = {}) =>
-    rpc(identity,"read_aqvora_general_ledger",{ ...readRequest(),p_account_id: cash,...extra });
+    rpc(identity,"read_aqvora_general_ledger",{ ...readRequest(),
+      p_account_id: cash ?? "00000000-0000-4000-8000-000000000000",...extra });
   const success = (result: ApiResult) => {
     expect(result.status, JSON.stringify(result.data)).toBeGreaterThanOrEqual(200);
     expect(result.status, JSON.stringify(result.data)).toBeLessThan(300);
@@ -119,7 +120,7 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
   afterAll(async () => { if (db) await db.end(); });
 
   it("uses issued AAL1/AAL2 JWTs for tenant-scoped RPC and table permissions", async () => {
-    denied(await readTb(null)); denied(await readTb(owner));
+    denied(await readTb(null)); denied(await readGl(null)); denied(await readTb(owner));
     denied(await readGl(owner));
     denied(await rpc(null, "list_aqvora_accounts", { p_organization_id: org }));
     denied(await rpc(owner, "list_aqvora_accounts", { p_organization_id: org }));

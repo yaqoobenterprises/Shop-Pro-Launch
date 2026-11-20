@@ -55,7 +55,7 @@ jobs:
         run: npx vitest run tests/aqvora_real_supabase.test.ts
 
       - name: Inspect disposable database security advisors
-        run: npx supabase db advisors --local --type security --fail-on none
+        run: npx supabase db advisors --local --type security --fail-on error
 
       - name: Stop disposable stack
         if: always()

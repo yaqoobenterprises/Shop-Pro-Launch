@@ -203,6 +203,14 @@ AAL1/AAL2 tokens against local PostgREST with synthetic users only. The existing
 migration-order/recovery suite includes the new RPC. Local database suites
 require disposable markers and localhost targets; CI provisions all infrastructure.
 
+The disposable security advisor also runs, failing CI on errors. Its initial
+review found three inherited mutable-search-path warnings in
+`public.enforce_transaction_author`, `private.ledger_transaction_delta` and
+`private.protect_transaction_account_posting`. None refers to these read RPCs;
+the legacy functions are unchanged and their separate hardening remains a
+release consideration. The new readers' fixed search paths, volatility and
+private execution denial are also asserted by the SQL contract suite.
+
 Hosted staging configuration/latency/load, approved accounting closing/opening
 policies, legacy reconciliation/queues, old-client fencing and the separate
 frontend integration remain release gates. Do not merge, apply hosted migrations

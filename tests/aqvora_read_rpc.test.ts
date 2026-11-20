@@ -143,6 +143,8 @@ describe("AQVORA certified immutable journal readers", () => {
     const before = await tb();
     await post("retry");
     expect((await tb(before.source.snapshot_token)).source.snapshot_token).toBe(before.source.snapshot_token);
+    await post("future", "1", "2026-12-01");
+    expect((await tb(before.source.snapshot_token)).source.snapshot_token).toBe(before.source.snapshot_token);
     await post("backdated", "1", "2026-10-01");
     await expect(tb(before.source.snapshot_token)).rejects.toThrow("source changed");
     const current = await tb();
@@ -173,6 +175,7 @@ describe("AQVORA certified immutable journal readers", () => {
     await expect(gl()).rejects.toThrow("not authorized");
     await user(i.owner,"aal1");
     await expect(tb()).rejects.toThrow("MFA");
+    await expect(gl()).rejects.toThrow("MFA");
   });
   it("rechecks role demotion, inactive membership and revoked sessions even with a valid token", async () => {
     const token = (await tb()).source.snapshot_token;
