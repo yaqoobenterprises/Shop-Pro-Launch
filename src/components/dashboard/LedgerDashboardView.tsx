@@ -28,7 +28,7 @@ import {
 const EXPENSE_CHART_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
 
 export const LedgerDashboardView: React.FC = () => {
-  const [period, setPeriod] = useState<OverviewPeriod>("day");
+  const [period, setPeriod] = useState<OverviewPeriod>("week");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
   const [rangeEnd, setRangeEnd] = useState(getKarachiBusinessDate());
