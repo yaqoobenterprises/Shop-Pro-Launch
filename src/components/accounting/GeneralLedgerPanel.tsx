@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { BookOpenText, ArrowRightLeft } from "lucide-react";
 import type { ChartAccount, PostedJournal } from "../../accounting/types";
 import { parseMinorUnits } from "../../accounting/minorUnits";
@@ -23,8 +23,9 @@ interface LedgerMovement {
 export const GeneralLedgerPanel: React.FC<Props> = ({
   accounts, journals, asOfDate, selectedAccountId,
 }) => {
-  const [chosen, setChosen] = useState("");
-  const accountId = selectedAccountId || chosen || accounts[0]?.id || "";
+  const [chosen, setChosen] = useState(selectedAccountId || "");
+  useEffect(() => { if (selectedAccountId) setChosen(selectedAccountId); }, [selectedAccountId]);
+  const accountId = chosen || accounts[0]?.id || "";
   const account = accounts.find((entry) => entry.id === accountId);
 
   const movements = useMemo(() => {
