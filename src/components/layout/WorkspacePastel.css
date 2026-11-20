@@ -1,0 +1,278 @@
+/* AQVORA workspace redesign — reference pastel shell, scoped to signed-in app. */
+.app-shell {
+  --soft: #e7e6eb;
+  --paper: #e7e6eb;
+  --surface: #e7e6eb;
+  --surface-card: #ffffff;
+  --surface-bright: #ffffff;
+  --surface-2: #f2f1f5;
+  --surface-dim: #f2f1f5;
+  --surface-container-low: #f2f1f5;
+  --surface-container-lowest: #ffffff;
+  --surface-variant: #eff5f3;
+  --input-bg: #ffffff;
+  --ink: #35383e;
+  --ink-2: #51535c;
+  --muted: #666a75;
+  --faint: #7a7c87;
+  --line: #dcdde3;
+  --line-strong: #cdd0d8;
+  --forest: #176b54;
+  --forest-hover: #0f5744;
+  --green: #176b54;
+  --accent-ink: #176b54;
+  --mint: #ecfffd;
+  --tint: #ebf8f5;
+  --tint-2: #ddf3ee;
+  --good-bg: #e5f8f3;
+  --good-line: #c5e8df;
+  --insight-bg: #efeeff;
+  --featured: #4d4b4c;
+  --report-tint-1: #ecfffd;
+  --report-tint-2: #feeaf5;
+  --report-tint-3: #f1efff;
+  --bar-muted: #c4c3d0;
+  --track: #edeef2;
+  --chart-line: #9189df;
+  --chart-stroke: #9189df;
+  --chart-lavender: #9189df;
+  --chart-teal: #55cdbb;
+  --chart-pink: #f58fcc;
+  --chart-grid: #e8e8ed;
+  --glass: rgba(255,255,255,.96);
+  --header-bg: rgba(255,255,255,.96);
+  --dock-bg: rgba(255,255,255,.96);
+  --shadow: 0 12px 32px rgba(64,57,78,.09);
+  --shadow-sm: 0 1px 3px rgba(64,57,78,.045);
+  --shadow-1: 0 1px 2px rgba(64,57,78,.035);
+  --shadow-2: 0 4px 16px rgba(64,57,78,.06);
+  --color-surface: var(--surface);
+  --color-surface-bright: var(--surface-card);
+  --color-surface-container-low: var(--surface-2);
+  --color-on-surface: var(--ink);
+  --color-on-surface-variant: var(--ink-2);
+  --color-primary: var(--forest);
+  --color-primary-hover: var(--forest-hover);
+  --color-text-muted: var(--muted);
+  --color-border-standard: var(--line);
+  background: var(--soft);
+  color: var(--ink);
+}
+html.dark .app-shell {
+  --soft: #181923;
+  --paper: #181923;
+  --surface: #181923;
+  --surface-card: #252731;
+  --surface-bright: #252731;
+  --surface-2: #30323e;
+  --surface-dim: #30323e;
+  --surface-container-low: #30323e;
+  --surface-container-lowest: #252731;
+  --surface-variant: #303540;
+  --input-bg: #292b36;
+  --ink: #f1f0f6;
+  --ink-2: #d4d4dd;
+  --muted: #b5b5c4;
+  --faint: #a5a5b5;
+  --line: #444554;
+  --line-strong: #575767;
+  --forest: #79dbc0;
+  --forest-hover: #96e7d0;
+  --green: #79dbc0;
+  --accent-ink: #79dbc0;
+  --mint: #253e40;
+  --tint: #283c3a;
+  --tint-2: #26463f;
+  --good-bg: #264039;
+  --good-line: #3b5b53;
+  --insight-bg: #383350;
+  --featured: #42414b;
+  --report-tint-1: #263b3b;
+  --report-tint-2: #413541;
+  --report-tint-3: #35344c;
+  --bar-muted: #626474;
+  --track: #3a3c4b;
+  --chart-line: #aca5fc;
+  --chart-stroke: #aca5fc;
+  --chart-lavender: #aca5fc;
+  --chart-teal: #6dd9c8;
+  --chart-pink: #f99fd1;
+  --chart-grid: #3d4050;
+  --glass: rgba(37,39,49,.96);
+  --header-bg: rgba(37,39,49,.96);
+  --dock-bg: rgba(37,39,49,.96);
+  --shadow: 0 14px 42px rgba(0,0,0,.25);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.18);
+  --shadow-1: 0 1px 2px rgba(0,0,0,.13);
+  --shadow-2: 0 6px 20px rgba(0,0,0,.2);
+}
+html .app-shell #app-sidebar {
+  background: var(--soft);
+  color: var(--ink-2);
+  border-inline-end: 1px solid var(--line);
+  padding: .6rem;
+}
+html .app-shell #app-sidebar .side-brand {
+  padding: .75rem .65rem 1rem;
+  border-bottom-color: transparent;
+}
+html .app-shell #app-sidebar .brand-mark {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: .45rem;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+html .app-shell #app-sidebar .brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+html .app-shell #app-sidebar .brand-copy strong {
+  color: var(--ink);
+  font-size: 1.12rem;
+  letter-spacing: -.055em;
+  font-weight: 750;
+}
+html .app-shell #app-sidebar .brand-copy > span {
+  color: var(--muted);
+  font-size: .58rem;
+  letter-spacing: .05em;
+}
+html .app-shell #app-sidebar .sidebar-section-label {
+  color: var(--muted);
+  font-size: .63rem;
+  font-weight: 670;
+  letter-spacing: .075em;
+  padding: .7rem .8rem .5rem;
+}
+html .app-shell #app-sidebar nav {
+  gap: .22rem;
+  padding-top: .25rem;
+}
+html .app-shell #app-sidebar nav button,
+html .app-shell #app-sidebar .sidebar-bottom > button {
+  min-height: 2.85rem;
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid transparent;
+  border-radius: .62rem;
+  font-size: .8rem;
+  font-weight: 580;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+html .app-shell #app-sidebar nav button svg,
+html .app-shell #app-sidebar .sidebar-bottom > button svg {
+  color: var(--muted);
+  stroke-width: 1.85;
+}
+html .app-shell #app-sidebar nav button:hover,
+html .app-shell #app-sidebar .sidebar-bottom > button:hover {
+  background: var(--surface-card);
+  color: var(--ink);
+}
+html .app-shell #app-sidebar nav button:hover svg,
+html .app-shell #app-sidebar .sidebar-bottom > button:hover svg { color: var(--ink); }
+html .app-shell #app-sidebar nav button.active,
+html .app-shell #app-sidebar .sidebar-bottom > button.active {
+  color: var(--ink);
+  background: var(--surface-card);
+  font-weight: 730;
+  box-shadow: 0 1px 3px rgba(65,57,82,.045);
+}
+html .app-shell #app-sidebar nav button.active::before,
+html .app-shell #app-sidebar .sidebar-bottom > button.active::before {
+  inset-block: .65rem;
+  background: var(--chart-lavender);
+  width: 3px;
+}
+html .app-shell #app-sidebar nav button.active svg,
+html .app-shell #app-sidebar .sidebar-bottom > button.active svg { color: var(--chart-lavender); }
+html .app-shell #app-sidebar .sidebar-bottom {
+  border-top-color: var(--line);
+  gap: .25rem;
+}
+html .app-shell #app-sidebar .sidebar-bottom .user-card {
+  background: var(--surface-card);
+  border-color: var(--line);
+  color: var(--ink);
+  border-radius: .7rem;
+  box-shadow: none;
+}
+html .app-shell #app-sidebar .sidebar-bottom .user-card .avatar {
+  color: var(--forest);
+  background: var(--good-bg);
+  border-color: var(--good-line);
+}
+html .app-shell #app-sidebar .sidebar-bottom .user-card-copy strong { color: var(--ink); }
+html .app-shell #app-sidebar .sidebar-bottom .user-card-copy span { color: var(--muted); }
+html .app-shell #app-sidebar .sidebar-toggle { color: var(--muted); }
+html .app-shell #app-sidebar .sidebar-toggle:hover { background: var(--surface-card); color: var(--ink); border-color: var(--line); }
+html .app-shell #app-sidebar nav button.nav-item-ledgermate:not(.active) {
+  background: transparent; color: var(--ink-2); border-color: transparent;
+}
+html .app-shell #app-sidebar nav button.nav-item-ledgermate.active {
+  background: var(--surface-card);
+  color: var(--ink);
+  border-color: transparent;
+  box-shadow: var(--shadow-1);
+}
+html .app-shell .app-header.workspace-header {
+  border-bottom-color: var(--line);
+  background: var(--surface-card);
+  box-shadow: none;
+}
+html .app-shell .workspace-context__eyebrow { color: var(--muted); letter-spacing: .05em; font-weight: 590; }
+html .app-shell .workspace-context__title { color: var(--ink); font-weight: 680; }
+html .app-shell .header-search-trigger,
+html .app-shell .header-icon-button {
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--surface-card);
+  color: var(--ink-2);
+}
+html .app-shell .header-icon-button { width: 2.75rem; }
+html .app-shell .header-search-trigger:hover,
+html .app-shell .header-icon-button:hover {
+  background: var(--surface-2);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+html .app-shell .connection-pill { background: var(--surface-2); border-color: var(--line); color: var(--ink-2); }
+html .app-shell .connection-pill--online { background: var(--good-bg); color: var(--forest); border-color: var(--good-line); }
+html .app-shell .connection-pill--offline { background: var(--warn-bg); color: var(--orange); }
+html .app-shell .page-content { color: var(--ink); }
+html .app-shell .page-title {
+  background: transparent;
+  border: 0;
+  min-height: 0;
+  box-shadow: none;
+  padding: 0 0 1.2rem;
+  margin-bottom: .15rem;
+}
+html .app-shell .panel,
+html .app-shell .report-cards > *,
+html .app-shell .account-grid > * {
+  border-color: var(--line);
+  border-radius: .78rem;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+}
+html .app-shell .mobile-bottom-nav { background: var(--surface-card); border-color: var(--line); }
+html .app-shell .mobile-bottom-nav > button[aria-current="page"] {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+html .app-shell .sidebar nav button:hover:not(.active),
+html .app-shell .sidebar-bottom > button:hover:not(.active) { transform: none; }
+@media (max-width: 767px) {
+  html .app-shell .app-header.workspace-header { min-height: 3.75rem; }
+  html .app-shell .header-search-trigger,
+  html .app-shell .header-icon-button { min-height: 2.5rem; width: 2.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html .app-shell #app-sidebar nav button,
+  html .app-shell #app-sidebar .sidebar-bottom > button { transition: none; }
+}
