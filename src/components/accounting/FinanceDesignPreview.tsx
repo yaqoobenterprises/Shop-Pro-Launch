@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BookOpenText, ChartNoAxesCombined, FileSpreadsheet, LayoutList, X } from "lucide-react";
+import { BookOpenText, ChartNoAxesCombined, FileSpreadsheet, LayoutList, Sparkles, X } from "lucide-react";
 import { buildFinancialSnapshot } from "../../accounting/financialSnapshot";
 import type { JournalPreviewPolicy } from "../../accounting/types";
 import { ChartExplorer } from "./ChartExplorer";
@@ -8,6 +8,7 @@ import { GeneralLedgerPanel } from "./GeneralLedgerPanel";
 import { TrialBalancePanel } from "./TrialBalancePanel";
 import { sampleChart, sampleCompany, sampleJournals } from "./financeSampleData";
 import "./FinanceDesignPreview.css";
+import "./FinanceFinish.css";
 
 type Page = "chart" | "journal" | "ledger" | "trial";
 const pages: { key: Page; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
@@ -24,9 +25,9 @@ const policy: JournalPreviewPolicy = {
   periodState: "open",
 };
 
-interface Props { onClose: () => void }
+interface Props { onClose: () => void; onOpenAi?: () => void }
 
-export const FinanceDesignPreview: React.FC<Props> = ({ onClose }) => {
+export const FinanceDesignPreview: React.FC<Props> = ({ onClose, onOpenAi }) => {
   const [page, setPage] = useState<Page>("chart");
   const [ledgerAccountId, setLedgerAccountId] = useState<string | undefined>(undefined);
   const report = useMemo(() => buildFinancialSnapshot({
@@ -73,6 +74,9 @@ export const FinanceDesignPreview: React.FC<Props> = ({ onClose }) => {
                 <Icon size={18} aria-hidden="true" /><span>{entry.label}</span>
               </button>;
             })}
+            {onOpenAi && <button type="button" className="aq-finance__ai-link" onClick={onOpenAi}>
+              <Sparkles size={17} aria-hidden="true" /><span>AI Copilot</span>
+            </button>}
             <div className="aq-finance__nav-note">
               <strong>Design preview</strong>
               <span>Secure journal posting and company-scoped reports are being built separately.</span>
@@ -81,8 +85,8 @@ export const FinanceDesignPreview: React.FC<Props> = ({ onClose }) => {
           <div className="aq-finance__main">
             <div className="aq-finance__welcome">
               <div><span>FINANCE / {pages.find((item) => item.key === page)?.label.toUpperCase()}</span>
-                <h1>Accounting workspace</h1>
-                <p>Sample Company · PKR · Illustrative activity only</p>
+                <h1>Finance & accounting</h1>
+                <p>Sample company · PKR · focused accounting workflows</p>
               </div>
             </div>
             <div className="aq-finance__mobile-tabs" role="navigation" aria-label="Finance preview views">

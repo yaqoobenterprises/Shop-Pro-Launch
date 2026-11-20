@@ -7,6 +7,7 @@ import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodCon
 import "./OverviewAnalytics.css";
 import "./OverviewPremium.css";
 import "./OverviewReference.css";
+import "./OverviewFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
 import { OverviewAreaChart } from "./OverviewAreaChart";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";

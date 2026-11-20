@@ -41,6 +41,18 @@ describe("AQVORA finance workspace design, no financial writes", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("opens the existing AI destination only on user action; no invented V2 AI posting", () => {
+    const onClose = vi.fn();
+    const onOpenAi = vi.fn();
+    render(<FinanceDesignPreview onClose={onClose} onOpenAi={onOpenAi} />);
+    const trigger = screen.getByRole("button", { name: "AI Copilot" });
+    expect(onOpenAi).not.toHaveBeenCalled();
+    fireEvent.click(trigger);
+    expect(onOpenAi).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Add account" }).hasAttribute("disabled")).toBe(true);
+  });
+
   it("filters chart of accounts by code, text and class, retaining a real empty state", () => {
     render(<ChartExplorer accounts={sampleChart} isSample />);
     fireEvent.change(screen.getByRole("searchbox", { name: "Search chart of accounts" }), {

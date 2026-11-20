@@ -1,0 +1,169 @@
+/*
+ * AQVORA founder reference finishing — airy Poital.flow visual rhythm.
+ * Presentation only. Keeps live navigation, theme, permissions and data behavior.
+ * Do not use sample values for authenticated financial views.
+ */
+html .app-shell {
+  --soft: #e8e7ec;
+  --paper: #e8e7ec;
+  --surface: #e8e7ec;
+  --shadow-sm: 0 2px 8px rgba(52, 48, 62, .035);
+}
+html.dark .app-shell {
+  --soft: #1c1d26;
+  --paper: #1c1d26;
+  --surface: #1c1d26;
+  --shadow-sm: 0 2px 9px rgba(0, 0, 0, .16);
+}
+
+/* Quiet chrome: let the page, not its header, carry the hierarchy. */
+html .app-shell #app-sidebar {
+  background: var(--soft);
+  border-inline-end-color: transparent;
+  padding: 1rem .72rem .85rem;
+}
+html .app-shell #app-sidebar .side-brand {
+  padding-block: 1rem 1.65rem;
+  padding-inline: .6rem;
+}
+html .app-shell #app-sidebar .brand-mark {
+  width: 2.35rem;
+  height: 2.35rem;
+}
+html .app-shell #app-sidebar .brand-copy strong {
+  font-size: 1.25rem;
+  font-weight: 750;
+  letter-spacing: -.05em;
+}
+html .app-shell #app-sidebar .brand-copy > span {
+  font-size: .56rem;
+  letter-spacing: .07em;
+}
+html .app-shell #app-sidebar nav {
+  gap: .42rem;
+  padding-top: .55rem;
+}
+html .app-shell #app-sidebar .sidebar-section-label {
+  padding: .65rem .8rem .6rem;
+  letter-spacing: .085em;
+}
+html .app-shell #app-sidebar nav button,
+html .app-shell #app-sidebar .sidebar-bottom > button {
+  min-height: 2.95rem;
+  padding-inline: .92rem;
+  font-size: .845rem;
+  font-weight: 500;
+  border-radius: .65rem;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+html .app-shell #app-sidebar nav button.active,
+html .app-shell #app-sidebar .sidebar-bottom > button.active {
+  background: var(--surface-card);
+  font-weight: 660;
+  box-shadow: none;
+}
+html .app-shell #app-sidebar nav button.active::before,
+html .app-shell #app-sidebar .sidebar-bottom > button.active::before {
+  width: 0;
+  content: none;
+}
+html .app-shell #app-sidebar nav button svg,
+html .app-shell #app-sidebar .sidebar-bottom > button svg {
+  width: 1.12rem;
+  height: 1.12rem;
+  stroke-width: 1.75;
+}
+html .app-shell #app-sidebar .sidebar-bottom {
+  border-top-color: var(--line);
+  padding-top: .9rem;
+  gap: .3rem;
+}
+html .app-shell #app-sidebar .sidebar-bottom .user-card {
+  border: 0;
+  border-radius: .7rem;
+  background: var(--surface-card);
+  box-shadow: none;
+}
+
+html .app-shell .app-header.workspace-header {
+  min-height: 4.9rem;
+  padding-inline: clamp(1rem, 2.15vw, 2.2rem);
+  border: 0;
+  background: var(--soft);
+  box-shadow: none;
+}
+html .app-shell .workspace-context__eyebrow {
+  font-size: .63rem;
+  font-weight: 560;
+}
+html .app-shell .workspace-context__title {
+  font-size: .93rem;
+  font-weight: 620;
+}
+html .app-shell .header-search-trigger {
+  min-width: clamp(10rem, 21vw, 18rem);
+  justify-content: flex-start;
+  border: 1px solid transparent;
+  background: var(--surface-card);
+  border-radius: .45rem;
+  box-shadow: var(--shadow-sm);
+}
+html .app-shell .header-search-trigger kbd {
+  margin-inline-start: auto;
+}
+html .app-shell .header-icon-button {
+  border: 0;
+  background: transparent;
+}
+html .app-shell .header-icon-button:hover {
+  border-color: transparent;
+}
+html .app-shell .connection-pill {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* A clean transition into the workspace, not a second visual hero. */
+html .app-shell .page-content {
+  padding-inline: clamp(1rem, 2.15vw, 2.1rem);
+  padding-block-start: .5rem;
+}
+html .app-shell .page-title {
+  margin-bottom: 1.1rem;
+}
+html .app-shell .panel,
+html .app-shell .report-cards > *,
+html .app-shell .account-grid > * {
+  border-color: transparent;
+  border-radius: .77rem;
+  box-shadow: var(--shadow-sm);
+}
+html .app-shell :is(button, a, input, select):focus-visible {
+  outline: 2px solid var(--chart-lavender);
+  outline-offset: 3px;
+}
+
+/* Keep operational tables scannable, including long financial amounts. */
+html .app-shell .num,
+html .app-shell .metric-amount {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Long translated labels/RTL must never get clipped by the reference sizing. */
+html .app-shell #app-sidebar nav button span,
+html .app-shell #app-sidebar .sidebar-bottom > button span {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1160px) {
+  html .app-shell .app-header.workspace-header { min-height: 4.35rem; }
+  html .app-shell .header-search-trigger { min-width: 2.75rem; }
+}
+@media (max-width: 767px) {
+  html .app-shell .app-header.workspace-header { min-height: 3.65rem; padding-inline: 1rem; }
+  html .app-shell .page-content { padding-inline: .95rem; padding-block-start: .65rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html .app-shell #app-sidebar nav button,
+  html .app-shell #app-sidebar .sidebar-bottom > button { transition: none; }
+}
