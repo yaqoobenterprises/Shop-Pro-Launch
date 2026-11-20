@@ -158,7 +158,7 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 ))}
               </Select>
               <p className="text-xs text-text-muted">
-                Currency changes are locked after the company has posted financial entries.
+                Currency and timezone changes are locked after financial entries are posted.
               </p>
             </div>
             <div className="space-y-1.5">
@@ -168,7 +168,7 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </div>
             <div className="space-y-1.5">
               <label htmlFor="company-setup-timezone" className="text-sm font-semibold text-on-surface">Business timezone</label>
-              <input id="company-setup-timezone" value={input.timezone}
+              <input id="company-setup-timezone" value={input.timezone} disabled={!isCloudAccount}
                 onChange={(event) => change("timezone", event.target.value)}
                 className={fieldClass} placeholder="Asia/Karachi" />
             </div>
