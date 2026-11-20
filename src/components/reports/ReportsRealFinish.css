@@ -1,0 +1,101 @@
+/* Actual Reports route: four calm KPI surfaces instead of bordered gradients. */
+.app-shell .reports-modern {
+  gap: 17px;
+}
+.app-shell .reports-modern__hero h1 {
+  font-size: clamp(22px, 1.8vw, 29px);
+  font-weight: 690;
+}
+.app-shell .reports-modern__hero p {
+  font-size: 12px;
+}
+.app-shell .reports-modern__filters,
+.app-shell .reports-modern__chart-panel,
+.app-shell .reports-modern__table-panel {
+  background: var(--surface-card, #fff);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #18182b08;
+}
+.app-shell .reports-modern__filters {
+  padding: clamp(15px, 1.6vw, 20px);
+}
+.app-shell .reports-modern__filter-heading {
+  margin-bottom: 11px;
+}
+.app-shell .reports-modern__presets {
+  margin-bottom: 13px;
+}
+.app-shell .reports-modern__filter-grid {
+  gap: 10px 13px;
+}
+.app-shell .reports-modern__kpis {
+  gap: clamp(10px, 1.15vw, 17px);
+}
+.app-shell .reports-modern__kpi {
+  min-height: 142px;
+  border: 0;
+  border-radius: 12px;
+  padding: 19px 21px;
+  background: var(--surface-card, #fff);
+  box-shadow: 0 2px 8px #18182b08;
+  color: var(--ink, #35383e);
+}
+.app-shell .reports-modern__kpi::before { display: none; }
+.app-shell .reports-modern__kpi:nth-child(1) { background: #4d4b4c; color: #fff; }
+.app-shell .reports-modern__kpi:nth-child(2) { background: #ecfffd; color: #38383b; }
+.app-shell .reports-modern__kpi:nth-child(3) { background: #feeaf5; color: #38383b; }
+.app-shell .reports-modern__kpi:nth-child(4) { background: #fff; color: #38383b; }
+.app-shell .reports-modern__kpi > span,
+.app-shell .reports-modern__kpi > strong,
+.app-shell .reports-modern__kpi > small {
+  color: inherit;
+}
+.app-shell .reports-modern__kpi > span {
+  font-size: 12px;
+  font-weight: 570;
+  letter-spacing: 0;
+}
+.app-shell .reports-modern__kpi > strong {
+  font-size: clamp(21px, 2vw, 31px);
+  font-weight: 710;
+}
+.app-shell .reports-modern__kpi > small {
+  font-size: 11px;
+  opacity: .76;
+}
+.app-shell .reports-modern__kpi > svg {
+  background: transparent;
+  color: inherit;
+  opacity: .68;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  stroke-width: 1.8;
+}
+.app-shell .reports-modern__export,
+.app-shell .reports-modern__apply {
+  background: var(--forest, #176b54);
+  box-shadow: none;
+  border-radius: 9px;
+}
+.app-shell .reports-modern__export:hover,
+.app-shell .reports-modern__apply:hover {
+  box-shadow: none;
+  transform: none;
+}
+html.dark .app-shell .reports-modern__kpi:nth-child(1) { background: #3e3e48; color: #fff; }
+html.dark .app-shell .reports-modern__kpi:nth-child(2) { background: #294440; color: #f1fbf9; }
+html.dark .app-shell .reports-modern__kpi:nth-child(3) { background: #493747; color: #fff1f7; }
+html.dark .app-shell .reports-modern__kpi:nth-child(4) { background: var(--surface-card, #252834); color: var(--ink, #f1f1f5); }
+@media (max-width: 1000px) {
+  .app-shell .reports-modern__kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+@media (max-width: 620px) {
+  .app-shell .reports-modern__kpi { min-height: 119px; padding: 14px; }
+  .app-shell .reports-modern__kpi > strong { font-size: clamp(16px, 4.5vw, 22px); }
+  .app-shell .reports-modern__filter-note { display: none; }
+}
+@media (max-width: 355px) {
+  .app-shell .reports-modern__kpis { grid-template-columns: minmax(0, 1fr); }
+}

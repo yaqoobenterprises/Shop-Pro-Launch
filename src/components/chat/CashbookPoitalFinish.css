@@ -1,0 +1,163 @@
+/* AQVORA Cashbook: real workspace finishing, aligned with founder reference. */
+.app-shell .ledger-page {
+  background: var(--soft, #e8e7ec);
+  color: var(--ink, #35383e);
+}
+.app-shell .ledger-page .cashbook-summary {
+  background: transparent;
+  border: 0;
+  padding: clamp(18px, 2vw, 28px) clamp(18px, 2vw, 34px) 12px;
+}
+.app-shell .ledger-page .cashbook-summary__header { margin-bottom: 20px; }
+.app-shell .ledger-page .cashbook-summary__header h1 {
+  font-size: clamp(21px, 1.8vw, 27px);
+  font-weight: 690;
+  letter-spacing: -.045em;
+}
+.app-shell .ledger-page .cashbook-summary__metrics { gap: clamp(10px, 1.15vw, 17px); }
+.app-shell .ledger-page .summary-metric {
+  min-height: 133px;
+  padding: clamp(18px, 1.7vw, 23px);
+  border: 0;
+  border-radius: 12px;
+  background: var(--surface-card, #fff);
+  box-shadow: 0 2px 8px #24243a08;
+  transform: none;
+}
+.app-shell .ledger-page .summary-metric::before { display: none; }
+.app-shell .ledger-page .summary-metric--income { background: #4d4b4c; color: #fff; }
+.app-shell .ledger-page .summary-metric--expense { background: #feeaf5; color: #38383b; }
+.app-shell .ledger-page .summary-metric--profit { background: #ecfffd; color: #38383b; }
+.app-shell .ledger-page .summary-metric--negative { background: #feeaf5; color: #a13b4c; }
+.app-shell .ledger-page .summary-metric__label {
+  font-size: 12px;
+  font-weight: 610;
+  letter-spacing: 0;
+  color: inherit;
+}
+.app-shell .ledger-page .summary-metric__label > svg {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  opacity: .68;
+  stroke-width: 1.75;
+}
+.app-shell .ledger-page .summary-metric .cashbook-summary__amount,
+.app-shell .ledger-page .summary-metric--expense .cashbook-summary__amount,
+.app-shell .ledger-page .summary-metric--profit .cashbook-summary__amount:not(.text-danger) {
+  margin-top: 16px;
+  color: inherit;
+  font-size: clamp(21px, 2.05vw, 30px);
+  font-weight: 720;
+}
+.app-shell .ledger-page .summary-metric:hover {
+  transform: none;
+  box-shadow: 0 2px 8px #24243a08;
+  border: 0;
+}
+
+/* Give entries an actual white reading surface rather than floating over grey. */
+.app-shell .ledger-page .cashbook-feed {
+  min-height: 0;
+  padding: 14px clamp(18px, 2vw, 34px) 20px;
+  background: transparent;
+  scrollbar-gutter: stable;
+}
+.app-shell .ledger-page .cashbook-feed__surface {
+  max-width: 1152px;
+  margin-inline: auto;
+  padding: 4px clamp(14px, 1.5vw, 24px) 12px;
+  background: var(--surface-card, #fff);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #24243a08;
+}
+.app-shell .ledger-page .cashbook-feed__heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 17px 2px;
+  border-bottom: 1px solid var(--line, #dcdde3);
+}
+.app-shell .ledger-page .cashbook-feed__heading h2 {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  font-weight: 690;
+  letter-spacing: -.018em;
+}
+.app-shell .ledger-page .cashbook-feed__heading p {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--muted, #747782);
+}
+.app-shell .ledger-page .cashbook-feed__heading > span {
+  border-radius: 8px;
+  background: var(--surface-2, #f2f1f5);
+  color: var(--ink-2, #51535c);
+  padding: 7px 10px;
+  font-size: 11px;
+  font-weight: 650;
+}
+.app-shell .ledger-page .cashbook-feed__surface .ledger-entry-row button {
+  min-height: 58px;
+  border-radius: 8px;
+  padding-inline: 10px;
+}
+.app-shell .ledger-page .cashbook-feed__surface .ledger-entry-row button:hover {
+  background: var(--surface-2, #f2f1f5);
+}
+.app-shell .ledger-page .cashbook-composer {
+  flex: 0 0 auto;
+  padding: 14px clamp(18px, 2vw, 34px) max(12px, env(safe-area-inset-bottom));
+  background: var(--surface-card, #fff);
+  box-shadow: none;
+  border-top: 1px solid var(--line, #dcdde3);
+}
+.app-shell .ledger-page .ledger-composer__quick-actions,
+.app-shell .ledger-page .ledger-composer__form,
+.app-shell .ledger-page .ledger-composer__hint { max-width: 1152px; }
+.app-shell .ledger-page .ledger-composer__chip {
+  background: var(--surface-2, #f2f1f5);
+  box-shadow: none;
+  border: 1px solid var(--line, #dcdde3);
+  border-radius: 9px;
+}
+.app-shell .ledger-page .ledger-composer__chip:hover { transform: none; }
+.app-shell .ledger-page .ledger-composer__input {
+  border-radius: 11px;
+  box-shadow: none;
+  background: var(--surface-card, #fff);
+}
+.app-shell .ledger-page .ledger-composer__send {
+  border-radius: 11px;
+  background: var(--forest, #176b54);
+  box-shadow: none;
+}
+html.dark .app-shell .ledger-page .summary-metric--income { background: #3e3e48; color: #fff; }
+html.dark .app-shell .ledger-page .summary-metric--expense { background: #493747; color: #fff1f7; }
+html.dark .app-shell .ledger-page .summary-metric--profit { background: #294440; color: #f1fbf9; }
+@media (max-width: 700px) {
+  .app-shell .ledger-page .cashbook-summary { padding: 15px 12px 8px; }
+  .app-shell .ledger-page .cashbook-summary__metrics { gap: 8px; }
+  .app-shell .ledger-page .summary-metric { min-height: 103px; padding: 13px 11px; }
+  .app-shell .ledger-page .summary-metric__label { font-size: 10px; }
+  .app-shell .ledger-page .summary-metric__label > svg { width: 15px; height: 15px; }
+  .app-shell .ledger-page .summary-metric .cashbook-summary__amount,
+  .app-shell .ledger-page .summary-metric--expense .cashbook-summary__amount,
+  .app-shell .ledger-page .summary-metric--profit .cashbook-summary__amount:not(.text-danger) {
+    font-size: clamp(15px, 3.7vw, 20px);
+    margin-top: 10px;
+  }
+  .app-shell .ledger-page .cashbook-feed { padding: 9px 10px 12px; }
+  .app-shell .ledger-page .cashbook-feed__surface { padding-inline: 12px; }
+  .app-shell .ledger-page .cashbook-composer { padding: 9px 12px max(10px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .ledger-page .summary-metric,
+  .app-shell .ledger-page .ledger-composer__chip { transition: none; }
+}
