@@ -6,7 +6,9 @@ import { AnimatedAmount } from "../common/AnimatedAmount";
 import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
 import "./OverviewAnalytics.css";
 import "./OverviewPremium.css";
+import "./OverviewReference.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
+import { OverviewAreaChart } from "./OverviewAreaChart";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import {
@@ -21,7 +23,7 @@ import {
   ArrowDownLeft,
 } from "lucide-react";
 
-const EXPENSE_CHART_PALETTE = ["#14765e", "#5688a0", "#b96d45", "#809b77", "#7c78a8", "#8a9ba8"];
+const EXPENSE_CHART_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
 
 export const LedgerDashboardView: React.FC = () => {
   const [period, setPeriod] = useState<OverviewPeriod>("day");
@@ -162,18 +164,14 @@ export const LedgerDashboardView: React.FC = () => {
       : period === "month"
         ? new Intl.DateTimeFormat("en", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(`${currentDate.slice(0, 7)}-01T00:00:00.000Z`))
         : `${formatDisplayDate(rangeStart)} – ${formatDisplayDate(rangeEnd)}`;
-  const trendMax = Math.max(...trendRows.map((row) => Math.max(row.income_paisa, row.expense_paisa)), 1);
-
   return (
-    <div className="page-content overview-page">
-      {/* Page Title */}
+    <div className="page-content overview-page aq-overview">
       <div className="page-title">
         <div className="overview-page-heading">
-          <span className="kicker">CASHBOOK</span>
-          <h1>Overview</h1>
-          <p>Recorded activity and account balances.</p>
+          <span className="kicker">CASHBOOK OVERVIEW</span>
+          <h1>Business overview</h1>
+          <p>Recorded activity and balances, with their correct date basis.</p>
         </div>
-
         <OverviewPeriodControls
           period={period}
           setPeriod={setPeriod}
@@ -188,242 +186,133 @@ export const LedgerDashboardView: React.FC = () => {
       </div>
 
       {loadError && (
-        <div role="alert" className="toast-note" style={{ background: "var(--danger-bg)", borderColor: "var(--danger)" }}>
-          <p style={{ margin: 0, color: "var(--danger)" }}>{loadError}</p>
+        <div role="alert" className="aq-overview__error">
+          <strong>Overview unavailable</strong>
+          <span>{loadError}</span>
+          <button type="button" onClick={() => void loadData()}>Retry</button>
         </div>
       )}
 
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard
-          label="Cash & bank"
-          scope="Latest loaded account balances"
-          icon={Wallet}
+        <OverviewMetricCard label="Cash & bank" scope="Latest loaded account balances" icon={Wallet}
           amountPaisa={totalBalancePaisa}
-          state={isLoading ? "loading" : loadError || activeAccounts.length === 0 ? "unavailable" : "ready"}
-        />
-        <OverviewMetricCard
-          label="Income"
-          scope="Selected cashbook period"
-          icon={TrendingUp}
+          state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
+        <OverviewMetricCard label="Income" scope="Selected cashbook period" icon={TrendingUp}
           amountPaisa={activeIncome}
-          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"}
-        />
-        <OverviewMetricCard
-          label="Expenses"
-          scope="Selected cashbook period"
-          icon={ArrowDownLeft}
+          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
+        <OverviewMetricCard label="Expenses" scope="Selected cashbook period" icon={ArrowDownLeft}
           amountPaisa={activeExpense}
-          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"}
-        />
-        <OverviewMetricCard
-          label="Operating result"
-          scope="Cashbook basis · not accrual P&L"
-          icon={ArrowUpRight}
-          amountPaisa={activeProfit}
-          tone={activeProfit < 0 ? "negative" : "positive"}
-          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"}
-        />
+          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
+        <OverviewMetricCard label="Operating result" scope="Cashbook basis · not accrual P&L" icon={ArrowUpRight}
+          amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "positive"}
+          state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
 
-      {/* Overview Grid: Cash Flow Panel + Reserves & Accounts */}
-      <div className="overview-grid">
-        {/* Left Column: Cash Flow Panel */}
+      <div className="aq-overview__visuals">
         <section className="panel cash-panel">
           <div className="panel-heading">
             <div>
               <h2>Income & expenses</h2>
               <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
-            <div className="chart-legend">
-              <span>
-                <i className="green" />
-                Income
-              </span>
-              <span>
-                <i />
-                Expenses
-              </span>
-            </div>
+            <span className="aq-overview__basis">Cashbook</span>
           </div>
-
           {period !== "day" ? (
-            <div>
-              {trendRows.length > 0 ? (
-                <>
-                <div className="cash-chart">
-                  <div className="y-labels">
-                    <span>{formatPaisa(trendMax)}</span>
-                    <span>{formatPaisa(Math.round(trendMax * 0.75))}</span>
-                    <span>{formatPaisa(Math.round(trendMax * 0.5))}</span>
-                    <span>{formatPaisa(Math.round(trendMax * 0.25))}</span>
-                    <span>0</span>
-                  </div>
-                  <div className="chart-bars">
-                    {trendRows.map((row, index) => {
-                      const incHeight = row.income_paisa > 0 ? Math.max(4, Math.min(100, Math.round((row.income_paisa / trendMax) * 100))) : 0;
-                      const expHeight = row.expense_paisa > 0 ? Math.max(4, Math.min(100, Math.round((row.expense_paisa / trendMax) * 100))) : 0;
-                      return (
-                        <div
-                          className="bar-group"
-                          key={row.key}
-                          title={row.title}
-                          style={{ "--bar-animation-delay": `${Math.min(index, 15) * 18}ms` } as React.CSSProperties}
-                        >
-                          <div>
-                            <i style={{ height: `${incHeight}%` }} title={`Income: ${formatPaisa(row.income_paisa)}`} />
-                            <i style={{ height: `${expHeight}%` }} title={`Expenses: ${formatPaisa(row.expense_paisa)}`} />
-                          </div>
-                          <span>{row.label}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                  <table className="sr-only" aria-label="Income and expenses by period">
-                    <caption>Recorded cashbook activity for {selectedRangeLabel}</caption>
-                    <thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th></tr></thead>
-                    <tbody>
-                      {trendRows.map((row) => (
-                        <tr key={row.key}>
-                          <th scope="row">{row.title}</th>
-                          <td>{formatPaisa(row.income_paisa)}</td>
-                          <td>{formatPaisa(row.expense_paisa)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </>
-              ) : (
-                <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "20px 0", textAlign: "center" }}>
-                  No entries recorded for this range.
-                </p>
-              )}
-            </div>
+            isLoading ? <p className="aq-overview__empty" role="status">Loading chart…</p>
+              : loadError ? <p className="aq-overview__empty">Chart unavailable.</p>
+                : <OverviewAreaChart rows={trendRows} range={selectedRangeLabel} />
           ) : (
-            <div style={{ padding: "16px 0" }}>
-              <div>
-                <p style={{ fontSize: "var(--type-caption)", fontWeight: 700, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8 }}>
-                  Expense totals by category
-                </p>
-                {expenseBreakdowns.length === 0 ? (
-                  <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "16px 0", textAlign: "center" }}>
-                    No active expenses for this date. Recorded expenses will appear here.
-                  </p>
-                ) : (
-                  <div className="expense-breakdown-layout">
-                    <div
-                      className="expense-donut"
-                      role="img"
-                      aria-label={`Expense category distribution. Total ${formatPaisa(expenseBreakdownTotal)}`}
-                      style={{ background: expenseDonutBackground }}
-                    >
-                      <div className="expense-donut__center">
-                        <strong>{formatPaisa(expenseBreakdownTotal)}</strong>
-                        <span>Total spend</span>
+            <div className="aq-overview__day">
+              {isLoading ? <p role="status">Loading activity…</p>
+                : !activeSummary || loadError ? <p>Activity unavailable.</p>
+                  : (
+                    <div className="aq-day-compare" role="group" aria-label="Income and expenses for selected date">
+                      <div className="aq-day-compare__row">
+                        <div><span>Income</span><strong>{formatPaisa(activeIncome)}</strong></div>
+                        <div className="aq-day-compare__track"><i style={{ width: `${activeIncome > 0 ? 100 * activeIncome / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
                       </div>
+                      <div className="aq-day-compare__row aq-day-compare__row--expense">
+                        <div><span>Expenses</span><strong>{formatPaisa(activeExpense)}</strong></div>
+                        <div className="aq-day-compare__track"><i style={{ width: `${activeExpense > 0 ? 100 * activeExpense / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
+                      </div>
+                      {activeIncome === 0 && activeExpense === 0 && <p className="aq-overview__empty">No income or expenses recorded for this date.</p>}
                     </div>
-                    <ul
-                      aria-label="Expense totals by category"
-                      className="expense-category-list"
-                    >
-                      {expenseBreakdowns.map((b, index) => (
-                        <li key={b.category_id || b.category_name}>
-                          <span className="expense-category-label">
-                            <i
-                              style={{ background: EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length] }}
-                              aria-hidden="true"
-                            />
-                            <span>{b.category_name}</span>
-                          </span>
-                          <span className="expense-category-amount">
-                            <small>{Math.round((b.total_paisa / expenseBreakdownTotal) * 100)}%</small>
-                            <strong>{formatPaisa(b.total_paisa)}</strong>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+                  )}
+              <p className="aq-overview__note">Select Week, Month or Custom to explore a time-series chart.</p>
             </div>
           )}
         </section>
 
-        {/* Right Column: Reserves & Active Accounts */}
-        <div style={{ display: "grid", gap: 14 }}>
-          {/* Non-Operating Capital Panel */}
-          <section className="panel health-panel">
-            <div className="panel-heading">
-              <div>
-                <h2>Capital & Drawings</h2>
-              </div>
-            </div>
-
-            <div className="health-items">
-              <span>
-                Capital Introduced
-                <strong>
-                  <AnimatedAmount amountPaisa={activeCapital} loading={isLoading} error={Boolean(loadError)} />
-                </strong>
-              </span>
-              <span>
-                Owner Drawings
-                <strong>
-                  <AnimatedAmount amountPaisa={activeWithdrawal} loading={isLoading} error={Boolean(loadError)} />
-                </strong>
-              </span>
-              <span>
-                Cash Adjustments In
-                <strong>
-                  <AnimatedAmount amountPaisa={activeAdjIn} loading={isLoading} error={Boolean(loadError)} />
-                </strong>
-              </span>
-              <span>
-                Cash Adjustments Out
-                <strong>
-                  <AnimatedAmount amountPaisa={activeAdjOut} loading={isLoading} error={Boolean(loadError)} />
-                </strong>
-              </span>
-            </div>
-          </section>
-
-          {/* Active Accounts Panel */}
-          <section className="panel transactions-panel">
-            <div className="panel-heading">
-              <div>
-                <h2>Active Accounts</h2>
-              </div>
-            </div>
-
+        <section className="panel aq-overview__distribution">
+          <div className="panel-heading">
             <div>
-              {activeAccounts.length === 0 ? (
-                <p style={{ color: "var(--muted)", fontSize: "var(--type-body)", padding: "16px 0", textAlign: "center" }}>
-                  No active shop accounts are available. Set up an account to see balances.
-                </p>
-              ) : (
-                <ul
-                  aria-label="Current balances by account"
-                  style={{ listStyle: "none", padding: 0, margin: 0, display: "grid" }}
-                >
-                  {activeAccounts.slice(0, 5).map((acc) => {
-                    const initials = acc.type === "CASH" ? "CA" : acc.type === "BANK" ? "BA" : "DW";
-                    return (
-                      <li className="transaction" key={acc.id}>
-                        <span className="transaction-icon">{initials}</span>
-                        <div>
-                          <strong>{acc.name}</strong>
-                          <small>{acc.type} {acc.is_default ? "· Primary Drawer" : ""}</small>
-                        </div>
-                        <strong>{formatPaisa(acc.balance_paisa)}</strong>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+              <h2>Expenses by category</h2>
+              <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
-          </section>
-        </div>
+          </div>
+          {isLoading ? <p className="aq-overview__empty" role="status">Loading categories…</p>
+            : loadError ? <p className="aq-overview__empty">Category breakdown unavailable.</p>
+              : expenseBreakdowns.length === 0 ? (
+                <p className="aq-overview__empty">No active expenses for this date. Recorded expenses will appear here.</p>
+              ) : (
+                <>
+                  <div className="aq-overview__donut-wrap">
+                    <div className="expense-donut" role="img"
+                      aria-label={`Expense category distribution. Total ${formatPaisa(expenseBreakdownTotal)}`}
+                      style={{ background: expenseDonutBackground }}>
+                      <div className="expense-donut__center">
+                        <strong>{formatPaisa(expenseBreakdownTotal)}</strong>
+                        <span>Total recorded</span>
+                      </div>
+                    </div>
+                  </div>
+                  <ul className="expense-category-list" aria-label="Expense totals by category">
+                    {expenseBreakdowns.map((b, index) => (
+                      <li key={b.category_id || b.category_name}>
+                        <span className="expense-category-label">
+                          <i style={{ background: EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length] }} aria-hidden="true" />
+                          <span>{b.category_name}</span>
+                        </span>
+                        <span className="expense-category-amount">
+                          <small>{Math.round((b.total_paisa / expenseBreakdownTotal) * 100)}%</small>
+                          <strong>{formatPaisa(b.total_paisa)}</strong>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {activeSummary && activeExpense !== expenseBreakdownTotal && (
+                    <p className="aq-overview__coverage">Category totals do not match the period expense total. Review the source entries.</p>
+                  )}
+                </>
+              )}
+        </section>
+      </div>
+
+      <div className="aq-overview__details">
+        <section className="panel transactions-panel">
+          <div className="panel-heading"><h2>Cash & bank accounts</h2><span className="aq-overview__basis">Balances as loaded</span></div>
+          {isLoading ? <p role="status" className="aq-overview__empty">Loading accounts…</p>
+            : loadError ? <p className="aq-overview__empty">Accounts unavailable.</p>
+              : activeAccounts.length === 0 ? <p className="aq-overview__empty">No active shop accounts are available. Set up an account to see balances.</p>
+                : <ul aria-label="Current balances by account" className="aq-overview__accounts">
+                    {activeAccounts.map((acc) => (
+                      <li className="transaction" key={acc.id}>
+                        <span className="transaction-icon">{acc.type === "CASH" ? "CA" : acc.type === "BANK" ? "BA" : "WL"}</span>
+                        <div><strong>{acc.name}</strong><small>{acc.type}{acc.is_default ? " · Primary" : ""}</small></div>
+                        <strong className="num">{formatPaisa(acc.balance_paisa)}</strong>
+                      </li>
+                    ))}
+                  </ul>}
+        </section>
+        <section className="panel health-panel">
+          <div className="panel-heading"><h2>Capital & adjustments</h2></div>
+          <div className="health-items">
+            <span>Capital introduced<strong><AnimatedAmount amountPaisa={activeCapital} loading={isLoading} error={Boolean(loadError) || !activeSummary} /></strong></span>
+            <span>Owner drawings<strong><AnimatedAmount amountPaisa={activeWithdrawal} loading={isLoading} error={Boolean(loadError) || !activeSummary} /></strong></span>
+            <span>Cash adjustments in<strong><AnimatedAmount amountPaisa={activeAdjIn} loading={isLoading} error={Boolean(loadError) || !activeSummary} /></strong></span>
+            <span>Cash adjustments out<strong><AnimatedAmount amountPaisa={activeAdjOut} loading={isLoading} error={Boolean(loadError) || !activeSummary} /></strong></span>
+          </div>
+        </section>
       </div>
     </div>
   );
