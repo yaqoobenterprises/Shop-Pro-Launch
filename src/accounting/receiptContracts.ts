@@ -27,10 +27,13 @@ export interface CustomerReceipt {
   reconciliation?:{source_complete:true;cash_debit_minor:ExactMinor;ar_credit_minor:ExactMinor;allocated_minor:ExactMinor;
     bank_verified:false;evidence_method:"dual_control_cash_attestation"};
 }
+export interface InvoiceOpenAllocationReference extends Omit<ReceiptAllocationReference,"invoice_id"> {
+  receipt_id:string;collection_id:string;receipt_number:string;business_date:string;
+}
 export interface InvoiceOpenBalance {
   organization_id:string;invoice_id:string;customer_id:string;currency:string;business_date:string;due_date:string;as_of_date:string|null;
   face_minor:ExactMinor;allocated_minor:ExactMinor;outstanding_minor:ExactMinor;all_posted_allocated_minor:ExactMinor;
-  status:"unpaid"|"partial"|"settled";allocations:Array<ReceiptAllocationReference&{receipt_id:string;collection_id:string;receipt_number:string;business_date:string}>;
+  status:"unpaid"|"partial"|"settled";allocations:InvoiceOpenAllocationReference[];
   source_complete:true;scope:"v2_invoice_allocations";fingerprint:string;legacy_included:false;opening_migration_verified:false;
 }
 export interface OpenInvoicePage {
