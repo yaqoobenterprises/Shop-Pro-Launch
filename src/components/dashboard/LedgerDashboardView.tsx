@@ -211,7 +211,7 @@ export const LedgerDashboardView: React.FC = () => {
       </div>
 
       <div className="aq-overview__visuals">
-        <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""}`}>
+        <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""} ${period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense ? "cash-panel--empty" : ""}`}>
           <div className="panel-heading">
             <div>
               <h2>Income & expenses</h2>
@@ -228,6 +228,22 @@ export const LedgerDashboardView: React.FC = () => {
               {isLoading ? <p role="status">Loading activity…</p>
                 : !activeSummary || loadError ? <p>Activity unavailable.</p>
                   : (
+                    activeIncome === 0 && activeExpense === 0 ? (
+                      <div className="aq-day-no-activity" role="status">
+                        <div className="aq-day-no-activity__symbol">
+                          <TrendingUp size={21} strokeWidth={1.7} aria-hidden="true" />
+                        </div>
+                        <div>
+                          <h3>No income or expenses recorded for this date.</h3>
+                          <p>{dailyData?.transaction_count
+                            ? `${dailyData.transaction_count} other recorded entries exist for this day.`
+                            : "Your books are clear for the selected date."} Explore a wider period for recorded trends.</p>
+                        </div>
+                        <button type="button" onClick={() => setPeriod("week")}>
+                          View weekly trends <ArrowUpRight size={16} aria-hidden="true" />
+                        </button>
+                      </div>
+                    ) : (
                     <div className="aq-day-compare" role="group" aria-label="Income and expenses for selected date">
                       <div className="aq-day-compare__row">
                         <div><span>Income</span><strong>{formatPaisa(activeIncome)}</strong></div>
@@ -237,7 +253,6 @@ export const LedgerDashboardView: React.FC = () => {
                         <div><span>Expenses</span><strong>{formatPaisa(activeExpense)}</strong></div>
                         <div className="aq-day-compare__track"><i style={{ width: `${activeExpense > 0 ? 100 * activeExpense / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
                       </div>
-                      {activeIncome === 0 && activeExpense === 0 && <p className="aq-overview__empty">No income or expenses recorded for this date.</p>}
                       <div className="aq-day-insights" aria-label="Selected day summary">
                         <div className="aq-day-insights__metric">
                           <span>Day operating result</span>
@@ -251,13 +266,15 @@ export const LedgerDashboardView: React.FC = () => {
                         </div>
                       </div>
                     </div>
+                    )
                   )}
-              <p className="aq-overview__note">Select Week, Month or Custom to explore a time-series chart.</p>
+              {!(period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense) &&
+                <p className="aq-overview__note">Select Week, Month or Custom to explore a time-series chart.</p>}
             </div>
           )}
         </section>
 
-        <section className="panel aq-overview__distribution">
+        <section className={`panel aq-overview__distribution ${!isLoading && !loadError && expenseBreakdowns.length === 0 ? "aq-overview__distribution--empty" : ""}`}>
           <div className="panel-heading">
             <div>
               <h2>Expenses by category</h2>
