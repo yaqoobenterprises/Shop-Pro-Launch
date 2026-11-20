@@ -61,7 +61,7 @@ describe("AQVORA verified General Ledger / Trial Balance functional route",()=>{
   });
   it("renders actual certified V2 Trial Balance on user's request",async()=>{
     render(<GeneralLedgerTrialBalanceWorkspace/>);
-    await waitFor(()=>expect(mock.accounts).toHaveBeenCalled());
+    await waitFor(()=>expect((screen.getByRole("button",{name:"Load certified report"}) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.change(screen.getByLabelText("From"),{target:{value:"2026-11-01"}});
     fireEvent.change(screen.getByLabelText("To"),{target:{value:"2026-11-20"}});
     fireEvent.click(screen.getByRole("button",{name:"Load certified report"}));
@@ -76,8 +76,8 @@ describe("AQVORA verified General Ledger / Trial Balance functional route",()=>{
   });
   it("selects only an authorized posting account and renders GL provenance",async()=>{
     render(<GeneralLedgerTrialBalanceWorkspace/>);
-    await waitFor(()=>expect(screen.getByRole("option",{name:/1000 · Cash/})).toBeTruthy());
     fireEvent.click(screen.getByRole("button",{name:"General Ledger"}));
+    await waitFor(()=>expect(screen.getByRole("option",{name:/1000 · Cash/})).toBeTruthy());
     fireEvent.change(screen.getByLabelText("Posting account"),{target:{value:accountId}});
     fireEvent.change(screen.getByLabelText("From"),{target:{value:"2026-11-01"}});
     fireEvent.change(screen.getByLabelText("To"),{target:{value:"2026-11-20"}});
@@ -91,12 +91,14 @@ describe("AQVORA verified General Ledger / Trial Balance functional route",()=>{
   it("refuses a denied or inconsistent report instead of showing zero",async()=>{
     mock.tb.mockRejectedValue(Object.assign(new Error("Source changed"),{code:"40001"}));
     render(<GeneralLedgerTrialBalanceWorkspace/>);
+    await waitFor(()=>expect((screen.getByRole("button",{name:"Load certified report"}) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole("button",{name:"Load certified report"}));
     await waitFor(()=>expect(screen.getByRole("alert").textContent).toContain("Source changed"));
     expect(screen.queryByText("Certified totals")).toBeNull();
   });
   it("invalidates displayed data immediately when report mode is switched",async()=>{
     render(<GeneralLedgerTrialBalanceWorkspace/>);
+    await waitFor(()=>expect((screen.getByRole("button",{name:"Load certified report"}) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole("button",{name:"Load certified report"}));
     await waitFor(()=>expect(screen.getByText("Certified totals")).toBeTruthy());
     fireEvent.click(screen.getByRole("button",{name:"General Ledger"}));
