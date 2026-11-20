@@ -8,7 +8,7 @@ const harness = vi.hoisted(() => ({
   setRegion: vi.fn(),
   setLanguage: vi.fn(),
   saveUserPreferences: vi.fn(async () => undefined),
-  saveCompany: vi.fn(async () => ({
+  saveCompany: vi.fn(async (_request: unknown) => ({
     name: "New Services Ltd",
     business_category: "Services",
     country: "Pakistan",
@@ -86,7 +86,7 @@ describe("AQVORA company setup journey", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByText("Step 3 of 3")).toBeTruthy();
-    expect(screen.getByText("No opening balances or accounting transactions will be created.")).toBeTruthy();
+    expect(screen.getByText(/No opening balances or accounting transactions will be created/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Confirm & continue/ }));
     await waitFor(() => expect(harness.saveCompany).toHaveBeenCalledOnce());
