@@ -276,3 +276,23 @@ html .app-shell .sidebar-bottom > button:hover:not(.active) { transform: none; }
   html .app-shell #app-sidebar nav button,
   html .app-shell #app-sidebar .sidebar-bottom > button { transition: none; }
 }
+
+/* Reports share the same verified-data chart palette; never alter calculations. */
+html .app-shell .reports-modern__profit-line {
+  stroke: var(--chart-lavender);
+}
+html .app-shell .reports-modern__profit-point {
+  fill: var(--chart-lavender);
+  stroke: var(--surface-card);
+}
+html .app-shell .reports-modern__profit-zero {
+  stroke: var(--line-strong);
+}
+html .app-shell .reports-modern__profit-gridline {
+  stroke: var(--chart-grid);
+}
+html .app-shell .reports-modern__table-panel {
+  background: var(--surface-card);
+  border-color: var(--line);
+  border-radius: .78rem;
+}
