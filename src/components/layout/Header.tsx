@@ -79,7 +79,7 @@ export const Header: React.FC = () => {
     <header className="app-header workspace-header" dir={dir}>
       <div className="workspace-context">
         <div className="workspace-context__copy">
-          <span className="workspace-context__eyebrow">{APP_NAME} <span aria-hidden="true">/</span> WORKSPACE</span>
+          <span className="workspace-context__eyebrow">AQVORA <span aria-hidden="true">/</span> WORKSPACE</span>
           <span className="workspace-context__title">{pageTitle}</span>
         </div>
       </div>
