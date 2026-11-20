@@ -129,7 +129,10 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
     cash = String(success(await createAccount("1000", "Cash", "asset", "debit")).id);
     sales = String(success(await createAccount("4000", "Sales", "revenue", "credit")).id);
     expect(success(await rpc(manager, "list_aqvora_accounts", { p_organization_id: org }))).toHaveLength(2);
-    expect(success(await rpc(manager, "list_aqvora_admin_events", { p_organization_id: org }))).toHaveLength(3);
+    const events = success(await rpc(manager, "list_aqvora_admin_events", {
+      p_organization_id: org,
+    })) as unknown as Array<{ id: number }>;
+    expect(events).toHaveLength(3);
     denied(await rpc(manager, "create_aqvora_period", {
       p_organization_id: org, p_starts_on: "2026-12-01", p_ends_on: "2026-12-31",
     }));
@@ -141,6 +144,11 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
     denied(await call(owner, "aqvora_accounts", { organization_id: org, code: "9000",
       name: "Bypass", account_class: "asset", normal_side: "debit", is_posting: true }));
     denied(await call(owner, "aqvora_admin_audit", { organization_id: org }));
+    denied(await call(owner, `aqvora_admin_audit?id=eq.${events[0].id}`,
+      { reason: "rewrite" }, "PATCH"));
+    denied(await call(owner, `aqvora_admin_audit?id=eq.${events[0].id}`,
+      undefined, "DELETE"));
+    denied(await rpc(owner, "aqvora_admin_authorize", { p_org: org }));
   }, 120000);
 
   it("posts one journal for racing requests and recovers its receipt after close", async () => {
@@ -184,6 +192,11 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
       "SELECT id FROM public.aqvora_admin_audit WHERE organization_id=$1 ORDER BY id LIMIT 1", [org]);
     await expect(db.query("UPDATE public.aqvora_admin_audit SET reason='rewrite' WHERE id=$1",
       [audit.rows[0].id])).rejects.toThrow("immutable");
+    await db.query("UPDATE public.organization_members SET role='CASHIER' WHERE organization_id=$1 AND user_id=$2",
+      [org, manager.id]);
+    denied(await rpc(manager, "list_aqvora_admin_events", { p_organization_id: org }));
+    await db.query("UPDATE public.organization_members SET role='MANAGER' WHERE organization_id=$1 AND user_id=$2",
+      [org, manager.id]);
     await db.query("DELETE FROM auth.sessions WHERE id=$1", [jwt(manager.token).session_id]);
     denied(await rpc(manager, "list_aqvora_admin_events", { p_organization_id: org }));
     await db.query("UPDATE public.organization_members SET is_active=false WHERE organization_id=$1 AND user_id=$2",

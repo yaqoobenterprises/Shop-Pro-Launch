@@ -36,3 +36,26 @@ Use only a verified isolated, disposable Supabase project or local stack with te
 4. If a release fails before enrollment, keep V2 disabled and use a reviewed forward correction or restore into a new isolated target. Do not run `db push` to conceal out-of-order history. If any V2 journal has posted, never drop or rewrite immutable history; stop new enrollment, preserve receipts and audit, restore with a verified tail/PITR plan, and reconcile every intent before traffic moves. Release requires explicit owner approval after the staging evidence and offline balance inventory are reviewed.
 
 No production migration, merge, company enrollment or customer posting is authorized by this document.
+
+## Phase 4 disposable verification update
+
+Draft PR #44 adds a CI-only Supabase CLI stack with real GoTrue, PostgREST and
+PostgreSQL. Synthetic users sign in through Auth and complete TOTP challenges;
+their issued AAL1/AAL2 tokens exercise owner, manager and foreign-company RPCs,
+direct table grants, revoked sessions, membership changes, audit immutability,
+and concurrent idempotent posting. The service key only creates test users.
+No hosted project or customer row is used. A separate PostgreSQL 17 job applies
+the fresh and documented deployed migration orders, takes a custom-format
+full-schema dump, injects a failed transactional migration, restores into a
+new disposable database, and compares counts, exact debit/credit totals,
+receipts, grants and closed-period behavior. These checks do not prove hosted
+Auth settings, hosted backup/PITR, or restore time objectives.
+
+Release gates remain: reconcile each legacy payment-account balance against
+the authoritative ledger; inventory and preserve every offline queue through
+the #30/#31 privilege change; fence old clients that can still write legacy
+balance snapshots; rehearse a hosted isolated backup/PITR restore with the
+actual migration ledger and operator sign-off; then verify the combined PR
+dependency order and currency/period rules before any company enrollment.
+The current UI previews are sample-only and must not be presented as an
+integrated financial workflow.

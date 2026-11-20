@@ -47,11 +47,40 @@ The public account API cannot create or modify one. Posting still rejects
 unverified AR, AP, inventory, and tax source references. This release does not
 add source-document verification or financial subledger posting.
 
+## Frontend adapter boundary
+
+The PR #40 preview is a local read model. A future adapter must page through
+`list_aqvora_accounts` until it has a complete company chart before calling
+`assertValidChart`; one page is not a complete chart. Map `organization_id`,
+`account_class`, `normal_side`, `parent_id`, `is_posting`, `is_active`, and
+`control_role` to the matching `ChartAccount` camel-case fields. Convert a null
+`control_role` to an absent optional value. Retain each row's `revision` for
+edit/archive calls. Every account mutation is an RPC, never a table write.
+
+For `JournalPreviewPolicy`, use the selected company's server currency and
+period dates. Map SQL `state = 'open'` to preview `periodState = 'open'` even
+when `reopen_count > 0`; the current preview treats `reopened` as locked.
+The preview is advisory and cannot grant posting authority.
+
+The posting adapter maps `JournalDraftInput.organizationId` to RPC
+`organization_id`, `intentId` to `intent_key`, `businessDate` to
+`business_date`, and each line's `accountId`, `debitMinor`, and `creditMinor`
+to `account_id`, `debit_minor`, and `credit_minor`. Amounts remain canonical
+decimal minor-unit strings. The server derives currency from the company.
+`lineId` is a local draft identifier; it is not a persisted journal line ID.
+Do not send `partyId`, `openItemId`, or `stockMovementId` until verified source
+posting exists. After a lost response, call `lookup_aqvora_receipt` with the
+same `(organization_id, intent_key)` before retrying the identical payload.
+The receipt supplies `journal_id`, `total_minor` as a string, `posted_at`, and
+`posted_by`. PR #40's current controls remain disabled; no UI integration is
+claimed by this contract.
+
 ## Verification boundary
 
 PGlite tests cover migration installation and RPC behavior. The CI PostgreSQL
 17 service exercises independent sessions, row locks, retry and receipt races,
-tenant isolation, and fresh/deployed migration orders. Real Supabase Auth and
-PostgREST behavior requires a disposable local stack or isolated cloud staging
-project; no existing project is a test target. Follow the Phase 3 recovery
-runbook before any future staging migration rehearsal.
+tenant isolation, fresh/deployed migration orders, and full-schema dump/restore.
+A separate disposable local Supabase stack on a GitHub Actions runner exercises
+real Auth-issued AAL1/AAL2 JWTs and PostgREST permissions with synthetic users.
+Neither job verifies hosted configuration or customer data. Follow the Phase 3
+recovery runbook before any isolated cloud staging migration rehearsal.
