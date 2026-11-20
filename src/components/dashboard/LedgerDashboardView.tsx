@@ -195,7 +195,7 @@ export const LedgerDashboardView: React.FC = () => {
       )}
 
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Cash & bank" scope="Current account balances" icon={Wallet}
+        <OverviewMetricCard label="Cash & bank" scope="Latest loaded account balances" icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Income" scope="Selected cashbook period" icon={TrendingUp}
