@@ -1,5 +1,5 @@
 import {afterEach,beforeEach,describe,expect,it,vi} from "vitest";
-import {cleanup,fireEvent,render,screen,waitFor} from "@testing-library/react";
+import {act,cleanup,fireEvent,render,screen,waitFor} from "@testing-library/react";
 import {GeneralLedgerTrialBalanceWorkspace} from "../src/components/accounting/GeneralLedgerTrialBalanceWorkspace";
 
 const mock=vi.hoisted(()=>({
@@ -74,6 +74,16 @@ describe("AQVORA verified General Ledger / Trial Balance functional route",()=>{
       fromDate:"2026-11-01",toDate:"2026-11-20",
     }),expect.objectContaining({pageSize:100}));
   });
+  it("continues loading posting accounts when switching reports before the RPC resolves",async()=>{
+    let release:(value:typeof account[])=>void=()=>{throw new Error("No pending account read");};
+    mock.accounts.mockImplementation(()=>new Promise(resolve=>{release=resolve;}));
+    render(<GeneralLedgerTrialBalanceWorkspace/>);
+    fireEvent.click(screen.getByRole("button",{name:"General Ledger"}));
+    await act(async()=>{release([account]);});
+    await waitFor(()=>expect(screen.getByRole("option",{name:/1000 · Cash/})).toBeTruthy());
+    expect((screen.getByLabelText("Posting account") as HTMLSelectElement).disabled).toBe(false);
+  });
+
   it("selects only an authorized posting account and renders GL provenance",async()=>{
     render(<GeneralLedgerTrialBalanceWorkspace/>);
     fireEvent.click(screen.getByRole("button",{name:"General Ledger"}));
