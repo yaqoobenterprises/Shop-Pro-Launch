@@ -1,6 +1,7 @@
 import { getSupabaseClient, hasActiveSupabaseSession, isSupabaseConfigured } from '../lib/supabase';
 import { getSqliteDatabase, SqlDatabase } from './sqliteEngine';
 import { getSecurityPrincipal } from '../lib/security';
+import { requiresAccountBalanceReconciliation } from './legacyAccountSyncGuard';
 
 export interface SyncStatus {
   isOnline: boolean;
@@ -93,7 +94,6 @@ export const TABLE_ALLOWED_COLUMNS: Record<string, string[]> = {
     'entity_id', 'details', 'metadata', 'created_at'
   ],
 };
-
 export function sanitizePayloadForCloud(tableName: string, payload: Record<string, unknown>): Record<string, unknown> {
   const allowed = TABLE_ALLOWED_COLUMNS[tableName];
   if (!allowed) {
@@ -109,24 +109,6 @@ export function sanitizePayloadForCloud(tableName: string, payload: Record<strin
   }
   return result;
 }
-
-/**
- * The legacy queue stores a snapshot of account balances. Replaying that
- * snapshot as an UPSERT can overwrite a balance modified by a later posting.
- * Keep these records in the local queue until an audited reconciliation path
- * can distinguish account metadata from real financial movements.
- */
-export function requiresAccountBalanceReconciliation(
-  tableName: string,
-  operation: string,
-  payload: Record<string, unknown>,
-): boolean {
-  return tableName === 'payment_accounts' &&
-    (operation === 'INSERT' || operation === 'UPDATE') &&
-    (Object.prototype.hasOwnProperty.call(payload, 'current_balance') ||
-      Object.prototype.hasOwnProperty.call(payload, 'opening_balance'));
-}
-
 class SyncEngineService {
   private isSyncing = false;
   private lastSyncTime: string | null = null;
@@ -155,7 +137,6 @@ class SyncEngineService {
     const status = this.getStatus();
     this.listeners.forEach((cb) => cb(status));
   }
-
   public getStatus(): SyncStatus {
     return {
       isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
@@ -179,7 +160,6 @@ class SyncEngineService {
       return this.pendingCount;
     }
   }
-
   private handleNetworkChange(online: boolean) {
     this.notify();
     if (online) {
@@ -279,16 +259,10 @@ class SyncEngineService {
             throw new Error('Sync payload organization does not match authenticated session');
           }
 
-          // Balance snapshots are not authoritative movements. Never replay
-          // them through generic UPSERT, and never acknowledge or exhaust
-          // their local retries before a verified reconciliation exists.
           if (requiresAccountBalanceReconciliation(item.table_name, item.operation, payload)) {
-            pushErrors.push(
-              `${item.table_name}/${item.record_id}: Local account balance requires reconciliation; retained in pending sync queue.`,
-            );
+            pushErrors.push(`${item.table_name}/${item.record_id}: Local account balance requires reconciliation; retained in pending sync queue.`);
             continue;
           }
-
           // Strip non-table properties and ensure valid payload
           const cleanPayload = sanitizePayloadForCloud(item.table_name, payload);
           cleanPayload.organization_id = principal.organizationId;
