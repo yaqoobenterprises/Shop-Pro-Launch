@@ -1,0 +1,82 @@
+/* The actual Overview route, not the sample finance preview. */
+html .app-shell .overview-page .aq-overview__visuals > .cash-panel--day {
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+}
+html .app-shell .overview-page .cash-panel--day .aq-overview__day {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+}
+html .app-shell .overview-page .cash-panel--day .aq-day-compare {
+  display: grid;
+  gap: 20px;
+  padding: 17px 0 8px;
+}
+html .app-shell .overview-page .cash-panel--day .aq-day-compare__track { height: 10px; }
+html .app-shell .overview-page .cash-panel--day .aq-day-compare__row > div:first-child {
+  font-size: 12px;
+  margin-bottom: 9px;
+}
+html .app-shell .overview-page .aq-day-insights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 6px;
+}
+html .app-shell .overview-page .aq-day-insights__metric {
+  min-width: 0;
+  padding: 15px 17px;
+  background: var(--surface-2, #f3f2f6);
+  border: 1px solid var(--line, #e2e1e8);
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+}
+html .app-shell .overview-page .aq-day-insights__metric span {
+  font-size: 11px;
+  color: var(--muted, #73737f);
+  font-weight: 560;
+}
+html .app-shell .overview-page .aq-day-insights__metric strong {
+  color: var(--ink, #35383e);
+  font-size: clamp(16px, 1.3vw, 20px);
+  font-weight: 690;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.035em;
+  overflow-wrap: anywhere;
+}
+html .app-shell .overview-page .aq-day-insights__metric small {
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--muted, #73737f);
+}
+html .app-shell .overview-page .cash-panel--day .aq-overview__note {
+  margin: 0;
+  padding-top: 4px;
+  font-size: 11px;
+}
+html .app-shell .overview-page .aq-overview__details .health-items {
+  display: grid;
+  gap: 0;
+}
+html .app-shell .overview-page .aq-overview__details .health-items > span {
+  min-height: 58px;
+  padding: 9px 0;
+  border-top: 1px solid var(--line, #e2e1e8);
+  font-size: 12px;
+}
+html .app-shell .overview-page .aq-overview__details .health-items > span:first-child { border-top: 0; }
+html .app-shell .overview-page .aq-overview__details .health-panel { min-height: auto; }
+@media (max-width: 700px) {
+  html .app-shell .overview-page .aq-overview__visuals > .cash-panel--day { min-height: 0; }
+  html .app-shell .overview-page .aq-day-insights { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  html .app-shell .overview-page .aq-day-insights__metric { padding: 11px; }
+  html .app-shell .overview-page .aq-day-insights__metric strong { font-size: 16px; }
+}
+@media (max-width: 390px) {
+  html .app-shell .overview-page .aq-day-insights { grid-template-columns: minmax(0, 1fr); }
+}
