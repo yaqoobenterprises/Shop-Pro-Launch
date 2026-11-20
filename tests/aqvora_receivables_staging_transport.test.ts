@@ -162,6 +162,6 @@ describe("AQVORA default-off V2 receivables staging RPC transport", () => {
       .rejects.toThrow(/Malformed AQVORA invoice balance response/);
     mock.rpc.mockResolvedValueOnce({data:{},error:null});
     await expect(loadIsolatedReceivablesReconciliation(context))
-      .rejects.toThrow(/complete matching V2 read/);
+      .rejects.toThrow(/Malformed AQVORA source certification response/);
   });
 });
