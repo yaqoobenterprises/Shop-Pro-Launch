@@ -68,7 +68,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
             <h2>Today's activity</h2>
             <p>Select an entry to view its details</p>
           </div>
-          <span aria-label={`${transactions.length} recorded entries`}>
+          <span aria-label={`${transactions.length} recorded ${transactions.length === 1 ? "entry" : "entries"}`}>
             {transactions.length} {transactions.length === 1 ? "entry" : "entries"}
           </span>
         </div>
