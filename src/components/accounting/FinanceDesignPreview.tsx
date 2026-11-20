@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BookOpenText, CalendarRange, ChartNoAxesCombined, FileSpreadsheet, LayoutList, Sparkles, X } from "lucide-react";
+import { BookOpenText, CalendarRange, ChartNoAxesCombined, FileSpreadsheet, LayoutDashboard, LayoutList, Sparkles, X } from "lucide-react";
 import { buildFinancialSnapshot } from "../../accounting/financialSnapshot";
 import type { JournalPreviewPolicy } from "../../accounting/types";
 import { ChartExplorer } from "./ChartExplorer";
+import { FinanceOverviewPanel } from "./FinanceOverviewPanel";
 import { FiscalPeriodPanel } from "./FiscalPeriodPanel";
 import type { AqvoraFiscalPeriod } from "../../services/aqvoraAdminReadService";
 import { JournalComposer } from "./JournalComposer";
@@ -12,9 +13,11 @@ import { sampleChart, sampleCompany, sampleJournals } from "./financeSampleData"
 import "./FinanceDesignPreview.css";
 import "./FinanceFinish.css";
 import "./FinanceAdmin.css";
+import "./FinanceOverview.css";
 
-type Page = "chart" | "periods" | "journal" | "ledger" | "trial";
+type Page = "overview" | "chart" | "periods" | "journal" | "ledger" | "trial";
 const pages: { key: Page; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
+  { key: "overview", label: "Overview", icon: LayoutDashboard },
   { key: "chart", label: "Chart of Accounts", icon: LayoutList },
   { key: "periods", label: "Fiscal Periods", icon: CalendarRange },
   { key: "journal", label: "Journal Entry", icon: FileSpreadsheet },
@@ -39,7 +42,7 @@ const samplePeriods: AqvoraFiscalPeriod[] = [
 interface Props { onClose: () => void; onOpenAi?: () => void }
 
 export const FinanceDesignPreview: React.FC<Props> = ({ onClose, onOpenAi }) => {
-  const [page, setPage] = useState<Page>("chart");
+  const [page, setPage] = useState<Page>("overview");
   const [ledgerAccountId, setLedgerAccountId] = useState<string | undefined>(undefined);
   const report = useMemo(() => buildFinancialSnapshot({
     organizationId: sampleCompany.organizationId,
@@ -105,6 +108,8 @@ export const FinanceDesignPreview: React.FC<Props> = ({ onClose, onOpenAi }) => 
                 aria-current={page === entry.key ? "page" : undefined}
                 onClick={() => setPage(entry.key)}>{entry.label}</button>)}
             </div>
+            {page === "overview" && <FinanceOverviewPanel accounts={sampleChart} periods={samplePeriods}
+              journals={sampleJournals} onNavigate={setPage} />}
             {page === "chart" && <ChartExplorer accounts={sampleChart} isSample />}
             {page === "periods" && <FiscalPeriodPanel periods={samplePeriods} source="illustrative" />}
             {page === "journal" && <JournalComposer accounts={sampleChart}
