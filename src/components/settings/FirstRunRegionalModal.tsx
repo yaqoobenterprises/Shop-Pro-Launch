@@ -44,7 +44,7 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
       country: organization.country || detected.country || "Pakistan",
       timezone: organization.timezone || detected.timeZone || "Asia/Karachi",
     });
-  }, [organization.id, detected]);
+  }, [organization.id, organization.name, organization.business_category, organization.currency, organization.country, organization.timezone, detected]);
 
   if (!isOpen) return null;
   const change = (key: keyof CompanySetupInput, value: string) => {
