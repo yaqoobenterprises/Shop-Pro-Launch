@@ -1,0 +1,214 @@
+/* AQVORA navigation: useful at every width, including a genuinely usable collapsed rail. */
+html .app-shell #app-sidebar .aq-nav-group {
+  display: grid;
+  align-content: start;
+  gap: .18rem;
+  min-width: 0;
+}
+html .app-shell #app-sidebar .aq-nav-group + .aq-nav-group {
+  margin-top: 1rem;
+}
+html .app-shell #app-sidebar .aq-nav-group .sidebar-section-label {
+  margin: 0 0 .15rem;
+  padding: .35rem .7rem;
+  font-size: .59rem;
+  font-weight: 720;
+  letter-spacing: .105em;
+}
+html .app-shell #app-sidebar .aq-nav-group button {
+  min-height: 44px;
+  text-align: start;
+}
+html .app-shell #app-sidebar.is-collapsed {
+  padding: .5rem;
+  align-items: stretch;
+}
+html .app-shell #app-sidebar.is-collapsed nav,
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+html .app-shell #app-sidebar.is-collapsed nav {
+  align-content: start;
+  gap: 1rem;
+  padding-top: .65rem;
+}
+html .app-shell #app-sidebar.is-collapsed .aq-nav-group {
+  display: grid;
+  gap: .18rem;
+}
+html .app-shell #app-sidebar.is-collapsed .aq-nav-group + .aq-nav-group {
+  margin-top: 0;
+  border-top: 1px solid var(--line);
+  padding-top: .6rem;
+}
+html .app-shell #app-sidebar.is-collapsed [data-sidebar-label],
+html .app-shell #app-sidebar.is-collapsed .sidebar-section-label { display: none; }
+html .app-shell #app-sidebar.is-collapsed nav button,
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom > button {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+  margin-inline: auto;
+}
+html .app-shell #app-sidebar.is-collapsed nav button svg,
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom > button svg {
+  width: 19px;
+  height: 19px;
+}
+html .app-shell #app-sidebar.is-collapsed .side-brand {
+  width: 100%;
+  margin: 0;
+  min-height: 50px;
+}
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom {
+  align-content: end;
+  gap: .25rem;
+  padding-top: .6rem;
+}
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom .user-card {
+  padding: 0;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+}
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom .user-card .avatar {
+  flex-shrink: 0;
+}
+html .app-shell #app-sidebar nav button:focus-visible,
+html .app-shell #app-sidebar .sidebar-bottom button:focus-visible {
+  outline: 2px solid var(--chart-lavender);
+  outline-offset: 2px;
+}
+
+/* Five clear mobile destinations. New is an actual entry composer action. */
+html .app-shell .aq-mobile-nav {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: .35rem .35rem calc(.3rem + env(safe-area-inset-bottom));
+  gap: .15rem;
+  min-height: calc(4.1rem + env(safe-area-inset-bottom));
+  border-color: var(--line);
+  background: var(--surface-card);
+  box-shadow: 0 -5px 24px rgba(41, 40, 60, .05);
+}
+html .app-shell .aq-mobile-nav__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .12rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 54px;
+  padding: .3rem 0;
+  background: transparent;
+  border: 0;
+  border-radius: .65rem;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+html .app-shell .aq-mobile-nav__item[aria-current="page"] {
+  color: var(--ink);
+  background: var(--surface-2);
+  font-weight: 700;
+}
+html .app-shell .aq-mobile-nav__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 30px;
+}
+html .app-shell .aq-mobile-nav__label {
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-inline: .15rem;
+  font-size: .62rem;
+  line-height: 1.2;
+  font-weight: 650;
+}
+html .app-shell .aq-mobile-nav__item--new .aq-mobile-nav__icon {
+  width: 39px;
+  height: 39px;
+  margin-top: -.4rem;
+  background: var(--featured);
+  border-radius: .75rem;
+  color: #fff;
+}
+html .app-shell .aq-mobile-nav__item--new[aria-current="page"] {
+  background: transparent;
+}
+html .app-shell .aq-mobile-nav__item--new .aq-mobile-nav__label {
+  font-weight: 750;
+  color: var(--ink);
+}
+html .app-shell .aq-mobile-nav__more-wrap {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  min-width: 0;
+}
+html .app-shell .aq-mobile-nav__more-wrap > .aq-mobile-nav__item {
+  z-index: 2;
+}
+html .app-shell .aq-mobile-nav__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  border: 0;
+  background: rgba(22, 24, 34, .28);
+}
+html .app-shell .aq-mobile-nav__menu {
+  position: absolute;
+  inset-inline-end: 0;
+  bottom: calc(100% + .8rem);
+  z-index: 3;
+  width: min(78vw, 270px);
+  display: grid;
+  padding: .45rem;
+  border: 1px solid var(--line);
+  border-radius: .85rem;
+  background: var(--surface-card);
+  box-shadow: var(--shadow);
+}
+html .app-shell .aq-mobile-nav__menu button {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  min-height: 46px;
+  padding: .65rem .75rem;
+  border: none;
+  border-radius: .6rem;
+  background: transparent;
+  color: var(--ink-2);
+  text-align: start;
+  font-size: .84rem;
+  font-weight: 600;
+}
+html .app-shell .aq-mobile-nav__menu button:hover,
+html .app-shell .aq-mobile-nav__menu button[aria-current="page"] {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+html .app-shell .aq-mobile-nav :is(button):focus-visible {
+  outline: 2px solid var(--chart-lavender);
+  outline-offset: 1px;
+}
+@media (min-width: 768px) {
+  html .app-shell .aq-mobile-nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html .app-shell .aq-mobile-nav__item,
+  html .app-shell .aq-mobile-nav__menu button { transition: none; }
+}
