@@ -96,7 +96,15 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
     </div>
 
     <div className="lm-messages" aria-live="polite" aria-relevant="additions text">
-      {messages.length === 0 && <div className="lm-empty-state">
+      {messages.length === 0 && !online && !checking && <div className="lm-offline-state" role="status">
+        <div className="lm-offline-state__icon"><Sparkles aria-hidden="true"/></div>
+        <p className="lm-eyebrow">AQVORA / ASSISTANT</p>
+        <h2>LedgerMate is offline</h2>
+        <p>Your saved conversations remain available. Live AI answers require a working provider connection.</p>
+        <button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true"/> Retry connection</button>
+        <small>No accounting entry has been changed.</small>
+      </div>}
+      {messages.length === 0 && (online || checking) && <div className="lm-empty-state">
         <div className="lm-empty-icon"><Sparkles aria-hidden="true" /></div>
         <p className="lm-eyebrow">Shop Pro financial intelligence</p>
         <h2>What would you like to understand?</h2>
@@ -132,7 +140,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
     </div>
 
     {error && <div className="lm-error" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError(null)}><X aria-hidden="true" /></button></div>}
-    {!online && !checking && <div className="lm-offline-banner"><span>LedgerMate is offline. Your chat remains saved; reconnect to send a question.</span><button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true" /> Retry</button></div>}
+    {!online && !checking && messages.length > 0 && <div className="lm-offline-banner"><span>LedgerMate is offline. Your chat remains saved; reconnect to send a question.</span><button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true" /> Retry</button></div>}
 
     <form className="lm-composer-wrap" onSubmit={(event) => onSend(event)}>
       <div className="lm-composer">
