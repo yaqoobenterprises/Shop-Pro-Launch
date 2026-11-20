@@ -71,12 +71,22 @@ const MainShell: React.FC = () => {
   const { t } = useI18n();
   const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
+  const demoPreviewOffered = React.useRef(false);
 
   useEffect(() => {
+    // Offer the existing real setup wizard once in the isolated demo preview.
+    // This has no effect on normal users when the feature flag is disabled.
+    if (companySetupEnabled && isDemoMode) {
+      if (!demoPreviewOffered.current) {
+        demoPreviewOffered.current = true;
+        setShowRegionalSetup(true);
+      }
+      return;
+    }
     setShowRegionalSetup(Boolean(
       companySetupEnabled && user?.role === "OWNER" && organization.region_configured === false,
     ));
-  }, [companySetupEnabled, user?.id, user?.role, organization.id, organization.region_configured]);
+  }, [companySetupEnabled, isDemoMode, user?.id, user?.role, organization.id, organization.region_configured]);
 
   useEffect(() => {
     let syncInFlight: Promise<void> | undefined;
