@@ -1,0 +1,147 @@
+/* Locked Poital.flow dashboard finishing: four KPIs, 2:1 chart hierarchy, air. */
+html .app-shell .overview-page {
+  max-width: 1540px;
+  margin-inline: auto;
+}
+html .app-shell .overview-page .page-title {
+  padding-block: .25rem 1.2rem;
+  margin-bottom: .65rem;
+  gap: 1.3rem;
+}
+html .app-shell .overview-page .overview-page-heading .kicker {
+  display: none;
+}
+html .app-shell .overview-page .overview-page-heading h1 {
+  font-size: clamp(1.28rem, 1.55vw, 1.5rem);
+  font-weight: 670;
+  letter-spacing: -.035em;
+}
+html .app-shell .overview-page .overview-page-heading p {
+  font-size: .76rem;
+  color: var(--muted);
+  line-height: 1.55;
+  margin-top: .26rem;
+}
+html .app-shell .overview-page .metrics {
+  gap: clamp(.85rem, 1.04vw, 1.15rem);
+  margin-bottom: clamp(1.25rem, 1.8vw, 1.65rem);
+}
+html .app-shell .overview-page .aq-metric {
+  min-height: clamp(9rem, 10.8vw, 9.85rem);
+  padding: clamp(1.05rem, 1.45vw, 1.45rem);
+  border: 0;
+  border-radius: .78rem;
+  box-shadow: none;
+}
+html .app-shell .overview-page .aq-metric:hover {
+  box-shadow: 0 4px 12px rgba(53, 49, 67, .05);
+  border: 0;
+}
+html .app-shell .overview-page .aq-metric .metric-top {
+  gap: .6rem;
+  align-items: center;
+}
+html .app-shell .overview-page .aq-metric .metric-top span {
+  font-size: clamp(.79rem, .85vw, .87rem);
+  font-weight: 540;
+  letter-spacing: -.01em;
+}
+html .app-shell .overview-page .aq-metric .metric-top svg {
+  width: 1.5rem;
+  height: 1.5rem;
+  stroke-width: 1.7;
+}
+html .app-shell .overview-page .aq-metric .metric-amount,
+html .app-shell .overview-page .aq-metric--positive .metric-amount,
+html .app-shell .overview-page .aq-metric--negative .metric-amount {
+  font-size: clamp(1.42rem, 2.18vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -.045em;
+  margin-top: .85rem;
+}
+html .app-shell .overview-page .aq-metric .aq-metric__scope {
+  color: inherit;
+  opacity: .7;
+  font-size: .69rem;
+  line-height: 1.5;
+  margin-top: .7rem;
+}
+html .app-shell .overview-page .aq-overview__visuals {
+  grid-template-columns: minmax(0, 1.95fr) minmax(255px, .95fr);
+  gap: clamp(.9rem, 1.15vw, 1.2rem);
+  margin-bottom: clamp(1.3rem, 1.8vw, 1.7rem);
+}
+html .app-shell .overview-page .aq-overview__details {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
+  gap: clamp(.9rem, 1.15vw, 1.2rem);
+  align-items: stretch;
+}
+html .app-shell .overview-page .panel {
+  border: 0;
+  box-shadow: var(--shadow-sm);
+  border-radius: .78rem;
+  padding: clamp(1.2rem, 1.65vw, 1.75rem);
+}
+html .app-shell .overview-page .panel-heading {
+  margin-bottom: 1.1rem;
+}
+html .app-shell .overview-page .panel-heading h2 {
+  font-size: clamp(.98rem, 1.08vw, 1.1rem);
+  font-weight: 670;
+  letter-spacing: -.026em;
+}
+html .app-shell .overview-page .overview-chart-range {
+  font-size: .72rem;
+  margin-top: .2rem;
+}
+html .app-shell .overview-page .aq-overview__basis {
+  background: var(--surface-2);
+  border-radius: .42rem;
+  font-size: .69rem;
+}
+html .app-shell .overview-page .aq-overview__visuals > .panel {
+  min-height: clamp(20rem, 29vw, 24rem);
+}
+html .app-shell .overview-page .aq-chart__canvas {
+  min-height: 230px;
+  max-height: 370px;
+}
+html .app-shell .overview-page .aq-overview__donut-wrap {
+  margin-top: 1rem;
+  margin-bottom: 1.1rem;
+}
+html .app-shell .overview-page .aq-overview__distribution .expense-donut {
+  width: min(100%, 206px);
+}
+html .app-shell .overview-page .aq-overview__distribution .expense-category-list {
+  gap: .14rem;
+}
+html .app-shell .overview-page .aq-overview__details .transaction {
+  min-height: 4rem;
+}
+html .app-shell .overview-page .health-items > span {
+  min-height: 3.1rem;
+}
+@media (max-width: 1250px) {
+  html .app-shell .overview-page .aq-overview__visuals { grid-template-columns: minmax(0, 1.55fr) minmax(260px, .9fr); }
+}
+@media (max-width: 1040px) {
+  html .app-shell .overview-page .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html .app-shell .overview-page .aq-overview__visuals,
+  html .app-shell .overview-page .aq-overview__details { grid-template-columns: minmax(0, 1fr); }
+  html .app-shell .overview-page .aq-overview__visuals > .panel { min-height: auto; }
+}
+@media (max-width: 650px) {
+  html .app-shell .overview-page .metrics { gap: .68rem; }
+  html .app-shell .overview-page .aq-metric { min-height: 8.4rem; padding: .96rem; }
+  html .app-shell .overview-page .aq-metric .metric-amount,
+  html .app-shell .overview-page .aq-metric--positive .metric-amount,
+  html .app-shell .overview-page .aq-metric--negative .metric-amount {
+    font-size: clamp(1.12rem, 4.05vw, 1.42rem);
+    overflow-wrap: anywhere;
+  }
+  html .app-shell .overview-page .panel { padding: 1rem; }
+}
+@media (max-width: 345px) {
+  html .app-shell .overview-page .metrics { grid-template-columns: minmax(0,1fr); }
+}
