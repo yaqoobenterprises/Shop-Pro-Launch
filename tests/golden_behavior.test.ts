@@ -188,11 +188,11 @@ describe('Phase 1 Golden Tests: Baseline Freezing', () => {
       const mockQueryBuilder: Record<string, unknown> = {
         upsert: vi.fn((data: Record<string, unknown>) => {
           upsertedRow = data;
-          return Promise.resolve({ data, error: null });
+          return mockQueryBuilder;
         }),
         select: vi.fn(() => mockQueryBuilder),
         eq: vi.fn(() => mockQueryBuilder),
-        maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        maybeSingle: vi.fn(() => Promise.resolve({ data: upsertedRow, error: null })),
       };
 
       const mockClient = {

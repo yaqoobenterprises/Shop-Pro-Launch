@@ -555,7 +555,7 @@ describe('ledger mutation concurrency', () => {
       idempotencyKey: 'queued-flush-key-1',
     });
     await enqueueForTest(pending);
-    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const upsert = vi.fn((payload) => ({ select: () => ({ maybeSingle: async () => ({ data: payload, error: null }) }) }));
     const mockClient = { from: vi.fn().mockReturnValue({ upsert }) };
     vi.spyOn(supabaseLib, 'getSupabaseClient').mockReturnValue(mockClient as never);
 
