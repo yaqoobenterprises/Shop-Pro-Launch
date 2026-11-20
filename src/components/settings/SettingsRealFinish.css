@@ -1,0 +1,37 @@
+/* Calm settings composition: no full-width white wall around a small profile form. */
+html .app-shell .settings-page .settings-layout { align-items: start; }
+html .app-shell .settings-page .settings-content > [role="region"]:not([hidden]) {
+  width: 100%;
+  max-width: 980px;
+}
+html .app-shell .settings-page #settings-panel-profile .workspace-panel {
+  max-width: 920px;
+  min-height: 0;
+  padding: clamp(20px, 2vw, 28px);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #18182b08;
+}
+html .app-shell .settings-page #settings-panel-profile form {
+  max-width: 780px;
+  grid-template-columns: minmax(170px, .72fr) minmax(250px, 1.4fr);
+  gap: clamp(20px, 3vw, 42px);
+  align-items: start;
+}
+html .app-shell .settings-page .settings-nav {
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #18182b08;
+}
+html .app-shell .settings-page .settings-nav-item { min-height: 43px; }
+html .app-shell .settings-page #settings-panel-profile input {
+  min-height: 46px;
+  border-radius: 9px;
+}
+@media (max-width: 760px) {
+  html .app-shell .settings-page #settings-panel-profile form {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+  html .app-shell .settings-page #settings-panel-profile .workspace-panel { padding: 18px 16px; }
+}
