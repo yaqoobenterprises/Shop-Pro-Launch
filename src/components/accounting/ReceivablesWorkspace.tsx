@@ -48,11 +48,13 @@ export function ReceivablesWorkspace() {
   const enabled = isIsolatedReceivablesReadEnabled();
   const canRead = enabled && !isDemoMode && isCloudAccount && Boolean(user?.id) &&
     (user?.role === "OWNER" || user?.role === "MANAGER");
-  const contextKey = [organization.id, user?.id, organization.currency, date, customerId].join("|");
+  const userId = user?.id ?? "";
+  const contextKey = [organization.id, userId, organization.currency, date, customerId].join("|");
   const shown = report?.contextKey === contextKey ? report : null;
 
   useEffect(() => {
     const generation = ++customerGeneration.current;
+    let active = true;
     ++reportGeneration.current;
     setCustomers([]);
     setCustomerId("");
@@ -61,27 +63,24 @@ export function ReceivablesWorkspace() {
     setReceiptId("");
     setCustomersError("");
     setDate(companyToday(organization.timezone));
-    if (!canRead || !user) return () => { ++customerGeneration.current; };
+    if (!canRead || !userId) return () => { active = false; };
     setCustomersLoading(true);
     const context: IsolatedReceivablesContext = {
-      organizationId: organization.id, userId: user.id,
+      organizationId: organization.id, userId,
       currency: organization.currency, asOfDate: companyToday(organization.timezone),
       isCloudAccount,
     };
     void loadIsolatedSalesCustomers(context).then(result => {
-      if (customerGeneration.current === generation) setCustomers(result.customers);
+      if (active && customerGeneration.current === generation) setCustomers(result.customers);
     }).catch(reason => {
-      if (customerGeneration.current === generation) {
+      if (active && customerGeneration.current === generation) {
         setCustomersError(reason instanceof Error ? reason.message : "Customer list unavailable.");
       }
     }).finally(() => {
-      if (customerGeneration.current === generation) setCustomersLoading(false);
+      if (active && customerGeneration.current === generation) setCustomersLoading(false);
     });
-    return () => {
-      ++customerGeneration.current;
-      ++reportGeneration.current;
-    };
-  }, [canRead, organization.id, organization.currency, organization.timezone, user?.id, isCloudAccount]);
+    return () => { active = false; };
+  }, [canRead, organization.id, organization.currency, organization.timezone, userId, isCloudAccount]);
 
   const invalidate = () => {
     ++reportGeneration.current;
