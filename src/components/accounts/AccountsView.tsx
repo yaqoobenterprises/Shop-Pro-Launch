@@ -201,15 +201,17 @@ export const AccountsView: React.FC = () => {
       <div className="page-title">
         <div className="accounts-page-heading">
           <span className="kicker">CASH & BANK MANAGEMENT</span>
-          <h1>Accounts</h1>
-          <p>Monitor cash, bank and digital wallet balances in one place.</p>
+          <h1>Cash & bank</h1>
+          <p>Manage cash, bank and wallet accounts.</p>
         </div>
 
         <div className="title-actions">
           <div className="balance-total">
-            <small>TOTAL LIQUIDITY</small>
+            <small>ACTIVE ACCOUNT BALANCES</small>
             <strong>
-              <AnimatedAmount amountPaisa={totalBalancePaisa} loading={isLoading && accounts.length === 0} />
+              {!isLoading && accounts.length === 0 ? "—" : (
+                <AnimatedAmount amountPaisa={totalBalancePaisa} loading={isLoading && accounts.length === 0} />
+              )}
             </strong>
           </div>
 
