@@ -1,0 +1,104 @@
+/* Company setup is a real owner workflow; the preview is explicitly skippable in demo only. */
+.aq-company-setup {
+  background: rgba(28, 26, 38, .58);
+  padding: clamp(.75rem, 2vw, 1.5rem);
+  overscroll-behavior: contain;
+}
+.aq-company-setup__panel {
+  width: min(100%, 640px);
+  max-height: min(92dvh, 850px);
+  background: var(--surface-card, #fff);
+  color: var(--ink, #35383e);
+  border: 1px solid var(--line, #dedee4);
+  box-shadow: 0 28px 70px rgba(28, 26, 38, .23);
+  padding: clamp(1.25rem, 2.7vw, 2.15rem);
+  border-radius: 1.15rem;
+}
+.aq-company-setup__header { align-items: center; }
+.aq-company-setup__logo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: var(--surface-2, #f3f2f6);
+  border: 1px solid var(--line, #dedee4);
+  border-radius: .8rem;
+}
+.aq-company-setup__logo img { width: 33px; height: 33px; object-fit: contain; }
+.aq-company-setup__eyebrow {
+  display: block;
+  margin-bottom: .2rem;
+  color: var(--forest, #176b54);
+  font-size: .61rem;
+  font-weight: 760;
+  letter-spacing: .08em;
+}
+.aq-company-setup__header h2 { font-size: clamp(1.18rem, 2vw, 1.4rem); font-weight: 740; letter-spacing: -.035em; }
+.aq-company-setup__header p { color: var(--muted, #666a75); font-size: .76rem; }
+.aq-company-setup__close {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  flex: none;
+  min-height: 44px;
+  padding: .25rem .7rem;
+  background: var(--surface-card, #fff);
+  border: 1px solid var(--line, #dedee4);
+  color: var(--ink-2, #565760);
+  border-radius: .6rem;
+  font-weight: 650;
+  font-size: .72rem;
+}
+.aq-company-setup__close:hover { background: var(--surface-2, #f3f2f6); }
+.aq-company-setup__progress { gap: .5rem; }
+.aq-company-setup__progress > div > div {
+  height: .33rem;
+  border-radius: 99px;
+}
+.aq-company-setup__panel input,
+.aq-company-setup__panel select {
+  color: var(--ink, #35383e);
+  border: 1px solid var(--line-strong, #cdd0d8);
+  border-radius: .6rem;
+  background: var(--surface-card, #fff);
+  min-height: 46px;
+  font-variant-numeric: tabular-nums;
+}
+.aq-company-setup__panel input:focus,
+.aq-company-setup__panel select:focus {
+  border-color: var(--chart-lavender, #9189df);
+  outline: 3px solid color-mix(in srgb, var(--chart-lavender, #9189df) 22%, transparent);
+  outline-offset: 1px;
+}
+.aq-company-setup__panel input:disabled,
+.aq-company-setup__panel select:disabled {
+  background: var(--surface-2, #f3f2f6);
+  opacity: .7;
+}
+.aq-company-setup__panel :is(button, a):focus-visible {
+  outline: 3px solid var(--chart-lavender, #9189df);
+  outline-offset: 2px;
+}
+.aq-company-setup__panel footer { border-color: var(--line, #dedee4); }
+.aq-company-setup__actions button {
+  font-weight: 670;
+  border-radius: .62rem;
+  min-height: 46px;
+  transition: background-color 140ms ease;
+}
+.aq-company-setup__actions button:disabled { cursor: not-allowed; }
+.aq-company-setup__panel .text-on-primary { color: #fff; }
+.aq-company-setup__panel [role="alert"] { border-radius: .65rem; }
+@media (max-width: 620px) {
+  .aq-company-setup__panel { padding: 1rem; max-height: 94dvh; }
+  .aq-company-setup__header { align-items: start; gap: .7rem; }
+  .aq-company-setup__logo { width: 37px; height: 37px; }
+  .aq-company-setup__logo img { width: 29px; height: 29px; }
+  .aq-company-setup__close { padding-inline: .45rem; font-size: .69rem; }
+  .aq-company-setup__progress span { font-size: .66rem; }
+  .aq-company-setup__actions { flex-wrap: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aq-company-setup__actions button { transition: none; }
+}
