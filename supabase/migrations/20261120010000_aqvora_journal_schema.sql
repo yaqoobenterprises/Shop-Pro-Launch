@@ -202,6 +202,9 @@ ALTER TABLE public.aqvora_journal_audit ENABLE ROW LEVEL SECURITY;
 CREATE FUNCTION private.aqvora_can_read(p_org uuid) RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
   SELECT (auth.jwt()->>'aal') = 'aal2' AND EXISTS (
+    SELECT 1 FROM auth.sessions s
+    WHERE s.id = nullif(auth.jwt()->>'session_id', '')::uuid
+      AND s.user_id = auth.uid()) AND EXISTS (
     SELECT 1 FROM public.organization_members m
     WHERE m.organization_id = p_org AND m.user_id = auth.uid()
       AND m.is_active AND m.role IN ('OWNER','MANAGER'));

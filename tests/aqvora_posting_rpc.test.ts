@@ -12,6 +12,9 @@ const otherOwner = "44444444-4444-4444-8444-444444444444";
 const cash = "55555555-5555-4555-8555-555555555555";
 const sales = "66666666-6666-4666-8666-666666666666";
 const foreign = "77777777-7777-4777-8777-777777777777";
+const receivable = "88888888-8888-4888-8888-888888888888";
+const payable = "99999999-9999-4999-8999-999999999999";
+const inventory = "aaaaaaaa-1111-4111-8111-111111111111";
 const day = "2026-11-20";
 
 const validLines = [
@@ -41,6 +44,7 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
     await db.exec("RESET ROLE");
     await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)", [user]);
     await db.query("SELECT set_config('request.jwt.claim.aal',$1,false)", [aal]);
+    await db.query("SELECT set_config('request.jwt.claim.session_id',$1,false)", [user]);
     await db.exec("SET ROLE authenticated");
   };
   const asAdmin = async () => db.exec("RESET ROLE");
@@ -50,10 +54,12 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
       CREATE ROLE anon; CREATE ROLE authenticated;
       CREATE SCHEMA auth; CREATE SCHEMA private;
       CREATE TABLE auth.users (id uuid PRIMARY KEY);
+      CREATE TABLE auth.sessions (id uuid PRIMARY KEY, user_id uuid NOT NULL);
       CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS
         $$ SELECT nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
       CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS
-        $$ SELECT jsonb_build_object('aal',current_setting('request.jwt.claim.aal', true)) $$;
+        $$ SELECT jsonb_build_object('aal',current_setting('request.jwt.claim.aal', true),
+             'session_id',current_setting('request.jwt.claim.session_id', true)) $$;
       GRANT USAGE ON SCHEMA auth TO authenticated;
       CREATE TABLE public.organizations (id uuid PRIMARY KEY, currency text);
       CREATE TABLE public.organization_members (
@@ -64,6 +70,9 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
       GRANT USAGE ON SCHEMA private TO authenticated;
       INSERT INTO auth.users VALUES
         ('${owner}'),('${manager}'),('${cashier}'),('${otherOwner}');
+      INSERT INTO auth.sessions VALUES
+        ('${owner}','${owner}'),('${manager}','${manager}'),
+        ('${cashier}','${cashier}'),('${otherOwner}','${otherOwner}');
       INSERT INTO public.organizations VALUES ('${org}','PKR'),('${otherOrg}','PKR');
       INSERT INTO public.organization_members VALUES
         ('${org}','${owner}','OWNER',true),
@@ -89,6 +98,11 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
         VALUES ('${org}','${cash}','1000','Cash','asset','debit',true),
                ('${org}','${sales}','4000','Sales','revenue','credit',true),
                ('${otherOrg}','${foreign}','1000','Other cash','asset','debit',true);
+      INSERT INTO public.aqvora_accounts
+        (organization_id,id,code,name,account_class,normal_side,is_posting,control_role)
+        VALUES ('${org}','${receivable}','1100','Receivables','asset','debit',true,'receivable'),
+               ('${org}','${payable}','2100','Payables','liability','credit',true,'payable'),
+               ('${org}','${inventory}','1200','Inventory','asset','debit',true,'inventory');
     `);
   });
   afterEach(asAdmin);
@@ -135,6 +149,21 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
     expect(total.rows[0].amount).toBe(amount);
   });
 
+  it("rejects unverified control accounts and arbitrary source references", async () => {
+    await asUser(owner);
+    for (const accountId of [receivable, payable, inventory]) {
+      await expect(post(key(), [
+        { account_id: accountId, debit_minor: "1", credit_minor: "0",
+          party_id: "pretend-party", open_item_id: "pretend-item", stock_movement_id: "pretend-stock" },
+        { ...validLines[1], credit_minor: "1" },
+      ])).rejects.toThrow("Verified source posting");
+    }
+    await expect(post(key(), [
+      { ...validLines[0], debit_minor: "1", party_id: "pretend-party" },
+      { ...validLines[1], credit_minor: "1" },
+    ])).rejects.toThrow("Unverified source references");
+  });
+
   it("recovers a lost response, rejects changed payload, and serializes retry keys", async () => {
     await asUser(owner);
     const intent = key();
@@ -176,6 +205,25 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
     expect(await post(earlier)).toEqual(receipt);
     await asAdmin();
     await db.query("INSERT INTO public.aqvora_enabled_companies (organization_id) VALUES ($1)", [org]);
+  });
+
+  it("rejects revoked sessions and currency drift before writing", async () => {
+    await asUser(owner);
+    const earlier = key();
+    const receipt = await post(earlier);
+    await asAdmin();
+    await db.query("DELETE FROM auth.sessions WHERE id=$1", [owner]);
+    await asUser(owner);
+    await expect(post(key())).rejects.toThrow("revoked or missing");
+    await expect(lookup(earlier)).rejects.toThrow("revoked or missing");
+    expect((await db.query("SELECT * FROM public.aqvora_journals WHERE id=$1", [receipt.journal_id])).rows).toEqual([]);
+    await asAdmin();
+    await db.query("INSERT INTO auth.sessions (id,user_id) VALUES ($1,$1)", [owner]);
+    await db.query("UPDATE public.organizations SET currency='USD' WHERE id=$1", [org]);
+    await asUser(owner);
+    await expect(post(key())).rejects.toThrow("currency differs");
+    await asAdmin();
+    await db.query("UPDATE public.organizations SET currency='PKR' WHERE id=$1", [org]);
   });
 
   it("enforces canonical role, active membership, MFA, and tenant isolation", async () => {

@@ -1,11 +1,15 @@
 -- All financial writes are server-owned and transaction-atomic.
 CREATE FUNCTION private.aqvora_authorize(p_org uuid) RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
-DECLARE actor uuid := auth.uid(); member_role text;
+DECLARE actor uuid := auth.uid(); member_role text; session_id uuid;
 BEGIN
   IF actor IS NULL OR p_org IS NULL OR (auth.jwt()->>'aal') IS DISTINCT FROM 'aal2' THEN
     RAISE EXCEPTION 'AQVORA posting requires an authenticated MFA session';
   END IF;
+  session_id := nullif(auth.jwt()->>'session_id', '')::uuid;
+  PERFORM 1 FROM auth.sessions
+    WHERE id = session_id AND user_id = actor FOR SHARE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'AQVORA session is revoked or missing'; END IF;
   SELECT role INTO member_role FROM public.organization_members
   WHERE organization_id = p_org AND user_id = actor AND is_active = true FOR SHARE;
   IF member_role IS NULL OR member_role NOT IN ('OWNER','MANAGER') THEN
@@ -43,6 +47,10 @@ BEGIN
   IF company_currency IS NULL OR company_currency !~ '^[A-Z]{3}$' THEN
     RAISE EXCEPTION 'Company has no valid base currency';
   END IF;
+  IF EXISTS (SELECT 1 FROM public.aqvora_journals
+    WHERE organization_id = p_org AND currency <> company_currency) THEN
+    RAISE EXCEPTION 'Company base currency differs from posted history';
+  END IF;
   normalized := jsonb_build_object('business_date', p_date, 'currency', company_currency,
     'lines', p_lines, 'reversal_of', p_reversal_of, 'reason', p_reason);
 
@@ -59,8 +67,11 @@ BEGIN
       'posted_at', prior.posted_at, 'posted_by', prior.posted_by);
   END IF;
 
-  IF NOT EXISTS (SELECT 1 FROM public.aqvora_enabled_companies
-    WHERE organization_id = p_org) THEN
+  -- DELETE of this row must wait for an in-flight post. If disablement wins
+  -- first, the waiting SELECT observes no row and the request fails closed.
+  PERFORM 1 FROM public.aqvora_enabled_companies
+    WHERE organization_id = p_org FOR SHARE;
+  IF NOT FOUND THEN
     RAISE EXCEPTION 'AQVORA posting is not enabled for this company';
   END IF;
 
@@ -93,6 +104,15 @@ BEGIN
     IF NOT FOUND OR NOT account.is_posting OR
        (NOT account.is_active AND p_reversal_of IS NULL) THEN
       RAISE EXCEPTION 'Journal account is missing, foreign, archived or a heading';
+    END IF;
+    IF p_reversal_of IS NULL AND account.control_role IN
+       ('receivable','payable','inventory','tax') THEN
+      RAISE EXCEPTION 'Verified source posting is required for control accounts';
+    END IF;
+    IF p_reversal_of IS NULL AND
+       (line->>'party_id' IS NOT NULL OR line->>'open_item_id' IS NOT NULL OR
+        line->>'stock_movement_id' IS NOT NULL) THEN
+      RAISE EXCEPTION 'Unverified source references are not accepted';
     END IF;
     IF account.control_role IN ('receivable','payable') AND
        (nullif(btrim(line->>'party_id'), '') IS NULL OR
@@ -163,7 +183,7 @@ REVOKE ALL ON FUNCTION public.post_aqvora_journal(uuid,text,date,jsonb) FROM PUB
 GRANT EXECUTE ON FUNCTION public.post_aqvora_journal(uuid,text,date,jsonb) TO authenticated;
 
 CREATE FUNCTION public.lookup_aqvora_receipt(organization_id uuid, intent_key text)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = '' AS $$
+RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
 DECLARE r record;
 BEGIN
   PERFORM private.aqvora_authorize(organization_id);
