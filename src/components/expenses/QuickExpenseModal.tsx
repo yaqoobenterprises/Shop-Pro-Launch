@@ -43,11 +43,15 @@ export const QuickExpenseModal: React.FC = () => {
         setIsLoadingMetadata(true);
         setMetadataError("");
         try {
-          const [allCategories, accs] = await Promise.all([
+          const [allCategories, loadedAccounts] = await Promise.all([
             ledgerService.getCategories(),
             ledgerService.getPaymentAccounts(),
           ]);
           if (!isCurrent) return;
+          // Only offer active payment accounts owned by the selected shop.
+          const accs = loadedAccounts.filter(
+            (account) => account.is_active && account.organization_id === organization.id,
+          );
           const cats = allCategories.filter(
             (category) => category.is_active && category.kind === "expense",
           );
@@ -279,11 +283,11 @@ export const QuickExpenseModal: React.FC = () => {
         <div className="flex items-start gap-2 rounded-lg border border-border-standard bg-surface p-3 text-xs text-text-muted">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <span>
-            Recording this expense will immediately deduct from{" "}
+            Once confirmed, this expense will deduct from{" "}
             <strong className="text-on-surface">
               {selectedAccount ? selectedAccount.name : "the selected account"}
             </strong>{" "}
-            and update the shop&rsquo;s financial records.
+            and update the shop&rsquo;s financial records. If offline, it stays pending until synced.
           </span>
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-border-standard pt-3">
