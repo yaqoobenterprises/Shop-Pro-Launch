@@ -19,6 +19,7 @@ const user = "22222222-2222-4222-8222-222222222222";
 const first = "33333333-3333-4333-8333-333333333333";
 const second = "44444444-4444-4444-8444-444444444444";
 const customer = "55555555-5555-4555-8555-555555555555";
+const approver = "77777777-7777-4777-8777-777777777777";
 const journal = "66666666-6666-4666-8666-666666666666";
 const fingerprint = "a".repeat(64);
 const context = { organizationId: org, userId: user, isCloudAccount: true };
@@ -28,7 +29,7 @@ function invoice(invoiceId = first) {
     organization_id: org, id: invoiceId, creation_intent: "create-1",
     customer_id: customer, currency: "PKR",
     business_date: "2026-11-20", due_date: "2026-11-30",
-    created_by: user, approved_by: user, created_at: "2026-11-20T12:00:00Z",
+    created_by: user, approved_by: approver, created_at: "2026-11-20T12:00:00Z",
     state: "issued", revision: "4", fingerprint, document_number: "SI-1",
     journal_id: journal, cancel_reason: null,
     lines: [{
