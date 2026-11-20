@@ -1,5 +1,10 @@
 import type { ChartAccount, JournalLineInput } from "./types";
 
+const ACCOUNT_CLASSES = new Set<ChartAccount["accountClass"]>([
+  "asset", "liability", "equity", "revenue",
+  "cost_of_sales", "expense", "other_income", "other_expense",
+]);
+
 const CONTROL_CLASSES: Record<string, ChartAccount["accountClass"][]> = {
   cash: ["asset"],
   receivable: ["asset"],
@@ -28,6 +33,12 @@ export function assertValidChart(organizationId: string, accounts: ChartAccount[
     if (byCode.has(code)) throw new Error(`Duplicate account code: ${account.code}`);
     if (!account.name.trim() || account.name.length > 160) {
       throw new Error("Chart account names must be 1–160 characters.");
+    }
+    if (!ACCOUNT_CLASSES.has(account.accountClass)) {
+      throw new Error("Chart account class is not recognized.");
+    }
+    if (typeof account.isPosting !== "boolean" || typeof account.isActive !== "boolean") {
+      throw new Error("Chart account status fields must be explicit.");
     }
     if (account.normalSide !== "debit" && account.normalSide !== "credit") {
       throw new Error("Every chart account must declare its normal side.");
