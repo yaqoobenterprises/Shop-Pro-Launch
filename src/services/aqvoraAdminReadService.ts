@@ -103,7 +103,7 @@ const account = (raw: DatabaseRow, organizationId: string): AqvoraChartRow => {
     name: nonEmptyString(raw.name, "account name"),
     accountClass: accountClass as AccountClass,
     normalSide: normalSide as AccountSide,
-    parentId: parentId || null,
+    parentId: typeof parentId === "string" ? parentId : null,
     isPosting: dbBoolean(raw.is_posting, "account posting flag"),
     isActive: dbBoolean(raw.is_active, "account active flag"),
     ...(controlRole ? { controlRole: controlRole as ControlRole } : {}),
