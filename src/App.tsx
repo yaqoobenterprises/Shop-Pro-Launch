@@ -52,6 +52,12 @@ const ReceivablesWorkspace = lazy(() =>
   ),
 );
 
+const SalesDraftsWorkspace = lazy(() =>
+  import("./components/accounting/SalesDraftsWorkspace").then(
+    module => ({ default: module.SalesDraftsWorkspace }),
+  ),
+);
+
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
   const { setLanguage } = useI18n();
@@ -134,6 +140,8 @@ const MainShell: React.FC = () => {
         return <AccountsView />;
       case "aqvora-receivables":
         return <ReceivablesWorkspace />;
+      case "aqvora-sales-drafts":
+        return <SalesDraftsWorkspace />;
       case "settings":
         return <LedgerSettingsView />;
       default:
