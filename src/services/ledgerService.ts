@@ -45,6 +45,7 @@ import {
   saveOfflineDraft,
 } from './offlineDraftStore';
 import { sqliteRepository } from './sqliteRepository';
+import { confirmOfflineTransaction } from './offlineTransactionReplay';
 import { subscribeToLiveTransactionsForUser } from './ledgerRealtime';
 import { getMonthlyLedgerSummary, getYearlyLedgerSummary } from './ledgerSummaryService';
 import { isDemoOrganization, isOnline, requireAuthoritativeCloudRead, type LedgerReadOptions } from './ledgerReadPolicy';
@@ -602,10 +603,6 @@ export class LedgerService {
       (!item.organizationId || item.organizationId === principal.organizationId) &&
       (!item.createdBy || item.createdBy === principal.id),
     );
-    const accounts = queue.some((item) => !item.accountId)
-      ? await this.getPaymentAccounts()
-      : [];
-    const defaultAccountId = accounts.find((account) => account.is_default)?.id;
     const tasks: Array<
       | { kind: 'ACCOUNT'; operation: OfflineAccountOperation; timestamp: number; priority: number }
       | { kind: 'DRAFT'; draft: TransactionDraft; timestamp: number; priority: number }
@@ -672,39 +669,8 @@ export class LedgerService {
           await removeOfflineDraft(task.draft.id);
         } else {
           const item = task.transaction;
-          const organizationId = item.organizationId || principal.organizationId;
-          const createdBy = item.createdBy || principal.id;
-          const accountId = item.accountId || defaultAccountId;
-          if (!organizationId || !createdBy || !accountId) {
-            throw new Error('Queued transaction is missing its original shop, creator, or account and cannot be synced safely.');
-          }
-          if (organizationId !== principal.organizationId || createdBy !== principal.id) {
-            throw new Error('Queued transaction belongs to a different shop or creator and cannot be synced safely.');
-          }
-
           const validCategoryId = isValidUUID(item.categoryId) ? item.categoryId : null;
-          const payload = {
-            id: item.id,
-            organization_id: organizationId,
-            account_id: accountId,
-            type: item.type,
-            amount_paisa: item.amountPaisa,
-            category_id: validCategoryId,
-            adjustment_dir: item.adjustmentDir || null,
-            business_date: item.businessDate,
-            device_entry_time: item.deviceEntryTime,
-            note: item.note || null,
-            raw_text: item.rawText,
-            status: 'active',
-            idempotency_key: item.idempotencyKey,
-            created_by: createdBy,
-            created_by_name: item.createdByName,
-          };
-
-          const { error } = await getSupabaseClient()
-            .from('transactions')
-            .upsert(payload, { onConflict: 'idempotency_key' });
-          if (error) throw error;
+          await confirmOfflineTransaction(item, principal, validCategoryId);
           await dequeueOfflineTransaction(item.idempotencyKey);
         }
         syncedCount++;
