@@ -4,6 +4,7 @@ import { FEATURES, isFeatureEnabled, FeatureFlags } from '../src/config/features
 describe('Feature Flags Configuration', () => {
   const expectedFlags: (keyof FeatureFlags)[] = [
     'regionSettings',
+    'companySetupWizard',
     'languageUr',
     'entryModes',
     'chatQueries',
@@ -11,6 +12,7 @@ describe('Feature Flags Configuration', () => {
 
   const expectedState: Record<keyof FeatureFlags, boolean> = {
     regionSettings: false,
+    companySetupWizard: false,
     languageUr: false,
     entryModes: false,
     chatQueries: true,
@@ -29,7 +31,7 @@ describe('Feature Flags Configuration', () => {
     }
   });
 
-  it('contains exactly the 4 required feature flags and no unauthorized extra flags', () => {
+  it('contains exactly the 5 required feature flags and no unauthorized extra flags', () => {
     const keys = Object.keys(FEATURES) as (keyof FeatureFlags)[];
     expect(keys.sort()).toEqual(expectedFlags.slice().sort());
   });

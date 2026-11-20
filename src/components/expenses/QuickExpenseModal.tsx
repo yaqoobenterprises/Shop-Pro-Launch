@@ -7,9 +7,11 @@ import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { Button } from "../common/Button";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import { expenseRepo, accountRepo } from "../../services";
-import { ExpenseCategory, PaymentAccount } from "../../types";
-import { formatCurrency } from "../../lib/utils";
+import { recordQuickExpense } from "../../services/quickExpenseService";
+import { ledgerService } from "../../services/ledgerService";
+import { Category, LedgerAccount } from "../../types/ledger";
+import { formatPaisa } from "../../lib/money";
+import { parseLocalizedMoneyInput } from "../../regional/moneyInput";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { useI18n } from "../../i18n";
 import { Check, AlertCircle } from "lucide-react";
@@ -20,8 +22,8 @@ export const QuickExpenseModal: React.FC = () => {
   const { isQuickExpenseOpen, setIsQuickExpenseOpen, refreshData, showToast } =
     useApp();
 
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [accounts, setAccounts] = useState<PaymentAccount[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
 
   const [categoryId, setCategoryId] = useState("");
   const [accountId, setAccountId] = useState("");
@@ -41,11 +43,13 @@ export const QuickExpenseModal: React.FC = () => {
         setIsLoadingMetadata(true);
         setMetadataError("");
         try {
-          const [cats, accs] = await Promise.all([
-            expenseRepo.getCategories(organization.id),
-            accountRepo.getAccounts(organization.id),
+          const [allCategories, loadedAccounts] = await Promise.all([
+            ledgerService.getCategories(),
+            ledgerService.getPaymentAccounts(),
           ]);
           if (!isCurrent) return;
+          const accs = loadedAccounts.filter((a) => a.is_active && a.organization_id === organization.id);
+          const cats = allCategories.filter((c) => c.is_active && c.kind === "expense");
           setCategories(cats);
           setAccounts(accs);
           setCategoryId((current) =>
@@ -82,15 +86,14 @@ export const QuickExpenseModal: React.FC = () => {
   }, [isQuickExpenseOpen, organization.id]);
 
   if (!isQuickExpenseOpen) return null;
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const numAmount = parseFloat(amount);
-    if (!numAmount || numAmount <= 0) {
+    const parsedAmount = parseLocalizedMoneyInput(amount);
+    if (!parsedAmount.isValid) {
       showToast(
         "error",
         "Invalid Amount",
-        "Please enter a positive expense amount.",
+        parsedAmount.error || "Enter a valid positive expense amount.",
       );
       return;
     }
@@ -110,7 +113,6 @@ export const QuickExpenseModal: React.FC = () => {
     if (!targetAccountId && accounts.length > 0) {
       targetAccountId = (accounts.find((a) => a.is_default) || accounts[0]).id;
     }
-
     if (!targetCategoryId || !targetAccountId) {
       showToast(
         "error",
@@ -119,24 +121,27 @@ export const QuickExpenseModal: React.FC = () => {
       );
       return;
     }
-
     setIsSubmitting(true);
     try {
-      const exp = await expenseRepo.createExpense(organization.id, {
-        category_id: targetCategoryId,
-        account_id: targetAccountId,
-        amount: numAmount,
+      const posting = await recordQuickExpense({
+        amountPaisa: parsedAmount.minor,
+        categoryId: targetCategoryId,
+        accountId: targetAccountId,
+        categories,
+        accounts,
         description: description.trim(),
-        reference_number: referenceNumber.trim() || undefined,
-        date,
-        notes: notes.trim() || undefined,
-        entered_by: getProfileDisplayName(user),
+        referenceNumber,
+        notes,
+        businessDate: date,
+        userId: user?.id,
+        createdByName: getProfileDisplayName(user),
       });
-
       showToast(
-        "success",
-        "Expense Recorded",
-        `${formatCurrency(exp.amount, organization.currency_symbol)} paid from ${exp.account_name}`,
+        posting.isQueuedOffline ? "warning" : "success",
+        posting.isQueuedOffline ? "Expense saved offline" : "Expense recorded",
+        posting.isQueuedOffline
+          ? "The expense is saved on this device and will post to the selected account when synchronization succeeds."
+          : `${formatPaisa(parsedAmount.minor)} paid from ${posting.accountName}`,
       );
       setIsQuickExpenseOpen(false);
       refreshData();
@@ -150,9 +155,7 @@ export const QuickExpenseModal: React.FC = () => {
       setIsSubmitting(false);
     }
   };
-
   const selectedAccount = accounts.find((a) => a.id === accountId);
-
   return (
     <Modal
       isOpen={isQuickExpenseOpen}
@@ -177,7 +180,6 @@ export const QuickExpenseModal: React.FC = () => {
           Add an active payment account before recording an expense.
         </p>
       )}
-
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
         <label className="block space-y-1 text-xs font-semibold text-secondary">
           <span>{t("expenses.category")}</span>
@@ -223,8 +225,8 @@ export const QuickExpenseModal: React.FC = () => {
           <div>
             <Input
               label={`Amount (${organization.currency_symbol})`}
-              type="number"
-              step="any"
+              type="text"
+              inputMode="decimal"
               required
               autoFocus
               placeholder="0.00"
@@ -233,7 +235,6 @@ export const QuickExpenseModal: React.FC = () => {
               className="font-mono text-base font-bold text-danger"
             />
           </div>
-
           <div>
             <label className="block w-full space-y-1.5 text-left">
               <span className="block text-xs font-semibold text-on-surface">Expense Date</span>
@@ -265,7 +266,6 @@ export const QuickExpenseModal: React.FC = () => {
             value={referenceNumber}
             onChange={(e) => setReferenceNumber(e.target.value)}
           />
-
           <Input
             label="Additional Notes / Payee (Optional)"
             placeholder="e.g. Supplier or payee"
@@ -278,11 +278,11 @@ export const QuickExpenseModal: React.FC = () => {
         <div className="flex items-start gap-2 rounded-lg border border-border-standard bg-surface p-3 text-xs text-text-muted">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <span>
-            Recording this expense will immediately deduct from{" "}
+            Once confirmed, this expense will deduct from{" "}
             <strong className="text-on-surface">
               {selectedAccount ? selectedAccount.name : "the selected account"}
             </strong>{" "}
-            and update the shop&rsquo;s financial records.
+            and update the shop&rsquo;s financial records. If offline, it stays pending until synced.
           </span>
         </div>
         <div className="flex items-center justify-end gap-2 border-t border-border-standard pt-3">

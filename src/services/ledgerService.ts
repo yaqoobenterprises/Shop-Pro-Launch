@@ -45,6 +45,7 @@ import {
   saveOfflineDraft,
 } from './offlineDraftStore';
 import { sqliteRepository } from './sqliteRepository';
+import { confirmOfflineTransaction } from './offlineTransactionReplay';
 import { subscribeToLiveTransactionsForUser } from './ledgerRealtime';
 import { getMonthlyLedgerSummary, getYearlyLedgerSummary } from './ledgerSummaryService';
 import { isDemoOrganization, isOnline, requireAuthoritativeCloudRead, type LedgerReadOptions } from './ledgerReadPolicy';
@@ -219,7 +220,8 @@ export class LedgerService {
     if (isDemo || !(await hasConfiguredCloudSession(principal.id))) return draft;
     try {
       const syncedDraft = await this.syncDraftToCloud(draft);
-      await removeOfflineDraft(draft.id);
+      // Preserve the draft locally until the posting RPC is positively acknowledged.
+      await saveOfflineDraft(syncedDraft);
       return syncedDraft;
     } catch (error) {
       console.warn('Could not sync draft to cloud, retaining offline draft:', error);
@@ -282,6 +284,9 @@ export class LedgerService {
     if (!accountId) throw new Error('Choose an account before posting this transaction.');
     const localDraft = (await getOfflineDrafts(principal.organizationId))
       .find((draft) => draft.id === draftId);
+    if (localDraft?.pending_account_id && localDraft.pending_account_id !== accountId) {
+      throw new Error('Draft posting is awaiting confirmation for a different account. Retry the original account first.');
+    }
 
     const isDemo = principal.organizationId === DEMO_ORGANIZATION_ID || isDemoSessionActive();
     if (isDemo) {
@@ -354,7 +359,11 @@ export class LedgerService {
     }
 
     try {
-      if (localDraft) await this.syncDraftToCloud(localDraft);
+      if (localDraft) {
+        // This choice must survive a lost network acknowledgement or reload.
+        await saveOfflineDraft({ ...localDraft, pending_account_id: accountId });
+        await this.syncDraftToCloud(localDraft);
+      }
       const { data, error } = await getSupabaseClient().rpc('post_transaction_draft', {
         draft_id: draftId,
         selected_account_id: accountId,
@@ -362,30 +371,18 @@ export class LedgerService {
       if (error) throw error;
       const postedTransaction = Array.isArray(data) ? data[0] : data;
       if (!postedTransaction) throw new Error('Transaction could not be posted. Refresh and try again.');
+      if (postedTransaction.organization_id !== principal.organizationId ||
+          postedTransaction.account_id !== accountId ||
+          postedTransaction.idempotency_key !== `draft-${draftId}`) {
+        throw new Error('The receipt does not match this shop, account, and draft. Review the entry before retrying.');
+      }
       await removeOfflineDraft(draftId);
       return { transaction: postedTransaction as Transaction, isQueuedOffline: false };
     } catch (error) {
-      console.warn('post_transaction_draft failed, attempting resilient fallback:', error);
-      if (localDraft) {
-        try {
-          const directResult = await this.recordTransaction({
-            type: localDraft.type,
-            amountPaisa: localDraft.amount_paisa,
-            categoryId: localDraft.category_id,
-            categoryName: localDraft.category_name,
-            accountId,
-            businessDate: localDraft.business_date,
-            note: localDraft.note,
-            rawText: localDraft.raw_text,
-            createdByName: localDraft.created_by_name,
-            adjustmentDir: localDraft.adjustment_dir,
-            idempotencyKey: `posted-${draftId}`,
-          }, principal.id);
-          await removeOfflineDraft(draftId);
-          return { transaction: directResult.transaction as Transaction, isQueuedOffline: directResult.isQueuedOffline };
-        } catch (directErr) {
-          console.warn('Direct recording fallback also encountered error:', directErr);
-        }
+      // Ambiguous network responses may follow a successful server commit.
+      // Never insert a second receipt using a different idempotency key.
+      if (!isNetworkFailure(error) || isPermissionOrAuthError(error)) {
+        throw error;
       }
       const accounts = await getCachedAccounts(principal.organizationId);
       if (localDraft && accounts.some((account) => account.id === accountId && account.is_active)) {
@@ -606,10 +603,6 @@ export class LedgerService {
       (!item.organizationId || item.organizationId === principal.organizationId) &&
       (!item.createdBy || item.createdBy === principal.id),
     );
-    const accounts = queue.some((item) => !item.accountId)
-      ? await this.getPaymentAccounts()
-      : [];
-    const defaultAccountId = accounts.find((account) => account.is_default)?.id;
     const tasks: Array<
       | { kind: 'ACCOUNT'; operation: OfflineAccountOperation; timestamp: number; priority: number }
       | { kind: 'DRAFT'; draft: TransactionDraft; timestamp: number; priority: number }
@@ -657,67 +650,27 @@ export class LedgerService {
         } else if (task.kind === 'DRAFT') {
           const syncedDraft = await this.syncDraftToCloud(task.draft);
           if (syncedDraft.pending_account_id) {
-            try {
-              const { error } = await getSupabaseClient().rpc('post_transaction_draft', {
-                draft_id: syncedDraft.id,
-                selected_account_id: syncedDraft.pending_account_id,
-              });
-              if (error) throw error;
-              accountsChanged = true;
-            } catch (rpcErr) {
-              console.warn('post_transaction_draft failed during queue flush, falling back to direct record:', rpcErr);
-              await this.recordTransaction({
-                type: syncedDraft.type,
-                amountPaisa: syncedDraft.amount_paisa,
-                categoryId: syncedDraft.category_id,
-                categoryName: syncedDraft.category_name,
-                accountId: syncedDraft.pending_account_id,
-                businessDate: syncedDraft.business_date,
-                note: syncedDraft.note,
-                rawText: syncedDraft.raw_text,
-                createdByName: syncedDraft.created_by_name,
-                adjustmentDir: syncedDraft.adjustment_dir,
-                idempotencyKey: `posted-${syncedDraft.id}`,
-              }, principal.id);
-              accountsChanged = true;
+            // Retry through the same idempotent RPC only. An uncertain result
+            // must retain the local draft; never create a different receipt.
+            const { data, error } = await getSupabaseClient().rpc('post_transaction_draft', {
+              draft_id: syncedDraft.id,
+              selected_account_id: syncedDraft.pending_account_id,
+            });
+            if (error) throw error;
+            const receipt = Array.isArray(data) ? data[0] : data;
+            if (!receipt) throw new Error('Posting is unconfirmed; keep draft for retry.');
+            if (receipt.organization_id !== principal.organizationId ||
+                receipt.account_id !== syncedDraft.pending_account_id ||
+                receipt.idempotency_key !== `draft-${syncedDraft.id}`) {
+              throw new Error('The posted receipt does not match the pending shop, account, and draft.');
             }
+            accountsChanged = true;
           }
           await removeOfflineDraft(task.draft.id);
         } else {
           const item = task.transaction;
-          const organizationId = item.organizationId || principal.organizationId;
-          const createdBy = item.createdBy || principal.id;
-          const accountId = item.accountId || defaultAccountId;
-          if (!organizationId || !createdBy || !accountId) {
-            throw new Error('Queued transaction is missing its original shop, creator, or account and cannot be synced safely.');
-          }
-          if (organizationId !== principal.organizationId || createdBy !== principal.id) {
-            throw new Error('Queued transaction belongs to a different shop or creator and cannot be synced safely.');
-          }
-
           const validCategoryId = isValidUUID(item.categoryId) ? item.categoryId : null;
-          const payload = {
-            id: item.id,
-            organization_id: organizationId,
-            account_id: accountId,
-            type: item.type,
-            amount_paisa: item.amountPaisa,
-            category_id: validCategoryId,
-            adjustment_dir: item.adjustmentDir || null,
-            business_date: item.businessDate,
-            device_entry_time: item.deviceEntryTime,
-            note: item.note || null,
-            raw_text: item.rawText,
-            status: 'active',
-            idempotency_key: item.idempotencyKey,
-            created_by: createdBy,
-            created_by_name: item.createdByName,
-          };
-
-          const { error } = await getSupabaseClient()
-            .from('transactions')
-            .upsert(payload, { onConflict: 'idempotency_key' });
-          if (error) throw error;
+          await confirmOfflineTransaction(item, principal, validCategoryId);
           await dequeueOfflineTransaction(item.idempotencyKey);
         }
         syncedCount++;

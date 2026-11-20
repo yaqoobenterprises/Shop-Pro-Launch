@@ -555,7 +555,7 @@ describe('ledger mutation concurrency', () => {
       idempotencyKey: 'queued-flush-key-1',
     });
     await enqueueForTest(pending);
-    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const upsert = vi.fn((payload) => ({ select: () => ({ maybeSingle: async () => ({ data: payload, error: null }) }) }));
     const mockClient = { from: vi.fn().mockReturnValue({ upsert }) };
     vi.spyOn(supabaseLib, 'getSupabaseClient').mockReturnValue(mockClient as never);
 
@@ -842,7 +842,7 @@ describe('ledger mutation concurrency', () => {
       .toBe(9000);
 
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
-    const postedTransaction = { id: 'draft-posted-tx', account_id: account.id, amount_paisa: 2500 };
+    const postedTransaction = { id: 'draft-posted-tx', organization_id: organizationId, account_id: account.id, idempotency_key: `draft-${draft.id}`, amount_paisa: 2500 };
     const draftQuery = {
       upsert: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
