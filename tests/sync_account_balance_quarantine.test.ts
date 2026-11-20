@@ -61,7 +61,8 @@ vi.mock('../src/services/sqliteEngine', () => ({
   getSqliteDatabase: vi.fn(async () => mocks.db),
 }));
 
-import { requiresAccountBalanceReconciliation, syncEngine } from '../src/services/syncEngine';
+import { requiresAccountBalanceReconciliation } from '../src/services/legacyAccountSyncGuard';
+import { syncEngine } from '../src/services/syncEngine';
 
 describe('legacy account sync balance quarantine', () => {
   it('identifies both zero and nonzero balance snapshots, without blocking metadata-only changes', () => {
