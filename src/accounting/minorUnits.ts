@@ -6,6 +6,7 @@ export function parseMinorUnits(value: string): bigint {
   if (typeof value !== "string" || !/^(0|[1-9][0-9]*|-[1-9][0-9]*)$/.test(value)) {
     throw new Error("Money must be a canonical decimal integer string.");
   }
+  if (value.length > 20) throw new Error("Money exceeds supported 64-bit minor-unit range.");
   const result = BigInt(value);
   if (result < MIN_MINOR || result > MAX_MINOR) {
     throw new Error("Money exceeds supported 64-bit minor-unit range.");
