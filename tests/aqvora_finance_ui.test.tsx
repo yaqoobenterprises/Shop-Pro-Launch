@@ -30,12 +30,13 @@ describe("AQVORA finance workspace design, no financial writes", () => {
     expect(formatMinorForPreview("-123456")).toBe("-Rs 1,234.56");
   });
 
-  it("renders four finance modules with strong sample-data disclosure and a close action", () => {
+  it("renders visibly refreshed finance overview with strong sample-data disclosure and a close action", () => {
     const onClose = vi.fn();
     render(<FinanceDesignPreview onClose={onClose} />);
     expect(screen.getByRole("dialog", { name: "AQVORA accounting interface preview" })).toBeTruthy();
     expect(screen.getByText("Illustrative data · No live records")).toBeTruthy();
-    expect(screen.getByRole("heading", { name: "Chart of Accounts" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Accounting overview" })).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Chart of Accounts" })[0]);
     expect(screen.getByRole("button", { name: "Add account" }).hasAttribute("disabled")).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: "Close accounting preview" }));
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -50,7 +51,7 @@ describe("AQVORA finance workspace design, no financial writes", () => {
     fireEvent.click(trigger);
     expect(onOpenAi).toHaveBeenCalledTimes(1);
     expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Add account" }).hasAttribute("disabled")).toBe(true);
+    expect(screen.getByRole("heading", { name: "Accounting overview" })).toBeTruthy();
   });
 
   it("filters chart of accounts by code, text and class, retaining a real empty state", () => {
