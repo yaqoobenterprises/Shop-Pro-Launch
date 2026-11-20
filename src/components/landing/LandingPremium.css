@@ -1,15 +1,15 @@
 /* AQVORA — premium landing. Isolated from legacy workspace and auth styles. */
 .shop-landing-page.aq-landing {
-  --aq-canvas: #f6f8f9;
+  --aq-canvas: #e7e6eb;
   --aq-paper: #ffffff;
-  --aq-ink: #172638;
-  --aq-body: #526477;
-  --aq-muted: #78889a;
-  --aq-line: #e5eaee;
+  --aq-ink: #46464a;
+  --aq-body: #646672;
+  --aq-muted: #777985;
+  --aq-line: #dedee4;
   --aq-accent: #176b54;
   --aq-accent-hover: #10533f;
-  --aq-accent-soft: #e9f4ef;
-  --aq-bar-secondary: #b4c4ce;
+  --aq-accent-soft: #ecfffd;
+  --aq-bar-secondary: #55cdbb;
   --aq-shadow: 0 24px 65px -28px rgba(14, 36, 52, 0.24);
   min-height: 100dvh;
   background: var(--aq-canvas);
@@ -19,16 +19,16 @@
   -webkit-font-smoothing: antialiased;
 }
 .dark .shop-landing-page.aq-landing {
-  --aq-canvas: #0d1823;
-  --aq-paper: #142331;
-  --aq-ink: #f0f5f6;
-  --aq-body: #b0bdc7;
-  --aq-muted: #91a3b0;
-  --aq-line: #2b3c4a;
+  --aq-canvas: #181923;
+  --aq-paper: #252731;
+  --aq-ink: #f1f0f6;
+  --aq-body: #d4d4dd;
+  --aq-muted: #b5b5c4;
+  --aq-line: #444554;
   --aq-accent: #43b996;
   --aq-accent-hover: #60cfad;
-  --aq-accent-soft: #153b35;
-  --aq-bar-secondary: #526e7d;
+  --aq-accent-soft: #28423f;
+  --aq-bar-secondary: #6dd9c8;
   --aq-shadow: 0 28px 75px -26px rgba(0, 0, 0, 0.7);
 }
 .aq-landing *, .aq-landing *::before, .aq-landing *::after { box-sizing: border-box; }
@@ -158,7 +158,7 @@
 .aq-preview__group { display: flex; flex-direction: column; min-width: 0; }
 .aq-preview__bars { height: 125px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; }
 .aq-preview__bar { display: block; flex: 0 1 15px; max-width: 15px; min-height: 1px; border-radius: 3px 3px 0 0; }
-.aq-preview__bar--income { background: var(--aq-accent); }
+.aq-preview__bar--income { background: #9189df; }
 .aq-preview__bar--expense { background: var(--aq-bar-secondary); }
 .aq-preview__month { display: block; text-align: center; color: var(--aq-muted); font-size: .61rem; margin-top: .55rem; }
 .aq-preview__recent { margin-top: 1rem; }
@@ -245,3 +245,7 @@
 
 /* The supplied approved mark is a vector asset, not a placeholder letter. */
 .aq-landing .aq-landing__brandmark { display: block; padding: 0; background: transparent; border-radius: 0; object-fit: contain; }
+
+/* The actual user-approved dashboard reference uses lavender/teal series. */
+.dark .aq-preview__bar--income { background: #aca5fc; }
+.dark .aq-preview__bar--expense { background: #6dd9c8; }
