@@ -24,6 +24,13 @@ BEGIN
   IF d.state<>'approved' OR d.revision IS DISTINCT FROM p_expected_revision OR d.fingerprint IS DISTINCT FROM p_fingerprint THEN
     RAISE EXCEPTION 'Sales source is unapproved, immutable or stale';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.aqvora_sales_audit a WHERE a.organization_id=p_organization_id
+    AND a.entity_type='invoice' AND a.entity_id=d.id AND a.revision=d.revision AND a.action='APPROVE'
+    AND a.actor_id=d.approved_by AND a.after_row=private.aqvora_sales_json(d))
+    OR (SELECT count(*) FROM public.aqvora_sales_audit a WHERE a.organization_id=p_organization_id
+      AND a.entity_type='invoice' AND a.entity_id=d.id) <> d.revision THEN
+    RAISE EXCEPTION 'Sales approval audit does not certify the current source';
+  END IF;
   PERFORM 1 FROM public.organization_members WHERE organization_id=p_organization_id AND user_id=d.approved_by
     AND role='OWNER' AND is_active FOR SHARE;
   IF NOT FOUND OR d.approved_by=d.created_by THEN RAISE EXCEPTION 'Sales checker authorization is no longer valid'; END IF;

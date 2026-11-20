@@ -101,4 +101,14 @@ describe("Sales source authorization and fail-closed verification",()=>{
     await h.user();await expect(h.get(approved.id)).rejects.toThrow("inconsistent");
     await expect(h.query("SELECT public.read_aqvora_trial_balance($1,'2026-11-01','2026-11-30','PKR')",[i.org])).rejects.toThrow("inconsistent");
   });
+  it("refuses to post if privileged tampering changes the approved source and recomputes its hash",async()=>{
+    const d=await h.approve(await h.draft(customer));await h.db.exec("RESET ROLE");
+    const input=JSON.stringify([{...serviceLines[0],unit_price_minor:"1"}]);
+    await h.query(`UPDATE public.aqvora_sales_invoices SET lines=private.aqvora_sales_lines($3::jsonb)->'lines',
+      gross_minor=1,face_minor=1 WHERE organization_id=$1 AND id=$2`,[i.org,d.id,input]);
+    await h.query(`UPDATE public.aqvora_sales_invoices d SET fingerprint=private.aqvora_sales_fingerprint(d)
+      WHERE organization_id=$1 AND id=$2`,[i.org,d.id]);
+    await h.user();await expect(h.issue(await h.get(d.id))).rejects.toThrow("approval audit");
+    expect((await h.query("SELECT * FROM public.aqvora_journals")).rows).toHaveLength(0);
+  });
 });
