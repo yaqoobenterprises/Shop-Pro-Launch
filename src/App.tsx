@@ -47,16 +47,10 @@ const AccountsView = lazy(() =>
 );
 
 const ReceivablesWorkspace = lazy(() =>
-  import("./components/accounting/ReceivablesWorkspace").then(
-    (module) => ({ default: module.ReceivablesWorkspace }),
-  ),
-);
+  import("./components/accounting/ReceivablesWorkspace").then(m => ({ default: m.ReceivablesWorkspace })));
 
 const SalesDraftsWorkspace = lazy(() =>
-  import("./components/accounting/SalesDraftsWorkspace").then(
-    module => ({ default: module.SalesDraftsWorkspace }),
-  ),
-);
+  import("./components/accounting/SalesDraftsWorkspace").then(m => ({ default: m.SalesDraftsWorkspace })));
 
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
