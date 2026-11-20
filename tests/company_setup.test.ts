@@ -41,6 +41,9 @@ function fakeClient(role = "OWNER", updateRow: Record<string, unknown> | null = 
       }) }) }),
     };
     if (table === "organizations") return { update };
+    if (["transactions", "account_ledger_entries", "account_transactions"].includes(table)) {
+      return { select: () => ({ eq: async () => ({ count: 1, error: null }) }) };
+    }
     throw new Error("Unexpected query " + table);
   });
   return { from, update };
@@ -92,6 +95,26 @@ describe("company setup validation and server confirmation", () => {
     expect(client.update).toHaveBeenCalledTimes(1);
     expect(client.update.mock.calls[0][0]).not.toHaveProperty("opening_balance");
     expect(client.update.mock.calls[0][0]).not.toHaveProperty("tax_enabled");
+  });
+
+  it("locks a cloud currency change if any financial postings exist", async () => {
+    vi.spyOn(supabase, "hasConfiguredCloudSession").mockResolvedValue(true);
+    const client = fakeClient();
+    vi.spyOn(supabase, "getSupabaseClient").mockReturnValue(client as never);
+    await expect(saveFirstRunCompanySetup({
+      ...request, input: { ...input, currency: "USD" },
+    })).rejects.toThrow(/locked/i);
+    expect(client.update).not.toHaveBeenCalled();
+  });
+
+  it("locks a timezone change when historical financial postings exist", async () => {
+    vi.spyOn(supabase, "hasConfiguredCloudSession").mockResolvedValue(true);
+    const client = fakeClient();
+    vi.spyOn(supabase, "getSupabaseClient").mockReturnValue(client as never);
+    await expect(saveFirstRunCompanySetup({
+      ...request, input: { ...input, timezone: "America/New_York" },
+    })).rejects.toThrow(/timezone is locked/i);
+    expect(client.update).not.toHaveBeenCalled();
   });
 
   it("does not relabel an existing local book's financial currency", async () => {
