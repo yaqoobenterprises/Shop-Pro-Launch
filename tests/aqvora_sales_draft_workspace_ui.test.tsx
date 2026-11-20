@@ -92,7 +92,7 @@ describe("AQVORA staging-only customer and service-draft forms",()=>{
           unit_price_minor:"101",discount_minor:"2"}],
       })));
     await waitFor(()=>expect(screen.getByText("Saved source draft")).toBeTruthy());
-    expect(screen.getByText("PKR 150 minor units")).toBeTruthy();
+    expect(screen.getByText(/Face: PKR 150 minor units/)).toBeTruthy();
     expect(screen.queryByRole("button",{name:/post journal/i})).toBeNull();
     expect(screen.getByRole("button",{name:"Create another draft"})).toBeTruthy();
   });
