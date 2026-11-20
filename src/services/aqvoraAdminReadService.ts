@@ -185,3 +185,84 @@ export async function loadAqvoraAdminReadSnapshot(
     hasMorePeriods: periodRows.length === 200,
   };
 }
+
+
+/**
+ * Fetch additional cursor pages for a complete *administration listing*.
+ * This is NOT a transactionally certified financial report or trial balance.
+ * Each page is separately authenticated; no partial collection is returned on
+ * denial, cursor drift, malformed payload, or tenant mismatch.
+ */
+const RPC_PAGE_SIZE = 200;
+const MAX_ACCOUNTS = 5000;
+const MAX_PERIODS = 1200;
+
+async function loadAdditionalPages<T extends { id: string }>(
+  firstRows: T[],
+  firstHasMore: boolean,
+  organizationId: string,
+  kind: "accounts" | "periods",
+  parse: (raw: DatabaseRow, organizationId: string) => T,
+  cursorOf: (row: T) => string,
+  orderedAfter: (current: string, previous: string) => boolean,
+  maxRows: number,
+): Promise<{ rows: T[]; hasMore: boolean }> {
+  const rows = [...firstRows];
+  const seenIds = new Set(rows.map((row) => row.id));
+  const seenCursors = new Set(rows.map(cursorOf));
+  if (seenIds.size !== rows.length || seenCursors.size !== rows.length) {
+    throw new Error("AQVORA administration contains duplicate record IDs or cursors.");
+  }
+  // A full first page may still be the final page; request another to know.
+  let hasMore = firstHasMore;
+  let previous = rows.length ? cursorOf(rows[rows.length - 1]) : null;
+  const rpcName = kind === "accounts" ? "list_aqvora_accounts" : "list_aqvora_periods";
+  while (hasMore && rows.length < maxRows) {
+    if (!previous) throw new Error("AQVORA pagination cursor was missing.");
+    const params = kind === "accounts"
+      ? { p_organization_id: organizationId, p_after_code: previous, p_limit: RPC_PAGE_SIZE }
+      : { p_organization_id: organizationId, p_before_start: previous, p_limit: RPC_PAGE_SIZE };
+    const result = await getSupabaseClient().rpc(rpcName, params);
+    if (result.error) {
+      throw new Error("AQVORA administration pagination could not be verified by the server.");
+    }
+    const rawRows = page(result.data, kind);
+    for (const rawRow of rawRows) {
+      const parsed = parse(rawRow, organizationId);
+      const cursor = cursorOf(parsed);
+      if (!orderedAfter(cursor, previous) || seenIds.has(parsed.id) || seenCursors.has(cursor)) {
+        throw new Error("AQVORA administration pagination returned out-of-order or duplicate records.");
+      }
+      seenIds.add(parsed.id);
+      seenCursors.add(cursor);
+      rows.push(parsed);
+      previous = cursor;
+    }
+    hasMore = rawRows.length === RPC_PAGE_SIZE;
+  }
+  return { rows, hasMore };
+}
+
+/** A fail-closed full listing (bounded): never silently equates a partial page with all books. */
+export async function loadAqvoraCompleteAdminReadSnapshot(
+  request: AqvoraAdminReadRequest,
+): Promise<AqvoraAdminReadSnapshot> {
+  const first = await loadAqvoraAdminReadSnapshot(request);
+  const [accountPages, periodPages] = await Promise.all([
+    loadAdditionalPages(
+      first.accounts, first.hasMoreAccounts, request.organizationId, "accounts", account,
+      (row) => row.code.toUpperCase(), (current, previous) => current > previous, MAX_ACCOUNTS,
+    ),
+    loadAdditionalPages(
+      first.periods, first.hasMorePeriods, request.organizationId, "periods", period,
+      (row) => row.startsOn, (current, previous) => current < previous, MAX_PERIODS,
+    ),
+  ]);
+  return {
+    ...first,
+    accounts: accountPages.rows,
+    periods: periodPages.rows,
+    hasMoreAccounts: accountPages.hasMore,
+    hasMorePeriods: periodPages.hasMore,
+  };
+}

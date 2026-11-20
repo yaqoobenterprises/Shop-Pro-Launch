@@ -3,10 +3,12 @@ import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
+import { isAqvoraIsolatedStagingReadEnabled } from "../../services/aqvoraAdminStagingGuard";
 import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
 import {
   BarChart3,
+  BookOpen,
   LayoutDashboard,
   Lock,
   MessageSquare,
@@ -53,7 +55,7 @@ const readSidebarCollapsed = () => {
 
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup, isDemoMode, organization, user } = useAuth();
+  const { lock, hasPinSetup, isDemoMode, isCloudAccount, organization, user } = useAuth();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
   const [isCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
@@ -73,6 +75,9 @@ export const Sidebar: React.FC = () => {
     { id: "chat", label: t("nav.ledger"), icon: MessageSquare },
     { id: "reports", label: t("nav.reports"), icon: BarChart3 },
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
+    ...(isCloudAccount && !isDemoMode && isAqvoraIsolatedStagingReadEnabled()
+      ? [{ id: "aqvora-admin" as AppView, label: "Company books · staging", icon: BookOpen }]
+      : []),
   ];
 
   const displayName = getProfileDisplayName(user, organization.owner_name);

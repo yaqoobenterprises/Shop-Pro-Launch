@@ -56,3 +56,24 @@
   padding:10px 14px; min-height:44px; font-size:12px; font-weight:620; }
 .aq-admin__tabs button[aria-current="page"] { color:#fff; background:#4d4b4c; border-color:#4d4b4c; }
 .aq-admin__tabs button:focus-visible { outline:3px solid #9189df; outline-offset:2px; }
+
+
+/* Authenticated administration lives inside the normal shell, never as demo overlay. */
+.aq-finance.aq-finance--staging {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
+  padding: clamp(18px, 2.2vw, 32px);
+  background: var(--aq-ref-canvas,#e8e7ec);
+}
+.aq-finance--staging .aq-admin__verified-header,
+.aq-finance--staging .aq-finance__section { max-width: 1550px; }
+.aq-finance--staging .aq-finance__welcome { margin-bottom: 24px; }
+.aq-finance--staging .aq-finance__stats { margin-top: 18px; }
+@media (max-width: 600px) {
+  .aq-finance.aq-finance--staging { padding: 17px 12px 44px; }
+}

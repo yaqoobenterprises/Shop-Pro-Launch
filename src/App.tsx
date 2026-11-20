@@ -12,17 +12,15 @@ import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
-
 import {
   ledgerService,
   OFFLINE_SYNC_COMPLETE_EVENT,
 } from "./services/ledgerService";
-
 import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
-
+import { AqvoraStagingAdminRoute } from "./components/accounting/AqvoraStagingAdminRoute";
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
 );
@@ -44,9 +42,9 @@ const LedgerSettingsView = lazy(() =>
 const AccountsView = lazy(() =>
   import("./components/accounts/AccountsView").then((module) => ({ default: module.AccountsView })),
 );
-
 const FinanceDesignPreview = lazy(() => import("./components/accounting/FinanceDesignPreview")
   .then((module) => ({ default: module.FinanceDesignPreview })));
+
 
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
@@ -130,6 +128,7 @@ const MainShell: React.FC = () => {
         return <LedgerReportsView />;
       case "accounts":
         return <AccountsView />;
+      case "aqvora-admin": return <AqvoraStagingAdminRoute />;
       case "settings":
         return <LedgerSettingsView />;
       default:
