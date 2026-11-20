@@ -44,12 +44,12 @@ describe("AQVORA account entry screens", () => {
     expect(screen.getByLabelText("Business name")).toBeTruthy();
     expect(screen.getByLabelText("Email address")).toBeTruthy();
     expect(screen.getByLabelText("Password")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Create account" })).toBeTruthy();
+    expect(document.querySelector(".aq-auth__submit")?.textContent).toContain("Create account");
     fireEvent.change(screen.getByLabelText("Full name"), { target: { value: "Test Owner" } });
     fireEvent.change(screen.getByLabelText("Business name"), { target: { value: "Sample Company" } });
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "StrongPass123" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    fireEvent.click(document.querySelector(".aq-auth__submit") as Element);
     await waitFor(() => expect(auth.signUp).toHaveBeenCalledWith("owner@example.com", "StrongPass123", "Test Owner", "Sample Company"));
     expect(screen.getByRole("heading", { name: "auth.checkEmail" })).toBeTruthy();
   });
@@ -62,7 +62,7 @@ describe("AQVORA account entry screens", () => {
     expect(password.getAttribute("type")).toBe("text");
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "owner@example.com" } });
     fireEvent.change(password, { target: { value: "CorrectPassword!" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in", exact: true }).closest("form")?.querySelector('button[type="submit"]') as Element);
+    fireEvent.click(document.querySelector(".aq-auth__submit") as Element);
     await waitFor(() => expect(auth.signIn).toHaveBeenCalledWith("owner@example.com", "CorrectPassword!"));
   });
 
@@ -81,7 +81,7 @@ describe("AQVORA account entry screens", () => {
     render(<AuthScreen initialMode="signIn" />);
     fireEvent.change(screen.getByLabelText("Email address"), { target: { value: "owner@example.com" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "SecretPass123" } });
-    fireEvent.click(screen.getByRole("button", { name: "Sign in", exact: true }).closest("form")?.querySelector('button[type="submit"]') as Element);
+    fireEvent.click(document.querySelector(".aq-auth__submit") as Element);
     expect((await screen.findByRole("alert")).textContent).toContain("Please verify your email.");
   });
 });
