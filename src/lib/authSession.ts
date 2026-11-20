@@ -9,8 +9,9 @@ export async function activateProfileAfterPinUnlock<TProfile extends { id: strin
 ): Promise<boolean> {
   if (await hasMatchingSession(profile.id)) {
     const status = await activateSession(profile.id);
-    if (status === "ready") return true;
-    if (status === "mfa_required") return false;
+    // A failed cloud authorization check cannot be bypassed by the cached
+    // profile's potentially stale local role.
+    return status === "ready";
   }
   activateLocally(profile, organization);
   return true;
