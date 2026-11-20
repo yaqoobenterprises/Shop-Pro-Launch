@@ -36,6 +36,7 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return;
     setStep(0);
     setError(null);
     setInput({
@@ -45,7 +46,7 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
       country: organization.country || detected.country || "Pakistan",
       timezone: organization.timezone || detected.timeZone || "Asia/Karachi",
     });
-  }, [organization.id, organization.name, organization.business_category, organization.currency, organization.country, organization.timezone, detected]);
+  }, [isOpen, organization.id, organization.name, organization.business_category, organization.currency, organization.country, organization.timezone, detected]);
 
   if (!isOpen) return null;
   const change = (key: keyof CompanySetupInput, value: string) => {
@@ -147,7 +148,7 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </label>
               <input id="company-setup-type" maxLength={80} value={input.businessCategory}
                 onChange={(event) => change("businessCategory", event.target.value)}
-                className={fieldClass} placeholder="Services, Retail, Wholesale..." />
+                className={fieldClass} placeholder="e.g. Retail" />
             </div>
             <p className="text-xs text-text-muted">Each company needs its own verified owner and records.</p>
           </section>
@@ -165,7 +166,9 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 ))}
               </Select>
               <p className="text-xs text-text-muted">
-                Currency and timezone changes are locked after financial entries are posted.
+                {isCloudAccount
+                  ? "Currency and timezone are locked once financial activity begins."
+                  : "This local book keeps its current currency. Changes require an accounting review."}
               </p>
             </div>
             <div className="space-y-1.5">
