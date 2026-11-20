@@ -26,7 +26,7 @@ export interface AqvoraAdminReadSnapshot {
   organizationId: string;
   accounts: AqvoraChartRow[];
   periods: AqvoraFiscalPeriod[];
-  source: "verified-cloud-rpc";
+  source: "authenticated-admin-rpc";
   /** True only for the loaded pages, not a claim that all pages were loaded. */
   hasMoreAccounts: boolean;
   hasMorePeriods: boolean;
@@ -180,7 +180,7 @@ export async function loadAqvoraAdminReadSnapshot(
     organizationId,
     accounts: accountRows.map((row) => account(row, organizationId)),
     periods: periodRows.map((row) => period(row, organizationId)),
-    source: "verified-cloud-rpc",
+    source: "authenticated-admin-rpc",
     hasMoreAccounts: accountRows.length === 200,
     hasMorePeriods: periodRows.length === 200,
   };
