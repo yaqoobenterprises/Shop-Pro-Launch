@@ -38,7 +38,7 @@ describe("AQVORA pastel workspace, real ledger boundaries", () => {
     const accessibleRows = screen.getByRole("table", { name: "Income and expenses by period" });
     expect(accessibleRows.querySelectorAll("th[scope='col']")).toHaveLength(3);
     expect(screen.getByRole("list", { name: "Expense totals by category" }).textContent).toContain("Paper");
-    expect(screen.getByText("Cashbook basis, not accrual P&L")).toBeTruthy();
+    expect(screen.getByText("Cashbook basis · not accrual P&L")).toBeTruthy();
   });
 
   it("keeps zero expense categories honest while retaining the original account empty state", async () => {
