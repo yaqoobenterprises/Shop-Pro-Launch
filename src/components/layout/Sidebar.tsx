@@ -1,21 +1,17 @@
 import React from "react";
-import { useApp, AppView } from "../../context/AppContext";
+import { useApp } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
+import "./NavigationPremium.css";
+import { workspaceNavGroups, workspaceNavLabel } from "./workspaceNavigation";
 import {
-  BarChart3,
-  LayoutDashboard,
   Lock,
-  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
-  Receipt,
   Settings,
-  Sparkles,
-  Wallet,
 } from "lucide-react";
 
 const SIDEBAR_WIDTH_KEY = "shop-pro.sidebar-width";
@@ -66,14 +62,7 @@ export const Sidebar: React.FC = () => {
     isRtl: boolean;
   } | null>(null);
 
-  const navItems: { id: AppView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "dashboard", label: t("nav.overview"), icon: LayoutDashboard },
-    { id: "sales", label: t("nav.entries"), icon: Receipt },
-    { id: "ai", label: "LedgerMate AI", icon: Sparkles },
-    { id: "chat", label: t("nav.ledger"), icon: MessageSquare },
-    { id: "reports", label: t("nav.reports"), icon: BarChart3 },
-    { id: "accounts", label: t("nav.accounts"), icon: Wallet },
-  ];
+  const navGroups = workspaceNavGroups.filter((group) => group.id !== "account");
 
   const displayName = getProfileDisplayName(user, organization.owner_name);
   const toggleLabel = isCollapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar");
@@ -191,25 +180,30 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav id="primary-navigation" aria-label="Main navigation">
-        <div className="sidebar-section-label" data-sidebar-label>WORKSPACE</div>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={isActive ? "active" : ""}
-              aria-current={isActive ? "page" : undefined}
-              aria-label={item.label}
-              title={isCollapsed ? item.label : undefined}
-              onClick={() => setCurrentView(item.id)}
-            >
-              <Icon className="h-4 w-4" aria-hidden="true" />
-              <span data-sidebar-label>{item.label}</span>
-            </button>
-          );
-        })}
+        {navGroups.map((group) => (
+          <div className="aq-nav-group" key={group.id}>
+            <div className="sidebar-section-label" data-sidebar-label>{group.title}</div>
+            {group.items.map((item) => {
+              const Icon = item.icon;
+              const label = workspaceNavLabel(item.id, t);
+              const isActive = currentView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={isActive ? "active" : ""}
+                  aria-current={isActive ? "page" : undefined}
+                  aria-label={label}
+                  title={isCollapsed ? label : undefined}
+                  onClick={() => setCurrentView(item.id)}
+                >
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <span data-sidebar-label>{label}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       <div className="sidebar-bottom">
