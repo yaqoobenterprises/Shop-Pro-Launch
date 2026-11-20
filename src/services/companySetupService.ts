@@ -46,18 +46,25 @@ export async function saveFirstRunCompanySetup(request: CompanySetupRequest): Pr
   if (setup.currency !== organization.currency) {
     // A currency switch after financial activity can invalidate every report.
     // Unknown or inaccessible data is not equivalent to an empty ledger.
-    const [{ count: transactionCount, error: transactionError },
-      { count: entryCount, error: entryError }] = await Promise.all([
-      client.from("transactions").select("id", { count: "exact", head: true })
+    const sources = ["transactions", "account_ledger_entries", "account_transactions"];
+    const counts = await Promise.all(sources.map((table) =>
+      client.from(table).select("id", { count: "exact", head: true })
         .eq("organization_id", organization.id),
-      client.from("account_ledger_entries").select("id", { count: "exact", head: true })
-        .eq("organization_id", organization.id),
-    ]);
-    if (transactionError || entryError || transactionCount === null || entryCount === null) {
-      throw new Error("Cannot verify the company ledger is empty. Currency was not changed.");
+    ));
+    if (counts.some((result) => result.error || result.count === null)) {
+      throw new Error("Cannot verify all company ledgers are empty. Currency was not changed.");
     }
-    if (transactionCount > 0 || entryCount > 0) {
-      throw new Error("Currency is locked because this company already has accounting entries.");
+    if (counts.some((result) => (result.count ?? 0) > 0)) {
+      throw new Error("Currency is locked because this company already has financial entries.");
+    }
+    const { data: accounts, error: accountsError } = await client
+      .from("payment_accounts").select("opening_balance")
+      .eq("organization_id", organization.id);
+    if (accountsError || !accounts) {
+      throw new Error("Cannot verify opening balances. Currency was not changed.");
+    }
+    if (accounts.some((account) => Number(account.opening_balance) !== 0)) {
+      throw new Error("Currency cannot change after company opening balances are set.");
     }
   }
 
@@ -70,7 +77,8 @@ export async function saveFirstRunCompanySetup(request: CompanySetupRequest): Pr
   if (error) throw new Error(error.message);
   // A 200 response with zero updated rows is a common RLS denial: never mark it saved.
   if (!data || data.id !== organization.id ||
-      data.name !== setup.name || data.currency !== setup.currency ||
+      data.name !== setup.name || data.business_category !== setup.business_category ||
+      data.currency !== setup.currency || data.currency_symbol !== setup.currency_symbol ||
       data.country !== setup.country || data.timezone !== setup.timezone ||
       data.region_configured !== true) {
     throw new Error("Company setup was not confirmed by the server. Review access and retry.");
