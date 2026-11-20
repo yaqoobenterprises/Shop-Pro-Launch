@@ -18,8 +18,8 @@ export async function saveFirstRunCompanySetup(request: CompanySetupRequest): Pr
 
   if (!isCloudAccount) {
     // Legacy local books may contain amounts; never silently relabel their currency.
-    if (setup.currency !== organization.currency) {
-      throw new Error("Changing currency on an offline company requires an accounting review.");
+    if (setup.currency !== organization.currency || setup.timezone !== organization.timezone) {
+      throw new Error("Changing currency or timezone on an offline company requires an accounting review.");
     }
     await sqliteRepository.updateOrganization({
       id: organization.id, ...setup, updated_at: new Date().toISOString(),
@@ -43,8 +43,8 @@ export async function saveFirstRunCompanySetup(request: CompanySetupRequest): Pr
     throw new Error("Only an active company owner may finish company setup.");
   }
 
-  if (setup.currency !== organization.currency) {
-    // A currency switch after financial activity can invalidate every report.
+  if (setup.currency !== organization.currency || setup.timezone !== organization.timezone) {
+    // Currency and timezone changes after activity can invalidate financial reporting.
     // Unknown or inaccessible data is not equivalent to an empty ledger.
     const sources = ["transactions", "account_ledger_entries", "account_transactions"];
     const counts = await Promise.all(sources.map((table) =>
@@ -55,7 +55,7 @@ export async function saveFirstRunCompanySetup(request: CompanySetupRequest): Pr
       throw new Error("Cannot verify all company ledgers are empty. Currency was not changed.");
     }
     if (counts.some((result) => (result.count ?? 0) > 0)) {
-      throw new Error("Currency is locked because this company already has financial entries.");
+      throw new Error("Currency or timezone is locked because this company already has financial entries.");
     }
     const { data: accounts, error: accountsError } = await client
       .from("payment_accounts").select("opening_balance")
@@ -64,7 +64,7 @@ export async function saveFirstRunCompanySetup(request: CompanySetupRequest): Pr
       throw new Error("Cannot verify opening balances. Currency was not changed.");
     }
     if (accounts.some((account) => Number(account.opening_balance) !== 0)) {
-      throw new Error("Currency cannot change after company opening balances are set.");
+      throw new Error("Currency or timezone cannot change after opening balances are set.");
     }
   }
 
