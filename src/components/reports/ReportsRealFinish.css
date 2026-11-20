@@ -99,3 +99,40 @@ html.dark .app-shell .reports-modern__kpi:nth-child(4) { background: var(--surfa
 @media (max-width: 355px) {
   .app-shell .reports-modern__kpis { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* Report register has a deliberate page length, not an unbounded 395-row wall. */
+.app-shell .reports-modern__pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 13px;
+  margin-top: 17px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.app-shell .reports-modern__pager > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--ink-2);
+}
+.app-shell .reports-modern__pager button {
+  min-height: 40px;
+  padding: 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 650;
+}
+.app-shell .reports-modern__pager button:hover:not(:disabled) { border-color: var(--chart-lavender); }
+.app-shell .reports-modern__pager button:disabled { opacity: .4; cursor: not-allowed; }
+.app-shell .reports-modern__pager button:focus-visible {
+  outline: 3px solid var(--chart-lavender); outline-offset: 2px;
+}
