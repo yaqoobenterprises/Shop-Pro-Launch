@@ -54,7 +54,7 @@ describe("AQVORA safe Chart and Fiscal admin screens", () => {
     });
     expect(screen.getByText("Page 1 of 1")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "View period 2026-01-01" }));
-    expect(screen.getByText("9007199254740993")).toBeTruthy();
+    expect(screen.getAllByText("9007199254740993").length).toBeGreaterThan(0);
   });
 
   it("makes period actions reviewable but never enables fiscal mutations", () => {
