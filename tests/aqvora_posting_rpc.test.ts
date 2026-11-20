@@ -316,6 +316,15 @@ describe("AQVORA isolated PostgreSQL posting engine", () => {
 
   it("administers accounts and periods through audited owner-only RPCs", async () => {
     await asUser(manager);
+    expect((await db.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org])).rows).toEqual([]);
+    await asAdmin();
+    await db.query("DELETE FROM auth.sessions WHERE id=$1", [manager]);
+    await asUser(manager);
+    await expect(db.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org]))
+      .rejects.toThrow("revoked or missing");
+    await asAdmin();
+    await db.query("INSERT INTO auth.sessions(id,user_id) VALUES ($1,$1)", [manager]);
+    await asUser(manager);
     await expect(db.query("SELECT public.create_aqvora_period($1,'2026-12-01','2026-12-31')", [org]))
       .rejects.toThrow("active owner");
     await asUser(owner, "aal1");

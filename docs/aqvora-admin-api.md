@@ -9,6 +9,9 @@ turn on journal posting for existing customers.
 - Every RPC takes `p_organization_id` and checks a live Auth session, AAL2 MFA,
   and active canonical `organization_members` membership. OWNER may mutate;
   OWNER or MANAGER may read. Anonymous callers cannot execute the RPCs.
+- Account, period and audit reads use the read authorization path. It holds
+  shared session and membership locks while checking revocation and role; it
+  does not take the exclusive company lock used by mutations.
 - Mutations lock the organization row exclusively after authorization. Journal
   posting holds a shared lock on the same row. A close or archive therefore
   commits either before or after a posting, never midway through it.

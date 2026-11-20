@@ -9,6 +9,7 @@ const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const otherOrg = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const owner = "11111111-1111-4111-8111-111111111111";
 const otherOwner = "22222222-2222-4222-8222-222222222222";
+const manager = "66666666-6666-4666-8666-666666666666";
 const cash = "33333333-3333-4333-8333-333333333333";
 const sales = "44444444-4444-4444-8444-444444444444";
 const lines = [
@@ -87,11 +88,12 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
         organization_id uuid NOT NULL, user_id uuid NOT NULL,
         role text NOT NULL, is_active boolean NOT NULL,
         PRIMARY KEY (organization_id,user_id));
-      INSERT INTO auth.users VALUES ('${owner}'),('${otherOwner}');
-      INSERT INTO auth.sessions VALUES ('${owner}','${owner}'),('${otherOwner}','${otherOwner}');
+      INSERT INTO auth.users VALUES ('${owner}'),('${otherOwner}'),('${manager}');
+      INSERT INTO auth.sessions VALUES ('${owner}','${owner}'),('${otherOwner}','${otherOwner}'),('${manager}','${manager}');
       INSERT INTO public.organizations VALUES ('${org}','PKR'),('${otherOrg}','PKR');
       INSERT INTO public.organization_members VALUES
-        ('${org}','${owner}','OWNER',true),('${otherOrg}','${otherOwner}','OWNER',true);
+        ('${org}','${owner}','OWNER',true),('${org}','${manager}','MANAGER',true),
+        ('${otherOrg}','${otherOwner}','OWNER',true);
     `);
     for (const file of [
       "20261120010000_aqvora_journal_schema.sql",
@@ -321,6 +323,32 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
       SELECT has_table_privilege('authenticated','public.aqvora_admin_audit','INSERT') AS direct_write,
       has_function_privilege('anon','public.archive_aqvora_account(uuid,uuid,bigint,text)','EXECUTE') AS anon_rpc`);
     expect(grants.rows[0]).toEqual({ direct_write: false, anon_rpc: false });
+  }, 30000);
+
+  it("lets a manager read audit during posting without an exclusive company lock", async () => {
+    const poster = await asUser();
+    await post(poster, key());
+    const reader = await asUser(manager);
+    await reader.query("SET LOCAL statement_timeout='1000ms'");
+    const events = await reader.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org]);
+    expect(events.rows.length).toBeGreaterThan(0);
+    expect((await reader.query("SELECT * FROM public.aqvora_admin_audit WHERE organization_id=$1", [otherOrg])).rows).toEqual([]);
+    await reader.query("COMMIT"); await close(reader);
+    await poster.query("COMMIT"); await close(poster);
+    const foreign = await asUser(otherOwner);
+    await expect(foreign.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org]))
+      .rejects.toThrow("not authorized");
+    await close(foreign);
+    const low = await asUser(manager, "aal1");
+    await expect(low.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org]))
+      .rejects.toThrow("MFA");
+    await close(low);
+    await admin.query("UPDATE public.organization_members SET is_active=false WHERE organization_id=$1 AND user_id=$2", [org, manager]);
+    const inactive = await asUser(manager);
+    await expect(inactive.query("SELECT * FROM public.list_aqvora_admin_events($1)", [org]))
+      .rejects.toThrow("not authorized");
+    await close(inactive);
+    await admin.query("UPDATE public.organization_members SET is_active=true WHERE organization_id=$1 AND user_id=$2", [org, manager]);
   }, 30000);
 
   it("serializes close and archive against posting and preserves posted history", async () => {
