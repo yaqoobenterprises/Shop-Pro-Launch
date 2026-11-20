@@ -54,6 +54,9 @@ jobs:
           AQVORA_DISPOSABLE_STACK: '1'
         run: npx vitest run tests/aqvora_real_supabase.test.ts
 
+      - name: Inspect disposable database security advisors
+        run: npx supabase db advisors --local --type security --fail-on error
+
       - name: Stop disposable stack
         if: always()
         run: npx supabase stop || true
@@ -102,6 +105,12 @@ jobs:
           pg_container=$(docker ps --filter ancestor=postgres:17 --format '{{.ID}}' | head -n 1)
           test -n "$pg_container"
           AQVORA_TEST_PG_DOCKER_CONTAINER="$pg_container" npx vitest run tests/aqvora_migration_reconciliation.test.ts
+
+      - name: Verify certified ledger snapshots and query plans
+        env:
+          AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/aqvora_test
+          AQVORA_DISPOSABLE_DB: '1'
+        run: npx vitest run tests/aqvora_read_postgres.test.ts
 
   verify:
     name: Verify application

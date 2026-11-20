@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { Client } from "pg";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { GeneralLedgerPage, TrialBalancePage } from "../src/accounting/readContracts";
 
 const statusPath = process.env.AQVORA_LOCAL_SUPABASE_STATUS;
 type Status = Record<string, string>;
@@ -47,6 +48,13 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
     return { status: response.status, data: raw ? JSON.parse(raw) as unknown : null };
   };
   const rpc = (identity: Identity | null, name: string, body: object) => call(identity, `rpc/${name}`, body);
+  const readRequest = () => ({ p_organization_id: org,p_from_date: "2026-11-01",
+    p_to_date: "2026-11-30",p_currency: "PKR" });
+  const readTb = (identity: Identity | null, extra: object = {}) =>
+    rpc(identity,"read_aqvora_trial_balance",{ ...readRequest(),...extra });
+  const readGl = (identity: Identity | null, extra: object = {}) =>
+    rpc(identity,"read_aqvora_general_ledger",{ ...readRequest(),
+      p_account_id: cash ?? "00000000-0000-4000-8000-000000000000",...extra });
   const success = (result: ApiResult) => {
     expect(result.status, JSON.stringify(result.data)).toBeGreaterThanOrEqual(200);
     expect(result.status, JSON.stringify(result.data)).toBeLessThan(300);
@@ -112,6 +120,8 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
   afterAll(async () => { if (db) await db.end(); });
 
   it("uses issued AAL1/AAL2 JWTs for tenant-scoped RPC and table permissions", async () => {
+    denied(await readTb(null)); denied(await readGl(null)); denied(await readTb(owner));
+    denied(await readGl(owner));
     denied(await rpc(null, "list_aqvora_accounts", { p_organization_id: org }));
     denied(await rpc(owner, "list_aqvora_accounts", { p_organization_id: org }));
     denied(await rpc(owner, "create_aqvora_period", {
@@ -128,6 +138,12 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
         p_parent_id: null, p_is_posting: true });
     cash = String(success(await createAccount("1000", "Cash", "asset", "debit")).id);
     sales = String(success(await createAccount("4000", "Sales", "revenue", "credit")).id);
+    const empty = success(await readTb(manager)) as unknown as TrialBalancePage;
+    expect(empty.source).toMatchObject({ source_complete: true,source_journal_count: "0",
+      legacy_included: false,opening_migration_verified: false });
+    expect(empty.totals.debit_minor).toBe("0");
+    expect(success(await readGl(manager))).toMatchObject({ rows: [],matched_count: "0" });
+    denied(await readTb(outsider)); denied(await readGl(outsider));
     expect(success(await rpc(manager, "list_aqvora_accounts", { p_organization_id: org }))).toHaveLength(2);
     const events = success(await rpc(manager, "list_aqvora_admin_events", {
       p_organization_id: org,
@@ -187,6 +203,51 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
     denied(await rpc(owner, "post_aqvora_journal", { ...posting, intent_key: `archived-${randomUUID()}` }));
   }, 120000);
 
+  it("serves exact GL/TB pages through real PostgREST with source drift and reversal checks", async () => {
+    const account = success(await rpc(owner,"create_aqvora_account",{ p_organization_id: org,
+      p_code: "1010",p_name: "Read test cash",p_account_class: "asset",p_normal_side: "debit",
+      p_parent_id: null,p_is_posting: true }));
+    const accountId = String(account.id);
+    const posting = { organization_id: org,intent_key: `read-${randomUUID()}`,business_date: "2026-11-20",
+      lines: [{ account_id: accountId,debit_minor: "9223372036854775807",credit_minor: "0" },
+        { account_id: sales,debit_minor: "0",credit_minor: "9223372036854775807" }] };
+    const [one,retry] = await Promise.all([rpc(owner,"post_aqvora_journal",posting),rpc(owner,"post_aqvora_journal",posting)]);
+    expect(success(one).journal_id).toBe(success(retry).journal_id);
+    const first = success(await readGl(manager,{ p_account_id: accountId,p_limit: 1 })) as unknown as GeneralLedgerPage;
+    success(await rpc(owner,"post_aqvora_journal",{ ...posting,intent_key: `read-${randomUUID()}` }));
+    const drift = await readTb(manager,{ p_snapshot_token: first.source.snapshot_token });
+    denied(drift); expect(drift.data).toMatchObject({ code: "40001" });
+    const report = success(await readTb(manager,{ p_limit: 1 })) as unknown as TrialBalancePage;
+    expect(report.totals.debit_minor).toBe("18446744073709551715");
+    const ledger = success(await readGl(manager,{ p_account_id: accountId,p_limit: 1,
+      p_snapshot_token: report.source.snapshot_token })) as unknown as GeneralLedgerPage;
+    expect(ledger.closing_minor).toBe("18446744073709551614");
+    const args = { p_account_id: accountId,p_limit: 1,p_cursor: ledger.next_cursor,
+      p_snapshot_token: ledger.source.snapshot_token };
+    const second = success(await readGl(manager,args)) as unknown as GeneralLedgerPage;
+    expect(second.rows[0]).toMatchObject({ ordinal: "2",running_balance_minor: "18446744073709551614" });
+    expect(second.has_more).toBe(false);
+    expect((success(await readGl(manager,args)) as unknown as GeneralLedgerPage).rows).toEqual(second.rows);
+    denied(await readGl(manager,{ ...args,p_account_id: sales }));
+    const tbSecond = success(await readTb(manager,{ p_limit: 1,p_cursor: report.next_cursor,
+      p_snapshot_token: report.source.snapshot_token })) as unknown as TrialBalancePage;
+    expect(tbSecond.rows[0].ordinal).toBe("2");
+    expect(tbSecond.totals).toEqual(report.totals);
+    denied(await readTb(manager,{ p_currency: "USD" }));
+    denied(await readTb(manager,{ p_to_date: "2026-02-30" }));
+    denied(await readTb(manager,{ p_limit: 201 }));
+    const original = (success(await readGl(manager)) as unknown as GeneralLedgerPage).rows[0];
+    success(await rpc(owner,"reverse_aqvora_journal",{ organization_id: org,original_journal_id: original.journal_id,
+      intent_key: `reverse-read-${randomUUID()}`,business_date: "2026-11-21",reason: "Synthetic correction" }));
+    const reversed = success(await readGl(manager)) as unknown as GeneralLedgerPage;
+    expect(reversed).toMatchObject({ closing_minor: "0",debit_minor: "101",credit_minor: "101" });
+    expect(reversed.rows[1].reversal_of).toBe(original.journal_id);
+    expect(reversed.account.is_active).toBe(false);
+    denied(await call(owner,`aqvora_journals?id=eq.${original.journal_id}`,{ total_minor: "1" },"PATCH"));
+    denied(await call(owner,"aqvora_journal_lines",{ organization_id: org,journal_id: original.journal_id }));
+    denied(await rpc(owner,"aqvora_certify_read",{ p_org: org }));
+  },120000);
+
   it("rejects revoked sessions and inactive memberships and preserves audit rows", async () => {
     const audit = await db.query<{ id: number }>(
       "SELECT id FROM public.aqvora_admin_audit WHERE organization_id=$1 ORDER BY id LIMIT 1", [org]);
@@ -195,13 +256,16 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
     await db.query("UPDATE public.organization_members SET role='CASHIER' WHERE organization_id=$1 AND user_id=$2",
       [org, manager.id]);
     denied(await rpc(manager, "list_aqvora_admin_events", { p_organization_id: org }));
+    denied(await readTb(manager)); denied(await readGl(manager));
     await db.query("UPDATE public.organization_members SET role='MANAGER' WHERE organization_id=$1 AND user_id=$2",
       [org, manager.id]);
     await db.query("DELETE FROM auth.sessions WHERE id=$1", [jwt(manager.token).session_id]);
     denied(await rpc(manager, "list_aqvora_admin_events", { p_organization_id: org }));
+    denied(await readTb(manager)); denied(await readGl(manager));
     await db.query("UPDATE public.organization_members SET is_active=false WHERE organization_id=$1 AND user_id=$2",
       [org, owner.id]);
     denied(await rpc(owner, "list_aqvora_admin_events", { p_organization_id: org }));
+    denied(await readTb(owner)); denied(await readGl(owner));
     denied(await rpc(owner, "create_aqvora_period", {
       p_organization_id: org, p_starts_on: "2026-12-01", p_ends_on: "2026-12-31",
     }));
