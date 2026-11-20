@@ -669,27 +669,30 @@ export const PinSetupScreen: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    const result = await setupPin(pin);
-    setIsSubmitting(false);
-
-    if (!result.success) {
-      setError(result.error || "Failed to set up PIN. Please try again.");
+    try {
+      const result = await setupPin(pin);
+      if (!result.success) {
+        setError(result.error || "Could not set your PIN. Try again.");
+      }
+    } catch {
+      setError("PIN setup failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-      <main className="auth-card w-full max-w-[400px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
+    <AuthFrame>
+      <main className="auth-card aq-auth__card aq-auth__pin-panel w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <KeyRound className="h-6 w-6" />
           </div>
           <h1 className="text-xl font-bold text-on-surface">
-            Set Your Quick-Unlock PIN
+            Choose a quick-unlock PIN
           </h1>
           <p className="mt-1.5 max-w-[300px] text-xs leading-relaxed text-text-muted">
-            Set a 4-digit PIN for quick register unlock and screen lock. Staff
-            won't need to retype passwords between transactions.
+            Use four digits to unlock this device quickly. Your account password remains separate.
           </p>
         </div>
 
@@ -755,7 +758,7 @@ export const PinSetupScreen: React.FC = () => {
               {showPin ? "Hide numbers" : "Show numbers"}
             </button>
             <span className="text-[11px] text-text-muted">
-              Choose a PIN you can recall
+              Never share your PIN
             </span>
           </div>
 
@@ -777,7 +780,7 @@ export const PinSetupScreen: React.FC = () => {
           >
             <CheckCircle2 className="h-4 w-4" />
             <span>
-              {isSubmitting ? "Setting PIN..." : "Save PIN & Enter Register"}
+              {isSubmitting ? "Setting PIN..." : "Save PIN and continue"}
             </span>
           </button>
 
@@ -790,7 +793,7 @@ export const PinSetupScreen: React.FC = () => {
           </button>
         </form>
       </main>
-    </div>
+    </AuthFrame>
   );
 };
 
@@ -804,6 +807,7 @@ export const LockScreen: React.FC = () => {
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const unlockInFlight = React.useRef(false);
   const displayName = getProfileDisplayName(user, organization.owner_name);
 
   useEffect(() => {
@@ -811,15 +815,23 @@ export const LockScreen: React.FC = () => {
   }, []);
 
   const handleUnlock = async (pinToTry: string) => {
+    if (unlockInFlight.current) return;
+    unlockInFlight.current = true;
     setError("");
     setIsSubmitting(true);
-    const success = await unlock(pinToTry);
-    setIsSubmitting(false);
-
-    if (!success) {
+    try {
+      const success = await unlock(pinToTry);
+      if (!success) {
+        setPin("");
+        setError("Incorrect PIN. Please try again.");
+        document.getElementById("unlock-pin")?.focus();
+      }
+    } catch {
       setPin("");
-      setError("Incorrect PIN. Please try again.");
-      document.getElementById("unlock-pin")?.focus();
+      setError("Unable to unlock right now. Try again.");
+    } finally {
+      unlockInFlight.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -831,8 +843,8 @@ export const LockScreen: React.FC = () => {
   };
 
   return (
-    <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-      <main className="auth-card w-full max-w-[380px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
+    <AuthFrame>
+      <main className="auth-card aq-auth__card aq-auth__pin-panel w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
         {/* User Avatar and Identity */}
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-3 rounded-full ring-4 ring-primary/10">
@@ -905,7 +917,7 @@ export const LockScreen: React.FC = () => {
             className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-primary text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover disabled:opacity-50"
           >
             <LockKeyhole className="h-4 w-4" />
-            <span>{isSubmitting ? "Unlocking..." : "Unlock Register"}</span>
+            <span>{isSubmitting ? "Unlocking..." : "Unlock workspace"}</span>
           </button>
 
           <button
@@ -917,7 +929,7 @@ export const LockScreen: React.FC = () => {
           </button>
         </form>
       </main>
-    </div>
+    </AuthFrame>
   );
 };
 

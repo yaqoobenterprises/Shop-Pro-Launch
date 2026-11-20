@@ -69,14 +69,17 @@ const MainShell: React.FC = () => {
   const { currentView } = useApp();
   const { isDemoMode, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
-  const regionSettingsEnabled = isFeatureEnabled("regionSettings");
+  const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
 
   useEffect(() => {
+    // A real owner sees the mandatory setup only when verified account setup is unfinished.
+    // The isolated demo gets an explicit, skippable preview instead.
+    if (isDemoMode) return;
     setShowRegionalSetup(Boolean(
-      regionSettingsEnabled && user?.role === "OWNER" && organization.region_configured === false,
+      companySetupEnabled && user?.role === "OWNER" && organization.region_configured === false,
     ));
-  }, [regionSettingsEnabled, user?.id, user?.role, organization.id, organization.region_configured]);
+  }, [companySetupEnabled, isDemoMode, user?.id, user?.role, organization.id, organization.region_configured]);
 
   useEffect(() => {
     let syncInFlight: Promise<void> | undefined;
@@ -135,8 +138,20 @@ const MainShell: React.FC = () => {
       {isDemoMode && (
         <div
           role="status"
-          className="z-40 flex min-h-14 shrink-0 items-center justify-end border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
+          className="z-40 flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
         >
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-text-muted">Sample workspace · no live company data</span>
+            {companySetupEnabled && (
+              <button
+                type="button"
+                onClick={() => setShowRegionalSetup(true)}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-container-low px-3 text-xs font-semibold text-on-surface hover:bg-surface-bright"
+              >
+                Preview company setup
+              </button>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => void exitDemoMode()}
