@@ -69,14 +69,14 @@ const MainShell: React.FC = () => {
   const { currentView } = useApp();
   const { isDemoMode, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
-  const regionSettingsEnabled = isFeatureEnabled("regionSettings");
+  const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
 
   useEffect(() => {
     setShowRegionalSetup(Boolean(
-      regionSettingsEnabled && user?.role === "OWNER" && organization.region_configured === false,
+      companySetupEnabled && user?.role === "OWNER" && organization.region_configured === false,
     ));
-  }, [regionSettingsEnabled, user?.id, user?.role, organization.id, organization.region_configured]);
+  }, [companySetupEnabled, user?.id, user?.role, organization.id, organization.region_configured]);
 
   useEffect(() => {
     let syncInFlight: Promise<void> | undefined;
