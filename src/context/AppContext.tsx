@@ -17,6 +17,7 @@ export type AppView =
   | "accounts"
   | "aqvora-receivables"
   | "aqvora-sales-drafts"
+  | "aqvora-gl-tb"
   | "reports"
   | "settings";
 
