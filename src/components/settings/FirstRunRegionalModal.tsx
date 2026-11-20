@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Building2, Check, Globe, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Globe, ShieldCheck } from "lucide-react";
 import { Select } from "../common/Select";
 import { useAuth } from "../../context/AuthContext";
 import { useRegion } from "../../regional/region";
