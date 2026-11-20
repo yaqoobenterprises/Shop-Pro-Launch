@@ -23,14 +23,14 @@ describe("AQVORA real payment-account page", () => {
     const transfer = screen.getByRole("button", { name: "Move money" });
     expect(create.getAttribute("aria-expanded")).toBe("false");
     expect(transfer.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByRole("textbox", { name: "Account name" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Account name" })).toBeNull();
     fireEvent.click(create);
     expect(create.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.getByRole("textbox", { name: "Account name" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Account name" })).toBeTruthy();
     fireEvent.click(transfer);
     expect(create.getAttribute("aria-expanded")).toBe("false");
     expect(transfer.getAttribute("aria-expanded")).toBe("true");
-    expect(screen.queryByRole("textbox", { name: "Account name" })).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Account name" })).toBeNull();
     expect(screen.getByRole("button", { name: "Transfer funds" })).toBeTruthy();
     fireEvent.click(transfer);
     expect(transfer.getAttribute("aria-expanded")).toBe("false");
