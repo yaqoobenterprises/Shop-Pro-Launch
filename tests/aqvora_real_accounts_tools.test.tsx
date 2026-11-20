@@ -18,7 +18,7 @@ vi.mock("../src/services/ledgerService", () => ({
 describe("AQVORA real payment-account page", () => {
   it("starts with concise cards and exposes exactly one functional form on demand", async () => {
     render(<AccountsView />);
-    await waitFor(() => expect(screen.getByText("Cash Drawer")).toBeTruthy());
+    await waitFor(() => expect(screen.getAllByText("Cash Drawer").length).toBeGreaterThan(0));
     const create = screen.getByRole("button", { name: "New account" });
     const transfer = screen.getByRole("button", { name: "Move money" });
     expect(create.getAttribute("aria-expanded")).toBe("false");
