@@ -1,6 +1,6 @@
 import { validBusinessDate } from "./minorUnits";
 import type {
-  InvoiceOpenBalance, OpenInvoicePage, ReceivablesReconciliation,
+  InvoiceOpenBalance, ReceivablesReconciliation,
 } from "./receiptContracts";
 import type { AccountingReadSource } from "./readContracts";
 
