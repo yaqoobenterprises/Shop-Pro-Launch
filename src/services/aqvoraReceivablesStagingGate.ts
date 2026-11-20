@@ -24,7 +24,10 @@ export interface IsolatedReceivablesContext extends ReceivableReadContext {
 export type ReceivablesReadRpc =
   | "get_aqvora_invoice_open_balance"
   | "list_aqvora_open_invoices"
-  | "read_aqvora_receivables";
+  | "read_aqvora_receivables"
+  | "get_aqvora_cash_collection"
+  | "get_aqvora_customer_receipt"
+  | "lookup_aqvora_customer_receipt_issue";
 
 export function isIsolatedReceivablesReadEnabled(): boolean {
   if (import.meta.env.VITE_ENABLE_AQVORA_VERIFIED_AR_READS !== "true" ||
