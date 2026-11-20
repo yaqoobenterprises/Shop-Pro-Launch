@@ -1,4 +1,11 @@
-/** Display-only formatter: never converts source amounts to floating-point. */
+/**
+ * Honest display for integer minor units.
+ *
+ * The current V2 RPC does NOT expose an authoritative, company-approved
+ * currency exponent. Intl/ICU currency digits can differ from the company's
+ * contractual scale (PKR is a known mismatch across runtimes). Never guess
+ * major-unit conversion from locale or JS Number. Show exact units instead.
+ */
 export function formatExactCurrencyMinor(
   value: string, currency: string,
 ): string {
@@ -6,23 +13,5 @@ export function formatExactCurrencyMinor(
       !/^[A-Z]{3}$/.test(currency)) {
     throw new Error("Invalid exact money display source.");
   }
-  let digits: number;
-  try {
-    digits = new Intl.NumberFormat("en-US", {
-      style: "currency", currency,
-    }).resolvedOptions().maximumFractionDigits;
-  } catch {
-    throw new Error("Unsupported display currency.");
-  }
-  if (!Number.isInteger(digits) || digits < 0 || digits > 3) {
-    throw new Error("Unsupported currency decimal scale.");
-  }
-  const divisor = 10n ** BigInt(digits);
-  const amount = BigInt(value);
-  const whole = (amount / divisor).toLocaleString("en-US");
-  const remainder = amount % divisor;
-  const fraction = digits === 0
-    ? ""
-    : "." + remainder.toString().padStart(digits, "0");
-  return `${currency} ${whole}${fraction}`;
+  return `${currency} ${BigInt(value).toLocaleString("en-US")} minor units`;
 }
