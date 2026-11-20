@@ -1,4 +1,5 @@
 import type { InvoiceOpenBalance, ReceivablesReconciliation } from "./receiptContracts";
+export { verifyReceivablesSource } from "./receiptReadPrimitives";
 import type { AccountingReadSource } from "./readContracts";
 import {
   date, money, object, uuid, validateContext, verifyReceivablesSource,
