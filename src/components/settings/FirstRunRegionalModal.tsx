@@ -10,12 +10,13 @@ import { prepareCompanySetup, type CompanySetupInput } from "../../lib/companySe
 import { saveUserPreferences } from "../../services/userPreferencesService";
 import { useI18n } from "../../i18n";
 import { isFeatureEnabled } from "../../config/features";
+import "./CompanySetupPremium.css";
 
 interface Props { isOpen: boolean; onClose: () => void }
 const fieldClass = "workspace-control w-full min-h-11 rounded-lg px-3 py-2 text-sm";
 
 export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { user, organization, updateOrganization, isCloudAccount } = useAuth();
+  const { user, organization, updateOrganization, isCloudAccount, isDemoMode } = useAuth();
   const { setRegion } = useRegion();
   const { setLanguage, t } = useI18n();
   const languageUrEnabled = isFeatureEnabled("languageUr");
@@ -95,22 +96,28 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   const steps = ["Company", "Location & currency", "Review"];
   return (
-    <div role="dialog" aria-modal="true" aria-labelledby="setup-title"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-xs sm:p-6">
-      <div className="workspace-panel max-h-[92dvh] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl p-5 shadow-2xl sm:p-7">
-        <header className="flex items-start gap-3">
-          <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
-            <Building2 aria-hidden="true" className="h-6 w-6" />
+    <div role="dialog" aria-modal="true" aria-labelledby="setup-title" aria-describedby="setup-description"
+      className="aq-company-setup fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 backdrop-blur-xs sm:p-6">
+      <div className="workspace-panel aq-company-setup__panel max-h-[92dvh] w-full max-w-xl space-y-5 overflow-y-auto rounded-2xl p-5 shadow-2xl sm:p-7">
+        <header className="aq-company-setup__header flex items-start gap-3">
+          <div className="aq-company-setup__logo" aria-hidden="true">
+            <img src="/assets/aqvora-symbol.svg" alt="" />
           </div>
           <div className="min-w-0 flex-1">
+            <span className="aq-company-setup__eyebrow">AQVORA · COMPANY ONBOARDING</span>
             <h2 id="setup-title" className="text-lg font-bold text-on-surface">Set up your company</h2>
-            <p className="mt-1 text-sm text-text-muted">
-              Configure the basics before recording your first transaction.
+            <p id="setup-description" className="mt-1 text-sm text-text-muted">
+              Start with company details. Financial books come next.
             </p>
           </div>
+          {isDemoMode && (
+            <button type="button" className="aq-company-setup__close" onClick={onClose} disabled={saving}>
+              Close demo
+            </button>
+          )}
         </header>
 
-        <div className="grid grid-cols-3 gap-2" aria-label="Company setup progress">
+        <div className="aq-company-setup__progress grid grid-cols-3 gap-2" aria-label="Company setup progress">
           {steps.map((name, index) => (
             <div key={name} className="min-w-0 space-y-1.5">
               <div className={`h-1.5 rounded-full ${index <= step ? "bg-primary" : "bg-border-standard"}`} />
@@ -209,7 +216,7 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </section>
         )}
 
-        <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border-standard pt-4">
+        <footer className="aq-company-setup__actions flex flex-wrap items-center justify-between gap-3 border-t border-border-standard pt-4">
           <button type="button" disabled={step === 0 || saving}
             onClick={() => { setStep((current) => Math.max(current - 1, 0)); setError(null); }}
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border-standard px-4 text-sm font-semibold text-on-surface disabled:opacity-40">
