@@ -27,7 +27,8 @@ BEGIN
   PERFORM 1 FROM public.aqvora_enabled_companies WHERE organization_id=p_organization_id FOR SHARE;
   IF NOT FOUND THEN RAISE EXCEPTION 'AQVORA posting is not enabled for this company'; END IF;
   PERFORM private.aqvora_receipt_validate_locked(r);
-  IF EXISTS(SELECT 1 FROM public.aqvora_journals WHERE organization_id=p_organization_id AND currency<>r.currency) THEN
+  IF EXISTS(SELECT 1 FROM public.aqvora_journals WHERE organization_id=p_organization_id AND currency<r.currency)
+    OR EXISTS(SELECT 1 FROM public.aqvora_journals WHERE organization_id=p_organization_id AND currency>r.currency) THEN
     RAISE EXCEPTION 'Company currency differs from posted history'; END IF;
   SELECT id INTO period FROM public.aqvora_periods WHERE organization_id=p_organization_id AND r.business_date BETWEEN starts_on AND ends_on AND state='open';
   number:=private.aqvora_receipt_next(p_organization_id,'receipt');intent:='customer-receipt:'||journal::text;

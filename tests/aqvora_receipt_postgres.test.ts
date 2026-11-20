@@ -122,10 +122,30 @@ describe.skipIf(!databaseUrl)("Receipt settlement on independent PostgreSQL sess
       const c=await user();const start=performance.now();await post(c,r);await commit(c);durations.push(performance.now()-start);}
     await admin.query("ANALYZE public.aqvora_receipt_allocations;ANALYZE public.aqvora_customer_receipts");
     const plan=await admin.query("EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) SELECT * FROM public.aqvora_receipt_allocations WHERE organization_id=$1 AND invoice_id=$2",[i.org,last!.id]);
-    expect(JSON.stringify(plan.rows[0])).toContain("aqvora_allocations_invoice");
+    expect(plan.rows[0]["QUERY PLAN"][0].Plan["Actual Rows"]).toBe(1);
     const indexes=await admin.query("SELECT indexdef FROM pg_indexes WHERE tablename='aqvora_customer_receipts'");
     expect(JSON.stringify(indexes.rows)).toContain("jsonb_path_ops");
-    console.info("AQVORA receipt posting timings ms",{first20:durations.slice(0,20),last20:durations.slice(-20)},"allocation plan",JSON.stringify(plan.rows[0]));
+    // A tiny four-page table can correctly use a cheaper sequential scan. Check
+    // scale on isolated temporary copies with identical indexes, without forcing
+    // the planner or polluting certified financial history with synthetic rows.
+    await admin.query(`CREATE TEMP TABLE aqvora_allocation_scale(LIKE public.aqvora_receipt_allocations INCLUDING ALL);
+      INSERT INTO aqvora_allocation_scale SELECT * FROM public.aqvora_receipt_allocations;
+      INSERT INTO aqvora_allocation_scale(organization_id,id,receipt_id,invoice_id,invoice_revision,invoice_fingerprint,amount_minor,journal_id,line_no)
+      SELECT CASE WHEN n%2=0 THEN '${i.org}'::uuid ELSE '${i.otherOrg}'::uuid END,gen_random_uuid(),gen_random_uuid(),gen_random_uuid(),
+        1,repeat('0',64),1,gen_random_uuid(),2 FROM generate_series(1,50000) n;
+      ANALYZE aqvora_allocation_scale;
+      CREATE TEMP TABLE aqvora_receipt_source_scale AS SELECT organization_id,id,state,allocations FROM public.aqvora_customer_receipts;
+      CREATE INDEX receipt_source_scale_gin ON aqvora_receipt_source_scale USING gin(allocations jsonb_path_ops) WHERE state='posted';
+      INSERT INTO aqvora_receipt_source_scale SELECT '${i.org}'::uuid,gen_random_uuid(),'posted',
+        jsonb_build_array(jsonb_build_object('invoice_id',gen_random_uuid(),'amount_minor','1')) FROM generate_series(1,50000);
+      ANALYZE aqvora_receipt_source_scale`);
+    const scaled=await admin.query("EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) SELECT * FROM aqvora_allocation_scale WHERE organization_id=$1 AND invoice_id=$2",[i.org,last!.id]);
+    expect(JSON.stringify(scaled.rows[0])).toContain("Index Cond");expect(scaled.rows[0]["QUERY PLAN"][0].Plan["Actual Rows"]).toBe(1);
+    const sources=await admin.query(`EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) SELECT * FROM aqvora_receipt_source_scale
+      WHERE organization_id=$1 AND state='posted' AND allocations @> $2::jsonb`,[i.org,JSON.stringify([{invoice_id:last!.id}])]);
+    expect(JSON.stringify(sources.rows[0])).toContain("receipt_source_scale_gin");
+    console.info("AQVORA receipt posting timings ms",{first20:durations.slice(0,20),last20:durations.slice(-20)},
+      "actual allocation plan",JSON.stringify(plan.rows[0]),"50k allocation plan",JSON.stringify(scaled.rows[0]),"50k source plan",JSON.stringify(sources.rows[0]));
     expect(Math.max(...durations.slice(-20))).toBeLessThan(15000);
     const c=await user();const report=(await c.query("SELECT public.read_aqvora_receivables($1,'PKR','2026-11-20',$2) r",[i.org,party])).rows[0].r;
     expect(report).toMatchObject({face_minor:"12120",allocated_minor:"120",outstanding_minor:"12000",ar_control_minor:"12000"});await commit(c);

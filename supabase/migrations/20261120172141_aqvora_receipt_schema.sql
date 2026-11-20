@@ -62,6 +62,7 @@ CREATE INDEX aqvora_receipts_customer_date ON public.aqvora_customer_receipts(or
 -- Independent source lookup catches a deleted allocation without scanning all
 -- receipt history for each invoice. Company ownership is still checked first.
 CREATE INDEX aqvora_receipts_invoice_sources ON public.aqvora_customer_receipts USING gin(allocations jsonb_path_ops) WHERE state='posted';
+CREATE INDEX aqvora_journals_company_currency ON public.aqvora_journals(organization_id,currency);
 CREATE INDEX aqvora_collections_customer ON public.aqvora_cash_collections(organization_id,customer_id,id);
 CREATE TABLE public.aqvora_receipt_allocations (
   organization_id uuid NOT NULL, id uuid NOT NULL DEFAULT gen_random_uuid(), receipt_id uuid NOT NULL,
