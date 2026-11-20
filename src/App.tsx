@@ -145,8 +145,20 @@ const MainShell: React.FC = () => {
       {isDemoMode && (
         <div
           role="status"
-          className="z-40 flex min-h-14 shrink-0 items-center justify-end border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
+          className="z-40 flex min-h-14 shrink-0 items-center justify-end gap-3 border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
         >
+          {companySetupEnabled && (
+            <>
+              <span className="mr-auto text-xs text-text-muted">V2 review · offline demo data only</span>
+              <button
+                type="button"
+                onClick={() => setShowRegionalSetup(true)}
+                className="min-h-11 rounded-lg border border-border-standard px-3 text-xs font-semibold"
+              >
+                Company setup
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={() => void exitDemoMode()}
