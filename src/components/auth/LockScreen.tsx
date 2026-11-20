@@ -292,8 +292,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   // If currently in Supabase Password Recovery Flow
   if (isPasswordRecovery) {
     return (
-      <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-        <main className="auth-card w-full max-w-[400px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
+      <AuthFrame onBack={onBack}>
+        <main className="auth-card aq-auth__card w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
           <div className="mb-6 flex flex-col items-center text-center">
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <KeyRound className="h-6 w-6" />
@@ -411,15 +411,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             </button>
           </form>
         </main>
-      </div>
+      </AuthFrame>
     );
   }
 
   // If email confirmation has been sent
   if (emailConfirmationSent) {
     return (
-      <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-        <main className="auth-card w-full max-w-[420px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8 text-center">
+      <AuthFrame onBack={onBack}>
+        <main className="auth-card aq-auth__card w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-bg text-success ring-8 ring-success-bg/50">
             <Mail className="h-6 w-6" />
           </div>
@@ -476,7 +476,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             <span>{t("auth.backToSignInScreen")}</span>
           </button>
         </main>
-      </div>
+      </AuthFrame>
     );
   }
 
