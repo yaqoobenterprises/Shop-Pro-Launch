@@ -111,6 +111,9 @@ export function verifyServiceInvoiceSource(
   if (v.state === "issued") {
     string(v.journal_id, "journal");
     string(v.approved_by, "approver");
+    if (v.approved_by === v.created_by) {
+      throw new Error("Issued sales invoice violates maker-checker separation.");
+    }
     const fingerprint = hash(v.fingerprint, "invoice");
     const number = string(v.document_number, "number");
     if (!/^SI-[1-9][0-9]*$/.test(number)) {
