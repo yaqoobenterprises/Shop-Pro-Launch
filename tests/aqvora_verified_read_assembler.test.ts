@@ -155,7 +155,9 @@ describe("AQVORA V2 all-or-nothing ledger-read client assembly", () => {
       ? {...glPage(2), rows: [{...glRow(2),ordinal: "1"}]}
       : glPage(1), glRequest, {pageSize: 1}))
       .rejects.toThrow(/gap or duplicate/);
-    await expect(readVerifiedGeneralLedger(async () => glPage(1), glRequest, {pageSize: 1}))
+    await expect(readVerifiedGeneralLedger(async args => args.p_cursor
+      ? {...glPage(2),matched_count: "3",has_more: true,next_cursor: glCursor}
+      : {...glPage(1),matched_count: "3"}, glRequest, {pageSize: 1}))
       .rejects.toThrow(/cursor loop/);
     await expect(readVerifiedGeneralLedger(async () => ({
       ...glPage(1),has_more: false,next_cursor: null,
@@ -186,7 +188,8 @@ describe("AQVORA V2 all-or-nothing ledger-read client assembly", () => {
       : tbPage(1), tbRequest, {pageSize: 1}))
       .rejects.toThrow(/duplicated/);
     await expect(readVerifiedTrialBalance(async args => args.p_cursor
-      ? {...tbPage(2),totals: {...tbTotals(),debit_minor: "101"}}
+      ? {...tbPage(2),totals: {...tbTotals(),
+          opening_debit_minor: "1",opening_credit_minor: "1"}}
       : tbPage(1), tbRequest, {pageSize: 1}))
       .rejects.toThrow(/totals or account identity changed/);
     await expect(readVerifiedTrialBalance(async () => ({
