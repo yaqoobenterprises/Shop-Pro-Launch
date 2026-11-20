@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { readFileSync, readdirSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { assertDisposablePostgres } from "./support/assertDisposablePostgres";
@@ -31,7 +32,7 @@ const sales = "33333333-3333-4333-8333-333333333333";
 
 describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable PostgreSQL", () => {
   let controller: Client;
-  const databases = ["aqvora_fresh_fixture", "aqvora_deployed_fixture"];
+  const databases = ["aqvora_fresh_fixture", "aqvora_deployed_fixture", "aqvora_restored_fixture"];
   const urlFor = (name: string) => {
     const parsed = new URL(databaseUrl!);
     parsed.pathname = `/${name}`;
@@ -76,7 +77,7 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
       EXCEPTION WHEN duplicate_object THEN NULL; END $$;
       DO $$ BEGIN CREATE ROLE authenticated;
       EXCEPTION WHEN duplicate_object THEN NULL; END $$;`);
-    for (const name of databases) await controller.query(`CREATE DATABASE ${name}`);
+    for (const name of databases.slice(0, 2)) await controller.query(`CREATE DATABASE ${name}`);
   }, 30000);
   afterAll(async () => {
     if (!controller) return;
@@ -153,4 +154,75 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
       }
     }, 90000);
   }
+
+  it.skipIf(!process.env.AQVORA_TEST_PG_DOCKER_CONTAINER)(
+    "restores full migration history, journal receipts and closed-period authorization", async () => {
+      const source = await open(databases[0]);
+      const restoredName = databases[2];
+      const container = process.env.AQVORA_TEST_PG_DOCKER_CONTAINER!;
+      const snapshot = async (client: Client) => (await client.query<{
+        journals: number; lines: number; receipts: number; audit: number;
+        debit: string; credit: string; members: number;
+      }>(`SELECT
+        (SELECT count(*)::int FROM public.aqvora_journals) AS journals,
+        (SELECT count(*)::int FROM public.aqvora_journal_lines) AS lines,
+        (SELECT count(*)::int FROM public.aqvora_posting_receipts) AS receipts,
+        (SELECT count(*)::int FROM public.aqvora_journal_audit) AS audit,
+        (SELECT sum(debit_minor)::text FROM public.aqvora_journal_lines) AS debit,
+        (SELECT sum(credit_minor)::text FROM public.aqvora_journal_lines) AS credit,
+        (SELECT count(*)::int FROM public.organization_members) AS members`)).rows[0];
+      try {
+        await source.query("BEGIN");
+        await source.query("SET LOCAL ROLE authenticated");
+        await source.query(`SELECT set_config('request.jwt.claim.sub',$1,true),
+          set_config('request.jwt.claim.aal','aal2',true),
+          set_config('request.jwt.claim.session_id',$1,true)`, [actor]);
+        const period = await source.query<{ id: string }>(
+          "SELECT id FROM public.aqvora_periods WHERE organization_id=$1", [org]);
+        await source.query("SELECT public.close_aqvora_period($1,$2,1,'Recovery drill')",
+          [org, period.rows[0].id]);
+        await source.query("COMMIT");
+        const before = await snapshot(source);
+        expect(before).toMatchObject({ journals: 1, lines: 2, receipts: 1, audit: 1,
+          debit: "1", credit: "1" });
+        const dump = execFileSync("docker", ["exec", container, "pg_dump", "-U", "postgres",
+          "-Fc", databases[0]], { maxBuffer: 64 * 1024 * 1024 });
+        expect(dump.length).toBeGreaterThan(1000);
+        await source.query("BEGIN");
+        await expect(source.query("CREATE TABLE public.aqvora_failed_upgrade(id integer); SELECT 1/0"))
+          .rejects.toThrow();
+        await source.query("ROLLBACK");
+        expect((await source.query("SELECT to_regclass('public.aqvora_failed_upgrade') AS relation"))
+          .rows[0].relation).toBeNull();
+        expect(await snapshot(source)).toEqual(before);
+        await controller.query(`CREATE DATABASE ${restoredName}`);
+        execFileSync("docker", ["exec", "-i", container, "pg_restore", "-U", "postgres",
+          "--exit-on-error", "-d", restoredName],
+        { input: dump, maxBuffer: 64 * 1024 * 1024 });
+        const target = await open(restoredName);
+        try {
+          expect(await snapshot(target)).toEqual(before);
+          await target.query("BEGIN");
+          await target.query("SET LOCAL ROLE authenticated");
+          await target.query(`SELECT set_config('request.jwt.claim.sub',$1,true),
+            set_config('request.jwt.claim.aal','aal2',true),
+            set_config('request.jwt.claim.session_id',$1,true)`, [actor]);
+          const recovered = await target.query<{ receipt: { journal_id: string } }>(
+            "SELECT public.lookup_aqvora_receipt($1,'migration-smoke') AS receipt", [org]);
+          const retry = await target.query<{ receipt: { journal_id: string } }>(
+            "SELECT public.post_aqvora_journal($1,'migration-smoke','2026-11-20',$2::jsonb) AS receipt",
+            [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
+              { account_id: sales, debit_minor: "0", credit_minor: "1" }])]);
+          expect(retry.rows[0].receipt.journal_id).toBe(recovered.rows[0].receipt.journal_id);
+          await expect(target.query("SELECT public.post_aqvora_journal($1,'new-after-close','2026-11-20',$2::jsonb)",
+            [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
+              { account_id: sales, debit_minor: "0", credit_minor: "1" }])])).rejects.toThrow("closed");
+          await target.query("ROLLBACK");
+          expect(await snapshot(target)).toEqual(before);
+          const grants = await target.query<{ direct_write: boolean }>(
+            "SELECT has_table_privilege('authenticated','public.aqvora_journals','INSERT') AS direct_write");
+          expect(grants.rows[0].direct_write).toBe(false);
+        } finally { await target.end(); }
+      } finally { await source.end(); }
+    }, 90000);
 });

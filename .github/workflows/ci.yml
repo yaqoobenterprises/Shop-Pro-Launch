@@ -35,6 +35,15 @@ jobs:
         timeout-minutes: 20
         run: |
           npx supabase init
+          python3 - <<'PY'
+          from pathlib import Path
+          config = Path('supabase/config.toml')
+          current = config.read_text()
+          disabled = '[auth.mfa.totp]\nenroll_enabled = false\nverify_enabled = false'
+          assert disabled in current, 'Supabase CLI TOTP config changed'
+          config.write_text(current.replace(disabled,
+              '[auth.mfa.totp]\nenroll_enabled = true\nverify_enabled = true'))
+          PY
           npx supabase start --exclude realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,edge-runtime,logflare,vector,supavisor
           npx supabase status -o json > "$RUNNER_TEMP/aqvora-status.json"
           echo "AQVORA_LOCAL_SUPABASE_STATUS=$RUNNER_TEMP/aqvora-status.json" >> "$GITHUB_ENV"
@@ -89,7 +98,10 @@ jobs:
         env:
           AQVORA_TEST_DATABASE_URL: postgresql://postgres:aqvora_test@localhost:5432/aqvora_test
           AQVORA_DISPOSABLE_DB: '1'
-        run: npx vitest run tests/aqvora_migration_reconciliation.test.ts
+        run: |
+          pg_container=$(docker ps --filter ancestor=postgres:17 --format '{{.ID}}' | head -n 1)
+          test -n "$pg_container"
+          AQVORA_TEST_PG_DOCKER_CONTAINER="$pg_container" npx vitest run tests/aqvora_migration_reconciliation.test.ts
 
   verify:
     name: Verify application
