@@ -6,6 +6,7 @@ import {
   LockKeyhole,
   MoreHorizontal,
   Receipt,
+  FileText,
   Sparkles,
   Settings,
   Wallet,
@@ -13,6 +14,7 @@ import {
 import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
+import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 
 const primaryItems: Array<{
   id: AppView;
@@ -37,9 +39,15 @@ const secondaryItems: Array<{
 
 export const MobileNav: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup } = useAuth();
+  const { lock, hasPinSetup, isCloudAccount, isDemoMode, user } = useAuth();
   const { t } = useI18n();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const showReceivables = isIsolatedReceivablesReadEnabled() &&
+    isCloudAccount && !isDemoMode &&
+    (user?.role === "OWNER" || user?.role === "MANAGER");
+  const availableSecondary: typeof secondaryItems = showReceivables
+    ? [...secondaryItems, {id:"aqvora-receivables",label:"Receivables",icon:FileText}]
+    : secondaryItems;
 
   const navigate = (view: AppView) => {
     setCurrentView(view);
@@ -89,8 +97,8 @@ export const MobileNav: React.FC = () => {
               id="mobile-more-menu"
               className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
             >
-              {secondaryItems.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : t("nav.settings");
+              {availableSecondary.map(({ id, icon: Icon }) => {
+                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : "Receivables";
                 return (
                   <button
                     key={id}
@@ -136,7 +144,8 @@ export const MobileNav: React.FC = () => {
             (
               isMoreOpen ||
               currentView === "settings" ||
-              currentView === "accounts"
+              currentView === "accounts" ||
+              currentView === "aqvora-receivables"
             ) ?
               "bg-primary/[0.07] text-primary"
             : "text-text-muted hover:bg-surface-container-low"
