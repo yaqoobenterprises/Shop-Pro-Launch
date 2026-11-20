@@ -42,7 +42,10 @@ export const MobileNav: React.FC = () => {
       {dockItems.map(({ id, key, icon: Icon }) => {
         const isNew = id === "new";
         const active = currentView === (isNew ? "chat" : id);
-        const label = isNew ? "New entry" : t(key!);
+        const label = isNew ? t("nav.newEntry") : t(key!);
+        const shortLabel = isNew ? t("nav.dockNew")
+          : id === "dashboard" ? t("nav.dockHome")
+            : id === "sales" ? t("nav.dockEntries") : t("nav.dockReports");
         return (
           <button
             key={id}
@@ -60,7 +63,7 @@ export const MobileNav: React.FC = () => {
             }}
           >
             <span className="aq-mobile-nav__icon"><Icon size={20} strokeWidth={1.85} aria-hidden="true" /></span>
-            <span className="aq-mobile-nav__label">{isNew ? "New" : label}</span>
+            <span className="aq-mobile-nav__label">{shortLabel}</span>
           </button>
         );
       })}
