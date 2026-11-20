@@ -91,7 +91,7 @@ describe("AQVORA functional read-only accounts receivable workspace",()=>{
   it("loads a full customer report, displays exact balances and inspects an invoice",async()=>{
     await loadCustomerReport();
     await waitFor(()=>expect(screen.getByText("Open service invoices · 1 certified V2 rows")).toBeTruthy());
-    expect(screen.getAllByText("PKR 6.00").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("PKR 600 minor units").length).toBeGreaterThan(0);
     expect(screen.getByText(/manually dual-attested, not bank-verified/)).toBeTruthy();
     expect(mocks.open).toHaveBeenCalledWith(expect.objectContaining({
       organizationId:org,userId:actor,customerId,currency:"PKR",
