@@ -11,7 +11,9 @@ export function normalizeSupabaseUrl(rawUrl?: string): string {
   return url;
 }
 
-function isCombinedReviewSandbox(): boolean { return true; } // REVIEW ONLY, remove before release
+function isCombinedReviewSandbox(): boolean {
+  return import.meta.env.VITE_SHOP_PRO_OFFLINE_PREVIEW === 'true';
+}
 
 export function getSupabaseConfig(): { url: string; anonKey: string } {
   // PREVIEW-ONLY: fail closed regardless of inherited deployment variables.
