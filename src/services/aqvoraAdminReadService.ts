@@ -128,7 +128,7 @@ const period = (raw: DatabaseRow, organizationId: string): AqvoraFiscalPeriod =>
     id: nonEmptyString(raw.id, "period ID"),
     startsOn,
     endsOn,
-    state: raw.state,
+    state: raw.state as "open" | "closed",
     reopenCount: raw.reopen_count,
     revision: revisionString(raw.revision),
   };
