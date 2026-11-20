@@ -1,16 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useI18n } from "../../i18n";
 import { useApp, type AppView } from "../../context/AppContext";
+import { workspaceNavItems, workspaceNavLabel } from "./workspaceNavigation";
 import {
-  BarChart3,
   HelpCircle,
-  LayoutDashboard,
-  Landmark,
-  MessageSquare,
   Receipt,
   Search,
-  Settings,
-  Sparkles,
   X,
 } from "lucide-react";
 
@@ -31,19 +26,11 @@ export const CommandPalette: React.FC = () => {
 
   if (!isCommandPaletteOpen) return null;
 
-  const pages: Array<{
-    label: string;
-    view: AppView;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    { label: t("nav.ledger"), view: "chat", icon: MessageSquare },
-    { label: "LedgerMate AI", view: "ai", icon: Sparkles },
-    { label: t("nav.overview"), view: "dashboard", icon: LayoutDashboard },
-    { label: t("nav.entries"), view: "sales", icon: Receipt },
-    { label: t("nav.reports"), view: "reports", icon: BarChart3 },
-    { label: t("nav.accounts"), view: "accounts", icon: Landmark },
-    { label: t("nav.settings"), view: "settings", icon: Settings },
-  ];
+  const pages = workspaceNavItems.map((item) => ({
+    label: workspaceNavLabel(item.id, t),
+    view: item.id,
+    icon: item.icon,
+  }));
   const filteredPages = pages.filter((page) =>
     page.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
   );
