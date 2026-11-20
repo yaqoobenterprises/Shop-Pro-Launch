@@ -1,18 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { BookOpenText, ChartNoAxesCombined, FileSpreadsheet, LayoutList, Sparkles, X } from "lucide-react";
+import { BookOpenText, CalendarRange, ChartNoAxesCombined, FileSpreadsheet, LayoutList, Sparkles, X } from "lucide-react";
 import { buildFinancialSnapshot } from "../../accounting/financialSnapshot";
 import type { JournalPreviewPolicy } from "../../accounting/types";
 import { ChartExplorer } from "./ChartExplorer";
+import { FiscalPeriodPanel } from "./FiscalPeriodPanel";
+import type { AqvoraFiscalPeriod } from "../../services/aqvoraAdminReadService";
 import { JournalComposer } from "./JournalComposer";
 import { GeneralLedgerPanel } from "./GeneralLedgerPanel";
 import { TrialBalancePanel } from "./TrialBalancePanel";
 import { sampleChart, sampleCompany, sampleJournals } from "./financeSampleData";
 import "./FinanceDesignPreview.css";
 import "./FinanceFinish.css";
+import "./FinanceAdmin.css";
 
-type Page = "chart" | "journal" | "ledger" | "trial";
+type Page = "chart" | "periods" | "journal" | "ledger" | "trial";
 const pages: { key: Page; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
   { key: "chart", label: "Chart of Accounts", icon: LayoutList },
+  { key: "periods", label: "Fiscal Periods", icon: CalendarRange },
   { key: "journal", label: "Journal Entry", icon: FileSpreadsheet },
   { key: "ledger", label: "General Ledger", icon: BookOpenText },
   { key: "trial", label: "Trial Balance", icon: ChartNoAxesCombined },
@@ -24,6 +28,13 @@ const policy: JournalPreviewPolicy = {
   periodEnd: "2026-11-30",
   periodState: "open",
 };
+
+const samplePeriods: AqvoraFiscalPeriod[] = [
+  { id: "sample-q1", organizationId: sampleCompany.organizationId, startsOn: "2026-01-01", endsOn: "2026-03-31", state: "closed", reopenCount: 0, revision: "1" },
+  { id: "sample-q2", organizationId: sampleCompany.organizationId, startsOn: "2026-04-01", endsOn: "2026-06-30", state: "closed", reopenCount: 1, revision: "3" },
+  { id: "sample-q3", organizationId: sampleCompany.organizationId, startsOn: "2026-07-01", endsOn: "2026-09-30", state: "closed", reopenCount: 0, revision: "1" },
+  { id: "sample-q4", organizationId: sampleCompany.organizationId, startsOn: "2026-10-01", endsOn: "2026-12-31", state: "open", reopenCount: 0, revision: "1" },
+];
 
 interface Props { onClose: () => void; onOpenAi?: () => void }
 
@@ -79,7 +90,7 @@ export const FinanceDesignPreview: React.FC<Props> = ({ onClose, onOpenAi }) => 
             </button>}
             <div className="aq-finance__nav-note">
               <strong>Design preview</strong>
-              <span>Secure journal posting and company-scoped reports are being built separately.</span>
+              <span>Period mutations and secure journal posting remain disabled pending real staging.</span>
             </div>
           </aside>
           <div className="aq-finance__main">
@@ -95,6 +106,7 @@ export const FinanceDesignPreview: React.FC<Props> = ({ onClose, onOpenAi }) => 
                 onClick={() => setPage(entry.key)}>{entry.label}</button>)}
             </div>
             {page === "chart" && <ChartExplorer accounts={sampleChart} isSample />}
+            {page === "periods" && <FiscalPeriodPanel periods={samplePeriods} source="illustrative" />}
             {page === "journal" && <JournalComposer accounts={sampleChart}
               initialDate={sampleCompany.asOfDate} policy={policy} />}
             {page === "ledger" && <GeneralLedgerPanel accounts={sampleChart}
