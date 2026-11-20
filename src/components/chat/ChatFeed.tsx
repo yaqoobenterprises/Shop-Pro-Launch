@@ -61,8 +61,17 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 sm:px-6">
-      <div className="mx-auto w-full max-w-4xl divide-y divide-border-standard">
+    <div className="cashbook-feed flex-1 overflow-y-auto px-4 sm:px-6" aria-label="Today's cashbook activity">
+      <div className="cashbook-feed__surface mx-auto w-full max-w-4xl divide-y divide-border-standard">
+        <div className="cashbook-feed__heading">
+          <div>
+            <h2>Today's activity</h2>
+            <p>Select an entry to view its details</p>
+          </div>
+          <span aria-label={`${transactions.length} recorded entries`}>
+            {transactions.length} {transactions.length === 1 ? "entry" : "entries"}
+          </span>
+        </div>
         {drafts.length > 0 && (
           <section className="space-y-2 py-4" aria-labelledby="drafts-heading">
             <div className="flex items-center justify-between gap-3">
