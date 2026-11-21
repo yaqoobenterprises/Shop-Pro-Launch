@@ -1,0 +1,258 @@
+/*
+ * AQVORA Cashbook workspace v2
+ * Layout-first rather than another bottom-docked styling patch:
+ * summary -> bounded activity -> entry composer, with one scroll owner.
+ */
+.app-shell .ledger-page.ledger-page--workspace {
+  --cash-radius: 16px;
+  --cash-content: 1240px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--soft);
+  padding: 20px clamp(14px, 2.3vw, 36px) 30px;
+  scrollbar-gutter: stable;
+}
+.app-shell .ledger-page .cashbook-summary {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: var(--cash-content);
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.app-shell .ledger-page .cashbook-summary__header { margin-bottom: 17px; }
+.app-shell .ledger-page .cashbook-summary__header h1 {
+  font-size: clamp(23px, 2.2vw, 29px);
+  font-weight: 710;
+  letter-spacing: -.045em;
+}
+.app-shell .ledger-page .cashbook-summary__date { color: var(--muted); font-size: 12px; }
+.app-shell .ledger-page .cashbook-summary__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 15px;
+}
+.app-shell .ledger-page .summary-metric {
+  min-width: 0;
+  min-height: 146px;
+  padding: 23px;
+  border: 0;
+  border-radius: var(--cash-radius);
+  box-shadow: var(--shadow-sm);
+  background: var(--surface-card);
+  color: var(--ink);
+  transform: none;
+}
+.app-shell .ledger-page .summary-metric::before { display: none; }
+.app-shell .ledger-page .summary-metric--income { background: #4d4b4c; color: #fff; }
+.app-shell .ledger-page .summary-metric--expense { background: #feeaf5; color: #3c3b40; }
+.app-shell .ledger-page .summary-metric--profit { background: #e7fbf5; color: #283e37; }
+.app-shell .ledger-page .summary-metric--negative { background: #feeaf5; color: #a63f52; }
+.app-shell .ledger-page .summary-metric__label {
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+.app-shell .ledger-page .summary-metric__label > svg {
+  box-sizing: border-box;
+  width: 23px;
+  height: 23px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  stroke-width: 1.7;
+  opacity: .75;
+}
+.app-shell .ledger-page .cashbook-summary__amount,
+.app-shell .ledger-page .summary-metric--expense .cashbook-summary__amount,
+.app-shell .ledger-page .summary-metric--profit .cashbook-summary__amount:not(.text-danger) {
+  color: inherit;
+  margin-top: 16px;
+  font-family: inherit;
+  font-size: clamp(24px, 2.5vw, 33px);
+  font-weight: 730;
+  line-height: 1.15;
+  letter-spacing: -.05em;
+}
+.app-shell .ledger-page .summary-metric:hover {
+  border: 0; transform: none; box-shadow: var(--shadow-sm);
+}
+.app-shell .ledger-page .cashbook-feed {
+  flex: 0 0 auto;
+  overflow: visible;
+  width: 100%;
+  max-width: var(--cash-content);
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+}
+.app-shell .ledger-page .cashbook-feed__surface {
+  width: 100%;
+  max-width: none;
+  padding: 0 22px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--cash-radius);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+}
+.app-shell .ledger-page .cashbook-feed__heading {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 22px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .ledger-page .cashbook-feed__heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 690;
+  letter-spacing: -.025em;
+}
+.app-shell .ledger-page .cashbook-feed__heading p {
+  margin: 3px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.app-shell .ledger-page .cashbook-feed__heading > span {
+  padding: 8px 12px;
+  border-radius: 30px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 630;
+  white-space: nowrap;
+}
+.app-shell .ledger-page .cashbook-feed__surface > .ledger-entry-row {
+  border-bottom: 1px solid var(--line);
+}
+.app-shell .ledger-page .cashbook-feed__surface > .ledger-entry-row:last-child { border-bottom: 0; }
+.app-shell .ledger-page .ledger-entry-row button { min-height: 58px; padding-inline: 8px; }
+.app-shell .ledger-page .ledger-entry-row button:hover { background: var(--surface-2); }
+.app-shell .ledger-page .cashbook-empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 15px;
+  min-height: 162px;
+  padding: 27px 0;
+}
+.app-shell .ledger-page .cashbook-empty__icon {
+  display: grid; place-items: center;
+  flex: 0 0 58px;
+  height: 58px;
+  border-radius: 13px;
+  background: var(--good-bg);
+  color: var(--forest);
+}
+.app-shell .ledger-page .cashbook-empty__copy { flex: 1 1 250px; min-width: 0; }
+.app-shell .ledger-page .cashbook-empty__copy h3 {
+  margin: 0 0 5px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 690;
+}
+.app-shell .ledger-page .cashbook-empty__copy p {
+  margin: 0;
+  max-width: 460px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.app-shell .ledger-page .cashbook-empty__action {
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  min-height: 44px; padding: 10px 15px;
+  border: 0; border-radius: 9px;
+  background: #176b54; color: white;
+  font-size: 12px; font-weight: 680;
+}
+.app-shell .ledger-page .cashbook-composer {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: var(--cash-content);
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--cash-radius);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+}
+.app-shell .ledger-page .cashbook-composer__heading {
+  display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap;
+  gap: 12px; margin-bottom: 17px;
+}
+.app-shell .ledger-page .cashbook-composer__heading span {
+  font-size: 10px; font-weight: 730; color: var(--forest); letter-spacing: .11em;
+}
+.app-shell .ledger-page .cashbook-composer__heading h2 {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-size: 17px; font-weight: 690; letter-spacing: -.027em;
+}
+.app-shell .ledger-page .cashbook-composer__heading p {
+  font-size: 11px; color: var(--muted); margin: 0;
+}
+.app-shell .ledger-page .ledger-composer__quick-actions,
+.app-shell .ledger-page .ledger-composer__form,
+.app-shell .ledger-page .ledger-composer__hint {
+  max-width: none;
+}
+.app-shell .ledger-page .ledger-composer__chip {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  box-shadow: none;
+  font-size: 12px;
+}
+.app-shell .ledger-page .ledger-composer__chip:hover { transform: none; background: var(--surface-2); }
+.app-shell .ledger-page .ledger-composer__input {
+  border-radius: 10px;
+  background: var(--surface-card);
+  box-shadow: none;
+}
+.app-shell .ledger-page .ledger-composer__send {
+  border-radius: 10px;
+  background: #176b54;
+  box-shadow: none;
+}
+.app-shell .ledger-page :is(.cashbook-empty__action, .ledger-composer__send):focus-visible {
+  outline: 3px solid var(--chart-lavender); outline-offset: 3px;
+}
+html.dark .app-shell .ledger-page .summary-metric--income { background: #444550; color: #fff; }
+html.dark .app-shell .ledger-page .summary-metric--expense { background: #493746; color: #ffeef6; }
+html.dark .app-shell .ledger-page .summary-metric--profit { background: #274840; color: #e3fff5; }
+html.dark .app-shell .ledger-page .summary-metric--negative { background: #493746; color: #ffbeca; }
+@media (max-width: 800px) {
+  .app-shell .ledger-page.ledger-page--workspace { gap: 12px; padding: 14px 12px 26px; }
+  .app-shell .ledger-page .summary-metric { min-height: 123px; padding: 17px; }
+  .app-shell .ledger-page .cashbook-composer,
+  .app-shell .ledger-page .cashbook-feed__surface { padding-inline: 16px; }
+}
+@media (max-width: 580px) {
+  .app-shell .ledger-page .cashbook-summary__metrics { gap: 8px; }
+  .app-shell .ledger-page .summary-metric { min-height: 107px; padding: 12px 10px; border-radius: 11px; }
+  .app-shell .ledger-page .summary-metric__label { font-size: 10px; }
+  .app-shell .ledger-page .summary-metric__label > svg { width: 18px; height: 18px; }
+  .app-shell .ledger-page .cashbook-summary__amount,
+  .app-shell .ledger-page .summary-metric--expense .cashbook-summary__amount,
+  .app-shell .ledger-page .summary-metric--profit .cashbook-summary__amount:not(.text-danger) {
+    font-size: clamp(17px, 4.4vw, 23px);
+    margin-top: 11px;
+  }
+  .app-shell .ledger-page .cashbook-feed__heading { padding-block: 16px; }
+  .app-shell .ledger-page .cashbook-empty { padding-block: 20px; gap: 11px; }
+  .app-shell .ledger-page .cashbook-empty__icon { flex-basis: 44px; height: 44px; border-radius: 10px; }
+  .app-shell .ledger-page .cashbook-empty__action { width: 100%; }
+  .app-shell .ledger-page .cashbook-composer { padding-block: 17px; }
+  .app-shell .ledger-page .cashbook-composer__heading p { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .ledger-page .ledger-composer__chip,
+  .app-shell .ledger-page .summary-metric { transition: none; }
+}

@@ -15,6 +15,7 @@ import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import { APP_NAME } from "../../config/app";
 import "./WorkspaceChrome.css";
+import "./WorkspacePastel.css";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();

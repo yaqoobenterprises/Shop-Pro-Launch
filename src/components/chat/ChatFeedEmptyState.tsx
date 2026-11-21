@@ -1,16 +1,28 @@
-import { Receipt } from "lucide-react";
+import { ArrowUpRight, ReceiptText } from "lucide-react";
 import { useI18n } from "../../i18n";
 
-export const ChatFeedEmptyState = () => {
+interface Props {
+  onStartEntry?: () => void;
+}
+
+/** Compact, accessible empty state inside the same bounded activity surface. */
+export const ChatFeedEmptyState = ({ onStartEntry }: Props) => {
   const { t } = useI18n();
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container-low text-secondary">
-        <Receipt className="h-5 w-5" aria-hidden="true" />
+    <div className="cashbook-empty" role="status" aria-label="No cashbook entries today">
+      <div className="cashbook-empty__icon">
+        <ReceiptText size={23} strokeWidth={1.7} aria-hidden="true" />
       </div>
-      <h4 className="text-sm font-semibold text-on-surface">No entries today</h4>
-      <p className="mt-1 text-xs text-text-muted">{t("chat.clearToday")}</p>
+      <div className="cashbook-empty__copy">
+        <h3>No entries today</h3>
+        <p>{t("chat.clearToday")} Use the entry form below when you are ready.</p>
+      </div>
+      {onStartEntry && (
+        <button type="button" className="cashbook-empty__action" onClick={onStartEntry}>
+          Record an entry <ArrowUpRight size={16} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 };

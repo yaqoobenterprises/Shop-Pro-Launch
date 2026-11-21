@@ -29,7 +29,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer active:scale-[0.99]";
+      "inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer";
 
     const variants = {
       primary:
@@ -50,21 +50,23 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes = {
-      sm: "h-8 px-3 text-xs gap-1.5 rounded-md",
-      md: "h-10 px-4 text-sm gap-2 rounded-lg",
-      lg: "h-12 px-6 text-base gap-2.5 rounded-xl font-semibold",
+      sm: "min-h-10 px-3 text-xs gap-1.5 rounded-md",
+      md: "min-h-11 px-4 text-sm gap-2 rounded-lg",
+      lg: "min-h-12 px-6 text-base gap-2.5 rounded-xl font-semibold",
     };
 
     return (
       <button
         ref={ref}
         disabled={disabled || isLoading}
+        aria-busy={isLoading || undefined}
         className={cn(baseStyles, variants[variant], sizes[size], className)}
         {...props}
       >
         {isLoading ?
           <svg
-            className="animate-spin h-4 w-4 text-current"
+            className="animate-spin motion-reduce:animate-none h-4 w-4 text-current"
+            aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
           >
@@ -84,6 +86,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </svg>
         : null}
         {children}
+        {isLoading && <span className="sr-only">Processing</span>}
       </button>
     );
   },

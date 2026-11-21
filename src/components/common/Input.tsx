@@ -20,20 +20,23 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       rightIcon,
       shortcutHint,
       id,
+      "aria-describedby": describedBy,
+      "aria-invalid": ariaInvalid,
       ...props
     },
     ref,
   ) => {
-    const inputId =
-      id ||
-      (label ? `input-${label.toLowerCase().replace(/\s+/g, "-")}` : undefined);
+    const reactId = React.useId();
+    const inputId = id || (label ? `input-${reactId}` : undefined);
+    const errorId = error ? `error-${reactId}` : undefined;
+    const descriptionIds = [describedBy, errorId].filter(Boolean).join(" ") || undefined;
 
     return (
       <div className="w-full space-y-1.5 text-left">
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-semibold text-on-surface"
+            className="block text-sm font-semibold text-on-surface"
           >
             {label}
           </label>
@@ -48,8 +51,10 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={type}
             ref={ref}
+            aria-invalid={error ? true : ariaInvalid}
+            aria-describedby={descriptionIds}
             className={cn(
-              "h-10 w-full rounded-lg border border-border-standard bg-surface-bright px-3 py-2 font-sans text-sm text-on-surface shadow-xs transition-all duration-150 placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-50",
+              "min-h-11 w-full rounded-lg border border-border-standard bg-surface-bright px-3 py-2 font-sans text-sm text-on-surface shadow-xs transition-all duration-150 placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/15 disabled:cursor-not-allowed disabled:opacity-50",
               leftIcon && "pl-9",
               (rightIcon || shortcutHint) && "pr-12",
               error &&
@@ -71,7 +76,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+        {error && <p id={errorId} role="alert" className="mt-1 text-xs text-danger">{error}</p>}
       </div>
     );
   },
