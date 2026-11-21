@@ -26,7 +26,7 @@ describe("Founder-approved ONE AQVORA workspace review",()=>{
       .toBeTruthy();
     expect(await screen.findByRole("region",{name:"Existing Cashbook surface"}))
       .toBeTruthy();
-    expect(screen.getByText(/Existing Cashbook records and reports/)).toBeTruthy();
+    expect(screen.getByText(/Saving entries changes your actual account data/)).toBeTruthy();
     expect(screen.queryByText(/Rs 23,000.00/)).toBeNull();
     expect(screen.queryByText(/Rs 17,000.00/)).toBeNull();
     expect(screen.queryByRole("dialog",{name:/sample preview/})).toBeNull();
