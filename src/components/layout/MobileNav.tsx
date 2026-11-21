@@ -6,10 +6,6 @@ import {
   LockKeyhole,
   MoreHorizontal,
   Receipt,
-  FileText,
-  FilePlus2,
-  BookOpenCheck,
-  ClipboardCheck,
   Sparkles,
   Settings,
   Wallet,
@@ -17,10 +13,7 @@ import {
 import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
-import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
-import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
-import { isIsolatedVerifiedFinancialReadEnabled } from "../../services/aqvoraVerifiedFinancialReadService";
-import { isIsolatedInvoiceLifecycleEnabled } from "../../services/aqvoraSalesLifecycleService";
+import { getStagingFinanceNavItems } from "../accounting/stagingFinanceNavigation";
 
 const primaryItems: Array<{
   id: AppView;
@@ -48,21 +41,9 @@ export const MobileNav: React.FC = () => {
   const { lock, hasPinSetup, isCloudAccount, isDemoMode, user } = useAuth();
   const { t } = useI18n();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const showReceivables = isIsolatedReceivablesReadEnabled() &&
-    isCloudAccount && !isDemoMode &&
-    (user?.role === "OWNER" || user?.role === "MANAGER");
-  const showDrafts = isIsolatedSalesDraftCreationEnabled() && isCloudAccount &&
-    !isDemoMode && (user?.role === "OWNER" || user?.role === "MANAGER");
-  const showFinance = isIsolatedVerifiedFinancialReadEnabled() && isCloudAccount &&
-    !isDemoMode && (user?.role === "OWNER" || user?.role === "MANAGER");
-  const showApprovals = isIsolatedInvoiceLifecycleEnabled() && isCloudAccount &&
-    !isDemoMode && (user?.role === "OWNER" || user?.role === "MANAGER");
   const availableSecondary: typeof secondaryItems = [
     ...secondaryItems,
-    ...(showReceivables ? [{id:"aqvora-receivables" as AppView,label:"Receivables",icon:FileText}] : []),
-    ...(showDrafts ? [{id:"aqvora-sales-drafts" as AppView,label:"Service drafts",icon:FilePlus2}] : []),
-    ...(showFinance ? [{id:"aqvora-gl-tb" as AppView,label:"GL & Trial Balance",icon:BookOpenCheck}] : []),
-    ...(showApprovals ? [{id:"aqvora-sales-lifecycle" as AppView,label:"Invoice approvals",icon:ClipboardCheck}] : []),
+    ...getStagingFinanceNavItems({ isCloudAccount, isDemoMode, role:user?.role }),
   ];
 
   const navigate = (view: AppView) => {
@@ -113,8 +94,8 @@ export const MobileNav: React.FC = () => {
               id="mobile-more-menu"
               className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
             >
-              {availableSecondary.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : id === "aqvora-receivables" ? "Receivables" : id === "aqvora-gl-tb" ? "GL & Trial Balance" : id === "aqvora-sales-lifecycle" ? "Invoice approvals" : "Service drafts";
+              {availableSecondary.map(({ id, label: itemLabel, icon: Icon }) => {
+                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : itemLabel;
                 return (
                   <button
                     key={id}
@@ -159,12 +140,7 @@ export const MobileNav: React.FC = () => {
           className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors ${
             (
               isMoreOpen ||
-              currentView === "settings" ||
-              currentView === "accounts" ||
-              currentView === "aqvora-receivables" ||
-              currentView === "aqvora-sales-drafts" ||
-              currentView === "aqvora-gl-tb" ||
-              currentView === "aqvora-sales-lifecycle"
+              availableSecondary.some(item => item.id === currentView)
             ) ?
               "bg-primary/[0.07] text-primary"
             : "text-text-muted hover:bg-surface-container-low"
