@@ -78,6 +78,8 @@ All existing public RPC names, arguments, canonical integer strings and `aqvora-
 
 Journal/source revision FKs use `(organization_id,revision)`. Certification independently compares invoice/receipt/cash policy snapshots, journal evidence and saved posting response to immutable policy, in addition to existing source/audit/amount checks. Missing evidence on a revision-bound source is corruption. Unconfigured pre-policy history cannot acquire authority from a current lookup.
 
+The follow-up integrity migration also validates currency evidence **before serializing any source lifecycle**, including drafts, submitted invoices/receipts and unconfirmed cash. Detail, list, audit and idempotent creation responses share this check. A bound revision must match the source currency and the policy effective on its business date; any stored policy snapshot must contain identical evidence. A NULL binding on a configured source is corruption, not an unconfigured fallback. These contradictions return `23514` before a response can supply a misleading scale. Valid historical JSON, audit, posting receipts, report tokens and genuine unconfigured legacy drafts retain their existing representation.
+
 Reports may include several policy revisions only when currency/exponent agree. The returned timeline contains revisions effective through the cutoff. The source token hashes the existing complete financial source plus that timeline and display completeness. GL, TB and AR use the same token basis for equal parameters. Source amount or relevant policy changes cause `40001`; restart the **entire** pagination. Future policy after cutoff does not invalidate a historical report. Each STABLE reader uses one statement snapshot.
 
 Use source-bound evidence for source amounts, and the certified envelope for aggregates. A current lookup alone cannot certify an old invoice, raw direct table row, cached report or unscaled import. Compare company, currency, effective date, revision and fingerprint across relevant responses. Revision changes with identical units are permitted and explicit; never require every historical invoice to carry today's revision.
@@ -126,6 +128,7 @@ After all eight #63 migrations ending `20261120172200_aqvora_receipt_reads.sql`,
 4. `20261121052837_aqvora_currency_certification.sql`
 5. `20261121053158_aqvora_currency_journal.sql`
 6. `20261121053320_aqvora_currency_source_certification.sql`
+7. `20261121065636_aqvora_currency_source_read_integrity.sql` (follow-up to Draft #78)
 
 Apply as one transactional release batch or with all financial clients fenced until the entire dependency chain is installed. Intermediate migration states are not supported application versions. Nullable revision columns preserve existing rows without monetary data rewrites; ALTER TABLE/FK validation still requires maintenance/locking rehearsal. Policies/enrollment stay empty. CLI is deliberately pinned at 2.121.0; the [CLI v3 changelog](https://supabase.com/changelog/supabase-cli-v3) requires migration review before upgrading that toolchain.
 
@@ -136,3 +139,5 @@ Before commit, a failed batch rolls back schema, functions and grants. After com
 Test reference fixtures use PKR 2, USD 2, JPY 0, KWD 3, CLF 4. Reference: [SIX ISO 4217 current list](https://www.six-group.com/dam/download/financial-information/data-center/iso-currrency/lists/list-one.xml), accessed 2026-11-21, maintained by [SIX](https://www.six-group.com/en/products-services/financial-information/market-reference-data/data-standards.html). These are synthetic test expectations, **not finance-reviewed production approvals**. N/A minor-unit assets, tax policy, FX and redenomination require explicit future decisions, never locale guesses. No ISO table is seeded into any company.
 
 See `aqvora-currency-verification.md` for exact check counts, CI, source reconciliation, races, migration/restore and inherited findings. The Windows execution host has no Docker/PostgreSQL runtime; independent connections and real TOTP Auth/PostgREST run on disposable CI services. Hosted behavior, realistic load, physical/PITR recovery, finance/jurisdiction approval, legacy reconciliation/queue fencing and rollout remain unverified release gates. Issue #72 implementation is a separate assignment after #68 review.
+
+See `aqvora-currency-integrity-review.md` for the follow-up review against verified Draft #78, the reproduced unposted-source gap, additive migration, compatibility checks and new CI evidence.

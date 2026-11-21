@@ -1,5 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
-  <rect width="32" height="32" rx="8" fill="#17654E"/>
-  <rect x="8" y="5" width="16" height="22" rx="2" stroke="#FFFFFF" stroke-width="2"/>
-  <path d="M11.5 11H20.5M11.5 16H20.5M11.5 21H18" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254" role="img" aria-labelledby="title">
+<title id="title">AQVORA</title>
+<defs>
+  <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#001E46"/><stop offset="1" stop-color="#072B5B"/></linearGradient>
+  <linearGradient id="emerald" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00B77F"/><stop offset="1" stop-color="#00B887"/></linearGradient>
+</defs>
+<rect width="1254" height="1254" fill="#fff"/>
+<path fill="url(#navy)" d="M718 340 L706 332 L672 317 L644 311 L609 311 L581 317 L558 326 L531 343 L509 365 L494 387 L428 501 L223 867 L216 890 L215 909 L217 921 L227 945 L243 963 L255 971 L270 977 L287 980 L307 979 L336 968 L347 960 L364 942 L511 668 L608 493 L617 483 L622 481 L634 482 L644 491 L762 703 L777 741 L779 752 L778 781 L855 853 L875 866 L888 856 L903 839 L913 825 L924 804 L936 764 L938 744 L937 721 L928 685 L912 652 L757 383 L740 360 Z"/>
+<path fill="url(#emerald)" d="M434 814 L446 804 L465 793 L499 783 L536 783 L568 792 L591 804 L608 817 L628 837 L683 900 L723 939 L756 962 L791 975 L823 978 L1024 978 L1036 974 L1042 967 L1044 961 L1044 954 L1040 945 L984 881 L975 876 L963 873 L891 872 L865 862 L705 715 L681 699 L655 686 L612 672 L588 668 L557 667 L509 674 Z"/>
 </svg>

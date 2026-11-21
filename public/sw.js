@@ -1,5 +1,5 @@
 // Yaqoob Enterprises Service Worker
-const CACHE_NAME = 'shop-pro-v4';
+const CACHE_NAME = 'aqvora-pwa-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
