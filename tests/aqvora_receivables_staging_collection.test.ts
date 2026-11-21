@@ -136,6 +136,64 @@ describe("AQVORA all-or-nothing source-token-fenced open-invoice collection",()=
     }
   });
 
+  it("rejects currency authority drift even if financial snapshot token is unchanged",async()=>{
+    const p={
+      contract_version:"aqvora-currency-policy-v1",status:"configured",
+      organization_id:org,transaction_currency:"PKR",ledger_currency:"PKR",
+      currency_exponent:2,minor_units_per_major:"100",display_decimal_places:2,
+      revision:"1",effective_from:"2026-01-01",fingerprint:"a".repeat(64),
+      provenance:{kind:"trusted_company_accounting_policy",
+        authority_reference:"test",authority_revision:"1",approval_reference:"test-approved",
+        approved_by:user},
+      source_rounding:"quantity_millionths_half_up_per_line_v1",fx_supported:false,
+    };
+    const evidence={
+      currency_evidence_version:"aqvora-currency-report-v1",
+      currency_policy_status:"configured",display_complete:true,
+      currency_policy:p,currency_policy_revisions:[p],
+      currency_policy_timeline_fingerprint:"a".repeat(64),
+    };
+    const firstPage={...first(),source:{...source(),...evidence}};
+    for(const secondSource of [
+      {...source(),...evidence,
+        currency_policy_timeline_fingerprint:"b".repeat(64)},
+      source(),
+      {...source(),...evidence,currency_policy:{...p,fingerprint:"b".repeat(64)}},
+    ]){
+      mock.rpc.mockResolvedValueOnce({data:firstPage,error:null})
+        .mockResolvedValueOnce({data:{...second(),source:secondSource},error:null});
+      await expect(collectIsolatedOpenInvoices(context,{pageSize:1}))
+        .rejects.toThrow(/currency|policy/i);
+    }
+    mock.rpc.mockResolvedValueOnce({data:first(),error:null})
+      .mockResolvedValueOnce({data:{...second(),source:{...source(),...evidence}},error:null});
+    await expect(collectIsolatedOpenInvoices(context,{pageSize:1}))
+      .rejects.toThrow(/currency|policy/i);
+  });
+  it("rejects an invoice whose original policy is absent from certified AR history",async()=>{
+    const p={
+      contract_version:"aqvora-currency-policy-v1",status:"configured",
+      organization_id:org,transaction_currency:"PKR",ledger_currency:"PKR",
+      currency_exponent:2,minor_units_per_major:"100",display_decimal_places:2,
+      revision:"1",effective_from:"2026-01-01",fingerprint:"a".repeat(64),
+      provenance:{kind:"trusted_company_accounting_policy",
+        authority_reference:"test",authority_revision:"1",approval_reference:"test-approved",
+        approved_by:user},
+      source_rounding:"quantity_millionths_half_up_per_line_v1",fx_supported:false,
+    };
+    const evidence={
+      currency_evidence_version:"aqvora-currency-report-v1",
+      currency_policy_status:"configured",display_complete:true,
+      currency_policy:p,currency_policy_revisions:[p],
+      currency_policy_timeline_fingerprint:"a".repeat(64),
+    };
+    const forged={...row(a),currency_policy:{...p,fingerprint:"b".repeat(64)},
+      display_complete:true};
+    const bad={...first(),rows:[forged],source:{...source(),...evidence}};
+    mock.rpc.mockResolvedValueOnce({data:bad,error:null});
+    await expect(collectIsolatedOpenInvoices(context,{pageSize:1}))
+      .rejects.toThrow(/not in certified report history/);
+  });
   it("never returns a truncated report when the page/row budget is exceeded",async()=>{
     await expect(collectIsolatedOpenInvoices(context,{
       pageSize:1,maxPages:1,
