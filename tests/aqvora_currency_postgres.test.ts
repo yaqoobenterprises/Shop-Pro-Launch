@@ -103,4 +103,12 @@ describe.skipIf(!databaseUrl)("Currency policy on independent PostgreSQL connect
     expect((await admin.query("SELECT count(*)::int n FROM private.aqvora_currency_policies WHERE organization_id=$1 AND revision=5",[i.org])).rows[0].n).toBe(0);
     expect((await admin.query("SELECT count(*)::int n FROM public.aqvora_journals WHERE organization_id=$1 AND intent_key='rolled-back-currency-post'",[i.org])).rows[0].n).toBe(0);
   });
+  it("reads historical source evidence during an uncommitted future policy append without blocking",async()=>{
+    const {d}=await preparedInvoice();
+    const a=await open();await a.query("BEGIN");await a.query(currencySeedSql(i.org,i.owner,"PKR",2,5,"2026-12-02"));
+    const b=await user();await b.query("SET LOCAL statement_timeout='1500ms'");
+    const read=()=>result<{currency_policy:CurrencyUnitPolicy}>(b,"SELECT public.get_aqvora_sales_invoice($1,$2) r",[i.org,d.id]);
+    const before=await read();expect(before.currency_policy.revision).toBe("1");
+    await commit(a);expect(await read()).toEqual(before);await close(b);
+  });
 });

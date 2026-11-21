@@ -7,6 +7,7 @@ import {afterAll,beforeAll,describe,expect,it} from "vitest";
 import {localIdentity,localAuthOptions,type LocalIdentity} from "./support/aqvoraLocalIdentity";
 import {currencySeedSql} from "./support/aqvoraCurrencyFixture";
 import type {CurrencyPolicyRead} from "../src/accounting/currencyContracts";
+import {serviceLines} from "./support/aqvoraSalesFixture";
 const statusPath=process.env.AQVORA_LOCAL_SUPABASE_STATUS;
 describe.skipIf(!statusPath)("Currency policy through real local Auth and PostgREST",()=>{
   let db:Client;let api:string;let anon:string;let org:string;
@@ -64,6 +65,35 @@ describe.skipIf(!statusPath)("Currency policy through real local Auth and PostgR
     await db.query("BEGIN;ALTER TABLE private.aqvora_currency_policies DISABLE TRIGGER USER");
     await db.query("UPDATE private.aqvora_currency_policies SET exponent=2 WHERE organization_id=$1",[org]);
     await db.query("ALTER TABLE private.aqvora_currency_policies ENABLE TRIGGER USER;COMMIT");
+  });
+  it("rejects corrupted unposted source scale through real authorized PostgREST reads and replay",async()=>{
+    const customer=await call(manager,"rpc/create_aqvora_customer",{p_organization_id:org,
+      p_code:"CUR-"+randomUUID().slice(0,12),p_name:"Synthetic currency read integrity"});
+    expect(customer.status,JSON.stringify(customer.data)).toBe(200);
+    const request={p_organization_id:org,p_intent_key:randomUUID(),p_customer_id:(customer.data as {id:string}).id,
+      p_business_date:"2026-11-20",p_due_date:"2026-12-20",p_currency:"PKR",p_lines:serviceLines};
+    const draft=await call(manager,"rpc/create_aqvora_sales_draft",request);
+    expect(draft.status,JSON.stringify(draft.data)).toBe(200);
+    const id=(draft.data as {id:string}).id;
+    const get=()=>call(manager,"rpc/get_aqvora_sales_invoice",{p_organization_id:org,p_invoice_id:id});
+    expect((await get()).data).toMatchObject({currency_policy:ok(await read(manager)).policy});
+    const mutate=async(date:string)=>{
+      await db.query("BEGIN;ALTER TABLE public.aqvora_sales_invoices DISABLE TRIGGER USER");
+      await db.query("UPDATE public.aqvora_sales_invoices SET business_date=$1 WHERE organization_id=$2 AND id=$3",[date,org,id]);
+      await db.query("ALTER TABLE public.aqvora_sales_invoices ENABLE TRIGGER USER;COMMIT");
+    };
+    try{
+      await mutate("2025-12-31");
+      for(const response of [await get(),await call(manager,"rpc/list_aqvora_sales_invoices",{p_organization_id:org}),
+        await call(manager,"rpc/create_aqvora_sales_draft",request)]){
+        denied(response);expect(response.data).toMatchObject({code:"23514"});
+      }
+    }finally{await mutate("2026-11-20");}
+    expect((await get()).data).toEqual(draft.data);
+    expect((await call(manager,"rpc/create_aqvora_sales_draft",request)).data).toEqual(draft.data);
+    const grants=await db.query(`SELECT has_function_privilege('authenticated',
+      'private.aqvora_currency_source_policy(uuid,bigint,date,text,jsonb)','EXECUTE') allowed`);
+    expect(grants.rows[0].allowed).toBe(false);
   });
   it("rechecks cashier, inactive membership and revoked sessions behind issued JWTs",async()=>{
     await db.query("UPDATE public.organization_members SET role='CASHIER' WHERE organization_id=$1 AND user_id=$2",[org,manager.id]);denied(await read(manager));
