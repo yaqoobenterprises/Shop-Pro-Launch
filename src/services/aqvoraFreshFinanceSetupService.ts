@@ -189,7 +189,10 @@ export async function loadFreshFinanceSetup(
   const periods=await allPeriods(ctx);
   // Reload the certified source before displaying a "fresh" status. Between
   // page queries, another authorized user could post an entry.
-  await certifiedZero(ctx);
+  const finalToken=await certifiedZero(ctx);
+  if(finalToken!==sourceToken) {
+    throw new Error("Certified finance source changed during setup review; refresh required.");
+  }
   return {accounts,periods,certifiedZeroJournals:true,currency:ctx.currency,sourceToken};
 }
 
