@@ -51,8 +51,8 @@ describe("AQVORA founder-locked source-traceable sample analytics",()=>{
   it("refuses mismatched receipt allocation, missing invoices and duplicate documents",()=>{
     const badReceipt=(extra:Partial<typeof sampleReceipt>)=>({...sampleReceipt,...extra});
     expect(()=>buildSampleActivity(sampleInvoices,[
-      badReceipt({amountMinor:"600001"}),"ignored" as never,
-    ],"2026-11-21")).toThrow();
+      badReceipt({amountMinor:"600001"}),
+    ],"2026-11-21")).toThrow(/differs/);
     expect(()=>buildSampleActivity(sampleInvoices,[
       badReceipt({invoiceId:"INV-FOREIGN"}),
     ],"2026-11-21")).toThrow(/Unmatched/);
