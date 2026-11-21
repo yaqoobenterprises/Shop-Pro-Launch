@@ -68,7 +68,7 @@ describe.skipIf(!statusPath)("Currency policy through real local Auth and PostgR
   });
   it("rejects corrupted unposted source scale through real authorized PostgREST reads and replay",async()=>{
     const customer=await call(manager,"rpc/create_aqvora_customer",{p_organization_id:org,
-      p_code:randomUUID(),p_name:"Synthetic currency read integrity"});
+      p_code:"CUR-"+randomUUID().slice(0,12),p_name:"Synthetic currency read integrity"});
     expect(customer.status,JSON.stringify(customer.data)).toBe(200);
     const request={p_organization_id:org,p_intent_key:randomUUID(),p_customer_id:(customer.data as {id:string}).id,
       p_business_date:"2026-11-20",p_due_date:"2026-12-20",p_currency:"PKR",p_lines:serviceLines};
