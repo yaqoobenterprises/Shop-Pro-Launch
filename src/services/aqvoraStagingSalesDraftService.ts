@@ -100,7 +100,7 @@ export async function createIsolatedServiceInvoiceDraft(
       throw new Error("Unsupported service invoice line property.");
     }
     if (typeof line.description!=="string" ||
-        !line.description.trim() || line.description.length>500) {
+        !line.description.trim() || line.description.length>300) {
       throw new Error("Invoice line description is missing or too long.");
     }
     const quantity=checkedMoney(line.quantity_millionths,"quantity",true);
