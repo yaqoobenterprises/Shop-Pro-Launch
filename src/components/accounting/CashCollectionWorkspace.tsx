@@ -92,7 +92,7 @@ export function CashCollectionWorkspace() {
   };
 
   const create=async()=>{
-    if(!enabled||recoveryFault||inFlight.current||customersLoading||customersError)return;
+    if(!enabled||recoveryFault||inFlight.current||customersLoading||(!pending&&customersError))return;
     if(!pending && (
         !customers.some(c=>c.id===customerId&&c.is_active) ||
         !validBusinessDate(date) || date>today ||
@@ -115,7 +115,7 @@ export function CashCollectionWorkspace() {
       if(token===generation.current){
         setPending(null);setSource(result.collection);
         setSourceInput(result.collection.id);
-        setNotice("Original cash claim confirmed by server. This is NOT a posted receipt or bank deposit.");
+        setNotice("Cash claim saved by server. This is NOT manual cash confirmation, a posted receipt or bank deposit.");
       }
     }catch(cause){
       if(token===generation.current)setError((cause instanceof Error?cause.message:"Cash claim outcome uncertain.")+
@@ -202,7 +202,7 @@ export function CashCollectionWorkspace() {
     <div className="grid gap-4 lg:grid-cols-2">
       <CashClaimCreateForm customers={customers} selectedCustomer={customerId}
         amount={amount} date={date} currency={organization.currency}
-        busy={busy||customersLoading} locked={Boolean(pending)||recoveryFault}
+        busy={busy||customersLoading} locked={Boolean(pending)||recoveryFault} blocked={recoveryFault}
         onCustomer={setCustomerId} onAmount={setAmount} onDate={setDate}
         onCreate={()=>void create()}/>
       <section className="space-y-3 rounded-xl border border-border-standard bg-surface-bright p-4">
