@@ -1,4 +1,5 @@
 import type { ChartAccount, PostedJournal } from "../../accounting/types";
+import {sampleInvoices,sampleReceipt} from "./erpSampleScenario";
 
 const org = "aqvora-sample-only";
 const account = (
@@ -56,15 +57,15 @@ const entry = (
 });
 
 export const sampleJournals: PostedJournal[] = [
-  entry("JV-S001", "2026-11-01", "1010", "3010", "5000000"),
-  entry("JV-S002", "2026-11-02", "1010", "4020", "1200000"),
-  entry("JV-S003", "2026-11-03", "6020", "1010", "300000"),
+  entry("JV-S001",sampleInvoices[0].date,"1100","4020",sampleInvoices[0].faceMinor),
+  entry("JV-S002",sampleReceipt.date,"1010","1100",sampleReceipt.amountMinor),
+  entry("JV-S003",sampleInvoices[1].date,"1100","4020",sampleInvoices[1].faceMinor),
 ];
 
 export const sampleCompany = {
   organizationId: org,
   currency: "PKR",
-  asOfDate: "2026-11-20",
+  asOfDate: "2026-11-21",
   sourceComplete: true,
   accounts: sampleChart,
   journals: sampleJournals,
