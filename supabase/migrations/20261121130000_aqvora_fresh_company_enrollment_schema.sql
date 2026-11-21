@@ -102,3 +102,31 @@ CREATE TRIGGER aqvora_fresh_no_legacy_stock BEFORE INSERT OR UPDATE
 CREATE TRIGGER aqvora_fresh_no_legacy_account_tx BEFORE INSERT OR UPDATE
   ON public.account_transactions FOR EACH ROW
   EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+
+-- Include the original Shop Pro POS, stock, expense and closing subsystems.
+-- Some tables carry legacy opening stock, receivables or cash separately from
+-- transactions; ignoring them would falsely certify zero V2 history.
+CREATE TRIGGER aqvora_fresh_no_legacy_products BEFORE INSERT OR UPDATE
+  ON public.products FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+CREATE TRIGGER aqvora_fresh_no_legacy_services BEFORE INSERT OR UPDATE
+  ON public.services FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+CREATE TRIGGER aqvora_fresh_no_legacy_customers BEFORE INSERT OR UPDATE
+  ON public.customers FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+CREATE TRIGGER aqvora_fresh_no_legacy_expenses BEFORE INSERT OR UPDATE
+  ON public.expenses FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+CREATE TRIGGER aqvora_fresh_no_legacy_sales BEFORE INSERT OR UPDATE
+  ON public.sales FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+CREATE TRIGGER aqvora_fresh_no_legacy_sale_items BEFORE INSERT OR UPDATE
+  ON public.sale_items FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+CREATE TRIGGER aqvora_fresh_no_legacy_daily_close BEFORE INSERT OR UPDATE
+  ON public.daily_closings FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
+CREATE TRIGGER aqvora_fresh_no_legacy_review_queue BEFORE INSERT OR UPDATE
+  ON public.review_queue FOR EACH ROW
+  EXECUTE FUNCTION private.aqvora_block_legacy_fresh_writes();
