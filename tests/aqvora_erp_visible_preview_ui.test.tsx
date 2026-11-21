@@ -26,7 +26,7 @@ describe("AQVORA visible ERP demo",()=>{
     pick("Journal Entry");
     expect(screen.getByRole("button",{name:/Post journal/i})).toHaveProperty("disabled",true);
     pick("General Ledger");
-    expect(screen.getByText(/Cash in hand/)).toBeTruthy();
+    expect(screen.getAllByText(/Cash in hand/).length).toBeGreaterThan(0);
     pick("Trial Balance");
     expect(screen.getByText(/Arithmetic reconciliation/)).toBeTruthy();
   });
