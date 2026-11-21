@@ -197,6 +197,21 @@ describe('AQVORA unposted historical double-entry simulation', () => {
     expect(() => planLegacyJournalDryRun(s, p)).toThrow(/collapse/);
   });
 
+  it('rejects foreign source policy mappings and unknown duplicate reviewer IDs', () => {
+    const s = snapshot(), p = policyFor(s);
+    p.payment_accounts[ORG] = { coa_account_id: EXPENSE_COA, account_class: 'ASSET' };
+    expect(() => planLegacyJournalDryRun(s, p)).toThrow(/Foreign\/unknown payment-account/);
+
+    const p2 = policyFor(s);
+    p2.categories[ORG] = { coa_account_id: REVENUE_COA, account_class: 'REVENUE',
+      treatment: 'earned_revenue' };
+    expect(() => planLegacyJournalDryRun(s, p2)).toThrow(/Foreign\/unknown category/);
+
+    const p3 = policyFor(s);
+    p3.duplicate_reviewed_source_ids = [ORG];
+    expect(() => planLegacyJournalDryRun(s, p3)).toThrow(/Foreign\/unknown duplicate/);
+  });
+
   it('produces deterministic idempotent proposed IDs with exact minor-unit strings', () => {
     const s = snapshot(), p = policyFor(s);
     const first = planLegacyJournalDryRun(s, p);
