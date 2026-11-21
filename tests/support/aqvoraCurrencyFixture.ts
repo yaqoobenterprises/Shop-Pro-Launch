@@ -8,6 +8,7 @@ export const currencyMigrations=[
   "20261121052837_aqvora_currency_certification.sql",
   "20261121053158_aqvora_currency_journal.sql",
   "20261121053320_aqvora_currency_source_certification.sql",
+  "20261121065636_aqvora_currency_source_read_integrity.sql",
 ];
 export const currencyMigrationSql=()=>currencyMigrations.map(f=>
   readFileSync(new URL(`../../supabase/migrations/${f}`,import.meta.url),"utf8")).join("\n");
