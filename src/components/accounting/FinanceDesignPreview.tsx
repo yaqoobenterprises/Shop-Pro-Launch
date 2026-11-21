@@ -11,6 +11,8 @@ import {TrialBalancePanel} from "./TrialBalancePanel";
 import {ErpSampleOverview} from "./ErpSampleOverview";
 import {ErpSampleOperations} from "./ErpSampleOperations";
 import {erpReviewGroups,type ErpReviewPage} from "./erpPreviewPages";
+import type {AppView} from "../../context/AppContext";
+import type {StagingFinanceNavItem} from "./stagingFinanceNavigation";
 import {sampleChart,sampleCompany,sampleJournals} from "./financeSampleData";
 import "./FinanceDesignPreview.css";
 import "./ErpSampleShowcase.css";
@@ -26,9 +28,15 @@ const policy:JournalPreviewPolicy={
   organizationId:sampleCompany.organizationId,currency:sampleCompany.currency,
   periodStart:"2026-01-01",periodEnd:"2026-12-31",periodState:"open",
 };
-interface Props {onClose:()=>void}
+interface Props {
+  onClose:()=>void;
+  stagingLinks?:StagingFinanceNavItem[];
+  onOpenStaging?:(id:AppView)=>void;
+}
 
-export const FinanceDesignPreview:React.FC<Props>=({onClose})=>{
+export const FinanceDesignPreview:React.FC<Props>=({
+  onClose,stagingLinks=[],onOpenStaging,
+})=>{
   const [page,setPage]=useState<ErpReviewPage>("overview");
   const [ledgerAccountId,setLedgerAccountId]=useState<string|undefined>();
   const mainRef=useRef<HTMLDivElement>(null);
@@ -84,6 +92,21 @@ export const FinanceDesignPreview:React.FC<Props>=({onClose})=>{
               </button>;
             })}
           </div>)}
+          {stagingLinks.length>0&&onOpenStaging&&<div className="aq-erp-nav-group"
+            aria-label="Authenticated V2 source workspaces">
+            <span>VERIFIED STAGING ONLY</span>
+            <p className="aq-erp-verified-note">
+              Real authenticated sources · not this synthetic company
+            </p>
+            {stagingLinks.map(link=>{
+              const Icon=link.icon;
+              return <button key={link.id} type="button"
+                onClick={()=>onOpenStaging(link.id)}>
+                <Icon className="aq-erp-verified-icon"/>
+                <span>Open {link.label}</span>
+              </button>;
+            })}
+          </div>}
         </aside>
         <div className="aq-finance__main" ref={mainRef}>
           <div className="aq-finance__mobile-tabs" role="navigation"
