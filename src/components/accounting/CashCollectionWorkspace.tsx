@@ -15,6 +15,8 @@ import {
 } from "../../services/aqvoraCashCollectionOperations";
 import type { IsolatedReceivablesContext } from "../../services/aqvoraReceivablesStagingGate";
 import { CashClaimCreateForm, CashClaimReviewPanel } from "./CashCollectionForms";
+import {CashReceiptWorkQueue} from "./CashReceiptWorkQueue";
+import {isIsolatedReceiptQueueEnabled} from "../../services/aqvoraReceiptWorkQueues";
 
 function businessToday(timezone:string):string {
   try {
@@ -46,6 +48,7 @@ export function CashCollectionWorkspace() {
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
+  const [showQueue,setShowQueue]=useState(false);
   const generation=useRef(0);
   const inFlight=useRef(false);
   const context:IsolatedReceivablesContext={
@@ -59,6 +62,7 @@ export function CashCollectionWorkspace() {
     setCustomers([]);setSource(null);setSourceInput("");setError("");setNotice("");
     setPending(null);setRecoveryFault(false);setCustomersError("");
     setCounted("");setAttest(false);setReason("");setAmount("");
+    setShowQueue(false);
     setDate(businessToday(organization.timezone));setCustomerId("");
     if(!enabled)return()=>{active=false;};
     try {
@@ -126,9 +130,9 @@ export function CashCollectionWorkspace() {
     }
   };
 
-  const inspect=async()=>{
+  const inspect=async(selectedId?:string)=>{
     if(!enabled||inFlight.current||pending||recoveryFault)return;
-    const id=sourceInput.trim();
+    const id=(selectedId??sourceInput).trim();
     const token=generation.current;
     inFlight.current=true;setBusy(true);setError("");setNotice("");clearSource();
     try{
@@ -194,7 +198,14 @@ export function CashCollectionWorkspace() {
         Cash claims and independent OWNER cash-count attestation only.
         A customer invoice is NOT paid until a separately approved customer receipt is posted.
       </p>
+      {isIsolatedReceiptQueueEnabled()&&<button type="button" onClick={()=>setShowQueue(v=>!v)}
+        aria-expanded={showQueue} className="rounded-lg border border-border-standard px-3 py-2 text-sm">
+        {showQueue?"Hide work queue":"Browse company cash claims"}
+      </button>}
     </header>
+    {showQueue&&<CashReceiptWorkQueue mode="cash" context={context}
+      disabled={busy||Boolean(pending)||recoveryFault}
+      onCashSelected={id=>{setSourceInput(id);void inspect(id);}}/>}
     {error&&<p role="alert" className="rounded-lg border border-red-300 p-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
     {notice&&<p role="status" className="rounded-lg border border-border-standard p-3 text-sm">{notice}</p>}
     {customersLoading&&<p role="status">Loading authorized customers…</p>}
