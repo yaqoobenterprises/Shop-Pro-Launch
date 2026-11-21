@@ -27,7 +27,7 @@ const days=sampleActivity.map(p=>({
 }));
 
 export function ErpSampleActivityChart(){
-  const [day,setDay]=useState<string>(days.findLast(p=>p.collectedMinor>0n)?.date??
+  const [day,setDay]=useState<string>([...days].reverse().find(p=>p.collectedMinor>0n)?.date??
     days.at(-1)?.date??"2026-11-21");
   const selected=days.find(p=>p.date===day)??days[days.length-1];
   return <>
