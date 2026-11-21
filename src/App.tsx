@@ -12,7 +12,6 @@ import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
-
 // Modern Shop Ledger Views
 import {
   ledgerService,
@@ -26,7 +25,6 @@ import { getUserPreferences } from "./services/userPreferencesService";
 import {
   ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
 } from "./components/accounting/FinanceLazyRoutes";
-
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
 );
