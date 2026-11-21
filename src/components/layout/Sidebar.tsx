@@ -83,10 +83,8 @@ export const Sidebar: React.FC = () => {
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
   ];
 
-  if (isIsolatedReceivablesReadEnabled() && !isDemoMode && isCloudAccount &&
-      (user?.role === "OWNER" || user?.role === "MANAGER")) {
+  if (isIsolatedReceivablesReadEnabled() && !isDemoMode && isCloudAccount && (user?.role === "OWNER" || user?.role === "MANAGER"))
     navItems.push({ id: "aqvora-receivables", label: "Receivables", icon: FileText });
-  }
 
   if (isIsolatedSalesDraftCreationEnabled() && !isDemoMode && isCloudAccount && (user?.role === "OWNER" || user?.role === "MANAGER"))
     navItems.push({ id: "aqvora-sales-drafts", label: "Service drafts", icon: FilePlus2 });
