@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { planLegacyJournalDryRun } from '../scripts/aqvora_legacy_journal_dry_run.mjs';
+import { execFile } from 'node:child_process';
+import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { promisify } from 'node:util';
+import { planLegacyJournalDryRun, writePrivateJournalReview } from '../scripts/aqvora_legacy_journal_dry_run.mjs';
+const execFileAsync = promisify(execFile);
 import { reconcileLegacySourceSnapshot } from '../scripts/aqvora_legacy_source_reconcile.mjs';
 
 const ORG = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -210,6 +216,63 @@ describe('AQVORA unposted historical double-entry simulation', () => {
     const p3 = policyFor(s);
     p3.duplicate_reviewed_source_ids = [ORG];
     expect(() => planLegacyJournalDryRun(s, p3)).toThrow(/Foreign\/unknown duplicate/);
+  });
+
+  it('writes private candidate report to an exclusive owner-only file, not the Git repository', async () => {
+    const s = snapshot(), report = planLegacyJournalDryRun(s, policyFor(s));
+    const temp = await mkdtemp(join(tmpdir(), 'aqvora-private-journal-review-'));
+    try {
+      const file = join(temp, 'review.json');
+      await writePrivateJournalReview(file, report);
+      const saved = JSON.parse(await readFile(file, 'utf8'));
+      expect(saved.summary.status).toBe('UNPOSTED_ACCOUNTING_REVIEW_ONLY');
+      expect(saved.summary.posting_allowed).toBe(false);
+      expect(saved.candidates).toHaveLength(3);
+      expect(saved.source_account_coverage).toHaveLength(2);
+      if (process.platform !== 'win32') {
+        expect((await stat(file)).mode & 0o777).toBe(0o600);
+      }
+      await expect(writePrivateJournalReview(file, report)).rejects.toThrow(/EEXIST/);
+      await expect(writePrivateJournalReview('review.json', report)).rejects.toThrow(/absolute/);
+      await expect(writePrivateJournalReview(resolve(process.cwd(), 'review.json'), report))
+        .rejects.toThrow(/inside Git repository/);
+      await expect(writePrivateJournalReview(join(temp, 'invalid.json'), {
+        ...report, summary: {...report.summary, posting_allowed: true},
+      })).rejects.toThrow(/Only complete/);
+    } finally {
+      await rm(temp, {recursive: true, force: true});
+    }
+  });
+
+  it('executes full private snapshot + policy CLI to produce actual dry-run JSON without leaking IDs to stdout', async () => {
+    const s = snapshot(), policy = policyFor(s);
+    const temp = await mkdtemp(join(tmpdir(), 'aqvora-journal-cli-e2e-'));
+    try {
+      const source = join(temp, 'source.json');
+      const mapping = join(temp, 'mapping.json');
+      const report = join(temp, 'review.json');
+      await Promise.all([
+        writeFile(source, JSON.stringify(s)),
+        writeFile(mapping, JSON.stringify(policy)),
+      ]);
+      const { stdout } = await execFileAsync(process.execPath, [
+        resolve(process.cwd(), 'scripts/aqvora_legacy_journal_dry_run.mjs'),
+        '--snapshot', source, '--policy', mapping, '--out', report,
+      ], {cwd:process.cwd(), timeout:10000});
+      const displayed = JSON.parse(stdout);
+      const saved = JSON.parse(await readFile(report, 'utf8'));
+      expect(displayed.candidate_journals).toBe(3);
+      expect(displayed.preview_debits_minor).toBe('570');
+      expect(displayed.preview_credits_minor).toBe('570');
+      expect(displayed.erp_books_updated).toBe(false);
+      expect(saved.candidates).toHaveLength(3);
+      expect(saved.candidates[0].source_id).toBe(txId(1));
+      expect(stdout).not.toContain(ORG);
+      expect(stdout).not.toContain(TARGET);
+      expect(stdout).not.toContain('PRINT 3');
+    } finally {
+      await rm(temp, {recursive: true, force: true});
+    }
   });
 
   it('produces deterministic idempotent proposed IDs with exact minor-unit strings', () => {
