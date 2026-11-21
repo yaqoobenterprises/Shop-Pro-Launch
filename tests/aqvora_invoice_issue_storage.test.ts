@@ -14,7 +14,7 @@ beforeEach(()=>{
   sessionStorage.clear();
   vi.stubGlobal("crypto",{randomUUID:()=>key});
 });
-afterEach(()=>{sessionStorage.clear();vi.unstubAllGlobals();});
+afterEach(()=>{vi.unstubAllGlobals();sessionStorage.clear();});
 describe("AQVORA financial issue original intent durability",()=>{
   it("reserves a cryptographically sourced intent and reads the exact same original after page reload",()=>{
     const a=reserveSalesIssue(org,actor,invoice,"3",fp);
