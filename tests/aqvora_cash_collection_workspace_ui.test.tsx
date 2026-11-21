@@ -92,6 +92,32 @@ describe("AQVORA real controlled-cash workflow UI",()=>{
     await waitFor(()=>expect(mock.create).toHaveBeenCalledTimes(2));
     expect(mock.create.mock.calls[0][1]).toEqual(mock.create.mock.calls[1][1]);
   });
+  it("can retry the original creation intent when customer directory refresh is offline",async()=>{
+    mock.create.mockRejectedValueOnce(new Error("Network ACK lost"));
+    await loadCreateForm();
+    fireEvent.click(screen.getByRole("button",{name:"Save unconfirmed cash claim"}));
+    await waitFor(()=>expect(screen.getByRole("alert").textContent)
+      .toContain("Network ACK lost"));
+    cleanup();
+    mock.customers.mockRejectedValueOnce(new Error("Customer directory offline"));
+    render(<CashCollectionWorkspace/>);
+    await waitFor(()=>expect(screen.getByText("Customer directory offline")).toBeTruthy());
+    const retry=screen.getByRole("button",{name:"Retry original cash claim"}) as HTMLButtonElement;
+    expect(retry.disabled).toBe(false);
+    fireEvent.click(retry);
+    await waitFor(()=>expect(mock.create).toHaveBeenCalledTimes(2));
+    expect(mock.create.mock.calls[0][1]).toEqual(mock.create.mock.calls[1][1]);
+  });
+
+  it("blocks every new claim if original cash recovery storage is corrupted",()=>{
+    sessionStorage.setItem(`aqvora:v2:cash-claim:${org}:${maker}`,"broken-json");
+    render(<CashCollectionWorkspace/>);
+    const blocked=screen.getByRole("button",{name:"Recovery blocked"}) as HTMLButtonElement;
+    expect(blocked.disabled).toBe(true);
+    expect(screen.getByText(/Stored source recovery requires investigation/)).toBeTruthy();
+    expect(mock.create).not.toHaveBeenCalled();
+  });
+
   it("allows a distinct OWNER to inspect and manually confirm exact cash count",async()=>{
     mock.auth.mockReturnValue({organization:{id:org,currency:"PKR",timezone:"Asia/Karachi"},
       user:{id:checker,role:"OWNER"},isCloudAccount:true,isDemoMode:false});
