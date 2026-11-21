@@ -64,7 +64,7 @@ export function CustomerReceiptDraftWorkspace(){
       setRecoveryFault(true);
       setError(cause instanceof Error?cause.message:"Unsafe receipt draft recovery.");
     }
-  },[enabled,organization.id,userId]);
+  },[enabled,organization.id,organization.currency,organization.timezone,userId,isCloudAccount]);
 
   const begin=()=>{
     setCash(null);setInvoices([]);setAllocations({});setReceipt(null);
@@ -102,6 +102,7 @@ export function CustomerReceiptDraftWorkspace(){
     const token=generation.current;
     inFlight.current=true;setBusy(true);setError("");setNotice("");
     try{
+      const recovering=Boolean(pending);
       const original=pending??(()=>{
         if(!cash || cash.collection.created_by!==userId){
           throw new Error("Only the original cash maker can create a receipt draft.");
@@ -112,11 +113,11 @@ export function CustomerReceiptDraftWorkspace(){
           organization.id,userId,cash.collection.id,request);
       })();
       setPending(original);
-      const result=await createIsolatedCustomerReceiptDraft(context,original.request);
+      const result=await createIsolatedCustomerReceiptDraft(context,original.request,{recoverExisting:recovering});
       clearPendingReceiptDraft(original);
       if(token===generation.current){
         setPending(null);setReceipt(result);setReceiptInput(result.receipt.id);
-        setNotice("Server confirmed receipt draft. No Cash/AR journal has been posted.");
+        setNotice(`Server confirmed original receipt source in ${result.receipt.state} state. This action did not post a journal.`);
       }
     }catch(cause){
       if(token===generation.current)setError((cause instanceof Error?cause.message:"Draft status unknown.")+
