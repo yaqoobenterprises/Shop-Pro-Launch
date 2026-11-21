@@ -5,6 +5,7 @@ import type {
 import { formatExactCurrencyMinor } from "../../accounting/formatExactCurrencyMinor";
 import { validBusinessDate } from "../../accounting/minorUnits";
 import { useAuth } from "../../context/AuthContext";
+import { useApp } from "../../context/AppContext";
 import { loadIsolatedSalesCustomers } from "../../services/aqvoraSalesCustomersReadService";
 import {
   createIsolatedSalesCustomer, createIsolatedServiceInvoiceDraft,
@@ -27,6 +28,7 @@ function todayInZone(zone:string):string {
 
 export function SalesDraftsWorkspace() {
   const {organization,user,isCloudAccount,isDemoMode}=useAuth();
+  const {setCurrentView}=useApp();
   const enabled=isIsolatedSalesDraftCreationEnabled() &&
     isCloudAccount && !isDemoMode && Boolean(user?.id) &&
     (user?.role==="OWNER" || user?.role==="MANAGER");
@@ -113,7 +115,7 @@ export function SalesDraftsWorkspace() {
           !/^[1-9][0-9]*$/.test(values.quantityMillionths) ||
           !/^[1-9][0-9]*$/.test(values.unitPriceMinor) ||
           !canonical.test(values.discountMinor) ||
-          !values.description || values.description.length>500) {
+          !values.description || values.description.length>300) {
         setError("Correct invoice dates, description, quantities and exact minor-unit amounts.");
         return;
       }
@@ -191,6 +193,16 @@ export function SalesDraftsWorkspace() {
               <p>Server state: {savedDraft.state} · Revision: {savedDraft.revision}</p>
               <p>Face: {formatExactCurrencyMinor(savedDraft.face_minor,organization.currency)}</p>
               <p className="text-xs text-text-muted">No AR, cash or revenue posting was triggered by draft creation.</p>
+              <button type="button" onClick={()=>{
+                try {
+                  sessionStorage.setItem(`aqvora:invoice-review:${organization.id}:${userId}`,savedDraft.id);
+                  setCurrentView("aqvora-sales-lifecycle");
+                } catch {
+                  setError("Invoice handoff could not be stored in this browser.");
+                }
+              }} className="rounded-lg border border-border-standard px-4 py-3">
+                Review this source invoice
+              </button>
               <button type="button" onClick={()=>{
                 setSavedDraft(null);setFormVersion(v=>v+1);
               }} className="rounded-lg border border-border-standard px-4 py-3">
