@@ -7,6 +7,7 @@ export function forbiddenAQVORAReleaseFlags(environment){
     value==="true"&&(
       key==="VITE_AQVORA_PREVIEW_DEFAULT"||
       key==="VITE_ENABLE_COMPANY_SETUP_WIZARD"||
+      key==="VITE_ENABLE_FINANCE_UI_PREVIEW"||
       key.startsWith("VITE_ENABLE_AQVORA_")
     ),
   ).map(([key])=>key).sort();
