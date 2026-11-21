@@ -46,7 +46,7 @@ export function ReceiptPostingPanel({context,actorRole,sourceReceipt}:{
       setRecoveryFault(true);
       setError(cause instanceof Error?cause.message:"Posting recovery data is corrupt.");
     }
-  },[enabled,organizationId,userId]);
+  },[enabled,organizationId,userId,sourceReceipt?.id]);
 
   useEffect(()=>{
     if(pending||busy||!sourceReceipt?.id)return;
@@ -56,7 +56,7 @@ export function ReceiptPostingPanel({context,actorRole,sourceReceipt}:{
     setReceiptId(sourceReceipt.id);
     setSource(sourceReceipt);
     setPosted(null);
-  },[sourceReceipt?.id,sourceReceipt?.revision,pending,busy,posted?.receipt_id]);
+  },[sourceReceipt,pending,busy,posted?.receipt_id]);
 
   const load=async()=>{
     if(!enabled||pending||recoveryFault||inFlight.current)return;
