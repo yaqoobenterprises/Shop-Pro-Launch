@@ -45,7 +45,7 @@ export const FinanceDesignPreview:React.FC<Props>=({onClose})=>{
     window.addEventListener("keydown",esc);
     return ()=>window.removeEventListener("keydown",esc);
   },[onClose]);
-  useEffect(()=>{mainRef.current?.scrollTo({top:0,behavior:"auto"});},[page]);
+  useEffect(()=>{if(typeof mainRef.current?.scrollTo==="function") mainRef.current.scrollTo({top:0,behavior:"auto"});},[page]);
   const selected=erpReviewGroups.flatMap(group=>group.pages).find(item=>item.id===page);
   const navigate=(next:ErpReviewPage)=>setPage(next);
 
