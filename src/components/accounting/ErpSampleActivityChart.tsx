@@ -32,7 +32,7 @@ export function ErpSampleActivityChart(){
   const selected=days.find(p=>p.date===day)??days[days.length-1];
   return <>
     <svg viewBox="0 0 720 260" preserveAspectRatio="xMidYMid meet"
-      role="img" aria-label="Seven-day synthetic activity: 15,000 invoiced on 18 November, 8,000 invoiced on 19 November and 6,000 collected on 20 November">
+      role="img" aria-label={`Seven-day synthetic activity: ${days.filter(p=>p.invoicedMinor>0n||p.collectedMinor>0n).map(p=>`${p.label}: ${samplePKR(p.invoicedMinor)} invoiced, ${samplePKR(p.collectedMinor)} collected`).join("; ")}`}>
       <defs>
         <linearGradient id="aq-invoice-gradient" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#9587e2" stopOpacity=".17"/>
