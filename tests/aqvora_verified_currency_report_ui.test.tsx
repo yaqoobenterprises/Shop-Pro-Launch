@@ -103,6 +103,6 @@ describe("AQVORA one-workspace handoff to authenticated staging",()=>{
     fireEvent.click(screen.getByRole("button",{name:"Open GL & Trial Balance"}));
     expect(navigate).toHaveBeenCalledTimes(1);
     expect(navigate).toHaveBeenCalledWith("aqvora-gl-tb");
-    expect(screen.getAllByText(/Illustrative company/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Illustrative ERP company/).length).toBeGreaterThan(0);
   });
 });
