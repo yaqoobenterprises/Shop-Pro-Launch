@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import {formatCertifiedSourceMoney} from "../../accounting/currencyReportEvidence";
+import {formatCertifiedSourceMoney} from "../../accounting/sourceMoneyEvidence";
 import {
   loadIsolatedCustomerReceipt, type VerifiedReceiptDetails,
 } from "../../services/aqvoraCashReceiptReadService";
