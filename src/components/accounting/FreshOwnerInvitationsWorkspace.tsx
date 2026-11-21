@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { ClipboardCopy, LockKeyhole, UserRoundPlus } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import {
@@ -38,7 +38,7 @@ export function FreshOwnerInvitationsWorkspace() {
     return () => { serial.current += 1; };
   }, [organization.id, user?.id, canUse]);
 
-  async function invite(event: React.FormEvent<HTMLFormElement>) {
+  async function invite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canUse || !isOwner || !organization.id || lock.current) return;
     const canonical = normalizeInviteEmail(email);
@@ -54,6 +54,7 @@ export function FreshOwnerInvitationsWorkspace() {
       };
     }
     const pending = attempt.current;
+    if (!pending) return;
     const serial = generation.current;
     lock.current = true; setBusy("invite"); setError(""); setCopyNotice("");
     try {
@@ -70,7 +71,7 @@ export function FreshOwnerInvitationsWorkspace() {
     } finally { lock.current = false; if (generation.current === serial) setBusy(null); }
   }
 
-  async function accept(event: React.FormEvent<HTMLFormElement>) {
+  async function accept(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canUse || lock.current) return;
     const serial = generation.current;
