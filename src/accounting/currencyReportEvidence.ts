@@ -3,7 +3,23 @@
  * Fingerprints are checked for shape and consistency, not re-signed in the browser.
  */
 import type {CurrencyReportEvidence,CurrencyUnitPolicy} from "./currencyContracts";
-import {exactReadMinor,readRecord,readString} from "./verifiedReadValidation";
+function readRecord(value:unknown,name:string):Record<string,unknown>{
+  if(!value||typeof value!=="object"||Array.isArray(value)){
+    throw new Error("Invalid "+name+" object.");
+  }
+  return value as Record<string,unknown>;
+}
+function readString(value:unknown,name:string):string{
+  if(typeof value!=="string"||!value.trim())throw new Error("Invalid "+name+".");
+  return value;
+}
+function exactReadMinor(value:unknown,name:string):bigint{
+  if(typeof value!=="string"||!/^(0|[1-9][0-9]*|-[1-9][0-9]*)$/.test(value)||
+     value.length>90){
+    throw new Error("Invalid exact "+name+".");
+  }
+  return BigInt(value);
+}
 
 const SHA=/^[0-9a-f]{64}$/;
 const CURRENCY=/^[A-Z]{3}$/;
@@ -32,6 +48,7 @@ function positive(value:unknown,name:string):string {
   if(typeof value!=="string"||!CANONICAL.test(value)){
     throw new Error("Invalid "+name+" in certified currency evidence.");
   }
+  if(value.length>64)throw new Error("Currency policy "+name+" is too large.");
   return value;
 }
 function fingerprint(value:unknown,name:string):string{
@@ -93,7 +110,7 @@ export function validateReportCurrencyEvidence(
   const source=readRecord(raw,"report currency evidence");
   const present=EVIDENCE_KEYS.filter(key=>Object.prototype.hasOwnProperty.call(source,key));
   if(present.length===0){
-    if(first)throw new Error("Report currency evidence disappeared across pages.");
+    if(first!==undefined&&first!==null)throw new Error("Report currency evidence disappeared across pages.");
     return null;
   }
   if(present.length!==EVIDENCE_KEYS.length){
@@ -140,7 +157,7 @@ export function validateReportCurrencyEvidence(
     }
   }
   const normalized=source as unknown as CurrencyReportEvidence;
-  if(first && JSON.stringify(normalized)!==JSON.stringify(first)){
+  if(first!==undefined && JSON.stringify(normalized)!==JSON.stringify(first)){
     throw new Error("Report currency authority changed across paginated source.");
   }
   return normalized;
