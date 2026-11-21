@@ -14,6 +14,7 @@ import {createIsolatedCustomerReceiptDraft,isIsolatedReceiptDraftEnabled,
   transitionIsolatedCustomerReceipt} from "../../services/aqvoraReceiptDraftService";
 import type {IsolatedReceivablesContext} from "../../services/aqvoraReceivablesStagingGate";
 import {enteredAllocations,ReceiptAllocationForm} from "./ReceiptAllocationForm";
+import {ReceiptPostingPanel} from "./ReceiptPostingPanel";
 
 function businessToday(zone:string):string {
   try{
@@ -265,10 +266,11 @@ export function CustomerReceiptDraftWorkspace(){
               className="rounded-lg border border-border-standard px-4 py-3 disabled:opacity-50">Cancel unposted</button>}
           </div>
           {record.state==="approved"&&<p role="status" className="text-sm text-text-muted">
-            Independently approved, but NOT posted. Financial receipt issuance requires a later separately gated, verified original-intent workflow.
+            Independently approved, but NOT posted. Posting remains separately locked behind staging, policy and financial authorization gates.
           </p>}
         </div>}
       </section>
     </div>
+    <ReceiptPostingPanel context={context} actorRole={user?.role} sourceReceipt={record}/>
   </div>;
 }
