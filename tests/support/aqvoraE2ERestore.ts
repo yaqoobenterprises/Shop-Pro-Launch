@@ -29,8 +29,18 @@ export async function restoreE2E(h: E2EHarness, c: E2ECompany, invoice: SalesInv
   const marker = docker(["exec", container, "psql", "-U", "postgres", "-d", "postgres", "-At", "-c",
     `SELECT id FROM public.organizations WHERE id='${c.org}'`]).toString().trim();
   expect(marker).toBe(c.org);
+  // Managed Auth schemas belong to supabase_admin. Use its existing local
+  // maintenance role for full restore; do not drop owners/ACLs or elevate callers.
+  expect(docker(["exec", container, "psql", "-U", "supabase_admin", "-d", "postgres", "-At", "-c",
+    "SELECT rolsuper FROM pg_roles WHERE rolname=current_user"]).toString().trim()).toBe("t");
+  const authDigest = async (db: Client) => (await db.query(`SELECT encode(sha256(convert_to(jsonb_build_object(
+    'users',(SELECT jsonb_agg(to_jsonb(u) ORDER BY id) FROM auth.users u WHERE id=ANY($1::uuid[])),
+    'sessions',(SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM auth.sessions s WHERE user_id=ANY($1::uuid[])),
+    'factors',(SELECT jsonb_agg(to_jsonb(f) ORDER BY id) FROM auth.mfa_factors f WHERE user_id=ANY($1::uuid[])))::text,'UTF8')),'hex') digest`,
+  [[h.ownerA.id, h.ownerB.id]])).rows[0].digest as string;
+  const originalAuthDigest = await authDigest(h.db);
   const before = await sqlE2ESnapshot(h.db, c);
-  const dump = docker(["exec", container, "pg_dump", "-U", "postgres", "-Fc", "postgres"]);
+  const dump = docker(["exec", container, "pg_dump", "-U", "supabase_admin", "-Fc", "postgres"]);
   expect(dump.length).toBeGreaterThan(1000);
   const suffix = randomUUID().replaceAll("-", "").slice(0, 20);
   const database = `aqvora_e2e_restore_${suffix}`, role = `aqvora_e2e_auth_${suffix}`, server = `aqvora-e2e-rest-${suffix}`;
@@ -38,10 +48,11 @@ export async function restoreE2E(h: E2EHarness, c: E2ECompany, invoice: SalesInv
   let created = false, roleCreated = false, started = false, target: Client | undefined;
   try {
     await h.db.query(`CREATE DATABASE ${database} TEMPLATE template0`); created = true;
-    docker(["exec", "-i", container, "pg_restore", "-U", "postgres", "--exit-on-error", "-d", database], dump);
+    docker(["exec", "-i", container, "pg_restore", "-U", "supabase_admin", "--exit-on-error", "-d", database], dump);
     const url = new URL(h.status.DB_URL); url.pathname = `/${database}`;
     target = new Client({connectionString: url.toString()}); await target.connect();
     expect(await sqlE2ESnapshot(target, c)).toEqual(before);
+    expect(await authDigest(target)).toBe(originalAuthDigest);
     expect(await legacy.snapshot(target)).toEqual(legacy.before);
     expect((await target.query("SELECT has_table_privilege('authenticated','public.aqvora_journals','INSERT') allowed")).rows[0].allowed).toBe(false);
     await h.db.query(`CREATE ROLE ${role} LOGIN NOINHERIT PASSWORD '${password}'`); roleCreated = true;
@@ -96,6 +107,7 @@ export async function restoreE2E(h: E2EHarness, c: E2ECompany, invoice: SalesInv
     expect(await sqlE2ESnapshot(target, c)).toEqual(before);
     return {kind: "full_database_logical_restore", dump_bytes: dump.length, source_digest: evidenceHash(before),
       restored_digest: evidenceHash(await sqlE2ESnapshot(target, c)), issued_jwt_postgrest_verified: true,
+      restored_auth_digest: await authDigest(target),
       restored_outstanding_minor: books.recon.outstanding_minor};
   } finally {
     if (started) docker(["rm", "-f", server]);
