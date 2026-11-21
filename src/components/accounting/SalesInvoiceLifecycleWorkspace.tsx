@@ -45,12 +45,11 @@ export function SalesInvoiceLifecycleWorkspace() {
   };
 
   useEffect(()=>{
-    const active=++generation.current;
+    ++generation.current;
     setInvoice(null);setError("");setNotice("");setConfirmed(false);
     if (!enabled) { setInvoiceInput("");setPending(null); return; }
     try{
       const original=loadPendingSalesIssue(organization.id,userId);
-      if(active!==generation.current)return;
       setPending(original);
       setInvoiceInput(original?.invoiceId ??
         sessionStorage.getItem(reviewKey(organization.id,userId)) ?? "");
@@ -58,7 +57,6 @@ export function SalesInvoiceLifecycleWorkspace() {
       setInvoiceInput("");setPending(null);
       setError(reason instanceof Error?reason.message:"Original issuance recovery is unsafe.");
     }
-    return()=>{generation.current++;};
   },[enabled,organization.id,userId]);
 
   const load=async()=>{
@@ -114,10 +112,9 @@ export function SalesInvoiceLifecycleWorkspace() {
     if(!invoice||pending||inFlight.current||!confirmed||!isIsolatedInvoiceIssueEnabled())return;
     const token=++generation.current;
     inFlight.current=true;setBusy(true);setError("");setNotice("");
-    let original:PendingSalesIssue|null=null;
     try{
       if(!invoice.fingerprint)throw new Error("Approved fingerprint missing.");
-      original=reserveSalesIssue(organization.id,userId,invoice.id,
+      const original=reserveSalesIssue(organization.id,userId,invoice.id,
         invoice.revision,invoice.fingerprint);
       setPending(original);
       const result=await issueIsolatedSalesInvoice(context,{
