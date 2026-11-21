@@ -105,6 +105,22 @@ describe("AQVORA new-company fresh zero-opening finance", () => {
         "SELECT count(*)::int AS n FROM public.aqvora_journals WHERE organization_id=$1",
         [company]);
       expect(count.rows[0].n).toBe(0);
+      // A server-certified zero Trial Balance is different from an RLS-denied
+      // empty SELECT. This is the actual trusted V2 read RPC with live AAL2.
+      const initialTrial = await db.query<{report:{
+        source:{source_complete:boolean;legacy_included:boolean;source_journal_count:string};
+        totals:{debit_minor:string;credit_minor:string;
+          closing_debit_minor:string;closing_credit_minor:string}
+      }}>(
+        "SELECT public.read_aqvora_trial_balance($1,$2::date,$3::date,'PKR') AS report",
+        [company,"2026-01-01","2026-12-31"]);
+      expect(initialTrial.rows[0].report.source).toMatchObject({
+        source_complete:true,legacy_included:false,source_journal_count:"0",
+      });
+      expect(initialTrial.rows[0].report.totals).toMatchObject({
+        debit_minor:"0",credit_minor:"0",
+        closing_debit_minor:"0",closing_credit_minor:"0",
+      });
 
       // No writer is enabled by creating a company or its CoA. Fail closed.
       const draftLines=lines(created,"1010","3010","100000");
