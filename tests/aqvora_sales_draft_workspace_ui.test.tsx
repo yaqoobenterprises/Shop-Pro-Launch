@@ -3,9 +3,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { SalesDraftsWorkspace } from "../src/components/accounting/SalesDraftsWorkspace";
 
 const mock=vi.hoisted(()=>({
-  auth:vi.fn(), enabled:vi.fn(), customers:vi.fn(),createCustomer:vi.fn(),createDraft:vi.fn(),
+  auth:vi.fn(), app:vi.fn(), enabled:vi.fn(), customers:vi.fn(),createCustomer:vi.fn(),createDraft:vi.fn(),
 }));
 vi.mock("../src/context/AuthContext",()=>({useAuth:mock.auth}));
+vi.mock("../src/context/AppContext",()=>({useApp:mock.app}));
 vi.mock("../src/services/aqvoraSalesCustomersReadService",()=>({
   loadIsolatedSalesCustomers:mock.customers,
 }));
@@ -27,6 +28,7 @@ const invoiceRecord={organization_id:org,id:invoice,creation_intent:"original",
   face_minor:"150",lines:[]};
 
 beforeEach(()=>{
+  mock.app.mockReturnValue({setCurrentView:vi.fn()});
   mock.enabled.mockReturnValue(true);
   mock.auth.mockReturnValue({
     organization:{id:org,currency:"PKR",timezone:"Asia/Karachi"},

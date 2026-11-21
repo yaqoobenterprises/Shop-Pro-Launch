@@ -94,7 +94,7 @@ export function ServiceInvoiceDraftCreateForm({
         </label>
       </div>
       <label className="block text-sm">Service description
-        <input aria-label="Service description" required maxLength={500}
+        <input aria-label="Service description" required maxLength={300}
           disabled={disabled} value={description} onChange={e=>setDescription(e.target.value)}
           className="mt-1 min-h-11 w-full rounded-md border border-border-standard bg-surface-bright px-3"/>
       </label>

@@ -24,7 +24,7 @@ import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalMod
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
 import {
-  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace,
+  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, SalesInvoiceLifecycleWorkspace,
 } from "./components/accounting/FinanceLazyRoutes";
 
 const ChatView = lazy(() =>
@@ -133,8 +133,8 @@ const MainShell: React.FC = () => {
         return <ReceivablesWorkspace />;
       case "aqvora-sales-drafts":
         return <SalesDraftsWorkspace />;
-      case "aqvora-gl-tb":
-        return <GeneralLedgerTrialBalanceWorkspace />;
+      case "aqvora-gl-tb": return <GeneralLedgerTrialBalanceWorkspace />;
+      case "aqvora-sales-lifecycle": return <SalesInvoiceLifecycleWorkspace />;
       case "settings":
         return <LedgerSettingsView />;
       default:
