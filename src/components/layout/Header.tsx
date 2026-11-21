@@ -36,6 +36,7 @@ export const Header: React.FC = () => {
     : currentView === "chat" ? t("nav.ledger")
     : currentView === "ai" ? "LedgerMate AI"
     : currentView === "reports" ? t("nav.reports")
+    : currentView === "aqvora-cash-collections" ? "Cash collections"
     : currentView === "aqvora-sales-lifecycle" ? "Invoice approvals"
     : currentView === "aqvora-gl-tb" ? "GL & Trial Balance"
     : currentView === "aqvora-sales-drafts" ? "Service drafts"
