@@ -40,6 +40,7 @@ export function validateManualJournalLines(lines:unknown):string {
     throw new Error("A journal requires 2–100 balanced posting lines.");
   }
   let debit=0n,credit=0n;
+  const distinctAccounts=new Set<string>();
   for(const raw of lines){
     if(!raw||typeof raw!=="object"||Array.isArray(raw)){
       throw new Error("Invalid journal line object.");
@@ -56,6 +57,10 @@ export function validateManualJournalLines(lines:unknown):string {
       throw new Error("Each journal line must have one positive side within bigint range.");
     }
     debit+=dr;credit+=cr;
+    distinctAccounts.add(line.account_id);
+  }
+  if(distinctAccounts.size<2){
+    throw new Error("Journal requires at least two distinct financial accounts.");
   }
   if(debit===0n||debit!==credit||debit>MAX){
     throw new Error("Journal debits and credits must balance in exact minor units.");
