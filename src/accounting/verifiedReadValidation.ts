@@ -1,4 +1,5 @@
 import type { AccountingReadSource, ReadCursor } from "./readContracts";
+import {validateReportCurrencyEvidence} from "./currencyReportEvidence";
 
 const EXACT = /^(0|[1-9][0-9]*|-[1-9][0-9]*)$/;
 const TOKEN = /^[0-9a-f]{64}$/;
@@ -88,6 +89,13 @@ export function validateCertifiedSource(
   )) {
     throw new Error("Financial source changed while reading pages; discard all rows.");
   }
+  // Codex #78 evidence is additive; legacy readers remain exact RAW minor units.
+  // New evidence must never disappear, mutate or appear mid-pagination.
+  const scope={organizationId:context.organizationId,currency:context.currency,
+    asOfDate:context.toDate};
+  const firstPolicy=first===undefined?undefined:
+    validateReportCurrencyEvidence(first,scope);
+  validateReportCurrencyEvidence(s,scope,firstPolicy);
   return s as unknown as AccountingReadSource;
 }
 
