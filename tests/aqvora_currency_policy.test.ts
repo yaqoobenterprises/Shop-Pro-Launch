@@ -116,6 +116,10 @@ describe("Authoritative currency units and financial integrity",()=>{
     const first=(await post(lines)).rows[0].r;expect((await post(lines)).rows[0].r).toEqual(first);
     expect(first.currency_policy).toEqual((await policy()).policy);
     await expect(post([{...lines[0],debit_minor:"2"},{...lines[1],credit_minor:"2"}])).rejects.toThrow("payload mismatch");
+    await h.db.exec("RESET ROLE;ALTER TABLE public.aqvora_posting_receipts DISABLE TRIGGER USER");
+    await h.db.exec("UPDATE public.aqvora_posting_receipts SET payload=jsonb_set(payload,'{currency_policy,currency_exponent}','0')");
+    await h.user();await expect(h.query("SELECT public.lookup_aqvora_receipt($1,'unit-retry')",[i.org])).rejects.toThrow("inconsistent");
+    await expect(post(lines)).rejects.toThrow("inconsistent");
   });
   it.each(["invoice","receipt","journal","policy"])("fails closed on corrupted %s policy metadata",async(kind)=>{
     const {inv,draft}=await posted();await h.db.exec("RESET ROLE");

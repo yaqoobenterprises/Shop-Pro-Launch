@@ -52,3 +52,12 @@ export interface CurrencyBoundSource {
   /** Absent only for pre-policy history; never infer a historical scale. */
   currency_policy?: CurrencyUnitPolicy;
 }
+/** Generic post_aqvora_journal / lookup_aqvora_receipt response. */
+export interface CurrencyPostingReceipt extends CurrencyBoundSource {
+  organization_id: string;
+  intent_key: string;
+  journal_id: string;
+  total_minor: string;
+  posted_at: string;
+  posted_by: string;
+}

@@ -37,11 +37,14 @@ BEGIN
 
   -- A lost response can be recovered even after the period closes. Authorization
   -- and MFA are always rechecked. A changed request may never reuse the key.
-  SELECT r.journal_id, r.payload, j.total_minor, j.posted_at, j.posted_by, j.currency_policy_revision
+  SELECT r.journal_id, r.payload, j.payload AS journal_payload, j.total_minor, j.posted_at, j.posted_by, j.currency_policy_revision
     INTO prior FROM public.aqvora_posting_receipts r
     JOIN public.aqvora_journals j ON (j.organization_id, j.id) = (r.organization_id, r.journal_id)
     WHERE r.organization_id = p_org AND r.intent_key = p_intent;
   IF FOUND THEN
+    IF prior.payload IS DISTINCT FROM prior.journal_payload OR NOT private.aqvora_currency_matches(
+      p_org,prior.currency_policy_revision,p_date,company_currency,prior.payload->'currency_policy') THEN
+      RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Posting receipt currency evidence is inconsistent'; END IF;
     IF prior.payload <> normalized THEN RAISE EXCEPTION 'Idempotency key payload mismatch'; END IF;
     RETURN jsonb_build_object('organization_id', p_org, 'intent_key', p_intent,
       'journal_id', prior.journal_id, 'total_minor', prior.total_minor::text,
@@ -121,13 +124,16 @@ BEGIN
           normalized, debit_total::bigint, actor, p_reversal_of, p_reason)
   ON CONFLICT (organization_id, intent_key) DO NOTHING RETURNING id INTO new_id;
   IF new_id IS NULL THEN
-    SELECT r.journal_id, r.payload, j.total_minor, j.posted_at, j.posted_by, j.currency_policy_revision
+    SELECT r.journal_id, r.payload, j.payload AS journal_payload, j.total_minor, j.posted_at, j.posted_by, j.currency_policy_revision
       INTO prior FROM public.aqvora_posting_receipts r
       JOIN public.aqvora_journals j ON (j.organization_id, j.id) = (r.organization_id, r.journal_id)
       WHERE r.organization_id = p_org AND r.intent_key = p_intent;
     IF NOT FOUND OR prior.payload <> normalized THEN
       RAISE EXCEPTION 'Idempotency key payload mismatch';
     END IF;
+    IF prior.payload IS DISTINCT FROM prior.journal_payload OR NOT private.aqvora_currency_matches(
+      p_org,prior.currency_policy_revision,p_date,company_currency,prior.payload->'currency_policy') THEN
+      RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Posting receipt currency evidence is inconsistent'; END IF;
     RETURN jsonb_build_object('organization_id', p_org, 'intent_key', p_intent,
       'journal_id', prior.journal_id, 'total_minor', prior.total_minor::text,
       'posted_at', prior.posted_at, 'posted_by', prior.posted_by) || CASE WHEN prior.currency_policy_revision IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('currency_policy',private.aqvora_currency_bound(p_org,prior.currency_policy_revision)) END;
@@ -170,13 +176,17 @@ RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS
 DECLARE r record;
 BEGIN
   PERFORM private.aqvora_authorize(organization_id);
-  SELECT receipt.journal_id, journal.total_minor, journal.posted_at, journal.posted_by, journal.currency_policy_revision
+  SELECT receipt.journal_id, receipt.payload, journal.payload AS journal_payload, journal.business_date, journal.currency,
+    journal.total_minor, journal.posted_at, journal.posted_by, journal.currency_policy_revision
     INTO r FROM public.aqvora_posting_receipts receipt
     JOIN public.aqvora_journals journal
       ON (journal.organization_id, journal.id) = (receipt.organization_id, receipt.journal_id)
     WHERE receipt.organization_id = lookup_aqvora_receipt.organization_id
       AND receipt.intent_key = lookup_aqvora_receipt.intent_key;
   IF NOT FOUND THEN RETURN NULL; END IF;
+  IF r.payload IS DISTINCT FROM r.journal_payload OR NOT private.aqvora_currency_matches(
+    organization_id,r.currency_policy_revision,r.business_date,r.currency,r.payload->'currency_policy') THEN
+    RAISE EXCEPTION USING ERRCODE='23514',MESSAGE='Posting receipt currency evidence is inconsistent'; END IF;
   RETURN jsonb_build_object('organization_id', organization_id, 'intent_key', intent_key,
     'journal_id', r.journal_id, 'total_minor', r.total_minor::text,
     'posted_at', r.posted_at, 'posted_by', r.posted_by) || CASE WHEN r.currency_policy_revision IS NULL THEN '{}'::jsonb ELSE jsonb_build_object('currency_policy',private.aqvora_currency_bound(organization_id,r.currency_policy_revision)) END;

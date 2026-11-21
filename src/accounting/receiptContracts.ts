@@ -1,4 +1,4 @@
-import type {CurrencyBoundSource} from "./currencyContracts";
+import type {CurrencyBoundSource,CurrencyUnitPolicy} from "./currencyContracts";
 /** PostgreSQL RPC wire contracts only. Activates no financial writer or client. */
 import type {AccountingReadSource,ExactMinor} from "./readContracts";
 export interface ReceiptAllocationInput {invoice_id:string;amount_minor:ExactMinor}
@@ -28,13 +28,15 @@ export interface CustomerReceipt extends CurrencyBoundSource {
   reconciliation?:{source_complete:true;cash_debit_minor:ExactMinor;ar_credit_minor:ExactMinor;allocated_minor:ExactMinor;
     bank_verified:false;evidence_method:"dual_control_cash_attestation"};
 }
-export interface InvoiceOpenBalance extends CurrencyBoundSource {
+export interface InvoiceOpenBalance {
+  currency_policy?:CurrencyUnitPolicy|null;display_complete?:boolean;
   organization_id:string;invoice_id:string;customer_id:string;currency:string;business_date:string;due_date:string;as_of_date:string|null;
   face_minor:ExactMinor;allocated_minor:ExactMinor;outstanding_minor:ExactMinor;all_posted_allocated_minor:ExactMinor;
   status:"unpaid"|"partial"|"settled";allocations:Array<ReceiptAllocationReference&{receipt_id:string;collection_id:string;receipt_number:string;business_date:string}>;
   source_complete:true;scope:"v2_invoice_allocations";fingerprint:string;legacy_included:false;opening_migration_verified:false;
 }
 export interface OpenInvoicePage {
+  returned_count?:number;
   source:AccountingReadSource;rows:InvoiceOpenBalance[];matched_count:string;has_more:boolean;next_after_id:string|null;
 }
 export interface ReceivablesReconciliation {
