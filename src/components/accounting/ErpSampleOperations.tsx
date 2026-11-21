@@ -124,7 +124,7 @@ export function ErpSampleOperations({page,onNavigate}:Props){
         <div><span>Remaining on INV-S001</span><strong>{samplePKR("900000")}</strong></div>
       </div>
       <p className="aq-erp-synthetic-caption">
-        Manual cash receipt in a synthetic scenario only. No real journal, bank clearance or Supabase write.</p>
+        Manual cash receipt in a synthetic scenario only. Bank verified: NO. No real journal or Supabase write.</p>
       <button type="button" className="aq-finance__button" onClick={()=>onNavigate("ledger")}>
         Trace Dr/Cr in General Ledger <ArrowRight size={16}/></button>
     </div>}
