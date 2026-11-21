@@ -102,8 +102,8 @@ describe("AQVORA manual journal staging UI",()=>{
       "disabled",false);
     fireEvent.click(screen.getByRole("button",{name:"Post verified journal"}));
     await waitFor(()=>expect(h.post).toHaveBeenCalledOnce());
-    expect(h.reserve.mock.calls[0]).toMatchObject([
-      ORG,USER,"PKR","2026-11-20",
+    expect(h.reserve.mock.calls[0]).toEqual([
+      ORG,USER,"PKR","2026-11-20",expect.any(Array),
     ]);
     await waitFor(()=>expect(h.clear).toHaveBeenCalledWith(mockPending));
     expect(await screen.findByText(/Server-verified journal posted/)).toBeTruthy();
