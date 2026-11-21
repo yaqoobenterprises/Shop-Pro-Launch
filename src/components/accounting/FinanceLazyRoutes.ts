@@ -5,6 +5,8 @@ export const ReceivablesWorkspace = lazy(() =>
   import("./ReceivablesWorkspace").then(m=>({default:m.ReceivablesWorkspace})));
 export const SalesDraftsWorkspace = lazy(() =>
   import("./SalesDraftsWorkspace").then(m=>({default:m.SalesDraftsWorkspace})));
+export const FreshFinanceSetupWorkspace = lazy(() =>
+  import("./FreshFinanceSetupWorkspace").then(m=>({default:m.FreshFinanceSetupWorkspace})));
 export const GeneralLedgerTrialBalanceWorkspace = lazy(() =>
   import("./GeneralLedgerTrialBalanceWorkspace").then(
     m=>({default:m.GeneralLedgerTrialBalanceWorkspace})));
