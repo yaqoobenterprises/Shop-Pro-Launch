@@ -1,7 +1,8 @@
 import {describe,expect,it} from "vitest";
 import type {CurrencyUnitPolicy} from "../src/accounting/currencyContracts";
 import {
-  formatCertifiedReportMoney,validateCurrencyUnitPolicy,
+  formatCertifiedReportMoney,formatCertifiedSourceMoney,
+  requireMatchingInvoicePolicyForReport,validateCurrencyUnitPolicy,
   validateReportCurrencyEvidence,
 } from "../src/accounting/currencyReportEvidence";
 import {validateCertifiedSource} from "../src/accounting/verifiedReadValidation";
@@ -141,6 +142,41 @@ describe("Source-certified company currency interpretation (#78)",()=>{
       .toThrow(/currency/i);
     expect(validateCertifiedSource(source(evidence()),readContext,verified))
       .toMatchObject({currency_evidence_version:"aqvora-currency-report-v1"});
+  });
+  it("formats invoice/receipt from ORIGINAL revision not latest report date",()=>{
+    const original=policy("PKR",2,"1","2026-01-01");
+    const newer=policy("PKR",2,"2","2026-11-15");
+    const source={organization_id:org,currency:"PKR",
+      business_date:"2026-11-14",currency_policy:original,display_complete:true};
+    const current=validateReportCurrencyEvidence({...evidence(newer),
+      currency_policy_revisions:[original,newer]},scope);
+    expect(formatCertifiedSourceMoney("150",source)).toBe("PKR 1.50");
+    expect(()=>requireMatchingInvoicePolicyForReport(source,current)).not.toThrow();
+    expect(formatCertifiedSourceMoney("60",{...source,display_complete:false}))
+      .toBe("PKR 60 minor units");
+    expect(formatCertifiedSourceMoney("60",{...source,currency_policy:null}))
+      .toBe("PKR 60 minor units");
+    expect(()=>formatCertifiedSourceMoney("150",{
+      ...source,currency_policy:null,display_complete:true,
+    })).toThrow(/completeness/);
+  });
+  it("refuses foreign, missing-from-timeline or future-dated source policies",()=>{
+    const original=policy();
+    const report=validateReportCurrencyEvidence(evidence(),scope);
+    for(const invalid of [
+      {...original,organization_id:actor},
+      {...original,transaction_currency:"JPY"},
+      {...original,minor_units_per_major:"1"},
+      {...original,effective_from:"2026-12-01"},
+    ]){
+      const row={organization_id:org,currency:"PKR",
+        business_date:"2026-11-14",currency_policy:invalid};
+      expect(()=>formatCertifiedSourceMoney("150",row)).toThrow();
+    }
+    const alien={organization_id:org,currency:"PKR",
+      business_date:"2026-11-14",
+      currency_policy:{...original,fingerprint:"b".repeat(64)}};
+    expect(()=>requireMatchingInvoicePolicyForReport(alien,report)).toThrow(/not in certified/);
   });
   it("never converts malformed money or uses floating numeric guesses",()=>{
     const valid=validateReportCurrencyEvidence(evidence(),scope);
