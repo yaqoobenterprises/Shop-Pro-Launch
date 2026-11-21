@@ -71,12 +71,9 @@ export function AuthorizedJournalWorkspace(){
       let recoveryValid=true;
       try{setPending(readPendingManualJournal(organization.id,userId));}
       catch(e){
-        recoveryValid=false;
-        setRecoveryFault(true);
+        recoveryValid=false;setRecoveryFault(true);
         setError(e instanceof Error?e.message:"Original journal recovery is invalid.");
       }
-      // A corrupt original intent is a hard stop. Refresh must never
-      // clear the recovery warning or make the posting form appear ready.
       if(recoveryValid)void refresh();
     }
     return()=>{++ref.current;};
