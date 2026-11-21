@@ -14,11 +14,13 @@ describe("AQVORA release-safe experience",()=>{
       VITE_ENABLE_AQVORA_VERIFIED_REPORT_READS:"true",
       VITE_AQVORA_PREVIEW_DEFAULT:"true",
       VITE_ENABLE_COMPANY_SETUP_WIZARD:"true",
+      VITE_ENABLE_FINANCE_UI_PREVIEW:"true",
       VITE_SUPABASE_URL:"https://example.supabase.co",
     };
     expect(forbiddenAQVORAReleaseFlags(unsafe)).toEqual([
       "VITE_AQVORA_PREVIEW_DEFAULT","VITE_ENABLE_AQVORA_STAGING_FINANCIAL_ISSUE",
       "VITE_ENABLE_AQVORA_VERIFIED_REPORT_READS","VITE_ENABLE_COMPANY_SETUP_WIZARD",
+      "VITE_ENABLE_FINANCE_UI_PREVIEW",
     ]);
     expect(()=>assertAQVORAReleaseSafety(unsafe,"production"))
       .toThrow(/production build blocked/);
