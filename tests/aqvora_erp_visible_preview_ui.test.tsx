@@ -46,6 +46,22 @@ describe("AQVORA visible ERP demo",()=>{
     pick("Purchases & Payables Planned");
     expect(screen.getByText(/Not included in this tested ERP workflow/)).toBeTruthy();
   });
+  it("lets reviewers inspect exact daily source amounts without hover or invented chart curves",()=>{
+    render(<FinanceDesignPreview onClose={vi.fn()}/>);
+    const inspect=screen.getByRole("combobox",{name:"Inspect sample day"});
+    expect((inspect as HTMLSelectElement).value).toBe("2026-11-20");
+    fireEvent.change(inspect,{target:{value:"2026-11-18"}});
+    expect((inspect as HTMLSelectElement).value).toBe("2026-11-18");
+    expect(screen.getAllByText("Rs 15,000.00").length).toBeGreaterThan(0);
+    const table=screen.getByRole("table",{
+      name:/Exact illustrative daily invoicing and controlled cash/,
+      hidden:true,
+    });
+    expect(table).toBeTruthy();
+    expect(screen.getByRole("img",{
+      name:/Seven-day synthetic activity/,
+    })).toBeTruthy();
+  });
   it("has a clear safe way back to legacy UI",()=>{
     const onClose=vi.fn();
     render(<FinanceDesignPreview onClose={onClose}/>);
