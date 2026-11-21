@@ -123,8 +123,21 @@ export function planLegacyJournalDryRun(snapshot, policy) {
       || !policy.categories || typeof policy.categories !== 'object') {
     throw new Error('Explicit source account and category mappings are required');
   }
+  const sourceAccounts = new Set(snapshot.payment_accounts.map(account => account.id));
+  const sourceCategories = new Set(snapshot.categories.map(category => category.id));
+  const sourceTransactions = new Set(snapshot.transactions.map(tx => tx.id));
+  for (const id of Object.keys(policy.categories)) {
+    if (!sourceCategories.has(id)) throw new Error('Foreign/unknown category policy mapping');
+  }
+  for (const id of Object.keys(policy.transaction_overrides || {})) {
+    if (!sourceTransactions.has(id)) throw new Error('Foreign/unknown transaction treatment override');
+  }
+  for (const id of policy.duplicate_reviewed_source_ids || []) {
+    if (!sourceTransactions.has(id)) throw new Error('Foreign/unknown duplicate review source ID');
+  }
   const targetAccounts = new Set();
   for (const [id, map] of Object.entries(policy.payment_accounts)) {
+    if (!sourceAccounts.has(id)) throw new Error('Foreign/unknown payment-account mapping');
     if (!UUID.test(id) || !map || !UUID.test(map.coa_account_id || '')
         || map.account_class !== 'ASSET') throw new Error('Invalid payment-account CoA mapping');
     if (targetAccounts.has(map.coa_account_id)) {
