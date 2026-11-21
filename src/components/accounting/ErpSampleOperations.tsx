@@ -21,8 +21,8 @@ export function ErpSampleOperations({page,onNavigate}:Props){
   const customerRows=sampleCustomers.filter(c=>
     [c.code,c.name].join(" ").toLowerCase().includes(search.toLowerCase()));
 
-  if(notes[page]){
-    const note=notes[page];
+  const note=notes[page];
+  if(note){
     return <section className="aq-erp-white-panel aq-erp-roadmap" aria-label={note.title}>
       <div className="aq-erp-roadmap-icon"><Clock3 size={27}/></div>
       <span className="aq-finance__eyebrow">ROADMAP · NOT IMPLEMENTED</span>
