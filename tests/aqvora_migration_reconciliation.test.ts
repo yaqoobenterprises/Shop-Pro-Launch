@@ -35,6 +35,11 @@ const deployedOrder = [
   ...salesMigrations,
   ...receiptMigrations,
   ...currencyMigrations,
+  // New independent provenance/dual-approval backend, never a data backfill.
+  "20261121130000_aqvora_fresh_company_enrollment_schema.sql",
+  "20261121130100_aqvora_fresh_company_creation_rpc.sql",
+  "20261121130200_aqvora_fresh_activation_evidence.sql",
+  "20261121130300_aqvora_fresh_dual_owner_activation_rpc.sql",
 ];
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const actor = "11111111-1111-4111-8111-111111111111";
@@ -124,6 +129,35 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
         expect(grants.rows[0]).toEqual({
           balance_update: false, name_update: true,
           anon_post: false, internal_post: false,
+        });
+        // Real PostgreSQL grant check: the public RPC interface is deliberate
+        // while private provenance/approval and enabled-company DML stay closed.
+        const freshGrants = await client.query<{
+          anon_register:boolean;anon_checker:boolean;authenticated_register:boolean;
+          authenticated_approve:boolean;private_function:boolean;
+          origin_select:boolean;approval_insert:boolean;enable_insert:boolean;
+        }>(`SELECT
+          has_function_privilege('anon',
+            'public.create_aqvora_fresh_company(uuid,text,text,text,text)','EXECUTE') anon_register,
+          has_function_privilege('anon',
+            'public.approve_aqvora_fresh_finance_activation(uuid,uuid,uuid,text)','EXECUTE') anon_checker,
+          has_function_privilege('authenticated',
+            'public.create_aqvora_fresh_company(uuid,text,text,text,text)','EXECUTE') authenticated_register,
+          has_function_privilege('authenticated',
+            'public.approve_aqvora_fresh_finance_activation(uuid,uuid,uuid,text)','EXECUTE') authenticated_approve,
+          has_function_privilege('authenticated',
+            'private.aqvora_fresh_aal2_actor()','EXECUTE') private_function,
+          has_table_privilege('authenticated',
+            'private.aqvora_fresh_company_origins','SELECT') origin_select,
+          has_table_privilege('authenticated',
+            'private.aqvora_finance_activation_approvals','INSERT') approval_insert,
+          has_table_privilege('authenticated',
+            'public.aqvora_enabled_companies','INSERT') enable_insert`);
+        expect(freshGrants.rows[0]).toEqual({
+          anon_register:false,anon_checker:false,
+          authenticated_register:true,authenticated_approve:true,
+          private_function:false,origin_select:false,
+          approval_insert:false,enable_insert:false,
         });
         const enrollment = await client.query<{ n: number }>(
           "SELECT count(*)::int AS n FROM public.aqvora_enabled_companies",
