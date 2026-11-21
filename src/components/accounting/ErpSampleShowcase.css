@@ -169,3 +169,15 @@
   .aq-erp-chart-inspection {align-items:stretch;}
   .aq-erp-day-figures {gap:10px;}
 }
+
+/* Unified review: the existing quick-entry Cashbook fills this ONE shell. */
+.aq-finance__main--cashbook {display:flex;flex-direction:column;min-height:0;
+  overflow:hidden;padding:0;}
+.aq-finance__cashbook {display:flex;flex:1;min-height:0;min-width:0;
+  flex-direction:column;}
+.aq-finance__cashbook .ledger-page {min-height:0;flex:1;}
+.aq-finance__cashbook .ledger-page--workspace {background:transparent;}
+@media (max-width:760px){
+  .aq-finance__main--cashbook .aq-finance__mobile-tabs {flex:none;}
+  .aq-finance__cashbook .ledger-page {min-height:0;}
+}
