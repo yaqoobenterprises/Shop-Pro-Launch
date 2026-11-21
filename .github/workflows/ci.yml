@@ -73,7 +73,7 @@ jobs:
         timeout-minutes: 5
         env:
           AQVORA_DISPOSABLE_STACK: '1'
-        run: npx vitest run tests/aqvora_real_supabase.test.ts tests/aqvora_sales_real_supabase.test.ts tests/aqvora_receipt_real_supabase.test.ts tests/aqvora_currency_real_supabase.test.ts
+        run: npx vitest run tests/aqvora_real_supabase.test.ts tests/aqvora_sales_real_supabase.test.ts tests/aqvora_receipt_real_supabase.test.ts tests/aqvora_currency_real_supabase.test.ts tests/aqvora_fresh_activation_real_supabase.test.ts
 
       - name: Inspect disposable database security advisors
         run: npx supabase db advisors --local --type security --fail-on error
