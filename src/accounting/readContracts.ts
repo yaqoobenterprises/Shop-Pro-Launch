@@ -1,10 +1,11 @@
+import type {CurrencyReportEvidence} from "./currencyContracts";
 /** Wire contracts for the certified V2 PostgreSQL readers. No UI activation. */
 import type { AccountClass, AccountSide, ControlRole } from "./types";
 
 /** Canonical signed decimal integer, arbitrary aggregate precision; never Number. */
 export type ExactMinor = string;
 export type ReadCursor = Record<string, string | number>;
-export interface AccountingReadSource {
+export interface AccountingReadSource extends Partial<CurrencyReportEvidence> {
   contract_version: "aqvora-read-v1";
   organization_id: string;
   currency: string;

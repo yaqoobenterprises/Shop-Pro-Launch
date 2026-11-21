@@ -1,4 +1,5 @@
 // @vitest-environment node
+import {currencySeedSql} from "./support/aqvoraCurrencyFixture";
 import {createHmac,randomBytes,randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {Client} from "pg";
@@ -61,6 +62,7 @@ describe.skipIf(!statusPath)("Verified sales with real local Supabase Auth/Postg
     period=ok<{id:string}>(await rpc(owner,"create_aqvora_period",{p_organization_id:org,p_starts_on:"2026-01-01",p_ends_on:"2026-12-31"})).id;
     revenue=ok<{id:string}>(await rpc(owner,"create_aqvora_account",{p_organization_id:org,p_code:"4000",p_name:"Services",
       p_account_class:"revenue",p_normal_side:"credit",p_parent_id:null,p_is_posting:true})).id;
+    await db.query(currencySeedSql(org,owner.id));
     await db.query(salesSeedSql(org,owner.id,revenue));
     customer=ok<{id:string}>(await rpc(maker,"create_aqvora_customer",{p_organization_id:org,p_code:"C-001",p_name:"Synthetic customer"})).id;
   },120000);
@@ -86,9 +88,11 @@ describe.skipIf(!statusPath)("Verified sales with real local Supabase Auth/Postg
     const d=await prepare([{...serviceLines[0],quantity_millionths:"1500000",discount_minor:"2"}]);const args=issueRequest(d);
     const [first,retry]=await Promise.all([rpc(maker,"issue_aqvora_sales_invoice",args),rpc(maker,"issue_aqvora_sales_invoice",args)]);
     const receipt=ok<SalesReceipt>(first);expect(ok(retry)).toEqual(receipt);expect(receipt.face_minor).toBe("150");
+    expect(receipt).toMatchObject({currency_policy:{organization_id:org,currency_exponent:2,minor_units_per_major:"100",revision:"1"}});
     deny(await rpc(maker,"issue_aqvora_sales_invoice",{...args,p_fingerprint:"0".repeat(64)}));
     const read={p_organization_id:org,p_from_date:"2026-11-01",p_to_date:"2026-11-30",p_currency:"PKR"};
     const tb=ok<TrialBalancePage>(await rpc(maker,"read_aqvora_trial_balance",read));expect(tb.totals.debit_minor).toBe("150");
+    expect(tb.source).toMatchObject({display_complete:true,currency_policy:{organization_id:org,currency_exponent:2,minor_units_per_major:"100",revision:"1"}});
     const gl=ok<GeneralLedgerPage>(await rpc(maker,"read_aqvora_general_ledger",{...read,p_account_id:ar,p_snapshot_token:tb.source.snapshot_token}));
     expect(gl.rows[0]).toMatchObject({journal_id:receipt.journal_id,party_id:customer,open_item_id:d.id,source_kind:"sales_invoice",source_id:d.id});
     const large=await prepare([{...serviceLines[0],unit_price_minor:"9223372036854775807"}]);

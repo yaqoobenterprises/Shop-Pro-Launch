@@ -23,7 +23,8 @@ it("installs V2 after the full repository migration chain in isolated PostgreSQL
     const migrationRoot = new URL("../supabase/migrations/", import.meta.url);
     const files = readdirSync(migrationRoot).filter((file) => file.endsWith(".sql")).sort();
     for (const file of files) {
-      await db.exec(readFileSync(new URL(file, migrationRoot), "utf8"));
+      try { await db.exec(readFileSync(new URL(file, migrationRoot), "utf8")); }
+      catch (error) { throw new Error(`Migration ${file} failed`, {cause:error}); }
     }
     const names = await db.query<{ name: string }>(`
       SELECT tablename AS name FROM pg_tables
