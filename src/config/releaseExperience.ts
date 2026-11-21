@@ -1,10 +1,10 @@
 /** Release entry policy.
- * Existing installations must open the working ledger. The synthetic ERP review
- * is opt-in unless a deliberately isolated preview build opts into sample-first.
+ * New clean AQVORA installations open the real Overview, not a synthetic preview.
+ * Synthetic review remains opt-in in isolated preview builds only.
  */
-export type AQVORAInitialView="chat"|"aqvora-erp-preview";
+export type AQVORAInitialView="dashboard"|"aqvora-erp-preview";
 export function initialAQVORAView(sampleFirst:boolean):AQVORAInitialView{
-  return sampleFirst?"aqvora-erp-preview":"chat";
+  return sampleFirst?"aqvora-erp-preview":"dashboard";
 }
 export const releaseInitialView=initialAQVORAView(
   import.meta.env.VITE_AQVORA_PREVIEW_DEFAULT==="true",
