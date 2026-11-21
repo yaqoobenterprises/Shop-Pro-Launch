@@ -118,7 +118,7 @@ DECLARE
   current_session uuid;
   invitation private.aqvora_fresh_owner_invitations;
   prior private.aqvora_fresh_owner_invite_acceptances;
-  accepted_at timestamptz;
+  accepted_timestamp timestamptz;
 BEGIN
   recipient:=private.aqvora_fresh_aal2_actor();
   IF p_organization_id IS NULL OR p_invitation_id IS NULL THEN
@@ -186,10 +186,10 @@ BEGIN
   INSERT INTO private.aqvora_fresh_owner_invite_acceptances(
     organization_id,invitation_id,accepted_by,accepted_session_id)
   VALUES(p_organization_id,p_invitation_id,recipient,current_session)
-  RETURNING accepted_at INTO accepted_at;
+  RETURNING accepted_at INTO accepted_timestamp;
   RETURN jsonb_build_object('organization_id',p_organization_id,
     'invitation_id',p_invitation_id,'accepted_by',recipient,
-    'accepted_at',accepted_at,'status','verified_owner_joined');
+    'accepted_at',accepted_timestamp,'status','verified_owner_joined');
 END $$;
 
 REVOKE ALL ON FUNCTION public.create_aqvora_fresh_owner_invite(uuid,uuid,text),
