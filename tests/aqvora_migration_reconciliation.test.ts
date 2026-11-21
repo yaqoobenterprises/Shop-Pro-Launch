@@ -35,6 +35,11 @@ const deployedOrder = [
   ...salesMigrations,
   ...receiptMigrations,
   ...currencyMigrations,
+  // New independent provenance/dual-approval backend, never a data backfill.
+  "20261121130000_aqvora_fresh_company_enrollment_schema.sql",
+  "20261121130100_aqvora_fresh_company_creation_rpc.sql",
+  "20261121130200_aqvora_fresh_activation_evidence.sql",
+  "20261121130300_aqvora_fresh_dual_owner_activation_rpc.sql",
 ];
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const actor = "11111111-1111-4111-8111-111111111111";
