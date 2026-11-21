@@ -104,7 +104,7 @@ export const FinanceDesignPreview:React.FC<Props>=({
           aria-label={unifiedCashbook?"AQVORA unified navigation":"AQVORA ERP preview navigation"}>
           {unifiedCashbook&&<div className="aq-erp-nav-group" aria-label="Existing Cashbook">
             <span>QUICK ENTRY</span>
-            <button type="button" aria-current={page==="cashbook"?"page":undefined}
+            <button type="button" aria-label="Cashbook" aria-current={page==="cashbook"?"page":undefined}
               onClick={()=>setPage("cashbook")}>
               <Wallet size={17} aria-hidden="true"/><span>Cashbook</span>
               <small className="aq-erp-nav-soon">Your records</small>
