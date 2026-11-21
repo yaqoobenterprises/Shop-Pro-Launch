@@ -257,6 +257,14 @@ export function planLegacyJournalDryRun(snapshot, policy) {
       posting_allowed: false, erp_books_updated: false,
       source_company_merged: false, externally_verified_cash_bank: false,
     },
+    // PRIVATE scope is necessary even when all journals are blocked by policy.
+    // It is deliberately omitted from the aggregate-only CLI stdout summary.
+    source_scope: {
+      source_project_ref: snapshot.source_project_ref,
+      source_organization_id: snapshot.organization_id,
+      target_company_id: policy.target_company_id,
+      capture_timestamp: snapshot.capture_timestamp || null,
+    },
     candidates, exceptions, opening_balances_not_posted: openingPending,
     source_account_coverage: sourceAccountCoverage,
   };
