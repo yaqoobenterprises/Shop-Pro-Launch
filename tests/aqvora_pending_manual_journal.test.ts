@@ -58,6 +58,7 @@ describe("AQVORA original manual journal intent persistence",()=>{
         {...lines[1],credit_minor:"9223372036854775808"}],
       [{...lines[0],credit_minor:"1"},lines[1]],
       [{...lines[0],party_id:"fake"},lines[1]],
+      [lines[0],{...lines[1],account_id:CASH}],
       [lines[0]],
     ];
     for(const input of bad){
