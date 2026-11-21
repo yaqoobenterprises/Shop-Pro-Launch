@@ -232,8 +232,7 @@ export function planLegacyJournalDryRun(snapshot, policy) {
   if (debit !== credit) throw new Error('Unbalanced candidate review batch');
   return {
     summary: {
-      status: 'UNPOSTED_ACCOUNTING_REVIEW_ONLY', source_key: policy.source_key,
-      target_company_id: policy.target_company_id,
+      status: 'UNPOSTED_ACCOUNTING_REVIEW_ONLY',
       source_snapshot_sha256: review.summary.source_snapshot_sha256,
       candidate_journals: candidates.length, exception_records: exceptions.length,
       quarantined_fixture_transactions: fixtures, historical_void_transactions: voids,
