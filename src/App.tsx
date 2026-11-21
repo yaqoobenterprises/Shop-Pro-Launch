@@ -20,6 +20,7 @@ import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
+import {getStagingFinanceNavItems} from "./components/accounting/stagingFinanceNavigation";
 import {
   ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
 } from "./components/accounting/FinanceLazyRoutes";
@@ -67,7 +68,7 @@ const I18nPreferenceSync: React.FC = () => {
 
 const MainShell: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { isDemoMode, exitDemoMode, organization, user } = useAuth();
+  const { isDemoMode, exitDemoMode, organization, user, isCloudAccount } = useAuth();
   const { t } = useI18n();
   const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
@@ -113,7 +114,10 @@ const MainShell: React.FC = () => {
     };
   }, [currentView]);
 
-  if (currentView === "aqvora-erp-preview") return <Suspense fallback={<div role="status">Loading AQVORA ERP review…</div>}><FinanceDesignPreview onClose={()=>setCurrentView("dashboard")}/></Suspense>;
+  if (currentView === "aqvora-erp-preview") return <Suspense fallback={<div role="status">Loading AQVORA ERP review…</div>}><FinanceDesignPreview
+    onClose={()=>setCurrentView("dashboard")}
+    stagingLinks={getStagingFinanceNavItems({isCloudAccount,isDemoMode,role:user?.role})}
+    onOpenStaging={setCurrentView}/></Suspense>;
 
   const renderActiveView = () => {
     switch (currentView) {
@@ -265,10 +269,8 @@ const WorkspaceGate: React.FC = () => {
   if (isLocked && !isDemoMode) {
     return <LockScreen />;
   }
-
   return <MainShell />;
 };
-
 const RegionalWorkspace: React.FC = () => {
   const { organization } = useAuth();
   return (
@@ -283,7 +285,6 @@ const RegionalWorkspace: React.FC = () => {
     </RegionProvider>
   );
 };
-
 export default function App() {
   return (
     <AuthProvider>
