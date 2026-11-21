@@ -87,6 +87,8 @@ describe("AQVORA company setup journey", () => {
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(screen.getByText("Step 3 of 3")).toBeTruthy();
     expect(screen.getByText(/No opening balances or accounting transactions will be created/)).toBeTruthy();
+    expect(screen.getByText(/Fresh AQVORA books start with zero posted entries/)).toBeTruthy();
+    expect(screen.getByText(/old Cashbook CSV stays/)).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: /Confirm & continue/ }));
     await waitFor(() => expect(harness.saveCompany).toHaveBeenCalledOnce());
