@@ -41,7 +41,7 @@ describe("Founder-approved ONE AQVORA workspace review",()=>{
     fireEvent.click(within(nav).getByRole("button",{name:"Cashbook Reports"}));
     expect(await screen.findByRole("region",{name:"Recorded Reports"})).toBeTruthy();
     expect(screen.queryByText(/Rs 17,000.00/)).toBeNull();
-    fireEvent.click(within(nav).getByRole("button",{name:/Cashbook/}));
+    fireEvent.click(within(nav).getByRole("button",{name:"Cashbook"}));
     expect(await screen.findByRole("region",{name:"Existing Cashbook surface"}))
       .toBeTruthy();
   });
