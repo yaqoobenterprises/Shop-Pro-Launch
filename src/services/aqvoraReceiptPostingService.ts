@@ -104,6 +104,19 @@ export async function postIsolatedCustomerReceipt(
     same((recovered.issue as unknown as Record<string,unknown>)[field],
       expected,"SQL issue "+field);
   }
+  const rawAllocations=response.allocations;
+  const durableAllocations=recovered.issue.allocations;
+  if(!Array.isArray(rawAllocations) ||
+     rawAllocations.length!==durableAllocations.length){
+    throw new Error("SQL response allocation evidence is incomplete.");
+  }
+  for(const [index,entry] of rawAllocations.entries()){
+    const rawAllocation=object(entry,"SQL allocation evidence");
+    const durable=durableAllocations[index]!;
+    for(const [field,expected] of Object.entries(durable)){
+      same(rawAllocation[field],expected,"verified allocation "+field);
+    }
+  }
   return recovered;
 }
 
