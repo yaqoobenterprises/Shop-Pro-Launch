@@ -138,7 +138,7 @@ export function FreshFinanceSetupWorkspace() {
           event.preventDefault();
           void execute(()=>createFreshFinanceAccount(ctx,{
             code,name,accountClass,normalSide,
-          }),"Account created and independently re-read.").then(()=>{});
+          }),"Account created and independently re-read.");
         }}>
           <label className="block text-sm">Account code
             <input required maxLength={32} value={code} onChange={e=>setCode(e.target.value)}
