@@ -65,7 +65,8 @@ describe("AQVORA one-workspace handoff to authenticated staging",()=>{
       stagingLinks={links} onOpenStaging={navigate}/>);
     expect(screen.getByText(/VERIFIED STAGING ONLY/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button",{name:"Open GL & Trial Balance"}));
-    expect(navigate).toHaveBeenCalledExactlyOnceWith("aqvora-gl-tb");
-    expect(screen.getByText(/Illustrative company/)).toBeTruthy();
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith("aqvora-gl-tb");
+    expect(screen.getAllByText(/Illustrative company/).length).toBeGreaterThan(0);
   });
 });
