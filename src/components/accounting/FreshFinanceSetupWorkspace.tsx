@@ -67,7 +67,9 @@ export function FreshFinanceSetupWorkspace() {
   useEffect(()=>{
     setSnapshot(null);setError("");setNotice("");
     if(enabled)void refresh();
-    return()=>{++sequence.current;};
+    // Capture the ref object in the effect scope for safe async cleanup.
+    const sequenceRef=sequence;
+    return()=>{sequenceRef.current+=1;};
   },[enabled,refresh]);
 
   const execute=async(work:()=>Promise<unknown>,message:string)=>{
