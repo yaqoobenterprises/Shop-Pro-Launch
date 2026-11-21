@@ -112,6 +112,12 @@ describe("Fresh AQVORA provenance, independent AAL2 owner activation & exact fir
       await rejected(db,
         "INSERT INTO public.payment_accounts(organization_id,name,type,opening_balance,current_balance) VALUES ($1,'Fake Old Cash','CASH',10000,10000)",
         [FRESH],/Fresh AQVORA company cannot write to the legacy Cashbook/);
+      await rejected(db,
+        "INSERT INTO public.products(organization_id,name,opening_stock,current_stock) VALUES($1,'Fake legacy inventory',500,500)",
+        [FRESH],/Fresh AQVORA company cannot write to the legacy Cashbook/);
+      await rejected(db,
+        "INSERT INTO public.customers(organization_id,name,outstanding_balance) VALUES($1,'Fake old receivable',9999)",
+        [FRESH],/Fresh AQVORA company cannot write to the legacy Cashbook/);
 
       // Missing chart/policy/period cannot be approved or proposed.
       await db.exec("SET LOCAL ROLE authenticated");
