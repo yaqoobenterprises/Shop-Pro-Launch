@@ -1,9 +1,10 @@
+import type {CurrencyBoundSource} from "./currencyContracts";
 /** PostgreSQL RPC wire contracts only. Activates no financial writer or client. */
 import type {AccountingReadSource,ExactMinor} from "./readContracts";
 export interface ReceiptAllocationInput {invoice_id:string;amount_minor:ExactMinor}
 export interface VerifiedReceiptAllocation extends ReceiptAllocationInput {invoice_revision:string;invoice_fingerprint:string}
 export interface ReceiptAllocationReference extends ReceiptAllocationInput {allocation_id:string;journal_id:string;line_no:number}
-export interface CashCollection {
+export interface CashCollection extends CurrencyBoundSource {
   organization_id:string;id:string;creation_intent:string;collection_number:string;
   source_kind:"controlled_cash";customer_id:string;business_date:string;currency:string;amount_minor:ExactMinor;
   state:"draft"|"confirmed"|"cancelled";revision:string;created_by:string;confirmed_by:string|null;
@@ -12,13 +13,13 @@ export interface CashCollection {
   fingerprint:string|null;created_at:string;confirmed_at:string|null;cancel_reason:string|null;
   evidence_method:"unconfirmed_claim"|"dual_control_cash_attestation";posted_receipt_id?:string|null;
 }
-export interface CustomerReceiptIssue {
+export interface CustomerReceiptIssue extends CurrencyBoundSource {
   organization_id:string;receipt_id:string;collection_id:string;source_ref:string;receipt_number:string;intent_key:string;
   journal_id:string;journal_intent_key:string;customer_id:string;business_date:string;currency:string;amount_minor:ExactMinor;
   source_revision:string;posted_revision:string;fingerprint:string;posted_by:string;posted_at:string;
   allocations:ReceiptAllocationReference[];evidence_method:"dual_control_cash_attestation";
 }
-export interface CustomerReceipt {
+export interface CustomerReceipt extends CurrencyBoundSource {
   organization_id:string;id:string;creation_intent:string;collection_id:string;collection_fingerprint:string;
   customer_id:string;business_date:string;currency:string;amount_minor:ExactMinor;allocations:VerifiedReceiptAllocation[];
   state:"draft"|"submitted"|"approved"|"posted"|"cancelled";revision:string;created_by:string;approved_by:string|null;
@@ -27,7 +28,7 @@ export interface CustomerReceipt {
   reconciliation?:{source_complete:true;cash_debit_minor:ExactMinor;ar_credit_minor:ExactMinor;allocated_minor:ExactMinor;
     bank_verified:false;evidence_method:"dual_control_cash_attestation"};
 }
-export interface InvoiceOpenBalance {
+export interface InvoiceOpenBalance extends CurrencyBoundSource {
   organization_id:string;invoice_id:string;customer_id:string;currency:string;business_date:string;due_date:string;as_of_date:string|null;
   face_minor:ExactMinor;allocated_minor:ExactMinor;outstanding_minor:ExactMinor;all_posted_allocated_minor:ExactMinor;
   status:"unpaid"|"partial"|"settled";allocations:Array<ReceiptAllocationReference&{receipt_id:string;collection_id:string;receipt_number:string;business_date:string}>;

@@ -1,3 +1,4 @@
+import type {CurrencyBoundSource} from "./currencyContracts";
 /** RPC wire types only. This module activates no client or financial writer. */
 import type {ExactMinor} from "./readContracts";
 export interface SalesLineInput {
@@ -16,13 +17,13 @@ export interface SalesCustomer {
   organization_id:string;id:string;code:string;name:string;
   is_active:boolean;revision:string;created_by:string;
 }
-export interface SalesIssueReceipt {
+export interface SalesIssueReceipt extends CurrencyBoundSource {
   organization_id:string;invoice_id:string;intent_key:string;
   document_number:string;journal_id:string;journal_intent_key:string;
   customer_id:string;business_date:string;currency:string;face_minor:ExactMinor;
   source_revision:string;issued_revision:string;fingerprint:string;posted_by:string;posted_at:string;
 }
-export interface SalesInvoice {
+export interface SalesInvoice extends CurrencyBoundSource {
   organization_id:string;id:string;creation_intent:string;customer_id:string;
   business_date:string;due_date:string;currency:string;lines:VerifiedSalesLine[];
   gross_minor:ExactMinor;discount_minor:ExactMinor;face_minor:ExactMinor;
