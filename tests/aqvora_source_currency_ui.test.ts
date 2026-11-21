@@ -51,6 +51,40 @@ function source(extra:Record<string,unknown>={}){
 const readContext={
   organizationId:org,currency:"PKR",fromDate:"2026-11-01",toDate:"2026-11-21",
 };
+
+describe("Real report observation metadata versus stable currency authority",()=>{
+  it("accepts timestamp-only changes between separately observed report pages",()=>{
+    const first=validateCertifiedSource(source(evidence()),readContext);
+    const next=source({...evidence(),observed_at:"2026-11-21T10:00:01Z"});
+    expect(validateCertifiedSource(next,readContext,first).observed_at).toBe(next.observed_at);
+    const originalEvidence=validateReportCurrencyEvidence(first,scope);
+    expect(validateReportCurrencyEvidence(next,scope,originalEvidence)).toEqual(originalEvidence);
+  });
+  it.each([
+    ["snapshot_token","b".repeat(64)],
+    ["organization_id","33333333-3333-4333-8333-333333333333"],
+    ["authorized_user_id","33333333-3333-4333-8333-333333333333"],
+    ["authorized_role","MANAGER"],
+    ["source_journal_count","1"],
+  ])("still rejects changed %s alongside a new observation timestamp",(key,value)=>{
+    const first=validateCertifiedSource(source(evidence()),readContext);
+    expect(()=>validateCertifiedSource(source({...evidence(),observed_at:"2026-11-21T10:00:01Z",[key]:value}),
+      readContext,first)).toThrow();
+  });
+  it("rejects a valid dated policy revision change even when observation timestamps also change",()=>{
+    const first=validateCertifiedSource(source(evidence()),readContext);
+    const nextPolicy={...policy(),revision:"2",effective_from:"2026-10-01",fingerprint:"b".repeat(64)};
+    const next=source({...evidence(nextPolicy),currency_policy_revisions:[policy(),nextPolicy],
+      currency_policy_timeline_fingerprint:"c".repeat(64),observed_at:"2026-11-21T10:00:01Z"});
+    expect(()=>validateReportCurrencyEvidence(next,scope)).not.toThrow();
+    expect(()=>validateCertifiedSource(next,readContext,first)).toThrow(/currency authority changed/i);
+  });
+  it("rejects a changed timeline fingerprint despite identical units and a new observation timestamp",()=>{
+    const first=validateCertifiedSource(source(evidence()),readContext);
+    expect(()=>validateCertifiedSource(source({...evidence(),currency_policy_timeline_fingerprint:"b".repeat(64),
+      observed_at:"2026-11-21T10:00:01Z"}),readContext,first)).toThrow(/currency authority changed/i);
+  });
+});
 describe("Source-certified company currency interpretation (#78)",()=>{
   it.each([
     ["PKR",2,"100","123456","PKR 1,234.56"],

@@ -48,6 +48,27 @@ jobs:
           npx supabase status -o json > "$RUNNER_TEMP/aqvora-status.json"
           echo "AQVORA_LOCAL_SUPABASE_STATUS=$RUNNER_TEMP/aqvora-status.json" >> "$GITHUB_ENV"
 
+      - name: Verify two-OWNER accounting journey and restored Auth/PostgREST
+        timeout-minutes: 8
+        env:
+          AQVORA_DISPOSABLE_STACK: '1'
+          AQVORA_E2E_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          AQVORA_E2E_EVIDENCE_PATH: ${{ runner.temp }}/aqvora-e2e-evidence.json
+        run: |
+          test -s "$AQVORA_LOCAL_SUPABASE_STATUS"
+          db_container=$(docker ps --filter 'name=^/supabase_db_' --format '{{.ID}}')
+          [[ "$db_container" =~ ^[0-9a-f]{12,64}$ ]]
+          AQVORA_E2E_RESTORE_CONTAINER="$db_container" npm run test:release:e2e
+
+      - name: Upload credential-free accounting and restore evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aqvora-local-e2e-${{ github.run_id }}
+          path: ${{ runner.temp }}/aqvora-e2e-evidence.json
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Exercise issued JWTs through PostgREST
         timeout-minutes: 5
         env:

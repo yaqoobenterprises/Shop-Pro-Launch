@@ -156,8 +156,11 @@ export function validateReportCurrencyEvidence(
       throw new Error("Currency report contains incompatible historical unit scales.");
     }
   }
-  const normalized=source as unknown as CurrencyReportEvidence;
-  if(first!==undefined && JSON.stringify(normalized)!==JSON.stringify(first)){
+  // Exclude per-read observed_at; callers still check tenant, authorization and snapshot.
+  const onlyEvidence=(value:Record<string,unknown>|CurrencyReportEvidence)=>
+    Object.fromEntries(EVIDENCE_KEYS.map(key=>[key,value[key]])) as unknown as CurrencyReportEvidence;
+  const normalized=onlyEvidence(source);
+  if(first!==undefined && JSON.stringify(normalized)!==JSON.stringify(first===null?null:onlyEvidence(first))){
     throw new Error("Report currency authority changed across paginated source.");
   }
   return normalized;
