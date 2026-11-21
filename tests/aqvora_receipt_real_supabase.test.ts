@@ -1,4 +1,5 @@
 // @vitest-environment node
+import {currencySeedSql} from "./support/aqvoraCurrencyFixture";
 import {randomUUID} from "node:crypto";
 import {readFileSync} from "node:fs";
 import {Client} from "pg";
@@ -48,6 +49,7 @@ describe.skipIf(!statusPath)("Receipt workflow with real local Supabase Auth/Pos
     period=ok<{id:string}>(await rpc(owner,"create_aqvora_period",{p_organization_id:org,p_starts_on:"2026-01-01",p_ends_on:"2026-12-31"})).id;
     const revenue=ok<{id:string}>(await rpc(owner,"create_aqvora_account",{p_organization_id:org,p_code:"4000",p_name:"Services",
       p_account_class:"revenue",p_normal_side:"credit",p_parent_id:null,p_is_posting:true})).id;
+    await db.query(currencySeedSql(org,owner.id));
     await db.query(salesSeedSql(org,owner.id,revenue));await db.query(receiptSeedSql(org,owner.id));
     customer=ok<{id:string}>(await rpc(maker,"create_aqvora_customer",{p_organization_id:org,p_code:"C-001",p_name:"Synthetic receipt customer"})).id;
   },120000);
@@ -72,12 +74,14 @@ describe.skipIf(!statusPath)("Receipt workflow with real local Supabase Auth/Pos
     const d=await prepare(c,[{invoice_id:y.id,amount_minor:"101"},{invoice_id:x.id,amount_minor:"40"}]);const args=postRequest(d);
     const [first,retry]=await Promise.all([rpc(maker,"post_aqvora_customer_receipt",args),rpc(maker,"post_aqvora_customer_receipt",args)]);
     const receipt=ok<ReceiptIssue>(first);expect(ok(retry)).toEqual(receipt);expect(receipt.allocations).toHaveLength(2);
+    expect(receipt).toMatchObject({currency_policy:{organization_id:org,currency_exponent:2,minor_units_per_major:"100",revision:"1"}});
     expect(new Set(receipt.allocations.map(a=>a.allocation_id)).size).toBe(2);
     for(const [inv,outstanding] of [[x,"61"],[y,"101"]] as const){
       expect(ok(await rpc(maker,"get_aqvora_invoice_open_balance",{p_organization_id:org,p_invoice_id:inv.id,p_as_of_date:"2026-11-20"}))).toMatchObject({outstanding_minor:outstanding});}
     const read={p_organization_id:org,p_from_date:"2026-11-01",p_to_date:"2026-11-30",p_currency:"PKR"};
     expect(ok<TrialBalancePage>(await rpc(maker,"read_aqvora_trial_balance",read)).totals).toMatchObject({debit_minor:"444",credit_minor:"444"});
     const gl=ok<GeneralLedgerPage>(await rpc(maker,"read_aqvora_general_ledger",{...read,p_account_id:ar}));expect(gl.closing_minor).toBe("162");
+    expect(gl.source).toMatchObject({display_complete:true,currency_policy:{organization_id:org,currency_exponent:2,minor_units_per_major:"100",revision:"1"}});
     expect(gl.rows.filter(r=>r.journal_id===receipt.journal_id)).toHaveLength(2);
     expect(gl.rows.find(r=>r.journal_id===receipt.journal_id)).toMatchObject({source_kind:"customer_receipt",source_id:d.id,party_id:customer});
     expect(ok<GeneralLedgerPage>(await rpc(owner,"read_aqvora_general_ledger",{...read,p_account_id:receiptCash})).closing_minor).toBe("141");
