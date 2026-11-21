@@ -1,6 +1,10 @@
 import {afterEach,describe,expect,it,vi} from "vitest";
 import {cleanup,fireEvent,render,screen} from "@testing-library/react";
 import {BookOpenCheck} from "lucide-react";
+import type {ReceivablesReconciliation,InvoiceOpenBalance}
+  from "../src/accounting/receiptContracts";
+import {ReceivablesReportPanel}
+  from "../src/components/accounting/ReceivablesReportPanel";
 import type {VerifiedTrialBalance} from "../src/accounting/verifiedTrialBalance";
 import type {StagingFinanceNavItem} from "../src/components/accounting/stagingFinanceNavigation";
 import {FinanceDesignPreview} from "../src/components/accounting/FinanceDesignPreview";
@@ -48,6 +52,38 @@ describe("AQVORA audited currency evidence in real read-only workspace",()=>{
     expect(screen.getByText(/Currency display incomplete/)).toBeTruthy();
     expect(screen.getAllByText("PKR 150 minor units")).toHaveLength(4);
     expect(screen.queryByText("PKR 1.50")).toBeNull();
+  });
+});
+
+describe("AQVORA exact receivables settlement display",()=>{
+  const report=(configured:boolean)=>({
+    source:source(configured),
+    as_of_date:"2026-11-21",face_minor:"150",
+    allocated_minor:"60",outstanding_minor:"90",ar_control_minor:"90",
+  }) as unknown as ReceivablesReconciliation;
+  const invoice=(configured:boolean)=>({
+    organization_id:org,currency:"PKR",business_date:"2026-11-18",
+    invoice_id:"44444444-4444-4444-8444-444444444444",
+    due_date:"2026-12-31",face_minor:"150",
+    allocated_minor:"60",outstanding_minor:"90",
+    currency_policy:configured?policy:null,display_complete:configured,
+  }) as unknown as InvoiceOpenBalance;
+  it("formats certified company AR and invoice from same policy, without fabricated aging",()=>{
+    render(<ReceivablesReportPanel currency="PKR" report={report(true)}
+      invoices={[invoice(true)]} onInspectInvoice={vi.fn()}/>);
+    expect(screen.getAllByText("PKR 1.50").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("PKR 0.60").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("PKR 0.90").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Company-certified currency unit scale/)).toBeTruthy();
+    expect(screen.getByText(/AR aging is unavailable/)).toBeTruthy();
+  });
+  it("does not fabricate major units for unconfigured historical receivables",()=>{
+    render(<ReceivablesReportPanel currency="PKR" report={report(false)}
+      invoices={[invoice(false)]} onInspectInvoice={vi.fn()}/>);
+    expect(screen.getAllByText("PKR 150 minor units").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("PKR 90 minor units").length).toBeGreaterThan(0);
+    expect(screen.queryByText("PKR 1.50")).toBeNull();
+    expect(screen.getByText(/Currency policy unconfigured or historical/)).toBeTruthy();
   });
 });
 
