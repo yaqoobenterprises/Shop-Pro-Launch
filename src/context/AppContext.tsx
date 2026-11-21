@@ -24,6 +24,7 @@ export type AppView =
   | "aqvora-receipt-drafts"
   | "aqvora-gl-tb"
   | "aqvora-finance-setup"
+  | "aqvora-owner-invites"
   | "aqvora-manual-journal"
   | "reports"
   | "settings";
