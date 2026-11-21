@@ -45,7 +45,7 @@ export function CashReceiptWorkQueue({
     if(next&&!cursor)return;
     const serial=++cashGeneration.current;
     cashFlight.current=true;setCashLoading(true);setCashError("");
-    setCashPage(null);
+    if(!next)setCashPage(null);
     try{
       const page=await loadIsolatedCashQueuePage(context,cursor);
       if(serial===cashGeneration.current)setCashPage(page);
@@ -62,7 +62,7 @@ export function CashReceiptWorkQueue({
     if(next&&!cursor)return;
     const serial=++receiptGeneration.current;
     receiptFlight.current=true;setReceiptLoading(true);setReceiptError("");
-    setReceiptPage(null);
+    if(!next)setReceiptPage(null);
     try{
       const page=await loadIsolatedReceiptQueuePage(context,cursor);
       if(serial===receiptGeneration.current)setReceiptPage(page);
