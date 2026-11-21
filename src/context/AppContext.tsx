@@ -23,6 +23,7 @@ export type AppView =
   | "aqvora-cash-collections"
   | "aqvora-receipt-drafts"
   | "aqvora-gl-tb"
+  | "aqvora-finance-setup"
   | "reports"
   | "settings";
 
