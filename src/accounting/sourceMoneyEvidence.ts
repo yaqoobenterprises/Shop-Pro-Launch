@@ -2,6 +2,7 @@
  * through a newer report revision or browser locale. */
 import type {CurrencyUnitPolicy,CurrencyReportEvidence} from "./currencyContracts";
 import {formatCertifiedReportMoney,validateCurrencyUnitPolicy} from "./currencyReportEvidence";
+const CURRENCY=/^[A-Z]{3}$/;
 
 /** Source-bound invoice, cash or receipt values have their own immutable original
  * policy. Do not incorrectly substitute the report's current revision.
