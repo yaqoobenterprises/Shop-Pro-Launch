@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { CashCollection } from "../src/accounting/receiptContracts";
 import {
   createIsolatedCashCollection, confirmIsolatedCashCollection,
   cancelIsolatedCashCollection, isIsolatedCashCollectionEnabled,
@@ -106,7 +107,7 @@ describe("AQVORA operational controlled-cash staging RPCs",()=>{
     }
   });
   it("only a distinct OWNER confirms the exact amount and server revision",async()=>{
-    const result=await confirmIsolatedCashCollection(ctx(checker),draft(),{
+    const result=await confirmIsolatedCashCollection(ctx(checker),draft() as unknown as CashCollection,{
       p_organization_id:org,p_collection_id:cashId,p_expected_revision:"1",
       p_counted_minor:"150",p_attestation:"cash_counted_in_person",
     },"OWNER");
@@ -123,7 +124,7 @@ describe("AQVORA operational controlled-cash staging RPCs",()=>{
       [maker,"OWNER","150","1"],[checker,"MANAGER","150","1"],
       [checker,"OWNER","149","1"],[checker,"OWNER","150","2"],
     ] as const){
-      await expect(confirmIsolatedCashCollection(ctx(user),draft(),{
+      await expect(confirmIsolatedCashCollection(ctx(user),draft() as unknown as CashCollection,{
         p_organization_id:org,p_collection_id:cashId,
         p_expected_revision:rev,p_counted_minor:count,
         p_attestation:"cash_counted_in_person",
@@ -133,13 +134,13 @@ describe("AQVORA operational controlled-cash staging RPCs",()=>{
   });
   it("cancels only an unconfirmed claim with exact audit reason",async()=>{
     const result=await cancelIsolatedCashCollection(ctx(maker),
-      draft(),"Entered in error","MANAGER");
+      draft() as unknown as CashCollection,"Entered in error","MANAGER");
     expect(result.collection.state).toBe("cancelled");
     expect(mock.rpc).toHaveBeenCalledWith("cancel_aqvora_cash_collection",{
       p_organization_id:org,p_collection_id:cashId,
       p_expected_revision:"1",p_reason:"Entered in error",
     });
-    await expect(cancelIsolatedCashCollection(ctx(checker),confirmed() as never,
+    await expect(cancelIsolatedCashCollection(ctx(checker),confirmed() as unknown as CashCollection,
       "Entered in error","OWNER")).rejects.toThrow(/valid draft/);
   });
   it("requires live session, avoids synthetic data fallback and propagates SQLSTATE",async()=>{
