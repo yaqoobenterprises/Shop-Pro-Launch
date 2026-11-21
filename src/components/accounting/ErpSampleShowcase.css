@@ -1,0 +1,139 @@
+/* Unified ERP review: approved airy lavender shell, navy/emerald identity. */
+.aq-finance__navigation { overflow-y: auto; padding-top: 20px; padding-bottom: 18px; }
+.aq-finance__navigation .aq-erp-nav-group { margin-bottom: 12px; }
+.aq-finance__navigation .aq-erp-nav-group > span {
+  display: block; padding: 13px 14px 7px; color: var(--muted,#666a75);
+  font-size: 10px; letter-spacing: .12em; font-weight: 750;
+}
+.aq-finance__navigation .aq-erp-nav-group > button {
+  display: flex; align-items: center; gap: 11px; width: 100%; min-height: 43px;
+  text-align: start; border: 0; border-radius: 10px; padding: 8px 12px;
+  background: transparent; color: var(--ink-2,#51535c); font-size: 12px; font-weight: 610;
+}
+.aq-finance__navigation .aq-erp-nav-group > button svg { color: #8d8b99; flex: none; }
+.aq-finance__navigation .aq-erp-nav-group > button:hover { background: #fff9; }
+.aq-finance__navigation .aq-erp-nav-group > button[aria-current="page"] {
+  background: var(--surface-card,#fff); font-weight: 750;
+  color: var(--ink,#35383e); box-shadow: 0 1px 3px #0000000a;
+}
+.aq-finance__navigation .aq-erp-nav-group > button[aria-current="page"] svg { color: #8677df; }
+.aq-finance__navigation .aq-erp-nav-group > button span { flex: 1; }
+.aq-erp-nav-soon { font-size: 9px; color: #948fa6; font-weight: 660; }
+.aq-finance__topbar { box-shadow: 0 1px 0 #00000009; }
+.aq-finance__welcome { display: none; }
+.aq-finance__main { background: #eae9ed; }
+.aq-erp-overview, .aq-erp-operations { max-width: 1540px; margin: 0 auto; }
+.aq-erp-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom: 23px; }
+.aq-erp-heading h2 { margin:0; font-size:clamp(25px,2.2vw,32px); letter-spacing:-.05em; }
+.aq-erp-heading p { margin:6px 0 0; color:#777887; font-size:12px; }
+.aq-erp-kpis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:22px; }
+.aq-erp-kpi {
+  display:flex; flex-direction:column; align-items:stretch; text-align:start;
+  min-width:0; min-height:163px; border:0; border-radius:14px;
+  padding:20px; transition:transform .16s ease,box-shadow .16s ease;
+}
+.aq-erp-kpi:hover { transform:translateY(-2px); box-shadow:0 8px 24px #161c2b0d; }
+.aq-erp-kpi--charcoal { background:#4b4a4d; color:#fff; }
+.aq-erp-kpi--mint { background:#e9fdfa; color:#343c3d; }
+.aq-erp-kpi--blush { background:#fae8f1; color:#3e3940; }
+.aq-erp-kpi--white { background:#fff; color:#3e3940; }
+.aq-erp-kpi__top {display:flex;justify-content:space-between;align-items:center;gap:8px;font-weight:630;font-size:12px;}
+.aq-erp-kpi__top svg {opacity:.58;flex:none;}
+.aq-erp-kpi strong { display:block; margin-top:24px; font-size:clamp(20px,2vw,29px); letter-spacing:-.05em; font-weight:780; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.aq-erp-kpi small { display:block; margin-top:6px; font-size:10px; opacity:.72; line-height:1.5; }
+.aq-erp-dashboard-grid { display:grid; grid-template-columns:minmax(0,1.9fr) minmax(260px,1fr); gap:18px; margin-bottom:18px; }
+.aq-erp-white-panel { min-width:0; background:var(--surface-card,#fff); border:1px solid #e3e2e8; border-radius:15px; padding:24px; }
+.aq-erp-panel-head {display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;}
+.aq-erp-panel-head h3 {font-size:16px;font-weight:730;letter-spacing:-.03em;margin:0;}
+.aq-erp-panel-head p {font-size:11px;color:#81818e;margin:5px 0 0;}
+.aq-erp-chart-legend {display:flex;align-items:center;gap:7px;color:#777988;font-size:10px;white-space:nowrap;}
+.aq-erp-chart-legend i {width:7px;height:7px;border-radius:50%;background:#9386dc;}
+.aq-erp-chart-legend i:nth-of-type(2){background:#55cbb5;margin-left:9px;}
+.aq-erp-trend svg {display:block;width:100%;height:auto;max-height:280px;}
+.aq-erp-axis {display:flex;justify-content:space-between;color:#8d8d98;font-size:10px;padding:0 16px 0 28px;}
+.aq-erp-synthetic-caption {font-size:10px;line-height:1.6;color:#888996;margin:12px 0 0;}
+.aq-erp-donut {width:190px;height:190px;margin:10px auto 22px;border-radius:50%;
+  background:conic-gradient(#51cbb2 0 26.1%,#9789dc 26.1% 100%);
+  display:grid;place-items:center;transform:rotate(-90deg);}
+.aq-erp-donut > div {width:142px;height:142px;border-radius:50%;background:#fff;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  transform:rotate(90deg);}
+.aq-erp-donut strong {font-size:30px;letter-spacing:-.06em;}
+.aq-erp-donut span {font-size:11px;color:#7b7c85;}
+.aq-erp-breakdown {display:grid;gap:12px;margin-bottom:20px;}
+.aq-erp-breakdown > div {display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:11px;}
+.aq-erp-breakdown span {display:flex;align-items:center;gap:8px;color:#6b6b76;}
+.aq-erp-breakdown strong {font-size:12px;font-variant-numeric:tabular-nums;}
+.aq-erp-breakdown i {width:9px;height:9px;border-radius:50%;}
+.aq-erp-breakdown i.mint {background:#51cbb2;}
+.aq-erp-breakdown i.lavender {background:#9789dc;}
+.aq-erp-inline-link {background:transparent!important;border:0!important;color:#137459!important;font-size:12px;font-weight:710;display:inline-flex;gap:7px;align-items:center;padding:6px 0;cursor:pointer;}
+.aq-erp-inline-link:hover {text-decoration:underline;}
+.aq-erp-activity {margin-top:0;}
+.aq-erp-steps {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;}
+.aq-erp-step {display:flex;gap:9px;align-items:flex-start;min-width:0;padding:14px;
+  border:1px solid #e7e6eb;border-radius:12px;background:#fff;text-align:start;}
+.aq-erp-step>svg:first-child {color:#2eaa84;flex:none;}
+.aq-erp-step>svg:last-child {color:#999;flex:none;margin-left:auto;}
+.aq-erp-step span {display:grid;gap:7px;min-width:0;}
+.aq-erp-step strong {font-size:11px;font-weight:740;}
+.aq-erp-step small {font-size:10px;line-height:1.5;color:#7b7b88;}
+.aq-erp-inspection {margin:0;padding:18px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:#f5f5f8;border-top:1px solid #dedee5;}
+.aq-erp-inspection>div {flex:1;min-width:220px;}
+.aq-erp-inspection p {margin:5px 0 0;color:#717481;font-size:11px;line-height:1.6;}
+.aq-erp-insight {display:flex;align-items:center;gap:10px;margin-top:20px;background:#e4f7f1;border-radius:11px;padding:16px 20px;color:#20594e;font-size:12px;}
+.aq-erp-insight button {margin-left:auto;}
+.aq-erp-document {max-width:790px;padding:27px 30px;}
+.aq-erp-document-top {display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+.aq-erp-document-icon, .aq-erp-roadmap-icon {width:48px;height:48px;border-radius:12px;display:grid;place-items:center;color:#16775f;background:#e5f7f2;}
+.aq-erp-document h3 {margin:0 0 14px;font-size:23px;letter-spacing:-.04em;}
+.aq-erp-document p {font-size:12px;color:#777985;line-height:1.7;}
+.aq-erp-document .aq-erp-amount {font-size:32px;letter-spacing:-.055em;display:block;}
+.aq-erp-evidence {display:flex;gap:11px;align-items:flex-start;border-radius:11px;background:#ebf7f5;color:#235c51;padding:14px 16px;margin:24px 0;font-size:12px;line-height:1.6;}
+.aq-erp-evidence svg {flex:none;}
+.aq-erp-split {display:grid;gap:0;margin:20px 0;border:1px solid #e4e4e8;border-radius:10px;overflow:hidden;}
+.aq-erp-split>div {display:flex;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid #e4e4e8;font-size:12px;}
+.aq-erp-split>div:last-child {border:0;background:#f6f6f8;}
+.aq-erp-split span {color:#777985;}
+.aq-erp-roadmap {min-height:390px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:12px;max-width:860px;}
+.aq-erp-roadmap h2 {font-size:28px;margin:0;letter-spacing:-.05em;}
+.aq-erp-roadmap p {max-width:560px;font-size:12px;line-height:1.7;color:#787b86;margin:0;}
+.aq-erp-roadmap .aq-finance__button {margin-top:20px;}
+.aq-erp-preview-banner {display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 20px;background:#fff8ea;border-bottom:1px solid #eadbb9;font-size:11px;color:#715b32;}
+.aq-erp-preview-banner strong {color:#594621;}
+.aq-finance__topbar-right {min-width:0;}
+.aq-erp-legacy-link {display:inline-flex;align-items:center;gap:7px;font-size:11px!important;color:#647083!important;border:0!important;background:transparent!important;cursor:pointer;}
+@media (max-width:1220px) {
+  .aq-erp-kpis {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .aq-erp-dashboard-grid {grid-template-columns:1fr;}
+  .aq-erp-steps {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .aq-erp-kpi strong {font-size:26px;}
+}
+@media (max-width:800px) {
+  .aq-erp-heading {align-items:flex-start;flex-wrap:wrap;}
+  .aq-erp-kpis {grid-template-columns:repeat(2,minmax(0,1fr));}
+  .aq-erp-white-panel {padding:17px;}
+  .aq-erp-steps {grid-template-columns:1fr;}
+  .aq-finance__mobile-tabs {scrollbar-width:thin;}
+}
+@media (max-width:500px) {
+  .aq-erp-kpis {gap:9px;}
+  .aq-erp-kpi {min-height:137px;padding:14px;}
+  .aq-erp-kpi strong {font-size:19px;}
+  .aq-erp-kpi small {font-size:9px;}
+  .aq-erp-panel-head {flex-wrap:wrap;}
+  .aq-erp-insight {flex-wrap:wrap;}
+  .aq-erp-insight button {margin-left:0;}
+  .aq-erp-document {padding:20px;}
+  .aq-erp-preview-banner {padding:9px 12px;}
+}
+.dark .aq-finance__main {background:#242630;}
+.dark .aq-erp-white-panel,.dark .aq-erp-step,.dark .aq-erp-kpi--white {background:#30333f;border-color:#454855;color:#f1f3fa;}
+.dark .aq-erp-kpi--mint {background:#294541;color:#f1f3fa;}
+.dark .aq-erp-kpi--blush {background:#493747;color:#fff;}
+.dark .aq-erp-donut>div {background:#30333f;}
+.dark .aq-erp-inspection,.dark .aq-erp-split>div:last-child {background:#383a46;}
+.dark .aq-erp-insight,.dark .aq-erp-evidence {background:#294b43;color:#d3f5e9;}
+.dark .aq-erp-preview-banner {background:#43392a;border-color:#584b39;color:#ffe9c5;}
+.dark .aq-erp-preview-banner strong {color:#fff;}
+@media (prefers-reduced-motion:reduce){.aq-erp-kpi {transition:none}.aq-erp-kpi:hover {transform:none}}
