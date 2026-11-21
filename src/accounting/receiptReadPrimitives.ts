@@ -1,5 +1,6 @@
 import { validBusinessDate } from "./minorUnits";
 import type { AccountingReadSource } from "./readContracts";
+import {validateReportCurrencyEvidence} from "./currencyReportEvidence";
 
 /**
  * Runtime checks for untrusted JSON from the certified V2 reads in PR #63.
@@ -106,6 +107,10 @@ export function verifyReceivablesSource(
   if (dr !== cr || journals === 0n && (lines !== 0n || dr !== 0n)) {
     throw new Error("AQVORA source financial totals are inconsistent.");
   }
+  validateReportCurrencyEvidence(src,{
+    organizationId:context.organizationId,currency:context.currency,
+    asOfDate:context.asOfDate,
+  });
   return src as unknown as AccountingReadSource;
 }
 
