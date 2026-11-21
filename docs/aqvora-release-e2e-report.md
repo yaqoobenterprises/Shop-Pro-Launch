@@ -8,6 +8,25 @@ Branch: `codex/issue-72-release-e2e-hardening`, created at PR #84's exact head `
 
 No UI component, financial SQL, migration, public grant, company-default policy or production setting is changed. The founder separately authorized one narrow shared-validator correction after real E2E exposed the timestamp bug described below. Synthetic fixture enrollment is limited to newly generated companies in a loopback disposable stack. Existing test companies and business Supabase projects are never used. Source currency remains synthetic PKR exponent 2, service-only verified out-of-tax-scope, without FX or bank-clearing claims.
 
+## Verified results and independent artifact inspection
+
+Verified implementation head: `3eec480fac00019ff8eac3183e0c68ef0867c4b9`. [CI run 44883078228](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44883078228) passed all three jobs. [Draft PR #86](https://github.com/yaqoobenterprises/Shop-Pro-Launch/pull/86) records the final branch head and [current checks](https://github.com/yaqoobenterprises/Shop-Pro-Launch/pull/86/checks), including documentation-only follow-up verification.
+
+| Verification | Exact result |
+| --- | --- |
+| [Application](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44883078228/job/136782397062) | 772 passed in 105 files; 81 real-service cases gated here and executed below |
+| [PostgreSQL 17](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44883078228/job/136782396989) | 47 passed: writer/session 8, migration/restore 3, readers 3, invoice 10, receipt 13, currency 10 |
+| [Actual local Supabase Auth/PostgREST](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44883078228/job/136782396873) | 34 passed: 12 new E2E/security/restore cases plus 22 existing Auth cases |
+| Total | **853 unique tests passed**, including 23 new cases (12 real E2E, 3 compatibility, 8 timestamp/currency regressions) |
+| TypeScript, strict, lint, size, production build, dependency audit | Passed; zero dependency vulnerabilities |
+| Disposable security advisor | No errors/new findings; three inherited search-path warnings remain |
+
+The full local Windows run also passed 772 tests with 81 dedicated-service cases gated. The focused currency/ledger/receivables suite passed 53 cases. A source-size check initially caught a comment exceeding the 200-line utility limit; the comment was shortened without changing logic. All checks were rerun.
+
+The [credential-free proof artifact](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44883078228/artifacts/14699036418) was downloaded and independently inspected. Its ZIP SHA-256 matches GitHub's digest `a7f9d009b97fd7f817225fcfa9ec67b2326eb86d198aff3f9103f1be0961cfb5`. All 41 migration hashes match the committed source blobs at the recorded source head. On Windows, compare `git show <source_head>:supabase/migrations/<filename>` bytes, not an automatically CRLF-converted working copy. The financial source and restored digests both equal `a8fcc1a675cb12946a54cade9d669770cec565c719713de2d90b7853f78efda6`; restored Auth-row digest and issued-JWT REST verification pass, and final AR remains `0`. No password, JWT, key or email fields are present in the proof.
+
+Vercel's separate automatic preview status is blocked by its build-rate limit. The production application build and all GitHub verification jobs pass. No deployment retry, paid upgrade or production action was made.
+
 ## Integration failure found and approved correction
 
 The [first E2E run 44882108412](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44882108412) passed application verification and the 47 independent PostgreSQL cases, but failed two new Auth E2E cases. Ten of eleven new security cases passed, including real sign-out and in-flight revocation. One test incorrectly expected SQLSTATE `23505` for a duplicate customer; the existing API deliberately returns `P0001` with `Customer code already identifies a different request`. The fixture assertion now verifies that exact existing contract.
