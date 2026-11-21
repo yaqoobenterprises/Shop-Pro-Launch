@@ -1,5 +1,8 @@
 import type { ReceivablesReconciliation, InvoiceOpenBalance } from "../../accounting/receiptContracts";
-import { formatExactCurrencyMinor } from "../../accounting/formatExactCurrencyMinor";
+import {formatCertifiedReportMoney,validateReportCurrencyEvidence}
+  from "../../accounting/currencyReportEvidence";
+import {formatCertifiedSourceMoney,requireMatchingInvoicePolicyForReport}
+  from "../../accounting/sourceMoneyEvidence";
 
 interface Props {
   currency: string;
@@ -11,7 +14,14 @@ interface Props {
 export function ReceivablesReportPanel({
   currency, report, invoices, onInspectInvoice,
 }: Props) {
-  const fmt = (minor: string) => formatExactCurrencyMinor(minor, currency);
+  const scope={organizationId:report.source.organization_id,currency,
+    asOfDate:report.as_of_date};
+  const evidence=validateReportCurrencyEvidence(report.source,scope);
+  const fmt=(minor:string)=>formatCertifiedReportMoney(minor,currency,evidence);
+  const invoiceFmt=(minor:string,invoice:InvoiceOpenBalance)=>{
+    requireMatchingInvoicePolicyForReport(invoice,evidence);
+    return formatCertifiedSourceMoney(minor,invoice);
+  };
   return (
     <section aria-label="Verified V2 receivables" className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
@@ -30,6 +40,14 @@ export function ReceivablesReportPanel({
         Certified V2 journal scope only. Legacy opening balances excluded. Cash receipts are
         manually dual-attested, not bank-verified; AR aging is unavailable.
         Source cutoff: {report.as_of_date}. Reconciliation to AR control: {fmt(report.ar_control_minor)}.
+      </p>
+      <p role="status" className="rounded-lg border border-border-standard p-3 text-xs text-text-muted">
+        {evidence?.display_complete===true&&evidence.currency_policy
+          ? <>Company-certified currency unit scale · {currency} · exponent {evidence.currency_policy.currency_exponent}
+            {" · "}revision {evidence.currency_policy.revision}. Dates and monetary
+            values retain their immutable source authority.</>
+          : <>Currency policy unconfigured or historical. Exact raw minor units only;
+            no assumed decimal places or bank clearing.</>}
       </p>
       {invoices === null ? (
         <div className="rounded-xl border border-border-standard bg-surface-bright p-4 text-sm text-text-muted">
@@ -59,9 +77,9 @@ export function ReceivablesReportPanel({
                     {invoice.invoice_id.slice(0,8)}…
                   </td>
                   <td className="px-4 py-3">{invoice.due_date}</td>
-                  <td className="px-4 py-3">{fmt(invoice.face_minor)}</td>
-                  <td className="px-4 py-3">{fmt(invoice.allocated_minor)}</td>
-                  <td className="px-4 py-3 font-semibold">{fmt(invoice.outstanding_minor)}</td>
+                  <td className="px-4 py-3">{invoiceFmt(invoice.face_minor,invoice)}</td>
+                  <td className="px-4 py-3">{invoiceFmt(invoice.allocated_minor,invoice)}</td>
+                  <td className="px-4 py-3 font-semibold">{invoiceFmt(invoice.outstanding_minor,invoice)}</td>
                   <td className="px-4 py-3">
                     <button type="button"
                       className="rounded-md border border-border-standard px-3 py-2 text-primary hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-primary"

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { InvoiceOpenBalance } from "../../accounting/receiptContracts";
-import { formatExactCurrencyMinor } from "../../accounting/formatExactCurrencyMinor";
+import {formatCertifiedSourceMoney} from "../../accounting/sourceMoneyEvidence";
 import { loadIsolatedInvoiceOpenBalance } from "../../services/aqvoraReceivablesReadService";
 import type { IsolatedReceivablesContext } from "../../services/aqvoraReceivablesStagingGate";
 
@@ -31,7 +31,8 @@ export function InvoiceEvidencePanel({ invoiceId, context, onClose, onReceipt }:
     return () => { alive = false; };
   }, [invoiceId, organizationId, userId, customerId, currency, asOfDate, isCloudAccount]);
 
-  const fmt = (minor: string) => formatExactCurrencyMinor(minor, currency);
+  const fmt=(minor:string)=>invoice
+    ?formatCertifiedSourceMoney(minor,invoice):`${currency} raw minor units unavailable`;
   return (
     <section aria-label="Invoice financial evidence"
       className="rounded-xl border border-border-standard bg-surface-bright p-4">
@@ -53,6 +54,11 @@ export function InvoiceEvidencePanel({ invoiceId, context, onClose, onReceipt }:
           </p>
           <p>Invoiced: {fmt(invoice.face_minor)} · Allocated: {fmt(invoice.allocated_minor)}
             {" · "}Remaining: {fmt(invoice.outstanding_minor)}</p>
+          <p role="status" className="text-xs text-text-muted">
+            {invoice.currency_policy && invoice.display_complete!==false
+              ? `Original invoice currency scale certified · exponent ${invoice.currency_policy.currency_exponent} · revision ${invoice.currency_policy.revision}`
+              : "Original invoice currency scale unavailable · exact raw minor units shown"}
+          </p>
           <p className="text-xs text-text-muted">
             Source verified for V2 at {asOfDate}; this is not bank-statement clearance.
             Later backdated postings can change historical business-date balances.

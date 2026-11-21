@@ -1,6 +1,7 @@
 import type { InvoiceOpenBalance, ReceivablesReconciliation } from "./receiptContracts";
 export { verifyReceivablesSource } from "./receiptReadPrimitives";
 import type { AccountingReadSource } from "./readContracts";
+import {validateCurrencyUnitPolicy} from "./currencyReportEvidence";
 import {
   date, money, object, uuid, validateContext, verifyReceivablesSource,
   type ReceivableReadContext,
@@ -46,6 +47,18 @@ export function verifyInvoiceOpenBalance(
     throw new Error("AQVORA invoice settlement status or allocation list is inconsistent.");
   }
 
+  if(item.display_complete!==undefined&&typeof item.display_complete!=="boolean"){
+    throw new Error("Invoice currency display completeness is malformed.");
+  }
+  if(item.display_complete===true&&item.currency_policy==null){
+    throw new Error("Invoice claims currency completeness without source-owned policy.");
+  }
+  if(item.currency_policy!=null){
+    validateCurrencyUnitPolicy(item.currency_policy,{
+      organizationId:context.organizationId,currency:context.currency,
+      asOfDate:invoiceDate,
+    });
+  }
   const seen = new Set<string>();
   let allocatedByRows = 0n;
   for (const raw of item.allocations) {

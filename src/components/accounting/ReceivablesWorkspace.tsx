@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SalesCustomer } from "../../accounting/salesContracts";
 import type { InvoiceOpenBalance, ReceivablesReconciliation } from "../../accounting/receiptContracts";
 import { useAuth } from "../../context/AuthContext";
+import {validateReportCurrencyEvidence} from "../../accounting/currencyReportEvidence";
 import { loadIsolatedSalesCustomers } from "../../services/aqvoraSalesCustomersReadService";
 import {
   collectIsolatedOpenInvoices, loadIsolatedReceivablesReconciliation,
@@ -111,6 +112,10 @@ export function ReceivablesWorkspace() {
           : Promise.resolve(null),
       ]);
       if (open) {
+        const scope={organizationId:organization.id,currency:organization.currency,
+          asOfDate:date};
+        const reportAuthority=validateReportCurrencyEvidence(reconciliation.source,scope);
+        validateReportCurrencyEvidence(open.source,scope,reportAuthority);
         const total = open.invoices.reduce((sum, item) => sum + BigInt(item.outstanding_minor), 0n);
         if (open.source.snapshot_token !== reconciliation.source.snapshot_token ||
             open.source.authorized_user_id !== reconciliation.source.authorized_user_id ||

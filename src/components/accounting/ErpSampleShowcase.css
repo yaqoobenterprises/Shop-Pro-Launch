@@ -137,3 +137,7 @@
 .dark .aq-erp-preview-banner {background:#43392a;border-color:#584b39;color:#ffe9c5;}
 .dark .aq-erp-preview-banner strong {color:#fff;}
 @media (prefers-reduced-motion:reduce){.aq-erp-kpi {transition:none}.aq-erp-kpi:hover {transform:none}}
+
+.aq-erp-verified-note {margin:2px 12px 10px;font-size:10px;line-height:1.5;color:#6b6b76;}
+.aq-erp-verified-icon {width:17px;height:17px;flex:none;color:#137459;}
+.dark .aq-erp-verified-note {color:#b7b7c3;}

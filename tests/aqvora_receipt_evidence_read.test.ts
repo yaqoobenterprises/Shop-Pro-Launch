@@ -132,6 +132,47 @@ describe("AQVORA controlled cash and posted receipt evidence",()=>{
     })).toThrow();
   });
 
+  it("preserves authoritative receipt and controlled-cash currency evidence",()=>{
+    const policy={
+      contract_version:"aqvora-currency-policy-v1",status:"configured",
+      organization_id:org,transaction_currency:"PKR",ledger_currency:"PKR",
+      currency_exponent:2,minor_units_per_major:"100",display_decimal_places:2,
+      revision:"1",effective_from:"2026-01-01",fingerprint:fp,
+      provenance:{kind:"trusted_company_accounting_policy",
+        authority_reference:"synthetic",authority_revision:"1",
+        approval_reference:"approved-test",approved_by:checker},
+      source_rounding:"quantity_millionths_half_up_per_line_v1",fx_supported:false,
+    };
+    const c={...verifiedCashFixture(),currency_policy:policy};
+    const r=verifiedReceiptFixture();
+    const linked={...r,currency_policy:policy,issue_receipt:{
+      ...r.issue_receipt,currency_policy:policy,
+    }};
+    expect(verifyControlledCashCollection(c,{...ctx,collectionId}).collection.currency_policy)
+      .toEqual(policy);
+    expect(verifyCustomerReceiptDetail(linked,{...ctx,receiptId}).currency_policy)
+      .toEqual(policy);
+    for(const bad of [
+      {...policy,organization_id:customer},
+      {...policy,minor_units_per_major:"1"},
+      {...policy,effective_from:"2026-11-21"},
+    ]){
+      expect(()=>verifyControlledCashCollection({
+        ...c,currency_policy:bad,
+      },{...ctx,collectionId})).toThrow();
+      expect(()=>verifyCustomerReceiptDetail({
+        ...linked,currency_policy:bad,
+      },{...ctx,receiptId})).toThrow();
+    }
+    expect(()=>verifyCustomerReceiptDetail({
+      ...linked,issue_receipt:{...linked.issue_receipt,
+        currency_policy:{...policy,fingerprint:"e".repeat(64)}},
+    },{...ctx,receiptId})).toThrow(/policy changed/);
+    expect(()=>verifyCustomerReceiptDetail({
+      ...linked,issue_receipt:r.issue_receipt,
+    },{...ctx,receiptId})).toThrow(/policy changed/);
+  });
+
   it("refuses future-dated/corrupt receipts and noncanonical source money",()=>{
     const r=verifiedReceiptFixture();
     for(const change of [

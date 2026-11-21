@@ -1,3 +1,4 @@
+import {validateCurrencyUnitPolicy} from "./currencyReportEvidence";
 import type { CustomerReceipt } from "./receiptContracts";
 import {
   date, money, object, uuid, validateContext, type ReceivableReadContext,
@@ -47,6 +48,12 @@ export function verifyCustomerReceiptDetail(
   hash(receipt.collection_fingerprint, "collection");
   if (date(receipt.business_date, "receipt business") > context.asOfDate) {
     throw new Error("Receipt is after the selected report cutoff.");
+  }
+  if(receipt.currency_policy!=null){
+    validateCurrencyUnitPolicy(receipt.currency_policy,{
+      organizationId:context.organizationId,currency:context.currency,
+      asOfDate:String(receipt.business_date),
+    });
   }
   const amount = money(receipt.amount_minor, "receipt amount", true);
   const revision = money(receipt.revision, "receipt revision");
@@ -109,6 +116,17 @@ export function verifyCustomerReceiptDetail(
     journal_id:receipt.journal_id, receipt_number:receipt.receipt_number,
     posted_revision:receipt.revision,
   })) match(issue,key,value);
+  if(issue.currency_policy!=null){
+    validateCurrencyUnitPolicy(issue.currency_policy,{
+      organizationId:context.organizationId,currency:context.currency,
+      asOfDate:String(receipt.business_date),
+    });
+  }
+  if((issue.currency_policy==null)!==(receipt.currency_policy==null)||
+     issue.currency_policy!=null&&JSON.stringify(issue.currency_policy)!==
+       JSON.stringify(receipt.currency_policy)){
+    throw new Error("Posted receipt policy changed from original bound source.");
+  }
   uuid(issue.posted_by, "posting actor");
   text(issue.intent_key, "posting intent");
   text(issue.journal_intent_key, "journal intent");

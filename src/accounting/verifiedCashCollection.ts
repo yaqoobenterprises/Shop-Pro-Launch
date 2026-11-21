@@ -1,3 +1,4 @@
+import {validateCurrencyUnitPolicy} from "./currencyReportEvidence";
 import type { CashCollection } from "./receiptContracts";
 import {
   date, money, object, uuid, validateContext, type ReceivableReadContext,
@@ -52,6 +53,12 @@ export function verifyControlledCashCollection(
   const cashDate = date(cash.business_date, "cash business");
   if (cashDate > context.asOfDate) {
     throw new Error("Cash source falls after the requested cutoff.");
+  }
+  if(cash.currency_policy!=null){
+    validateCurrencyUnitPolicy(cash.currency_policy,{
+      organizationId:context.organizationId,currency:context.currency,
+      asOfDate:cashDate,
+    });
   }
   const amount = money(cash.amount_minor, "cash amount", true);
   if (amount <= 0n) throw new Error("Cash collection amount must be positive.");

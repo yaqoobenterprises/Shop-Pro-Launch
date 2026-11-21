@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { formatExactCurrencyMinor } from "../../accounting/formatExactCurrencyMinor";
+import {formatCertifiedSourceMoney} from "../../accounting/sourceMoneyEvidence";
 import {
   loadIsolatedCustomerReceipt, type VerifiedReceiptDetails,
 } from "../../services/aqvoraCashReceiptReadService";
@@ -32,7 +32,8 @@ export function ReceiptEvidencePanel({receiptId, context, onClose}: Props) {
     return () => { alive = false; };
   }, [receiptId, organizationId, userId, customerId, currency, asOfDate, isCloudAccount]);
 
-  const fmt = (minor: string) => formatExactCurrencyMinor(minor, currency);
+  const fmt=(minor:string)=>result
+    ?formatCertifiedSourceMoney(minor,result.receipt):`${currency} raw minor units unavailable`;
   return (
     <section aria-label="Cash receipt financial evidence"
       className="rounded-xl border border-border-standard bg-surface-bright p-4">
@@ -53,6 +54,11 @@ export function ReceiptEvidencePanel({receiptId, context, onClose}: Props) {
           </p>
           <p>Receipt status: {result.receipt.state}. Cash evidence:
             {" "}{result.cash.attestation === "dual_control" ? "Two-person manually attested" : "Not confirmed"}.
+          </p>
+          <p role="status" className="text-xs text-text-muted">
+            {result.receipt.currency_policy
+              ? `Source-owned receipt currency scale · exponent ${result.receipt.currency_policy.currency_exponent} · revision ${result.receipt.currency_policy.revision}`
+              : "Original receipt policy unavailable · amounts shown in raw minor units"}
           </p>
           <p className="text-xs text-text-muted">
             Bank verification: unavailable. This receipt does not prove a cleared bank deposit.

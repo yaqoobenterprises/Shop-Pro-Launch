@@ -6,6 +6,10 @@ import type {
   InvoiceOpenBalance, ReceivablesReconciliation,
 } from "../accounting/receiptContracts";
 import type { AccountingReadSource } from "../accounting/readContracts";
+import {validateReportCurrencyEvidence}
+  from "../accounting/currencyReportEvidence";
+import {requireMatchingInvoicePolicyForReport}
+  from "../accounting/sourceMoneyEvidence";
 import {
   verifyInvoiceOpenBalance, verifyOpenInvoicePage,
   verifyReceivablesReconciliation,
@@ -126,6 +130,14 @@ export async function collectIsolatedOpenInvoices(
         )) {
       throw new Error("AQVORA open-invoice source identity changed during paging.");
     }
+    const scope={organizationId:context.organizationId,
+      currency:context.currency,asOfDate:context.asOfDate};
+    const expectedEvidence=source===null?undefined:
+      validateReportCurrencyEvidence(source,scope);
+    const pageEvidence=validateReportCurrencyEvidence(
+      page.source,scope,expectedEvidence);
+    page.rows.forEach(invoice=>requireMatchingInvoicePolicyForReport(
+      invoice,pageEvidence));
     const count = money(page.matchedCount, "matched invoices");
     if (matched !== null && matched !== count) {
       throw new Error("AQVORA open-invoice count changed during paging.");
