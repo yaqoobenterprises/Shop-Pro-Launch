@@ -1,7 +1,8 @@
-// Yaqoob Enterprises Service Worker
-const CACHE_NAME = 'aqvora-pwa-v1';
-const ASSETS_TO_CACHE = [
-  '/',
+// AQVORA public app shell ONLY. Never persist customer data or API responses.
+// Keep workers waiting until existing tabs close to avoid interrupting offline work.
+const CACHE_NAME = 'aqvora-shell-v2';
+const OLD_AQVORA_PREFIXES = ['aqvora-pwa-', 'aqvora-shell-'];
+const SHELL_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/assets/logo.svg',
@@ -9,59 +10,71 @@ const ASSETS_TO_CACHE = [
   '/assets/icon-512.png'
 ];
 
+function publicAsset(url) {
+  if (url.origin !== self.location.origin || url.search) return false;
+  if (SHELL_ASSETS.includes(url.pathname)) return true;
+  return /^\/assets\/[a-zA-Z0-9_./-]+\.(?:js|css|woff2?|png|svg|webp|jpe?g)$/.test(url.pathname)
+    && !url.pathname.includes('..');
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(SHELL_ASSETS);
+    // Bundle entrypoints are public files; cache those for the installed PWA.
+    // Lazy chunks are cached only when actually opened, never guessed.
+    const shell = await cache.match('/index.html');
+    if (!shell) return;
+    const html = await shell.text();
+    const entries = [...html.matchAll(/(?:src|href)=["'](\/assets\/[a-zA-Z0-9_./-]+\.(?:js|css))["']/g)]
+      .map((match) => match[1])
+      .filter((path) => publicAsset(new URL(path, self.location.origin)));
+    await Promise.allSettled([...new Set(entries)].map((entry) => cache.add(entry)));
+    // No skipWaiting(): an active installed cashbook keeps its old worker
+    // until its tabs close. This is not permission to alter its local queue.
+  })());
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter((key) => key !== CACHE_NAME &&
+      OLD_AQVORA_PREFIXES.some((prefix) => key.startsWith(prefix)))
+      .map((key) => caches.delete(key)));
+    // Do not claim already-open tabs from another service-worker version.
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  // Navigation is network-first, with only static HTML fallback offline.
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        return await fetch(request, { cache: 'no-store' });
+      } catch {
+        return await caches.match('/index.html') || Response.error();
+      }
+    })());
     return;
   }
-
-  // Let Supabase API requests pass straight through to network
-  if (event.request.url.includes('supabase.co') || event.request.url.includes('/rest/v1/')) {
-    return;
-  }
-
+  // API, Auth, /rest/v1, /functions, custom report and all other GETs are
+  // network-only. An account change cannot reveal cached personal records.
+  if (!publicAsset(url)) return;
   event.respondWith((async () => {
-    try {
-      // Reload the latest app shell on navigation so old HTML cannot keep pointing to old bundles.
-      const response = event.request.mode === 'navigate'
-        ? await fetch(event.request, { cache: 'no-store' })
-        : await fetch(event.request);
-
-      if (response.ok && new URL(event.request.url).origin === self.location.origin) {
-        const cache = await caches.open(CACHE_NAME);
-        await cache.put(event.request, response.clone());
+    const cache = await caches.open(CACHE_NAME);
+    const stored = await cache.match(request);
+    if (stored) return stored;
+    const response = await fetch(request);
+    if (response.ok && response.type !== 'opaque' &&
+        !/\b(?:private|no-store)\b/i.test(response.headers.get('cache-control') || '')) {
+      try { await cache.put(request, response.clone()); } catch {
+        // Cache quota failure must never break a working online app.
       }
-      return response;
-    } catch {
-      const cachedResponse = await caches.match(event.request);
-      if (cachedResponse) return cachedResponse;
-
-      if (event.request.mode === 'navigate') {
-        return (await caches.match('/index.html')) || Response.error();
-      }
-
-      return Response.error();
     }
+    return response;
   })());
 });

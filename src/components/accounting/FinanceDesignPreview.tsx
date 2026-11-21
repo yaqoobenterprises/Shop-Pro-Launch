@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useRef,useState} from "react";
-import {BookOpenText,CalendarDays,ChartNoAxesCombined,FileSpreadsheet,
+import {BookOpenText,CalendarDays,ChartNoAxesCombined,ChevronDown,FileSpreadsheet,
   FileText,HandCoins,LayoutDashboard,LayoutList,Package,ReceiptText,
   ShoppingCart,Sparkles,Users,Wallet,X,type LucideIcon} from "lucide-react";
 import {buildFinancialSnapshot} from "../../accounting/financialSnapshot";
@@ -38,6 +38,7 @@ export const FinanceDesignPreview:React.FC<Props>=({
   onClose,stagingLinks=[],onOpenStaging,
 })=>{
   const [page,setPage]=useState<ErpReviewPage>("overview");
+  const [roadmapOpen,setRoadmapOpen]=useState(false);
   const [ledgerAccountId,setLedgerAccountId]=useState<string|undefined>();
   const mainRef=useRef<HTMLDivElement>(null);
   const report=useMemo(()=>buildFinancialSnapshot({
@@ -80,8 +81,12 @@ export const FinanceDesignPreview:React.FC<Props>=({
       <div className="aq-finance__body">
         <aside className="aq-finance__navigation" aria-label="AQVORA ERP preview navigation">
           {erpReviewGroups.map(group=><div key={group.label} className="aq-erp-nav-group">
-            <span>{group.label}</span>
-            {group.pages.map(entry=>{
+            {group.label==="ROADMAP"?<button type="button"
+              className="aq-erp-section-toggle" aria-expanded={roadmapOpen}
+              onClick={()=>setRoadmapOpen(open=>!open)}>
+              <span>ROADMAP</span><ChevronDown aria-hidden="true"/>
+            </button>:<span>{group.label}</span>}
+            {(group.label!=="ROADMAP"||roadmapOpen)&&group.pages.map(entry=>{
               const Icon=icons[entry.id];
               return <button type="button" key={entry.id}
                 aria-current={page===entry.id?"page":undefined}

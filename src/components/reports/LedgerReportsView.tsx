@@ -14,6 +14,7 @@ import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
 import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
 import "./ReportsAnalytics.css";
+import "./ReportsRealFinish.css";
 import { ReportInsightCharts } from "./ReportInsightCharts";
 
 export const LedgerReportsView: React.FC = () => {
@@ -30,7 +31,8 @@ export const LedgerReportsView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [showAllTransactions, setShowAllTransactions] = useState(false);
+  const [transactionPage, setTransactionPage] = useState(0);
+  const rowsPerPage = 15;
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export const LedgerReportsView: React.FC = () => {
       });
       if (id !== requestId.current) return;
       setTransactions(rows);
-      setShowAllTransactions(false);
+      setTransactionPage(0);
     } catch (error) {
       if (id !== requestId.current) return;
       setTransactions([]);
@@ -106,7 +108,9 @@ export const LedgerReportsView: React.FC = () => {
     }
   };
 
-  const visibleTransactions = showAllTransactions ? transactions : transactions.slice(0, 50);
+  const pageCount = Math.max(1, Math.ceil(transactions.length / rowsPerPage));
+  const safePage = Math.min(transactionPage, pageCount - 1);
+  const visibleTransactions = transactions.slice(safePage * rowsPerPage, (safePage + 1) * rowsPerPage);
   return (
     <main className="page-content reports-page reports-modern">
       <header className="reports-modern__hero">
@@ -134,9 +138,9 @@ export const LedgerReportsView: React.FC = () => {
 
       <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
         <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
-          <span>NET PROFIT</span><TrendingUp size={18} aria-hidden="true" />
+          <span>OPERATING RESULT</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.net_profit_paisa)}</strong>
-          <small>Income less operating expenses</small>
+          <small>Cashbook basis · not accrual P&L</small>
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--income">
           <span>TOTAL INCOME</span><TrendingUp size={18} aria-hidden="true" />
@@ -194,7 +198,7 @@ export const LedgerReportsView: React.FC = () => {
             <div><span>Cash adjustments in</span><strong>{formatPaisa(totals.adjustment_in_paisa)}</strong></div>
             <div><span>Cash adjustments out</span><strong>{formatPaisa(totals.adjustment_out_paisa)}</strong></div>
           </div>
-          <p className="reports-modern__footnote">Net profit is calculated from income minus operating expenses. Capital, drawings and cash adjustments remain separately visible.</p>
+          <p className="reports-modern__footnote">Operating result equals recorded income less operating expenses on the selected cashbook basis. Capital, drawings and adjustments are excluded; this is not an accrual P&L.</p>
         </section>
       </div>
 
@@ -203,7 +207,16 @@ export const LedgerReportsView: React.FC = () => {
         {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
           {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
         </tbody></table></div>}
-        {transactions.length > 50 && <button type="button" className="reports-modern__show-more" onClick={() => setShowAllTransactions((value) => !value)}>{showAllTransactions ? "Show latest 50 only" : `Show all ${transactions.length.toLocaleString()} records`}</button>}
+        {transactions.length > rowsPerPage && <nav className="reports-modern__pager" aria-label="Transaction register pagination">
+          <span>Showing {safePage * rowsPerPage + 1}–{Math.min((safePage + 1) * rowsPerPage, transactions.length)} of {transactions.length.toLocaleString()} records · All are included in export</span>
+          <div>
+            <button type="button" disabled={safePage === 0}
+              aria-label="Previous transaction page" onClick={() => setTransactionPage((p) => Math.max(0, p - 1))}>Previous</button>
+            <span aria-live="polite">Page {safePage + 1} of {pageCount}</span>
+            <button type="button" disabled={safePage === pageCount - 1}
+              aria-label="Next transaction page" onClick={() => setTransactionPage((p) => Math.min(pageCount - 1, p + 1))}>Next</button>
+          </div>
+        </nav>}
       </section>
       <p className="reports-modern__footer-note">Report generated from active ledger records · Date boundaries use the shop business date.</p>
     </main>
