@@ -16,6 +16,7 @@ import { useAuth } from "../../context/AuthContext";
 import { UserAvatar } from "../common/UserAvatar";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { useI18n } from "../../i18n";
+import { AuthFrame } from "./AuthFrame";
 
 const fieldClass =
   "w-full h-11 rounded-lg border border-border-standard bg-surface-bright px-3.5 text-sm outline-none transition placeholder:text-text-muted focus:border-primary focus:ring-2 focus:ring-primary/15";
@@ -29,10 +30,12 @@ const fieldClass =
  */
 export interface AuthScreenProps {
   initialMode?: "signIn" | "signUp" | "forgotPassword";
+  onBack?: () => void;
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({
   initialMode = "signIn",
+  onBack,
 }) => {
   const {
     signIn,
@@ -289,8 +292,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   // If currently in Supabase Password Recovery Flow
   if (isPasswordRecovery) {
     return (
-      <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-        <main className="auth-card w-full max-w-[400px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
+      <AuthFrame onBack={onBack}>
+        <main className="auth-card aq-auth__card w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
           <div className="mb-6 flex flex-col items-center text-center">
             <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <KeyRound className="h-6 w-6" />
@@ -408,15 +411,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             </button>
           </form>
         </main>
-      </div>
+      </AuthFrame>
     );
   }
 
   // If email confirmation has been sent
   if (emailConfirmationSent) {
     return (
-      <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-        <main className="auth-card w-full max-w-[420px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8 text-center">
+      <AuthFrame onBack={onBack}>
+        <main className="auth-card aq-auth__card w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-bg text-success ring-8 ring-success-bg/50">
             <Mail className="h-6 w-6" />
           </div>
@@ -473,376 +476,166 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             <span>{t("auth.backToSignInScreen")}</span>
           </button>
         </main>
-      </div>
+      </AuthFrame>
     );
   }
 
   return (
-    <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-      <main className="auth-card w-full max-w-[420px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
-        {/* Header Branding */}
-        <div className="mb-6 flex flex-col items-center text-center">
-          <img
-            src="/assets/logo.svg"
-            alt="Shop Pro"
-            className="mb-2 h-10 w-10 rounded-lg shadow-xs"
-          />
-          <p className="text-[11px] font-bold uppercase tracking-wider text-primary">
-            Shop Pro Cashbook
+    <AuthFrame onBack={onBack}>
+      <main className="auth-card aq-auth__card">
+        <header className="aq-auth__heading">
+          <h1>{mode === "signIn" ? "Welcome back" : mode === "signUp" ? "Create your account" : "Reset your password"}</h1>
+          <p>
+            {mode === "signIn" ? "Sign in to continue to your business workspace."
+              : mode === "signUp" ? "Start with your name and business details."
+                : "We'll email you a link to reset your password."}
           </p>
-          <h1 className="mt-1 text-xl font-bold tracking-tight text-on-surface">
-            {mode === "signIn" ?
-              "Welcome back"
-            : mode === "signUp" ?
-              "Create your account"
-            : "Reset your password"}
-          </h1>
-          <p className="mt-1 max-w-[300px] text-xs text-text-muted">
-            {mode === "signIn" ?
-              "Sign in to access your shop ledger and accounts."
-            : mode === "signUp" ?
-              "Set up your shop and start recording transactions."
-            : "Enter your registered email to receive reset instructions"}
-          </p>
-        </div>
+        </header>
 
-        {/* Mode Selector Tabs (Sign In / Sign Up) */}
         {mode !== "forgotPassword" && (
-          <div className="auth-mode-tabs mb-5 grid grid-cols-2 gap-1 rounded-lg border border-border-standard bg-surface p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signIn");
-                setFeedback(null);
-              }}
-              className={`auth-mode-tab flex h-11 items-center justify-center rounded-md text-xs font-semibold transition cursor-pointer ${
-                mode === "signIn" ?
-                  "bg-surface-bright text-on-surface shadow-xs"
-                : "text-text-muted hover:text-on-surface"
-              }`}
-            >
-              Sign in
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signUp");
-                setFeedback(null);
-              }}
-              className={`auth-mode-tab flex h-11 items-center justify-center rounded-md text-xs font-semibold transition cursor-pointer ${
-                mode === "signUp" ?
-                  "bg-surface-bright text-on-surface shadow-xs"
-                : "text-text-muted hover:text-on-surface"
-              }`}
-            >
-              Create account
-            </button>
-          </div>
+          <nav className="aq-auth__switch" aria-label="Account access">
+            <button type="button" aria-current={mode === "signIn" ? "page" : undefined} disabled={isSubmitting || isGoogleLoading}
+              onClick={() => { setMode("signIn"); setFeedback(null); }}>Sign in</button>
+            <button type="button" aria-current={mode === "signUp" ? "page" : undefined} disabled={isSubmitting || isGoogleLoading}
+              onClick={() => { setMode("signUp"); setFeedback(null); }}>Create account</button>
+          </nav>
         )}
 
-        {/* Google Single Sign-On Button */}
-        {mode !== "forgotPassword" && (
-          <>
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isSubmitting || isGoogleLoading}
-              className="flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-border-standard bg-surface-bright text-sm font-semibold text-on-surface shadow-xs transition hover:border-outline-variant hover:bg-surface disabled:opacity-60 cursor-pointer"
-            >
-              {isGoogleLoading ?
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="text-xs">{t("auth.connectingGoogle")}</span>
-                </>
-              : <>
-                  <svg className="h-4.5 w-4.5 shrink-0" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                  <span>{t("auth.continueGoogle")}</span>
-                </>
-              }
-            </button>
-
-            {/* Clean Divider */}
-            <div className="relative my-5">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border-standard" />
-              </div>
-              <div className="relative flex justify-center text-[11px] font-medium uppercase tracking-wider text-text-muted">
-                <span className="bg-surface-bright px-2.5">{t("auth.orEmail")}</span>
-              </div>
+        <form onSubmit={handleSubmit} className="aq-auth__form">
+          <div className="aq-auth__fields">
+            {mode === "signUp" && (
+              <>
+                <div className="aq-auth__field">
+                  <label className="aq-auth__field-label" htmlFor="aq-full-name">Full name</label>
+                  <input id="aq-full-name" required type="text" value={form.fullName}
+                    autoComplete="name" maxLength={120} placeholder="Your name"
+                    onChange={(event) => update("fullName", event.target.value)} />
+                </div>
+                <div className="aq-auth__field">
+                  <label className="aq-auth__field-label" htmlFor="aq-company-name">Business name</label>
+                  <input id="aq-company-name" required type="text" value={form.shopName}
+                    autoComplete="organization" maxLength={160} placeholder="Company or business"
+                    onChange={(event) => update("shopName", event.target.value)} />
+                </div>
+              </>
+            )}
+            <div className="aq-auth__field">
+              <label className="aq-auth__field-label" htmlFor="aq-email">Email address</label>
+              <input id="aq-email" type="email" required autoComplete="email" inputMode="email" spellCheck={false}
+                value={form.email} placeholder="name@company.com"
+                onChange={(event) => update("email", event.target.value)} />
             </div>
-          </>
-        )}
 
-        {/* Email & Password Form */}
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          {mode === "signUp" && (
-            <>
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-secondary">
-                  Your Full Name
-                </label>
-                <input
-                  required
-                  type="text"
-                  placeholder="e.g. Muhammad Yaqoob"
-                  className={fieldClass}
-                  value={form.fullName}
-                  onChange={(e) => update("fullName", e.target.value)}
-                  autoComplete="name"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-secondary">
-                  Shop / Business Name
-                </label>
-                <input
-                  required
-                  type="text"
-                  placeholder="e.g. Yaqoob Enterprises & Printing"
-                  className={fieldClass}
-                  value={form.shopName}
-                  onChange={(e) => update("shopName", e.target.value)}
-                  autoComplete="organization"
-                />
-              </div>
-            </>
-          )}
-
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-secondary">
-              Email Address
-            </label>
-            <input
-              required
-              type="email"
-              placeholder="name@business.com"
-              className={fieldClass}
-              value={form.email}
-              onChange={(e) => update("email", e.target.value)}
-              autoComplete="email"
-            />
-          </div>
-
-          {mode !== "forgotPassword" && (
-            <div>
-              <div className="mb-1 flex items-center justify-between">
-                <label className="block text-xs font-semibold text-secondary">
-                  Password
-                </label>
-                {mode === "signIn" && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMode("forgotPassword");
-                      setFeedback(null);
-                    }}
-                    className="auth-inline-action min-h-11 px-1 text-xs font-medium text-primary hover:text-primary-hover hover:underline cursor-pointer"
-                  >
-                    Forgot password?
-                  </button>
-                )}
-              </div>
-              <div className="relative">
-                <input
-                  required
-                  minLength={8}
-                  type={showPassword ? "text" : "password"}
-                  placeholder={
-                    mode === "signUp" ? "Minimum 8 characters" : "••••••••"
-                  }
-                  className={`${fieldClass} pr-10`}
-                  value={form.password}
-                  onChange={(e) => update("password", e.target.value)}
-                  autoComplete={
-                    mode === "signIn" ? "current-password" : "new-password"
-                  }
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="auth-password-toggle absolute right-1 top-1 text-text-muted hover:text-on-surface transition cursor-pointer"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ?
-                    <EyeOff className="h-4.5 w-4.5" />
-                  : <Eye className="h-4.5 w-4.5" />}
-                </button>
-              </div>
-              {mode === "signUp" && (
-                <p className="mt-1 text-[11px] text-text-muted">
-                  Use at least 8 characters with letters and numbers.
-                </p>
-              )}
-            </div>
-          )}
-
-          {feedback && (
-            <div
-              className={`p-3 rounded-lg text-xs leading-relaxed flex flex-col gap-2 ${
-                feedback.type === "error" ?
-                  "bg-danger-bg border border-danger-border text-danger"
-                : feedback.type === "success" ?
-                  "bg-success-bg border border-success-border text-success"
-                : "bg-primary/5 border border-primary/20 text-primary"
-              }`}
-            >
-              <div className="flex items-start gap-2">
-                {feedback.type === "error" ?
-                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                : feedback.type === "info" && isGoogleLoading ?
-                  <Loader2 className="h-4 w-4 shrink-0 mt-0.5 animate-spin text-primary" />
-                : <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />}
-                <span>{feedback.text}</span>
-              </div>
-
-              {feedback.authUrl && (
-                <div className="mt-1 flex items-center gap-3 font-semibold">
-                  <a
-                    href={feedback.authUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="auth-inline-action min-h-10 gap-1 underline text-primary hover:text-primary-hover cursor-pointer"
-                  >
-                    <span>{t("auth.openGoogleSignIn")}</span>
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                  {isGoogleLoading && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsGoogleLoading(false);
-                        setFeedback(null);
-                      }}
-                      className="auth-inline-action min-h-10 text-text-muted hover:text-on-surface hover:underline cursor-pointer font-normal"
-                    >
-                      Cancel
+            {mode !== "forgotPassword" && (
+              <div className="aq-auth__field">
+                <div className="aq-auth__field-head">
+                  <label htmlFor="aq-password" className="aq-auth__field-label">Password</label>
+                  {mode === "signIn" && (
+                    <button type="button" className="aq-auth__inline"
+                      onClick={() => { setMode("forgotPassword"); setFeedback(null); }}>
+                      Forgot password?
                     </button>
                   )}
                 </div>
-              )}
-
-              {feedback.isRateLimit && (
-                <div className="mt-1 flex flex-col gap-2 pt-2 border-t border-danger-border/60">
-                  <button
-                    type="button"
-                    onClick={handleGoogleSignIn}
-                    className="flex h-9 w-full items-center justify-center gap-2 rounded-md bg-surface-bright border border-border-standard text-xs font-semibold text-on-surface hover:bg-surface transition cursor-pointer"
-                  >
-                    <span>{t("auth.googleInstant")}</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
+                <div className="aq-auth__input-wrap">
+                  <input id="aq-password" type={showPassword ? "text" : "password"}
+                    required minLength={8} autoComplete={mode === "signIn" ? "current-password" : "new-password"}
+                    value={form.password} placeholder={mode === "signUp" ? "8 characters minimum" : "Enter your password"}
+                    aria-describedby={mode === "signUp" ? "aq-password-hint" : undefined}
+                    onChange={(event) => update("password", event.target.value)} />
+                  <button type="button" className="aq-auth__show-password"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}>
+                    {showPassword ? <EyeOff size={18} aria-hidden="true" /> : <Eye size={18} aria-hidden="true" />}
                   </button>
                 </div>
+                {mode === "signUp" && <p className="aq-auth__field-note" id="aq-password-hint">Use at least 8 characters with letters and numbers.</p>}
+              </div>
+            )}
+          </div>
+
+          {feedback && (
+            <div className="aq-auth__feedback" data-tone={feedback.type}
+              role={feedback.type === "error" ? "alert" : "status"} aria-live={feedback.type === "error" ? "assertive" : "polite"}>
+              <span>
+                {feedback.type === "error" ? <AlertCircle size={17} aria-hidden="true" />
+                  : <CheckCircle2 size={17} aria-hidden="true" />}
+                {feedback.text}
+              </span>
+              {feedback.authUrl && (
+                <span>
+                  <a href={feedback.authUrl} target="_blank" rel="noopener noreferrer" className="aq-auth__inline">
+                    {t("auth.openGoogleSignIn")} <ExternalLink size={13} aria-hidden="true" />
+                  </a>
+                  {isGoogleLoading && <button type="button" className="aq-auth__inline"
+                    onClick={() => { setIsGoogleLoading(false); setFeedback(null); }}>Cancel</button>}
+                </span>
+              )}
+              {feedback.isRateLimit && (
+                <button type="button" className="aq-auth__google" disabled={isGoogleLoading}
+                  onClick={() => void handleGoogleSignIn()}>Try Google sign in</button>
               )}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting || isGoogleLoading}
-            className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-primary text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover disabled:opacity-60 cursor-pointer"
-          >
-            {isSubmitting ?
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span>
-                  {mode === "signIn" ? "Signing in..."
-                  : mode === "signUp" ? "Creating account..."
-                  : "Sending reset link..."}
-                </span>
-              </>
-            : <>
-                <span>
-                  {mode === "signIn" ? "Sign in"
-                  : mode === "signUp" ? "Create account"
-                  : "Send reset link"}
-                </span>
-                <ArrowRight className="h-4 w-4" />
-              </>
-            }
+          <button type="submit" className="aq-auth__submit" disabled={isSubmitting || isGoogleLoading} aria-busy={isSubmitting}>
+            {isSubmitting ? <Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              : <ArrowRight size={17} aria-hidden="true" />}
+            {isSubmitting ? (mode === "signIn" ? "Signing in…" : mode === "signUp" ? "Creating account…" : "Sending link…")
+              : (mode === "signIn" ? "Sign in" : mode === "signUp" ? "Create account" : "Send reset link")}
           </button>
         </form>
 
-        {/* Footer Navigation */}
-        <div className="mt-6 pt-5 border-t border-border-standard text-center text-xs text-text-muted">
-          {mode === "forgotPassword" ?
-            <button
-              type="button"
-              onClick={() => {
-                setMode("signIn");
-                setFeedback(null);
-              }}
-              className="auth-inline-action min-h-11 gap-1.5 px-1 font-semibold text-primary hover:underline cursor-pointer"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span>{t("auth.backToSignIn")}</span>
+        {mode !== "forgotPassword" && (
+          <>
+            <div className="aq-auth__divider"><span>or continue with</span></div>
+            <button type="button" className="aq-auth__google"
+              onClick={() => void handleGoogleSignIn()} disabled={isGoogleLoading || isSubmitting}
+              aria-busy={isGoogleLoading}>
+              {isGoogleLoading ? <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
+                : <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                  </svg>}
+              {isGoogleLoading ? "Connecting…" : "Continue with Google"}
             </button>
-          : mode === "signIn" ?
-            <p>
-              Don't have an account?{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("signUp");
-                  setFeedback(null);
-                }}
-                className="auth-inline-action min-h-11 px-1 font-semibold text-primary hover:underline cursor-pointer"
-              >
-                Create one now
-              </button>
-            </p>
-          : <p>
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("signIn");
-                  setFeedback(null);
-                }}
-                className="auth-inline-action min-h-11 px-1 font-semibold text-primary hover:underline cursor-pointer"
-              >
-                Sign in instead
-              </button>
-            </p>
-          }
+          </>
+        )}
 
-          <div className="mt-4 pt-3 border-t border-border-standard/60 text-center">
-            <button
-              type="button"
-              onClick={async () => {
-                setIsSubmitting(true);
-                setFeedback({
-                  type: "info",
-                  text: "Clearing stale credentials and resetting connection...",
-                });
-                await resetConnectionAndSession();
-              }}
-              className="auth-inline-action min-h-10 px-1 text-[11px] text-text-muted hover:text-primary transition underline cursor-pointer"
-            >
-              Reset connection & clear cached session
+        <footer className="aq-auth__form-footer">
+          {mode === "forgotPassword" ? (
+            <button type="button" className="aq-auth__inline"
+              onClick={() => { setMode("signIn"); setFeedback(null); }}>
+              <ArrowLeft size={14} aria-hidden="true" /> Back to sign in
             </button>
-          </div>
-        </div>
+          ) : mode === "signIn" ? (
+            <span>New here? <button type="button" className="aq-auth__inline"
+              onClick={() => { setMode("signUp"); setFeedback(null); }}>Create an account</button></span>
+          ) : (
+            <span>Already registered? <button type="button" className="aq-auth__inline"
+              onClick={() => { setMode("signIn"); setFeedback(null); }}>Sign in</button></span>
+          )}
+          <details className="aq-auth__support">
+            <summary className="aq-auth__field-note">Having trouble signing in?</summary>
+            <button type="button" className="aq-auth__inline" disabled={isSubmitting}
+              onClick={async () => {
+                if (!window.confirm("Clear cached session data and reset the connection on this device?")) return;
+                setIsSubmitting(true);
+                setFeedback({ type: "info", text: "Resetting your saved connection…" });
+                try { await resetConnectionAndSession(); }
+                catch { setFeedback({ type: "error", text: "Connection reset failed. Please try again." }); }
+                finally { setIsSubmitting(false); }
+              }}>
+              Reset connection on this device
+            </button>
+          </details>
+        </footer>
       </main>
-    </div>
+    </AuthFrame>
   );
+
 };
 
 /**
@@ -876,27 +669,30 @@ export const PinSetupScreen: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    const result = await setupPin(pin);
-    setIsSubmitting(false);
-
-    if (!result.success) {
-      setError(result.error || "Failed to set up PIN. Please try again.");
+    try {
+      const result = await setupPin(pin);
+      if (!result.success) {
+        setError(result.error || "Could not set your PIN. Try again.");
+      }
+    } catch {
+      setError("PIN setup failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-      <main className="auth-card w-full max-w-[400px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
+    <AuthFrame>
+      <main className="auth-card aq-auth__card aq-auth__pin-panel w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <KeyRound className="h-6 w-6" />
           </div>
           <h1 className="text-xl font-bold text-on-surface">
-            Set Your Quick-Unlock PIN
+            Choose a quick-unlock PIN
           </h1>
           <p className="mt-1.5 max-w-[300px] text-xs leading-relaxed text-text-muted">
-            Set a 4-digit PIN for quick register unlock and screen lock. Staff
-            won't need to retype passwords between transactions.
+            Use four digits to unlock this device quickly. Your account password remains separate.
           </p>
         </div>
 
@@ -962,7 +758,7 @@ export const PinSetupScreen: React.FC = () => {
               {showPin ? "Hide numbers" : "Show numbers"}
             </button>
             <span className="text-[11px] text-text-muted">
-              Choose a PIN you can recall
+              Never share your PIN
             </span>
           </div>
 
@@ -984,7 +780,7 @@ export const PinSetupScreen: React.FC = () => {
           >
             <CheckCircle2 className="h-4 w-4" />
             <span>
-              {isSubmitting ? "Setting PIN..." : "Save PIN & Enter Register"}
+              {isSubmitting ? "Setting PIN..." : "Save PIN and continue"}
             </span>
           </button>
 
@@ -997,7 +793,7 @@ export const PinSetupScreen: React.FC = () => {
           </button>
         </form>
       </main>
-    </div>
+    </AuthFrame>
   );
 };
 
@@ -1011,6 +807,7 @@ export const LockScreen: React.FC = () => {
   const [showPin, setShowPin] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const unlockInFlight = React.useRef(false);
   const displayName = getProfileDisplayName(user, organization.owner_name);
 
   useEffect(() => {
@@ -1018,15 +815,23 @@ export const LockScreen: React.FC = () => {
   }, []);
 
   const handleUnlock = async (pinToTry: string) => {
+    if (unlockInFlight.current) return;
+    unlockInFlight.current = true;
     setError("");
     setIsSubmitting(true);
-    const success = await unlock(pinToTry);
-    setIsSubmitting(false);
-
-    if (!success) {
+    try {
+      const success = await unlock(pinToTry);
+      if (!success) {
+        setPin("");
+        setError("Incorrect PIN. Please try again.");
+        document.getElementById("unlock-pin")?.focus();
+      }
+    } catch {
       setPin("");
-      setError("Incorrect PIN. Please try again.");
-      document.getElementById("unlock-pin")?.focus();
+      setError("Unable to unlock right now. Try again.");
+    } finally {
+      unlockInFlight.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -1038,8 +843,8 @@ export const LockScreen: React.FC = () => {
   };
 
   return (
-    <div className="auth-screen flex min-h-dvh w-full items-center justify-center bg-surface p-4 font-sans text-on-surface">
-      <main className="auth-card w-full max-w-[380px] rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
+    <AuthFrame>
+      <main className="auth-card aq-auth__card aq-auth__pin-panel w-full rounded-xl border border-border-standard bg-surface-bright p-6 shadow-level-2 sm:p-8">
         {/* User Avatar and Identity */}
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="mb-3 rounded-full ring-4 ring-primary/10">
@@ -1112,7 +917,7 @@ export const LockScreen: React.FC = () => {
             className="flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-primary text-sm font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover disabled:opacity-50"
           >
             <LockKeyhole className="h-4 w-4" />
-            <span>{isSubmitting ? "Unlocking..." : "Unlock Register"}</span>
+            <span>{isSubmitting ? "Unlocking..." : "Unlock workspace"}</span>
           </button>
 
           <button
@@ -1124,7 +929,7 @@ export const LockScreen: React.FC = () => {
           </button>
         </form>
       </main>
-    </div>
+    </AuthFrame>
   );
 };
 

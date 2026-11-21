@@ -2,7 +2,7 @@ import React from "react";
 import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
-import { APP_NAME } from "../../config/app";
+import { getStagingFinanceNavItems } from "../accounting/stagingFinanceNavigation";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
@@ -54,7 +54,7 @@ const readSidebarCollapsed = () => {
 
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup, isDemoMode, organization, user } = useAuth();
+  const { lock, hasPinSetup, isDemoMode, isCloudAccount, organization, user } = useAuth();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
   const [isCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
@@ -76,6 +76,10 @@ export const Sidebar: React.FC = () => {
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
   ];
 
+  navItems.unshift({id:"aqvora-erp-preview",label:"AQVORA ERP Preview",icon:LayoutDashboard});
+  navItems.push(...getStagingFinanceNavItems({
+    isDemoMode, isCloudAccount, role:user?.role,
+  }));
   const displayName = getProfileDisplayName(user, organization.owner_name);
   const toggleLabel = isCollapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar");
 
@@ -171,13 +175,9 @@ export const Sidebar: React.FC = () => {
     >
       <div className="side-brand">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
+          <div className="brand-mark" aria-hidden="true"><img src="/assets/aqvora-symbol.svg" alt="" /></div>
           <div className="brand-copy min-w-0" data-sidebar-label>
-            <strong className="truncate">{APP_NAME}</strong>
+            <strong className="truncate">AQVORA</strong>
             <span data-sidebar-label>FINANCIAL WORKSPACE</span>
           </div>
         </div>

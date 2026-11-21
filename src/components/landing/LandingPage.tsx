@@ -1,269 +1,193 @@
 import React, { useState } from "react";
 import {
-  ArrowDownLeft,
   ArrowRight,
-  ArrowUpRight,
-  FileSpreadsheet,
-  Landmark,
+  BarChart3,
+  BookOpenText,
+  Check,
+  LayoutDashboard,
   Moon,
-  Play,
-  Receipt,
-  Store,
+  ShieldCheck,
   Sun,
-  WifiOff,
 } from "lucide-react";
-import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
+import { getSavedTheme, applyTheme, type ThemePreference } from "../../lib/theme";
 import { useI18n } from "../../i18n";
-import { formatPaisa } from "../../lib/money";
-import { AnimatedAmount } from "../common/AnimatedAmount";
+import { LandingPreview } from "./LandingPreview";
+import "./LandingPremium.css";
 
 export interface LandingPageProps {
   onOpenAuth: (initialMode?: "signIn" | "signUp") => void;
   onTryDemo: () => Promise<void> | void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({
-  onOpenAuth,
-  onTryDemo,
-}) => {
+const CAPABILITIES = [
+  {
+    icon: BookOpenText,
+    title: "Record with ease",
+    description: "Income, expenses and searchable entries.",
+  },
+  {
+    icon: LayoutDashboard,
+    title: "See where you stand",
+    description: "Cash, bank and daily operating totals.",
+  },
+  {
+    icon: BarChart3,
+    title: "Understand the numbers",
+    description: "Clear reports with date and account filters.",
+  },
+] as const;
+
+const STEPS = [
+  { number: "01", title: "Create your account", description: "Start with your business details." },
+  { number: "02", title: "Record activity", description: "Review entries before saving." },
+  { number: "03", title: "Stay informed", description: "Find activity and follow your balances." },
+] as const;
+
+export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo }) => {
   const { t } = useI18n();
   const [theme, setTheme] = useState<ThemePreference>(() => getSavedTheme());
   const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
 
   const toggleTheme = () => {
-    const nextTheme: ThemePreference = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    applyTheme(nextTheme);
+    const next: ThemePreference = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    applyTheme(next);
   };
 
-  const handleLaunchDemo = async () => {
+  const openDemo = async () => {
+    if (isDemoLoading) return;
+    setDemoError(null);
     setIsDemoLoading(true);
     try {
       await onTryDemo();
+    } catch {
+      setDemoError("The demo could not open. Please try again.");
     } finally {
       setIsDemoLoading(false);
     }
   };
 
   return (
-    <div className="shop-landing-page min-h-screen overflow-x-clip bg-surface font-sans text-on-surface">
-      <header className="sticky top-0 z-40 border-b border-border-standard bg-surface-bright">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-6">
-          <div className="inline-flex min-w-0 items-center gap-2.5 text-on-surface">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-white">
-              <Store aria-hidden="true" className="h-[18px] w-[18px]" />
-            </span>
-            <span className="landing-brand-name truncate text-base font-bold tracking-tight">Shop Pro</span>
-          </div>
+    <div className="shop-landing-page aq-landing" id="top">
+      <a href="#main-content" className="aq-landing__skip">Skip to content</a>
 
-          <div className="flex shrink-0 items-center gap-2">
+      <header className="aq-landing__header">
+        <div className="aq-landing__nav aq-landing__container">
+          <a href="#top" className="aq-landing__brand" aria-label="AQVORA home">
+            <img className="aq-landing__brandmark" src="/assets/aqvora-symbol.svg" alt="" aria-hidden="true" />
+            <span>AQVORA</span>
+          </a>
+
+          <nav className="aq-landing__navlinks" aria-label="Page navigation">
+            <a href="#platform">Platform</a>
+            <a href="#how-it-works">How it works</a>
+          </nav>
+
+          <div className="aq-landing__nav-actions">
             <button
               type="button"
+              className="aq-landing__theme"
               onClick={toggleTheme}
               aria-label={t("landing.switchTheme")}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright text-secondary transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)]"
+              title={t("landing.switchTheme")}
             >
-              {theme === "dark" ? (
-                <Sun aria-hidden="true" className="h-4 w-4" />
-              ) : (
-                <Moon aria-hidden="true" className="h-4 w-4" />
-              )}
+              {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
             </button>
-            <button
-              type="button"
-              onClick={() => onOpenAuth("signIn")}
-              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-bright px-2 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] sm:px-4"
-            >
+            <button type="button" className="aq-landing__signin" onClick={() => onOpenAuth("signIn")}>
               {t("landing.signIn")}
             </button>
-            <button
-              type="button"
-              disabled={isDemoLoading}
-              onClick={handleLaunchDemo}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-2 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60 sm:px-4"
-            >
-              <Play aria-hidden="true" className="h-3.5 w-3.5 fill-current" />
-              <span className="hidden sm:inline">{t("landing.openDemo")}</span>
-              <span className="sm:hidden">{t("landing.demo")}</span>
+            <button type="button" className="aq-landing__button aq-landing__button--primary aq-landing__nav-cta" onClick={() => onOpenAuth("signUp")}>
+              Get started <ArrowRight size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
       </header>
 
-      <main id="top">
-        <section className="shop-landing-hero border-b border-border-standard py-10 sm:py-14 lg:py-16">
-          <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 sm:px-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12">
-            <div className="shop-landing-copy max-w-xl lg:py-8">
-              <h1 className="max-w-[14ch] text-3xl font-bold leading-tight tracking-tight text-on-surface sm:text-4xl lg:text-5xl">
-                {t("landing.headline")}
-              </h1>
-
-              <div className="mt-7 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
-                <button
-                  type="button"
-                  disabled={isDemoLoading}
-                  onClick={handleLaunchDemo}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60"
-                >
-                  <Play aria-hidden="true" className="h-4 w-4 fill-current" />
-                  {isDemoLoading ? t("landing.openingDemo") : t("landing.openDemo")}
+      <main id="main-content">
+        <section className="aq-landing__hero" aria-labelledby="landing-title">
+          <div className="aq-landing__container aq-landing__hero-grid">
+            <div className="aq-landing__hero-content">
+              <p className="aq-landing__eyebrow"><span aria-hidden="true" /> THE BUSINESS WORKSPACE</p>
+              <h1 id="landing-title">Your business.<span>In clear view.</span></h1>
+              <p className="aq-landing__intro">
+                Record activity, understand balances and stay in control — in one focused workspace.
+              </p>
+              <div className="aq-landing__hero-actions">
+                <button type="button" className="aq-landing__button aq-landing__button--primary" onClick={() => onOpenAuth("signUp")}>
+                  Create your account <ArrowRight size={18} aria-hidden="true" />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onOpenAuth("signUp")}
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-5 text-sm font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)]"
-                >
-                  {t("landing.createShop")}
-                  <ArrowRight aria-hidden="true" className="h-4 w-4 text-secondary" />
+                <button type="button" className="aq-landing__button aq-landing__button--secondary" onClick={() => void openDemo()} disabled={isDemoLoading}>
+                  {isDemoLoading ? "Opening demo…" : "Explore demo"}
                 </button>
               </div>
+              {demoError && <p role="alert" className="aq-landing__error">{demoError}</p>}
+              <p className="aq-landing__reassurance"><Check size={15} aria-hidden="true" /> Demo uses sample data, never your real books.</p>
             </div>
-
-            <section
-              aria-label={t("landing.exampleRegister")}
-              className="shop-landing-preview min-w-0 rounded-xl border border-border-standard bg-surface-bright p-3 shadow-level-1 sm:p-5"
-            >
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-b border-border-standard pb-3">
-                <div className="flex min-w-0 items-center gap-2">
-                  <Receipt aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
-                  <h2 className="truncate text-sm font-semibold text-on-surface sm:text-base">
-                    {t("landing.exampleRegister")}
-                  </h2>
-                </div>
-                <span className="inline-flex shrink-0 items-center rounded-full border border-border-standard bg-surface-container-low px-2.5 py-1 text-[11px] font-medium text-secondary">
-                  {t("landing.exampleData")}
-                </span>
-              </div>
-
-              <dl className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
-                <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
-                  <dt className="text-xs font-medium text-secondary">{t("landing.incomeToday")}</dt>
-                  <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-primary sm:mt-1 sm:text-left sm:text-base">
-                    <AnimatedAmount amountPaisa={2_600_000} />
-                  </dd>
-                </div>
-                <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
-                  <dt className="text-xs font-medium text-secondary">{t("landing.expensesToday")}</dt>
-                  <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-on-surface sm:mt-1 sm:text-left sm:text-base">
-                    <AnimatedAmount amountPaisa={365_000} />
-                  </dd>
-                </div>
-                <div className="flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border-standard bg-surface-container-low px-3 py-2.5 sm:block sm:px-3 sm:py-3">
-                  <dt className="text-xs font-medium text-secondary">{t("landing.netProfitToday")}</dt>
-                  <dd className="whitespace-nowrap text-right font-mono text-sm font-semibold text-on-surface sm:mt-1 sm:text-left sm:text-base">
-                    <AnimatedAmount amountPaisa={2_235_000} />
-                  </dd>
-                </div>
-              </dl>
-
-              <h3 className="mt-4 text-xs font-semibold text-secondary">
-                {t("landing.recentEntries")}
-              </h3>
-              <ul className="mt-2 divide-y divide-border-standard overflow-hidden rounded-lg border border-border-standard">
-                <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-success-bg text-success">
-                      <ArrowDownLeft aria-hidden="true" className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-on-surface">{t("landing.sampleSale")}</p>
-                      <p className="truncate text-[11px] text-secondary">{t("landing.cashDrawer")}</p>
-                    </div>
-                  </div>
-                  <span className="whitespace-nowrap text-right font-mono text-xs font-semibold text-success">+{formatPaisa(1_850_000)}</span>
-                </li>
-                <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-danger-bg text-danger">
-                      <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-on-surface">{t("landing.sampleExpense")}</p>
-                      <p className="truncate text-[11px] text-secondary">{t("landing.cashDrawer")}</p>
-                    </div>
-                  </div>
-                  <span className="whitespace-nowrap text-right font-mono text-xs font-semibold text-on-surface">−{formatPaisa(320_000)}</span>
-                </li>
-                <li className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-3 py-2.5">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-success-bg text-success">
-                      <ArrowDownLeft aria-hidden="true" className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-xs font-semibold text-on-surface">{t("landing.sampleSale")}</p>
-                      <p className="truncate text-[11px] text-secondary">{t("landing.bankAccount")}</p>
-                    </div>
-                  </div>
-                  <span className="whitespace-nowrap text-right font-mono text-xs font-semibold text-success">+{formatPaisa(750_000)}</span>
-                </li>
-              </ul>
-            </section>
+            <div className="aq-landing__preview-wrap">
+              <LandingPreview />
+            </div>
           </div>
         </section>
 
-        <section className="bg-surface-container-low/40 py-10 sm:py-14">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <h2 className="text-xl font-semibold tracking-tight text-on-surface sm:text-2xl">
-              {t("landing.featuresTitle")}
-            </h2>
-            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Receipt aria-hidden="true" className="h-4 w-4" />
-                </span>
-                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.salesExpenses")}</h3>
-                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.salesExpensesDescription")}</p>
-              </article>
-              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Landmark aria-hidden="true" className="h-4 w-4" />
-                </span>
-                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.accountsTitle")}</h3>
-                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.accountsDescription")}</p>
-              </article>
-              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <FileSpreadsheet aria-hidden="true" className="h-4 w-4" />
-                </span>
-                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.reportsTitle")}</h3>
-                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.reportsDescription")}</p>
-              </article>
-              <article className="rounded-xl border border-border-standard bg-surface-bright p-5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <WifiOff aria-hidden="true" className="h-4 w-4" />
-                </span>
-                <h3 className="mt-4 text-sm font-semibold text-on-surface">{t("landing.offlineTitle")}</h3>
-                <p className="mt-1.5 text-sm leading-5 text-secondary">{t("landing.offlineDescription")}</p>
-              </article>
+        <section className="aq-landing__platform" id="platform" aria-labelledby="platform-title">
+          <div className="aq-landing__container">
+            <div className="aq-landing__section-head">
+              <div>
+                <p className="aq-landing__overline">A BETTER DAILY ROUTINE</p>
+                <h2 id="platform-title">The essentials, beautifully organized.</h2>
+              </div>
+              <p>Built to stay simple as your business grows.</p>
             </div>
+            <div className="aq-landing__features">
+              {CAPABILITIES.map(({ icon: Icon, title, description }) => (
+                <article className="aq-landing__feature" key={title}>
+                  <span className="aq-landing__feature-icon"><Icon size={21} strokeWidth={1.75} aria-hidden="true" /></span>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                </article>
+              ))}
+            </div>
+            <p className="aq-landing__upcoming"><ShieldCheck size={16} aria-hidden="true" /> General ledger, invoicing, inventory and payroll are in development.</p>
+          </div>
+        </section>
+
+        <section className="aq-landing__steps" id="how-it-works" aria-labelledby="steps-title">
+          <div className="aq-landing__container">
+            <div className="aq-landing__section-head">
+              <div>
+                <p className="aq-landing__overline">GETTING STARTED</p>
+                <h2 id="steps-title">Three steps. One clear view.</h2>
+              </div>
+            </div>
+            <div className="aq-landing__steps-grid">
+              {STEPS.map((step) => (
+                <div className="aq-landing__step" key={step.number}>
+                  <span>{step.number}</span>
+                  <div><h3>{step.title}</h3><p>{step.description}</p></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="aq-landing__last">
+          <div className="aq-landing__container aq-landing__last-inner">
+            <div>
+              <h2>A clearer day starts here.</h2>
+              <p>Bring your business activity into one place.</p>
+            </div>
+            <button type="button" className="aq-landing__button aq-landing__button--primary" onClick={() => onOpenAuth("signUp")}>
+              Get started <ArrowRight size={17} aria-hidden="true" />
+            </button>
           </div>
         </section>
       </main>
 
-      <footer className="border-t border-border-standard bg-surface-bright py-5 text-xs text-secondary">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-3 px-4 sm:px-6">
-          <span className="inline-flex items-center gap-2 font-medium text-on-surface">
-            <Store aria-hidden="true" className="h-4 w-4 text-primary" />
-            Shop Pro
-            <span className="font-normal text-secondary">© {new Date().getFullYear()}</span>
-          </span>
-          <nav aria-label={t("landing.footerNavigation")} className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <button
-              type="button"
-              onClick={() => onOpenAuth("signIn")}
-              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)]"
-            >
-              {t("landing.signIn")}
-            </button>
-            <button
-              type="button"
-              disabled={isDemoLoading}
-              onClick={handleLaunchDemo}
-              className="min-h-10 rounded-sm transition-colors hover:text-on-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--accent-ink)] disabled:cursor-wait disabled:opacity-60"
-            >
-              {t("landing.openDemo")}
-            </button>
-          </nav>
+      <footer className="aq-landing__footer">
+        <div className="aq-landing__container aq-landing__footer-inner">
+          <span>© {new Date().getFullYear()} AQVORA · Private product preview</span>
+          <button type="button" onClick={() => onOpenAuth("signIn")}>Sign in</button>
         </div>
       </footer>
     </div>

@@ -13,6 +13,7 @@ import {
 import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
+import { getStagingFinanceNavItems } from "../accounting/stagingFinanceNavigation";
 
 const primaryItems: Array<{
   id: AppView;
@@ -37,9 +38,14 @@ const secondaryItems: Array<{
 
 export const MobileNav: React.FC = () => {
   const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup } = useAuth();
+  const { lock, hasPinSetup, isCloudAccount, isDemoMode, user } = useAuth();
   const { t } = useI18n();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const availableSecondary: typeof secondaryItems = [
+    {id:"aqvora-erp-preview",label:"AQVORA ERP Preview",icon:LayoutDashboard},
+    ...secondaryItems,
+    ...getStagingFinanceNavItems({ isCloudAccount, isDemoMode, role:user?.role }),
+  ];
 
   const navigate = (view: AppView) => {
     setCurrentView(view);
@@ -89,8 +95,8 @@ export const MobileNav: React.FC = () => {
               id="mobile-more-menu"
               className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
             >
-              {secondaryItems.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : t("nav.settings");
+              {availableSecondary.map(({ id, label: itemLabel, icon: Icon }) => {
+                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : itemLabel;
                 return (
                   <button
                     key={id}
@@ -135,8 +141,7 @@ export const MobileNav: React.FC = () => {
           className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors ${
             (
               isMoreOpen ||
-              currentView === "settings" ||
-              currentView === "accounts"
+              availableSecondary.some(item => item.id === currentView)
             ) ?
               "bg-primary/[0.07] text-primary"
             : "text-text-muted hover:bg-surface-container-low"

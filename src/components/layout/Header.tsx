@@ -15,6 +15,7 @@ import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import { APP_NAME } from "../../config/app";
 import "./WorkspaceChrome.css";
+import "./WorkspacePastel.css";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();
@@ -35,6 +36,13 @@ export const Header: React.FC = () => {
     : currentView === "chat" ? t("nav.ledger")
     : currentView === "ai" ? "LedgerMate AI"
     : currentView === "reports" ? t("nav.reports")
+    : currentView === "aqvora-erp-preview" ? "AQVORA ERP Preview"
+    : currentView === "aqvora-cash-collections" ? "Cash collections"
+    : currentView === "aqvora-receipt-drafts" ? "Customer receipts"
+    : currentView === "aqvora-sales-lifecycle" ? "Invoice approvals"
+    : currentView === "aqvora-gl-tb" ? "GL & Trial Balance"
+    : currentView === "aqvora-sales-drafts" ? "Service drafts"
+    : currentView === "aqvora-receivables" ? "Receivables"
     : currentView === "accounts" ? t("nav.accounts")
     : t("nav.settings");
 
@@ -78,7 +86,7 @@ export const Header: React.FC = () => {
     <header className="app-header workspace-header" dir={dir}>
       <div className="workspace-context">
         <div className="workspace-context__copy">
-          <span className="workspace-context__eyebrow">{APP_NAME} <span aria-hidden="true">/</span> WORKSPACE</span>
+          <span className="workspace-context__eyebrow">AQVORA <span aria-hidden="true">/</span> WORKSPACE</span>
           <span className="workspace-context__title">{pageTitle}</span>
         </div>
       </div>

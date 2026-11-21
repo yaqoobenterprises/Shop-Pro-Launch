@@ -8,6 +8,7 @@ import React, {
 import { useAuth } from "./AuthContext";
 import { EntryMode, getUserPreferences } from "../services/userPreferencesService";
 import { isFeatureEnabled } from "../config/features";
+import {releaseInitialView} from "../config/releaseExperience";
 
 export type AppView =
   | "chat"
@@ -15,6 +16,15 @@ export type AppView =
   | "dashboard"
   | "sales"
   | "accounts"
+  | "aqvora-erp-preview"
+  | "aqvora-receivables"
+  | "aqvora-sales-drafts"
+  | "aqvora-sales-lifecycle"
+  | "aqvora-cash-collections"
+  | "aqvora-receipt-drafts"
+  | "aqvora-gl-tb"
+  | "aqvora-finance-setup"
+  | "aqvora-manual-journal"
   | "reports"
   | "settings";
 
@@ -55,7 +65,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { user } = useAuth();
   const entryModesEnabled = isFeatureEnabled("entryModes");
-  const [currentView, setCurrentView] = useState<AppView>("chat"); // Default to Modern Shop Ledger Chat
+  const [currentView, setCurrentView] = useState<AppView>(releaseInitialView); // Preserve installed ledger; sample-first only by explicit preview build.
   const [entryMode, setEntryMode] = useState<EntryMode>("chat");
   const [dataVersion, setDataVersion] = useState<number>(1);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);

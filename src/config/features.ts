@@ -5,6 +5,7 @@
 
 export interface FeatureFlags {
   regionSettings: boolean;
+  companySetupWizard: boolean;
   languageUr: boolean;
   entryModes: boolean;
   chatQueries: boolean;
@@ -12,6 +13,8 @@ export interface FeatureFlags {
 
 export const FEATURES: FeatureFlags = {
   regionSettings: false,
+  // Preview-only opt-in. Never active on production without an explicit build setting.
+  companySetupWizard: import.meta.env?.VITE_ENABLE_COMPANY_SETUP_WIZARD === 'true',
   languageUr: false,
   entryModes: false,
   chatQueries: true,

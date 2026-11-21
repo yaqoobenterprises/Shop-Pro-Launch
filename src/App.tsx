@@ -12,18 +12,19 @@ import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
-
-// Modern Shop Ledger Views
 import {
   ledgerService,
   OFFLINE_SYNC_COMPLETE_EVENT,
 } from "./services/ledgerService";
-
 import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
-
+import {getStagingFinanceNavItems} from "./components/accounting/stagingFinanceNavigation";
+import {
+  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, FreshFinanceSetupWorkspace, AuthorizedJournalWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
+} from "./components/accounting/FinanceLazyRoutes";
+const FinanceDesignPreview = lazy(() => import("./components/accounting/FinanceDesignPreview").then(m=>({default:m.FinanceDesignPreview})));
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
 );
@@ -45,7 +46,6 @@ const LedgerSettingsView = lazy(() =>
 const AccountsView = lazy(() =>
   import("./components/accounts/AccountsView").then((module) => ({ default: module.AccountsView })),
 );
-
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
   const { setLanguage } = useI18n();
@@ -66,19 +66,23 @@ const I18nPreferenceSync: React.FC = () => {
 };
 
 const MainShell: React.FC = () => {
-  const { currentView } = useApp();
-  const { isDemoMode, exitDemoMode, organization, user } = useAuth();
+  const { currentView, setCurrentView } = useApp();
+  const { isDemoMode, exitDemoMode, organization, user, isCloudAccount } = useAuth();
   const { t } = useI18n();
-  const regionSettingsEnabled = isFeatureEnabled("regionSettings");
+  const companySetupEnabled = isFeatureEnabled("companySetupWizard");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
 
   useEffect(() => {
+    // A real owner sees the mandatory setup only when verified account setup is unfinished.
+    // The isolated demo gets an explicit, skippable preview instead.
+    if (isDemoMode) return;
     setShowRegionalSetup(Boolean(
-      regionSettingsEnabled && user?.role === "OWNER" && organization.region_configured === false,
+      companySetupEnabled && user?.role === "OWNER" && organization.region_configured === false,
     ));
-  }, [regionSettingsEnabled, user?.id, user?.role, organization.id, organization.region_configured]);
+  }, [companySetupEnabled, isDemoMode, user?.id, user?.role, organization.id, organization.region_configured]);
 
   useEffect(() => {
+    if (currentView === "aqvora-erp-preview") return;
     let syncInFlight: Promise<void> | undefined;
     const synchronizeOfflineWork = () => {
       if (syncInFlight) return;
@@ -107,7 +111,12 @@ const MainShell: React.FC = () => {
       window.removeEventListener("online", synchronizeOfflineWork);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [currentView]);
+
+  if (currentView === "aqvora-erp-preview") return <Suspense fallback={<div role="status">Loading AQVORA ERP review…</div>}><FinanceDesignPreview
+    onClose={()=>setCurrentView("dashboard")}
+    stagingLinks={getStagingFinanceNavItems({isCloudAccount,isDemoMode,role:user?.role})}
+    onOpenStaging={setCurrentView}/></Suspense>;
 
   const renderActiveView = () => {
     switch (currentView) {
@@ -123,6 +132,16 @@ const MainShell: React.FC = () => {
         return <LedgerReportsView />;
       case "accounts":
         return <AccountsView />;
+      case "aqvora-receivables":
+        return <ReceivablesWorkspace />;
+      case "aqvora-sales-drafts":
+        return <SalesDraftsWorkspace />;
+      case "aqvora-gl-tb": return <GeneralLedgerTrialBalanceWorkspace />;
+      case "aqvora-finance-setup": return <FreshFinanceSetupWorkspace />;
+      case "aqvora-manual-journal": return <AuthorizedJournalWorkspace />;
+      case "aqvora-sales-lifecycle": return <SalesInvoiceLifecycleWorkspace />;
+      case "aqvora-cash-collections": return <CashCollectionWorkspace />;
+      case "aqvora-receipt-drafts": return <CustomerReceiptDraftWorkspace />;
       case "settings":
         return <LedgerSettingsView />;
       default:
@@ -135,8 +154,20 @@ const MainShell: React.FC = () => {
       {isDemoMode && (
         <div
           role="status"
-          className="z-40 flex min-h-14 shrink-0 items-center justify-end border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
+          className="z-40 flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
         >
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-text-muted">Sample workspace · no live company data</span>
+            {companySetupEnabled && (
+              <button
+                type="button"
+                onClick={() => setShowRegionalSetup(true)}
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-border-standard bg-surface-container-low px-3 text-xs font-semibold text-on-surface hover:bg-surface-bright"
+              >
+                Preview company setup
+              </button>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => void exitDemoMode()}
@@ -213,18 +244,16 @@ const WorkspaceGate: React.FC = () => {
     );
   }
 
-  // If password recovery is active, show password reset form
   if (isPasswordRecovery) {
     return <AuthScreen />;
   }
 
   if (mfaChallengeRequired) return <MfaChallengeScreen />;
 
-  // If no active user session and not in demo mode
   if (!user && !isDemoMode) {
     if (authMode) {
       return (
-        <AuthScreen initialMode={authMode} />
+        <AuthScreen initialMode={authMode} onBack={() => setAuthMode(null)} />
       );
     }
     return (
@@ -241,10 +270,8 @@ const WorkspaceGate: React.FC = () => {
   if (isLocked && !isDemoMode) {
     return <LockScreen />;
   }
-
   return <MainShell />;
 };
-
 const RegionalWorkspace: React.FC = () => {
   const { organization } = useAuth();
   return (
@@ -259,7 +286,6 @@ const RegionalWorkspace: React.FC = () => {
     </RegionProvider>
   );
 };
-
 export default function App() {
   return (
     <AuthProvider>
