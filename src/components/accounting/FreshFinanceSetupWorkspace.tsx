@@ -74,6 +74,7 @@ export function FreshFinanceSetupWorkspace() {
 
   const execute=async(work:()=>Promise<unknown>,message:string)=>{
     if(!enabled||!snapshot||lock.current)return;
+    const token=++sequence.current;
     lock.current=true;setBusy(true);setError("");setNotice("");
     setSnapshot(null);
     try {
@@ -81,11 +82,16 @@ export function FreshFinanceSetupWorkspace() {
       // Never treat a successful mutation response as proof that the full
       // remote state is current: re-read all organization/account evidence.
       const latest=await loadFreshFinanceSetup(ctx);
-      setSnapshot(latest);
-      setNotice(message);
+      // Ignore responses from the previous account/company after a switch.
+      if(sequence.current===token){
+        setSnapshot(latest);
+        setNotice(message);
+      }
     }catch(reason){
-      setError((reason instanceof Error?reason.message:"Server save could not be verified.")+
-        " The action may have committed; refresh before attempting it again.");
+      if(sequence.current===token){
+        setError((reason instanceof Error?reason.message:"Server save could not be verified.")+
+          " The action may have committed; refresh before attempting it again.");
+      }
     }finally{lock.current=false;setBusy(false);}
   };
 
