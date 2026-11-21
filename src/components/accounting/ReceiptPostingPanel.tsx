@@ -49,11 +49,14 @@ export function ReceiptPostingPanel({context,actorRole,sourceReceipt}:{
   },[enabled,organizationId,userId]);
 
   useEffect(()=>{
-    if(!pending&&!busy&&sourceReceipt?.id){
-      setReceiptId(sourceReceipt.id);
-      setSource(sourceReceipt);
-    }
-  },[sourceReceipt?.id,sourceReceipt?.revision,pending,busy]);
+    if(pending||busy||!sourceReceipt?.id)return;
+    // A successful immutable posting must not be overwritten by a stale
+    // approved parent source when the original pending key is cleared.
+    if(posted?.receipt_id===sourceReceipt.id)return;
+    setReceiptId(sourceReceipt.id);
+    setSource(sourceReceipt);
+    setPosted(null);
+  },[sourceReceipt?.id,sourceReceipt?.revision,pending,busy,posted?.receipt_id]);
 
   const load=async()=>{
     if(!enabled||pending||recoveryFault||inFlight.current)return;
