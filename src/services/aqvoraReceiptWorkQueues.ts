@@ -7,8 +7,7 @@ import {verifyControlledCashCollection} from "../accounting/verifiedCashCollecti
 import {verifyCustomerReceiptDetail} from "../accounting/verifiedCustomerReceipt";
 import {uuid} from "../accounting/receiptReadPrimitives";
 import {getSupabaseClient} from "../lib/supabase";
-import {isIsolatedReceiptDraftEnabled} from "./aqvoraReceiptDraftService";
-import {requireIsolatedReceivablesSession,
+import {isIsolatedReceivablesReadEnabled,requireIsolatedReceivablesSession,
   type IsolatedReceivablesContext} from "./aqvoraReceivablesStagingGate";
 
 type QueueKind="cash"|"receipt";
@@ -17,7 +16,7 @@ export type LiveReceiptQueuePage<T>={
   liveNotSnapshot:true;bankVerified:false;legacyIncluded:false;
 };
 export const isIsolatedReceiptQueueEnabled=():boolean=>
-  isIsolatedReceiptDraftEnabled() &&
+  isIsolatedReceivablesReadEnabled() &&
   import.meta.env.VITE_ENABLE_AQVORA_STAGING_RECEIPT_INBOX==="true";
 
 function validateOptions(afterId:string|null,limit:number):void{
