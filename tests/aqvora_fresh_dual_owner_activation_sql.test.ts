@@ -167,9 +167,12 @@ describe("Fresh AQVORA provenance, independent AAL2 owner activation & exact fir
       // Single-actor dual approval is forbidden even with valid MFA.
       const approveSql="SELECT public.approve_aqvora_fresh_finance_activation($1,$2,$3,$4) AS r";
       await rejected(db,approveSql,[FRESH,MAKER_KEY,CHECK_KEY,ATTEST],/distinct|Second ACTIVE/);
-      expect((await db.query<{n:number}>(
-        "SELECT count(*)::int n FROM public.aqvora_enabled_companies WHERE organization_id=$1",
-        [FRESH])).rows[0].n).toBe(0);
+      // Authenticated users cannot SELECT the private enabled table.
+      // The audited owner-only approval receipt lookup must still be empty.
+      const notApproved=await db.query<{r:R|null}>(
+        "SELECT public.lookup_aqvora_fresh_finance_activation($1,$2) AS r",
+        [FRESH,CHECK_KEY]);
+      expect(notApproved.rows[0].r).toBeNull();
 
       // A genuine second OWNER cannot approve on an AAL1 session.
       await login(CHECKER,"aal1");
