@@ -29,7 +29,8 @@ export function buildPeriodProfitAndLoss(
   periodStart: string,
   periodEnd: string,
 ): PeriodProfitAndLoss {
-  if (!validBusinessDate(periodStart) || !validBusinessDate(periodEnd)
+  if (!validBusinessDate(input.asOfDate) || !validBusinessDate(periodStart)
+      || !validBusinessDate(periodEnd)
       || periodStart > periodEnd || periodEnd > input.asOfDate) {
     throw new Error("Choose a valid period within the certified as-of cutoff.");
   }
