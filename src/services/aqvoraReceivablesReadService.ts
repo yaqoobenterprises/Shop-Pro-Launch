@@ -6,8 +6,10 @@ import type {
   InvoiceOpenBalance, ReceivablesReconciliation,
 } from "../accounting/receiptContracts";
 import type { AccountingReadSource } from "../accounting/readContracts";
-import {validateReportCurrencyEvidence,requireMatchingInvoicePolicyForReport}
+import {validateReportCurrencyEvidence}
   from "../accounting/currencyReportEvidence";
+import {requireMatchingInvoicePolicyForReport}
+  from "../accounting/sourceMoneyEvidence";
 import {
   verifyInvoiceOpenBalance, verifyOpenInvoicePage,
   verifyReceivablesReconciliation,
