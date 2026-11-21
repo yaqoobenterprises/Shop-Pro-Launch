@@ -16,7 +16,6 @@ import { isIsolatedVerifiedFinancialReadEnabled } from "./aqvoraVerifiedFinancia
 
 const UUID=/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i;
 const EXACT=/^[1-9][0-9]*$/;
-const FORBIDDEN=new Set(["receivable","payable","inventory","tax"]);
 
 export interface ManualJournalContext {
   organizationId:string;
