@@ -3,7 +3,7 @@
 Date: 2026-11-21. Status: **read-only, synthetic tests, no V2 historical import.**
 
 ## Why this exists
-AQVORA is the upgraded Shop Pro. **Both historic organizations** are valid sources to review, but their records cannot be silently treated as a single authorized legal-entity book. Original Cashbook activity (including revisions, voids and pending/offline entries) remains preserved. The end state is immutable, properly authorized and balanced V2 double-entry, not renaming the legacy `account_ledger_entries` table into a General Ledger.
+AQVORA is the upgraded Shop Pro. **Two founder-named business sources** require review, but a live read-only audit found **four distinct source organization UUIDs** behind those display names: one active source under the first name and three under the second name. Every UUID is an independent source partition. Their records cannot be silently treated as a single authorized legal-entity book. Original Cashbook activity (including revisions, voids and pending/offline entries) remains preserved. The end state is immutable, properly authorized and balanced V2 double-entry, not renaming the legacy `account_ledger_entries` table into a General Ledger.
 
 This Draft branch builds on [#90](https://github.com/yaqoobenterprises/Shop-Pro-Launch/pull/90), which in turn builds on [#88](https://github.com/yaqoobenterprises/Shop-Pro-Launch/pull/88). Follow [release issue #89](https://github.com/yaqoobenterprises/Shop-Pro-Launch/issues/89). **Do not individually merge this child into main.**
 
@@ -48,10 +48,10 @@ node scripts/aqvora_legacy_source_reconcile.mjs \
   --expect-transactions 415 \
   --out "/private/legacy-source-1-reconciliation.json"
 ```
-Only aggregate counts/totals/checksum print to stdout. The optional detailed file includes source record IDs and stays private: owner-only permissions where supported, never overwrite an existing file. Non-reconciled snapshots exit nonzero. Repeat for the second organization with a **different source key** and its own private snapshot, not one merged JSON.
+Only aggregate counts/totals/checksum print to stdout. The optional detailed file includes source record IDs and stays private: owner-only permissions where supported, never overwrite an existing file. Non-reconciled snapshots exit nonzero. Repeat independently for **every actual organization UUID** using distinct source keys and private snapshots, not one merged JSON. Snapshot identity, not the visible company name, controls tenancy.
 
 ## Existing source evidence (read-only; not a migration)
-The connected legacy project was queried read-only: the Cashbook *transaction cash movements* reconcile to its legacy account ledger for both scopes with 0 per-transaction signed discrepancies. This is separate from independent cash count and bank statement reconciliations. The user has a 415-row private CSV that lacks account IDs, transfers and audit source detail. The other source contains 1,000 source-text-tagged pagination test rows; they are quarantined from future economic statement totals pending founder signoff. Never publish raw data or personally identifying fields in GitHub.
+The connected legacy project was queried read-only: the Cashbook *transaction cash movements* reconcile to its legacy account ledger for the two UUID-scoped organizations containing transactions with 0 per-transaction signed discrepancies. **Two additional UUID-scoped organizations share the second display name but have no transaction rows; one has nonzero opening-account balances. These are separate source partitions, and their balances must not be automatically combined.** This is separate from independent cash count and bank statement reconciliations. The user has a 415-row private CSV that lacks account IDs, transfers and audit source detail. The other source contains 1,000 source-text-tagged pagination test rows; they are quarantined from future economic statement totals pending founder signoff. Never publish raw data or personally identifying fields in GitHub.
 
 ## Remaining stop gates for actual ERP migration
 1. **Private full snapshots and independent recovery:** cloud DB logical + physical/PITR restore evidence, device IndexedDB offline queue backup, PWA upgrade and pending intents.
