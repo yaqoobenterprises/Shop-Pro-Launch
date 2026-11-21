@@ -1,8 +1,9 @@
 import {describe,expect,it} from "vitest";
 import type {CurrencyUnitPolicy} from "../src/accounting/currencyContracts";
+import {formatCertifiedSourceMoney,requireMatchingInvoicePolicyForReport}
+  from "../src/accounting/sourceMoneyEvidence";
 import {
-  formatCertifiedReportMoney,formatCertifiedSourceMoney,
-  requireMatchingInvoicePolicyForReport,validateCurrencyUnitPolicy,
+  formatCertifiedReportMoney,validateCurrencyUnitPolicy,
   validateReportCurrencyEvidence,
 } from "../src/accounting/currencyReportEvidence";
 import {validateCertifiedSource} from "../src/accounting/verifiedReadValidation";
