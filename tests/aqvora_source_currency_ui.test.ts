@@ -178,6 +178,11 @@ describe("Source-certified company currency interpretation (#78)",()=>{
       business_date:"2026-11-14",
       currency_policy:{...original,fingerprint:"b".repeat(64)}};
     expect(()=>requireMatchingInvoicePolicyForReport(alien,report)).toThrow(/not in certified/);
+    const missing={organization_id:org,currency:"PKR",
+      business_date:"2026-11-14",currency_policy:null,display_complete:false};
+    expect(()=>requireMatchingInvoicePolicyForReport(missing,report))
+      .toThrow(/lacks policy proof/);
+
   });
   it("never converts malformed money or uses floating numeric guesses",()=>{
     const valid=validateReportCurrencyEvidence(evidence(),scope);
