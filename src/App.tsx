@@ -12,7 +12,6 @@ import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
-
 // Modern Shop Ledger Views
 import {
   ledgerService,
@@ -24,9 +23,8 @@ import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalMod
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
 import {
-  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace,
+  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
 } from "./components/accounting/FinanceLazyRoutes";
-
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
 );
@@ -136,6 +134,7 @@ const MainShell: React.FC = () => {
       case "aqvora-gl-tb": return <GeneralLedgerTrialBalanceWorkspace />;
       case "aqvora-sales-lifecycle": return <SalesInvoiceLifecycleWorkspace />;
       case "aqvora-cash-collections": return <CashCollectionWorkspace />;
+      case "aqvora-receipt-drafts": return <CustomerReceiptDraftWorkspace />;
       case "settings":
         return <LedgerSettingsView />;
       default:
