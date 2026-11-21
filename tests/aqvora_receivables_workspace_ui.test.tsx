@@ -39,6 +39,7 @@ const customerReport=()=>({...company(),customer_id:customerId,scope:"customer"}
 const openList=()=>({
   complete:true,source,
   invoices:[{
+    organization_id:org,customer_id:customerId,currency:"PKR",
     invoice_id:invoiceId,due_date:"2026-11-30",business_date:"2026-11-18",
     face_minor:"1000",allocated_minor:"400",outstanding_minor:"600",
     status:"partial",
