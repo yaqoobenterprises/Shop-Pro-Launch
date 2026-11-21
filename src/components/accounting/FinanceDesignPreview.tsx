@@ -176,7 +176,8 @@ export const FinanceDesignPreview:React.FC<Props>=({
             selectedAccountId={ledgerAccountId}/>}
           {page==="trial"&&<TrialBalancePanel snapshot={report}
             onOpenLedger={id=>{setLedgerAccountId(id);setPage("ledger");}}/>}
-          {!["overview","chart","journal","ledger","trial","cashbook","cashbook-reports"].includes(page)&&
+          {page!=="cashbook"&&page!=="cashbook-reports"&&
+            !["overview","chart","journal","ledger","trial"].includes(page)&&
             <ErpSampleOperations key={page} page={page} onNavigate={navigate}/>}
           {!recorded&&<p className="aq-erp-synthetic-caption">
             Review-only visual workflow. Functional staging RPCs exist in separate
