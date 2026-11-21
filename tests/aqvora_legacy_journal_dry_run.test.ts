@@ -136,6 +136,10 @@ describe('AQVORA unposted historical double-entry simulation', () => {
     ]);
     expect(result.summary.erp_books_updated).toBe(false);
     expect(result.summary.posting_allowed).toBe(false);
+    expect(result.source_scope.source_organization_id).toBe(ORG);
+    expect(result.source_scope.target_company_id).toBe(TARGET);
+    expect(result.source_scope.source_project_ref).toBe('test-source-project');
+    expect(result.summary).not.toHaveProperty('target_company_id');
     expect(result.summary.source_company_merged).toBe(false);
     expect(result.summary.externally_verified_cash_bank).toBe(false);
   });
@@ -182,6 +186,8 @@ describe('AQVORA unposted historical double-entry simulation', () => {
     const result = planLegacyJournalDryRun(s, p);
     expect(result.summary.candidate_journals).toBe(0);
     expect(result.summary.exception_records).toBe(9);
+    expect(result.source_scope.source_organization_id).toBe(ORG);
+    expect(result.source_scope.target_company_id).toBe(TARGET);
     expect(result.summary.posting_allowed).toBe(false);
   });
 
