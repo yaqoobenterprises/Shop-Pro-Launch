@@ -3,13 +3,14 @@
  * This does NOT grant SQL authorization: every operation requires live server checks.
  */
 import type { ComponentType } from "react";
-import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, ReceiptText, Landmark, } from "lucide-react";
+import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, ReceiptText, Landmark, ScrollText, } from "lucide-react";
 import type { AppView } from "../../context/AppContext";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
 import { isIsolatedInvoiceLifecycleEnabled } from "../../services/aqvoraSalesLifecycleService";
 import { isIsolatedVerifiedFinancialReadEnabled } from "../../services/aqvoraVerifiedFinancialReadService";
 import { isFreshFinanceSetupStagingEnabled } from "../../services/aqvoraFreshFinanceSetupService";
+import { isIsolatedManualJournalEnabled } from "../../services/aqvoraManualJournalService";
 import { isIsolatedCashCollectionEnabled } from "../../services/aqvoraCashCollectionOperations";
 import { isIsolatedReceiptDraftEnabled } from "../../services/aqvoraReceiptDraftService";
 
@@ -26,6 +27,9 @@ export function getStagingFinanceNavItems(flags:{
   const result:StagingFinanceNavItem[]=[];
   if(flags.role==="OWNER"&&isFreshFinanceSetupStagingEnabled()){
     result.push({id:"aqvora-finance-setup",label:"Finance setup",icon:Landmark});
+  }
+  if(flags.role==="OWNER"&&isIsolatedManualJournalEnabled()){
+    result.push({id:"aqvora-manual-journal",label:"Journal posting",icon:ScrollText});
   }
   if(isIsolatedReceivablesReadEnabled()){
     result.push({id:"aqvora-receivables",label:"Receivables",icon:FileText});
