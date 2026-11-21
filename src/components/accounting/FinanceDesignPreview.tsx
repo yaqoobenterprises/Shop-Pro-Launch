@@ -129,6 +129,8 @@ export const FinanceDesignPreview:React.FC<Props>=({
                 <Icon size={17} aria-hidden="true"/>
                 <span>{entry.label}</span>
                 {!entry.implemented&&<small className="aq-erp-nav-soon">Planned</small>}
+                {unifiedCashbook&&entry.implemented&&entry.id!=="overview"&&
+                  <small className="aq-erp-nav-soon" aria-hidden="true">Sample</small>}
               </button>;
             })}
           </div>)}
@@ -161,7 +163,7 @@ export const FinanceDesignPreview:React.FC<Props>=({
             {erpReviewGroups.flatMap(group=>group.pages).map(entry=><button
               type="button" key={entry.id} aria-current={page===entry.id?"page":undefined}
               onClick={()=>navigate(entry.id)}>
-              {entry.label}{!entry.implemented?" · Planned":""}
+              {entry.label}{!entry.implemented?" · Planned":unifiedCashbook&&entry.id!=="overview"?" · Sample":""}
             </button>)}
           </div>
           {unifiedCashbook&&page==="cashbook"&&<div className="aq-finance__cashbook"><React.Suspense fallback={<p role="status">Loading your Cashbook…</p>}><Cashbook/></React.Suspense></div>}
