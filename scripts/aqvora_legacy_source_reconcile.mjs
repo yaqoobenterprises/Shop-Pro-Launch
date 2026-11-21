@@ -13,6 +13,14 @@ const COLLECTIONS = ['transactions', 'payment_accounts', 'account_ledger_entries
   'account_transfers', 'audit_log', 'transaction_drafts', 'categories'];
 const SIGNS = { income: 1n, expense: -1n, capital_in: 1n, withdrawal: -1n, investment: 1n };
 const sha256 = text => createHash('sha256').update(text).digest('hex');
+function canonicalJson(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+  if (value && typeof value === 'object') {
+    return '{' + Object.keys(value).sort()
+      .map(key => JSON.stringify(key) + ':' + canonicalJson(value[key])).join(',') + '}';
+  }
+  return JSON.stringify(value);
+}
 
 function integerMinor(value, label) {
   if (typeof value !== 'string' || !/^-?(?:0|[1-9]\d*)$/.test(value)) {
@@ -90,6 +98,9 @@ export function reconcileLegacySourceSnapshot(snapshot, sourceKey) {
     }
     const hasTxn = entry.transaction_id !== null && entry.transaction_id !== undefined;
     const hasTransfer = entry.transfer_id !== null && entry.transfer_id !== undefined;
+    if (entry.entry_type === 'OPENING_BALANCE' && (hasTxn || hasTransfer)) {
+      recordIssue(issues, 'opening_ledger_must_not_link_to_transaction', entry.id);
+    }
     if (Number(hasTxn) + Number(hasTransfer) > 1) {
       recordIssue(issues, 'ledger_multiple_source_links', entry.id);
     } else if (hasTxn) {
@@ -128,6 +139,14 @@ export function reconcileLegacySourceSnapshot(snapshot, sourceKey) {
     if (amount <= 0n) throw new Error('Invalid positive transaction amount');
     const expected = txnEffect(tx);
     const entries = byTransaction.get(tx.id) || [];
+    const allowedEntryType = {
+      income: 'INCOME', expense: 'EXPENSE', capital_in: 'CAPITAL',
+      withdrawal: 'WITHDRAWAL', investment: 'INVESTMENT', adjustment: 'ADJUSTMENT',
+    }[tx.type];
+    if (!allowedEntryType || entries.some(entry => ![allowedEntryType, 'REVERSAL'].includes(entry.entry_type))) {
+      recordIssue(issues, 'transaction_unexpected_ledger_entry_type', tx.id);
+    }
+    if (tx.account_posted !== true) recordIssue(issues, 'transaction_missing_legacy_posting_status', tx.id);
     const actual = entries.reduce((sum, entry) => sum + entry.delta, 0n);
     if (entries.length === 0) recordIssue(issues, 'transaction_no_ledger_entries', tx.id);
     if (actual !== expected) recordIssue(issues, 'transaction_cash_delta_mismatch', tx.id);
@@ -138,12 +157,20 @@ export function reconcileLegacySourceSnapshot(snapshot, sourceKey) {
     if (tx.category_id && !categoryMap.has(tx.category_id)) {
       recordIssue(issues, 'orphan_transaction_category', tx.id);
     }
+    const category = categoryMap.get(tx.category_id);
+    if (category && tx.status === 'active' && ['income', 'expense'].includes(tx.type)
+      && category.kind !== tx.type) {
+      recordIssue(issues, 'transaction_category_kind_mismatch', tx.id);
+    }
     if (!tx.idempotency_key || typeof tx.idempotency_key !== 'string') {
       recordIssue(issues, 'transaction_missing_idempotency_key', tx.id);
     }
     const history = auditByTransaction.get(tx.id) || [];
     if (tx.status === 'voided') {
       voidedRows++;
+      if (!entries.some(entry => entry.entry_type === 'REVERSAL')) {
+        recordIssue(issues, 'void_missing_reversal_entry', tx.id);
+      }
       if (!history.some(x => x.action === 'void') || !tx.voided_at || !tx.void_reason) {
         recordIssue(issues, 'void_without_complete_audit', tx.id);
       }
@@ -156,6 +183,9 @@ export function reconcileLegacySourceSnapshot(snapshot, sourceKey) {
 
   let verifiedTransfers = 0;
   for (const tr of transferMap.values()) {
+    if (tr.account_posted !== true) {
+      recordIssue(issues, 'transfer_missing_legacy_posting_status', tr.id);
+    }
     if (tr.status !== 'ACTIVE') {
       recordIssue(issues, 'transfer_requires_void_reversal_policy', tr.id);
       continue;
@@ -212,9 +242,10 @@ export function reconcileLegacySourceSnapshot(snapshot, sourceKey) {
     transactionKeys.add(tx.idempotency_key);
   }
   // These match legacy cashbook postings only. Bank reconciliation / ERP posting are separate.
-  const contentFingerprint = sha256(COLLECTIONS.flatMap(name =>
-    snapshot[name].map(row => name + '|' + row.id + '|' + JSON.stringify(row))
-  ).sort().join('\n'));
+  const contentFingerprint = sha256('contract=1|org=' + org + '|currency=' + snapshot.currency + '\n'
+    + COLLECTIONS.flatMap(name =>
+      snapshot[name].map(row => name + '|' + row.id + '|' + canonicalJson(row))
+    ).sort().join('\n'));
   return {
     summary: {
       contract_version: 1, source_key: sourceKey, currency: 'PKR',
