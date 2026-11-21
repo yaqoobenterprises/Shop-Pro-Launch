@@ -30,21 +30,23 @@ export function CashReceiptWorkQueue({
   const [receiptError,setReceiptError]=useState("");
   const cashGeneration=useRef(0);
   const receiptGeneration=useRef(0);
-  const cashFlight=useRef(false);
-  const receiptFlight=useRef(false);
+  const cashFlight=useRef<number|null>(null);
+  const receiptFlight=useRef<number|null>(null);
 
   useEffect(()=>{
     cashGeneration.current++;receiptGeneration.current++;
+    cashFlight.current=null;receiptFlight.current=null;
+    setCashLoading(false);setReceiptLoading(false);
     setCashPage(null);setReceiptPage(null);
     setCashError("");setReceiptError("");
   },[enabled,organizationId,userId,currency,asOfDate,isCloudAccount]);
 
   const loadCash=async(next=false)=>{
-    if(!enabled||disabled||cashFlight.current)return;
+    if(!enabled||disabled||cashFlight.current!==null)return;
     const cursor=next&&cashPage?.hasPossibleMore?cashPage.nextAfterId:null;
     if(next&&!cursor)return;
     const serial=++cashGeneration.current;
-    cashFlight.current=true;setCashLoading(true);setCashError("");
+    cashFlight.current=serial;setCashLoading(true);setCashError("");
     if(!next)setCashPage(null);
     try{
       const page=await loadIsolatedCashQueuePage(context,cursor);
@@ -52,16 +54,16 @@ export function CashReceiptWorkQueue({
     }catch(cause){
       if(serial===cashGeneration.current)setCashError(errorText(cause));
     }finally{
-      cashFlight.current=false;
+      if(cashFlight.current===serial)cashFlight.current=null;
       if(serial===cashGeneration.current)setCashLoading(false);
     }
   };
   const loadReceipts=async(next=false)=>{
-    if(!enabled||disabled||receiptFlight.current)return;
+    if(!enabled||disabled||receiptFlight.current!==null)return;
     const cursor=next&&receiptPage?.hasPossibleMore?receiptPage.nextAfterId:null;
     if(next&&!cursor)return;
     const serial=++receiptGeneration.current;
-    receiptFlight.current=true;setReceiptLoading(true);setReceiptError("");
+    receiptFlight.current=serial;setReceiptLoading(true);setReceiptError("");
     if(!next)setReceiptPage(null);
     try{
       const page=await loadIsolatedReceiptQueuePage(context,cursor);
@@ -69,7 +71,7 @@ export function CashReceiptWorkQueue({
     }catch(cause){
       if(serial===receiptGeneration.current)setReceiptError(errorText(cause));
     }finally{
-      receiptFlight.current=false;
+      if(receiptFlight.current===serial)receiptFlight.current=null;
       if(serial===receiptGeneration.current)setReceiptLoading(false);
     }
   };
