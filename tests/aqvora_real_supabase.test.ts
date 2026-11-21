@@ -1,4 +1,5 @@
 // @vitest-environment node
+import {currencySeedSql} from "./support/aqvoraCurrencyFixture";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { Client } from "pg";
@@ -115,6 +116,7 @@ describe.skipIf(!statusPath)("AQVORA real local Supabase Auth and PostgREST", ()
     await db.query(`INSERT INTO public.organization_members
       (organization_id,user_id,role,is_active) VALUES ($1,$2,'MANAGER',true)
       ON CONFLICT (organization_id,user_id) DO UPDATE SET role='MANAGER',is_active=true`, [org, manager.id]);
+    await db.query(currencySeedSql(org,owner.id));
     await db.query("INSERT INTO public.aqvora_enabled_companies(organization_id) VALUES($1)", [org]);
   }, 120000);
   afterAll(async () => { if (db) await db.end(); });
