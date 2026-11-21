@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2, LockKeyhole, RefreshCw } from "lucide-react";
 import type { AccountClass, AccountSide } from "../../accounting/types";
 import { useAuth } from "../../context/AuthContext";
+import { FreshFinanceReadinessPanel } from "./FreshFinanceReadinessPanel";
 import {
   createFreshFinanceAccount, createFreshFinancePeriod,
   isFreshFinanceSetupStagingEnabled, loadFreshFinanceSetup,
@@ -239,6 +240,7 @@ export function FreshFinanceSetupWorkspace() {
         </div>
       </section>
     </div>
+    <FreshFinanceReadinessPanel/>
     <p className="flex items-start gap-2 text-xs text-text-muted">
       <LockKeyhole size={15} aria-hidden="true" className="shrink-0"/>
       Creating accounts or periods does not activate the financial writer.
