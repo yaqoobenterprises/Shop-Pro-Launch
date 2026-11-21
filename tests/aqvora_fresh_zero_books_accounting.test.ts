@@ -92,13 +92,13 @@ describe("AQVORA new-company fresh zero-opening finance", () => {
       const created:Record<string,string>={};
       for(const item of cases){
         const r=await db.query<{account:{id:string;code:string}}>(
-          "SELECT public.create_aqvora_account($1,$2,$3,$4,$5,NULL,true) AS account",
+          "SELECT to_jsonb(public.create_aqvora_account($1,$2,$3,$4,$5,NULL,true)) AS account",
           [company,item.code,item.name,item.account_class,item.normal_side]);
         expect(r.rows[0].account.code).toBe(item.code);
         created[item.code]=r.rows[0].account.id;
       }
       const period=await db.query<{period:{id:string;state:string}}>(
-        "SELECT public.create_aqvora_period($1,$2::date,$3::date) AS period",
+        "SELECT to_jsonb(public.create_aqvora_period($1,$2::date,$3::date)) AS period",
         [company,"2026-01-01","2026-12-31"]);
       expect(period.rows[0].period.state).toBe("open");
       const count=await db.query<{n:number}>(
