@@ -159,7 +159,7 @@ END $$;
 CREATE FUNCTION public.lookup_aqvora_fresh_finance_activation(
   p_organization_id uuid,p_checker_intent uuid
 ) RETURNS jsonb
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE checker uuid; prior private.aqvora_finance_activation_approvals;
 BEGIN
   checker:=private.aqvora_authorize(p_organization_id);
