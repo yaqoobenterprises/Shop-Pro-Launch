@@ -6,6 +6,7 @@ export function forbiddenAQVORAReleaseFlags(environment){
   return Object.entries(environment).filter(([key,value])=>
     value==="true"&&(
       key==="VITE_AQVORA_PREVIEW_DEFAULT"||
+      key==="VITE_AQVORA_UNIFIED_WORKSPACE_PREVIEW"||
       key==="VITE_ENABLE_COMPANY_SETUP_WIZARD"||
       key==="VITE_ENABLE_FINANCE_UI_PREVIEW"||
       key.startsWith("VITE_ENABLE_AQVORA_")
