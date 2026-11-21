@@ -106,7 +106,7 @@ describe.skipIf(!base)("AQVORA new-company and checker approval true PostgreSQL 
       try{
         await expect(create(c,"Changed fraudulently")).rejects.toThrow(/idempotency key changed/i);
       }finally{await close(c);}
-      const result=await admin.query<{n:number}>("SELECT count(*)::int n FROM private.aqvora_fresh_company_origins WHERE creator_id=$1 AND creation_intent=$2",[MAKER,CREATE_KEY]);
+      const result=await inspector.query<{n:number}>("SELECT count(*)::int n FROM private.aqvora_fresh_company_origins WHERE creator_id=$1 AND creation_intent=$2",[MAKER,CREATE_KEY]);
       expect(result.rows[0].n).toBe(1);
     }finally{await close(a);await close(b);}
   },20000);
@@ -136,7 +136,7 @@ describe.skipIf(!base)("AQVORA new-company and checker approval true PostgreSQL 
       await revoker.query("COMMIT");
       await expect(attempt).rejects.toThrow(/maker lost active OWNER or session/i);
       await checker.query("ROLLBACK");
-      const result=await admin.query<{n:number}>("SELECT count(*)::int n FROM public.aqvora_enabled_companies WHERE organization_id=$1",[organization]);
+      const result=await inspector.query<{n:number}>("SELECT count(*)::int n FROM public.aqvora_enabled_companies WHERE organization_id=$1",[organization]);
       expect(result.rows[0].n).toBe(0);
     }finally{await close(checker);await close(revoker);}
     await inspector.query("INSERT INTO auth.sessions(id,user_id) VALUES($1,$1)",[MAKER]);
@@ -159,7 +159,7 @@ describe.skipIf(!base)("AQVORA new-company and checker approval true PostgreSQL 
           "SELECT public.lookup_aqvora_fresh_finance_activation($1,$2) r",[organization,CHECK_A]);
         expect(recovered.rows[0].r).toEqual(first);
       }finally{await close(c);}
-      const result=await admin.query<{enabled:number;approvals:number;journals:number}>(
+      const result=await inspector.query<{enabled:number;approvals:number;journals:number}>(
         "SELECT (SELECT count(*)::int FROM public.aqvora_enabled_companies WHERE organization_id=$1) enabled,"+
         "(SELECT count(*)::int FROM private.aqvora_finance_activation_approvals WHERE organization_id=$1) approvals,"+
         "(SELECT count(*)::int FROM public.aqvora_journals WHERE organization_id=$1) journals",[organization]);
