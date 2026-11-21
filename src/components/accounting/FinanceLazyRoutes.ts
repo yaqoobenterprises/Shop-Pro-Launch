@@ -12,3 +12,6 @@ export const SalesInvoiceLifecycleWorkspace = lazy(() =>
   import("./SalesInvoiceLifecycleWorkspace").then(m=>({default:m.SalesInvoiceLifecycleWorkspace})));
 export const CashCollectionWorkspace = lazy(() =>
   import("./CashCollectionWorkspace").then(m=>({default:m.CashCollectionWorkspace})));
+
+export const CustomerReceiptDraftWorkspace = lazy(() =>
+  import("./CustomerReceiptDraftWorkspace").then(m=>({default:m.CustomerReceiptDraftWorkspace})));
