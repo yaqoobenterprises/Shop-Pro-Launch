@@ -6,7 +6,15 @@
 
 Branch: `codex/issue-72-release-e2e-hardening`, created at PR #84's exact head `f200cc9068c06887f08b4dfb837f4068c7f720dc`. PR #84 remains untouched. It integrates frontend #82, backend #83 and main's six PWA branding assets; its [baseline CI 44879946409](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44879946409) passed 761 application, 47 PostgreSQL and 22 real Auth tests. Reviewed #83, Issue #72, active migrations, source contracts, currency validation, legacy transaction/balance triggers, offline queue/recovery and the service worker before implementation.
 
-No UI, financial SQL, migration, public grant, company-default policy or production setting is changed by this verification harness. Synthetic fixture enrollment is limited to newly generated companies in a loopback disposable stack. Existing test companies and business Supabase projects are never used. Source currency remains synthetic PKR exponent 2, service-only verified out-of-tax-scope, without FX or bank-clearing claims.
+No UI component, financial SQL, migration, public grant, company-default policy or production setting is changed. The founder separately authorized one narrow shared-validator correction after real E2E exposed the timestamp bug described below. Synthetic fixture enrollment is limited to newly generated companies in a loopback disposable stack. Existing test companies and business Supabase projects are never used. Source currency remains synthetic PKR exponent 2, service-only verified out-of-tax-scope, without FX or bank-clearing claims.
+
+## Integration failure found and approved correction
+
+The [first E2E run 44882108412](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/44882108412) passed application verification and the 47 independent PostgreSQL cases, but failed two new Auth E2E cases. Ten of eleven new security cases passed, including real sign-out and in-flight revocation. One test incorrectly expected SQLSTATE `23505` for a duplicate customer; the existing API deliberately returns `P0001` with `Customer code already identifies a different request`. The fixture assertion now verifies that exact existing contract.
+
+The substantive failure was in `src/accounting/currencyReportEvidence.ts`: it cast the whole report source to the narrower currency evidence type and compared the entire runtime object across pages. Real PostgREST calls legitimately return different `observed_at` timestamps, so valid complete report collection failed. A new local regression reproduced the failure before the correction.
+
+The founder explicitly approved changing this shared validator only. It now projects the six documented currency-evidence fields before comparison. All existing policy identity, revision, exponent, denominator, provenance, fingerprint, timeline and tenant validation remains. Outer source validation still enforces authorization, snapshot tokens, counts and exact financial totals. New regressions accept timestamp-only changes and reject altered policy/timeline, snapshot token, tenant, reader identity, role and source count. No UI component or unrelated frontend code was changed.
 
 ## Implemented journey and independent evidence
 

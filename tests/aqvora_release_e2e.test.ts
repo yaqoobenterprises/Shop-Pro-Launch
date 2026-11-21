@@ -24,8 +24,10 @@ describe.skipIf(!statusPath)("Release candidate: two actual OWNERs, MFA and end-
     const members = (await h.db.query("SELECT user_id,role FROM public.organization_members WHERE organization_id=$1 ORDER BY user_id", [c.org])).rows;
     expect(members).toHaveLength(2);
     expect(members.every(m => m.role === "OWNER")).toBe(true);
-    denied(await h.tryRpc(h.ownerA, "create_aqvora_customer", {p_organization_id: c.org,
-      p_code: "e2e-customer", p_name: "Duplicate case-insensitive code"}), "23505");
+    const duplicate = await h.tryRpc(h.ownerA, "create_aqvora_customer", {p_organization_id: c.org,
+      p_code: "e2e-customer", p_name: "Duplicate case-insensitive code"});
+    denied(duplicate, "P0001");
+    expect(duplicate.data).toMatchObject({message: "Customer code already identifies a different request"});
     const empty = await h.rpc<{source: {source_journal_count: string; legacy_included: false; opening_migration_verified: false}}>(h.ownerA,
       "read_aqvora_trial_balance", {p_organization_id: c.org, p_from_date: "0001-01-01", p_to_date: e2eDate, p_currency: "PKR"});
     expect(empty.source).toMatchObject({source_journal_count: "0", legacy_included: false, opening_migration_verified: false});
