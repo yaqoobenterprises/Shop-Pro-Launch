@@ -281,6 +281,27 @@ describe('AQVORA unposted historical double-entry simulation', () => {
     }
   });
 
+  it('uses bounded V2-compatible SHA-256 receipt keys even for long source project references', () => {
+    const s = snapshot();
+    s.source_project_ref = 'a'.repeat(85);
+    const p = policyFor(s);
+    p.source_project_ref = s.source_project_ref as string;
+    const result = planLegacyJournalDryRun(s, p);
+    expect(result.candidates.length).toBeGreaterThan(0);
+    for (const candidate of result.candidates) {
+      expect(candidate.intent_key).toMatch(/^legacy:[a-f0-9]{64}$/);
+      expect(candidate.intent_key.length).toBeLessThanOrEqual(160);
+      expect(candidate.intent_key).not.toContain(ORG);
+      expect(candidate.intent_key).not.toContain(s.source_project_ref);
+    }
+    const again = planLegacyJournalDryRun(s, p);
+    expect(result.candidates.map(x => x.intent_key)).toEqual(again.candidates.map(x => x.intent_key));
+    const changed = snapshot();
+    const otherPolicy = policyFor(changed);
+    expect(result.candidates[0].intent_key).not.toBe(
+      planLegacyJournalDryRun(changed, otherPolicy).candidates[0].intent_key);
+  });
+
   it('produces deterministic idempotent proposed IDs with exact minor-unit strings', () => {
     const s = snapshot(), p = policyFor(s);
     const first = planLegacyJournalDryRun(s, p);
