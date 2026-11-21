@@ -185,7 +185,6 @@ const MainShell: React.FC = () => {
         >
           Skip to main content
         </a>
-        {/* Sidebar Navigation */}
         <Sidebar />
 
         {/* Main Content Area */}
