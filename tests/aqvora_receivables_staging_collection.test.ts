@@ -153,7 +153,8 @@ describe("AQVORA all-or-nothing source-token-fenced open-invoice collection",()=
       currency_policy:p,currency_policy_revisions:[p],
       currency_policy_timeline_fingerprint:"a".repeat(64),
     };
-    const firstPage={...first(),source:{...source(),...evidence}};
+    const firstPage={...first(),rows:[{...row(a),currency_policy:p,display_complete:true}],
+      source:{...source(),...evidence}};
     for(const secondSource of [
       {...source(),...evidence,
         currency_policy_timeline_fingerprint:"b".repeat(64)},
@@ -162,7 +163,7 @@ describe("AQVORA all-or-nothing source-token-fenced open-invoice collection",()=
     ]){
       mock.rpc.mockReset(); // Each scenario starts with a fresh network-response sequence.
       mock.rpc.mockResolvedValueOnce({data:firstPage,error:null})
-        .mockResolvedValueOnce({data:{...second(),source:secondSource},error:null});
+        .mockResolvedValueOnce({data:{...second(),rows:[{...row(b),currency_policy:p,display_complete:true}],source:secondSource},error:null});
       await expect(collectIsolatedOpenInvoices(context,{pageSize:1}))
         .rejects.toThrow(/currency|policy/i);
     }
