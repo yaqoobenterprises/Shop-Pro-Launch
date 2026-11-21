@@ -3,13 +3,14 @@
  * This does NOT grant SQL authorization: every operation requires live server checks.
  */
 import type { ComponentType } from "react";
-import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, ReceiptText, Landmark, ScrollText, } from "lucide-react";
+import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, ReceiptText, Landmark, ScrollText, UserRoundPlus, } from "lucide-react";
 import type { AppView } from "../../context/AppContext";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
 import { isIsolatedInvoiceLifecycleEnabled } from "../../services/aqvoraSalesLifecycleService";
 import { isIsolatedVerifiedFinancialReadEnabled } from "../../services/aqvoraVerifiedFinancialReadService";
 import { isFreshFinanceSetupStagingEnabled } from "../../services/aqvoraFreshFinanceSetupService";
+import { isFreshOwnerInvitationStagingEnabled } from "../../services/aqvoraFreshOwnerInvitationService";
 import { isIsolatedManualJournalEnabled } from "../../services/aqvoraManualJournalService";
 import { isIsolatedCashCollectionEnabled } from "../../services/aqvoraCashCollectionOperations";
 import { isIsolatedReceiptDraftEnabled } from "../../services/aqvoraReceiptDraftService";
@@ -22,9 +23,14 @@ export interface StagingFinanceNavItem {
 export function getStagingFinanceNavItems(flags:{
   isCloudAccount:boolean; isDemoMode:boolean; role:string|undefined;
 }):StagingFinanceNavItem[] {
-  if (!flags.isCloudAccount || flags.isDemoMode ||
-      (flags.role!=="OWNER"&&flags.role!=="MANAGER"))return [];
+  if (!flags.isCloudAccount || flags.isDemoMode) return [];
   const result:StagingFinanceNavItem[]=[];
+  // Recipients are not yet members of the inviting company, so they must
+  // still be able to reach acceptance from their own verified cloud account.
+  if (isFreshOwnerInvitationStagingEnabled()) {
+    result.push({id:"aqvora-owner-invites",label:"Owner invitations",icon:UserRoundPlus});
+  }
+  if (flags.role!=="OWNER"&&flags.role!=="MANAGER") return result;
   if(flags.role==="OWNER"&&isFreshFinanceSetupStagingEnabled()){
     result.push({id:"aqvora-finance-setup",label:"Finance setup",icon:Landmark});
   }
