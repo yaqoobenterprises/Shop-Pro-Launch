@@ -53,7 +53,7 @@ describe('AQVORA PWA production service worker: public-only caching', () => {
   it('does not force immediate takeover of an installed Cashbook with offline work', () => {
     expect(code).not.toContain('self.skipWaiting()');
     expect(code).not.toContain('self.clients.claim()');
-    expect(code).not.toContain('caches.delete(key))');
+    expect(code).toContain('OLD_AQVORA_PREFIXES.some');
     expect(code).toContain("const CACHE_NAME = 'aqvora-shell-v2'");
   });
 
