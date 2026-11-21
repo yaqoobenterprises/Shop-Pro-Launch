@@ -236,7 +236,6 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
             [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
               { account_id: sales, debit_minor: "0", credit_minor: "1" }])]);
           expect((retry.rows[0].receipt as unknown as {currency_policy:{currency_exponent:number}}).currency_policy.currency_exponent).toBe(2);
-          expect((await target.query("SELECT revision::text,exponent FROM private.aqvora_currency_policies WHERE organization_id=$1 ORDER BY revision",[org])).rows).toEqual([{revision:"1",exponent:2},{revision:"2",exponent:2}]);
           expect(retry.rows[0].receipt.journal_id).toBe(recovered.rows[0].receipt.journal_id);
           const report = await target.query<{ report: TrialBalancePage }>(
             "SELECT public.read_aqvora_trial_balance($1,'2026-11-01','2026-11-30','PKR') AS report",[org]);
@@ -245,6 +244,7 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
             [org, JSON.stringify([{ account_id: cash, debit_minor: "1", credit_minor: "0" },
               { account_id: sales, debit_minor: "0", credit_minor: "1" }])])).rejects.toThrow("closed");
           await target.query("ROLLBACK");
+          expect((await target.query("SELECT revision::text,exponent FROM private.aqvora_currency_policies WHERE organization_id=$1 ORDER BY revision",[org])).rows).toEqual([{revision:"1",exponent:2},{revision:"2",exponent:2}]);
           const restoredSales = await verifyRestoredSales(target);
           expect(restoredSales.receipt).toEqual(restoredSales.replay);
           expect(restoredSales.source.reconciliation).toMatchObject({face_minor:"101",ar_debit_minor:"101",revenue_credit_minor:"101"});
