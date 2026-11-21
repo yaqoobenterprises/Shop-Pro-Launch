@@ -95,6 +95,14 @@ export async function collectLegacySnapshot(client, { organizationId, sourceProj
         || typeof p.captured_at !== 'string') {
       throw new Error('A non-privileged, RLS-enabled read-only source session is required');
     }
+    const company = await client.query(
+      'SELECT id::text AS id, currency::text AS currency FROM public.organizations WHERE id = $1::uuid',
+      [organizationId],
+    );
+    if (company.rows?.length !== 1 || company.rows[0].id !== organizationId
+        || company.rows[0].currency !== 'PKR') {
+      throw new Error('Source organization is missing, unauthorized or not verified PKR');
+    }
     const snapshot = {
       schema_version: 1, organization_id: organizationId,
       source_project_ref: sourceProjectRef, currency: 'PKR',
@@ -123,11 +131,13 @@ export async function collectLegacySnapshot(client, { organizationId, sourceProj
 
 export function configureExactPgTypes(pg) {
   // Suppress JS Number rounding in JSONB audit history and preserve date/time strings.
-  const overrides = new pg.types.TypeOverrides();
-  for (const oid of [20, 1082, 1114, 1184, 1700, 114, 3802]) {
-    overrides.setTypeParser(oid, value => value);
-  }
-  return overrides;
+  const preciseOids = new Set([20, 1082, 1114, 1184, 1700, 114, 3802]);
+  return {
+    getTypeParser(oid, format = 'text') {
+      if (format === 'text' && preciseOids.has(oid)) return value => value;
+      return pg.types.getTypeParser(oid, format);
+    },
+  };
 }
 
 export async function writePrivateSnapshot(path, snapshot) {
