@@ -12,12 +12,10 @@ import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
-// Modern Shop Ledger Views
 import {
   ledgerService,
   OFFLINE_SYNC_COMPLETE_EVENT,
 } from "./services/ledgerService";
-
 import { LandingPage } from "./components/landing/LandingPage";
 import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
 import { isFeatureEnabled } from "./config/features";
@@ -25,6 +23,7 @@ import { getUserPreferences } from "./services/userPreferencesService";
 import {
   ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
 } from "./components/accounting/FinanceLazyRoutes";
+const FinanceDesignPreview = lazy(() => import("./components/accounting/FinanceDesignPreview").then(m=>({default:m.FinanceDesignPreview})));
 const ChatView = lazy(() =>
   import("./components/chat/ChatView").then((module) => ({ default: module.ChatView })),
 );
@@ -67,7 +66,7 @@ const I18nPreferenceSync: React.FC = () => {
 };
 
 const MainShell: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, setCurrentView } = useApp();
   const { isDemoMode, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const companySetupEnabled = isFeatureEnabled("companySetupWizard");
@@ -83,6 +82,7 @@ const MainShell: React.FC = () => {
   }, [companySetupEnabled, isDemoMode, user?.id, user?.role, organization.id, organization.region_configured]);
 
   useEffect(() => {
+    if (currentView === "aqvora-erp-preview") return;
     let syncInFlight: Promise<void> | undefined;
     const synchronizeOfflineWork = () => {
       if (syncInFlight) return;
@@ -111,7 +111,9 @@ const MainShell: React.FC = () => {
       window.removeEventListener("online", synchronizeOfflineWork);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [currentView]);
+
+  if (currentView === "aqvora-erp-preview") return <Suspense fallback={<div role="status">Loading AQVORA ERP review…</div>}><FinanceDesignPreview onClose={()=>setCurrentView("dashboard")}/></Suspense>;
 
   const renderActiveView = () => {
     switch (currentView) {
@@ -237,14 +239,12 @@ const WorkspaceGate: React.FC = () => {
     );
   }
 
-  // If password recovery is active, show password reset form
   if (isPasswordRecovery) {
     return <AuthScreen />;
   }
 
   if (mfaChallengeRequired) return <MfaChallengeScreen />;
 
-  // If no active user session and not in demo mode
   if (!user && !isDemoMode) {
     if (authMode) {
       return (

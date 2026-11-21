@@ -15,6 +15,7 @@ export type AppView =
   | "dashboard"
   | "sales"
   | "accounts"
+  | "aqvora-erp-preview"
   | "aqvora-receivables"
   | "aqvora-sales-drafts"
   | "aqvora-sales-lifecycle"
@@ -61,7 +62,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { user } = useAuth();
   const entryModesEnabled = isFeatureEnabled("entryModes");
-  const [currentView, setCurrentView] = useState<AppView>("chat"); // Default to Modern Shop Ledger Chat
+  const [currentView, setCurrentView] = useState<AppView>("aqvora-erp-preview"); // Sample-only preview branch. NEVER merge this default into production.
   const [entryMode, setEntryMode] = useState<EntryMode>("chat");
   const [dataVersion, setDataVersion] = useState<number>(1);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);

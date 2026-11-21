@@ -42,6 +42,7 @@ export const MobileNav: React.FC = () => {
   const { t } = useI18n();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const availableSecondary: typeof secondaryItems = [
+    {id:"aqvora-erp-preview",label:"AQVORA ERP Preview",icon:LayoutDashboard},
     ...secondaryItems,
     ...getStagingFinanceNavItems({ isCloudAccount, isDemoMode, role:user?.role }),
   ];
