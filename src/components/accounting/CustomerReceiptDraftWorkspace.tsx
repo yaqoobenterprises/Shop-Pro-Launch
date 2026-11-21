@@ -15,6 +15,8 @@ import {createIsolatedCustomerReceiptDraft,isIsolatedReceiptDraftEnabled,
 import type {IsolatedReceivablesContext} from "../../services/aqvoraReceivablesStagingGate";
 import {enteredAllocations,ReceiptAllocationForm} from "./ReceiptAllocationForm";
 import {ReceiptPostingPanel} from "./ReceiptPostingPanel";
+import {CashReceiptWorkQueue} from "./CashReceiptWorkQueue";
+import {isIsolatedReceiptQueueEnabled} from "../../services/aqvoraReceiptWorkQueues";
 
 function businessToday(zone:string):string {
   try{
@@ -48,13 +50,14 @@ export function CustomerReceiptDraftWorkspace(){
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
+  const [showQueue,setShowQueue]=useState(false);
   const generation=useRef(0);
   const inFlight=useRef(false);
 
   useEffect(()=>{
     ++generation.current;
     setCashInput("");setCash(null);setInvoices([]);setAllocations({});
-    setReceiptInput("");setReceipt(null);setPending(null);
+    setReceiptInput("");setReceipt(null);setPending(null);setShowQueue(false);
     setRecoveryFault(false);setReason("");setError("");setNotice("");
     if(!enabled)return;
     try{
@@ -71,12 +74,12 @@ export function CustomerReceiptDraftWorkspace(){
     setCash(null);setInvoices([]);setAllocations({});setReceipt(null);
     setError("");setNotice("");setReason("");
   };
-  const inspectCash=async()=>{
+  const inspectCash=async(selectedId?:string)=>{
     if(!enabled||inFlight.current||pending||recoveryFault)return;
     const token=++generation.current;
     inFlight.current=true;setBusy(true);begin();
     try{
-      const original=await loadIsolatedCashCollection(context,cashInput.trim());
+      const original=await loadIsolatedCashCollection(context,(selectedId??cashInput).trim());
       if(original.attestation!=="dual_control" || original.linkedPostedReceiptId!==null){
         throw new Error("Select confirmed, not-yet-posted manual cash evidence.");
       }
@@ -129,12 +132,12 @@ export function CustomerReceiptDraftWorkspace(){
     }
   };
 
-  const inspectReceipt=async()=>{
+  const inspectReceipt=async(selectedId?:string)=>{
     if(!enabled||pending||recoveryFault||inFlight.current)return;
     const token=++generation.current;
     inFlight.current=true;setBusy(true);setError("");setNotice("");setReceipt(null);
     try{
-      const verified=await loadIsolatedCustomerReceipt(context,receiptInput.trim());
+      const verified=await loadIsolatedCustomerReceipt(context,(selectedId??receiptInput).trim());
       if(token===generation.current)setReceipt(verified);
     }catch(cause){
       if(token===generation.current)setError(cause instanceof Error?cause.message:"Receipt source not verified.");
@@ -193,7 +196,16 @@ export function CustomerReceiptDraftWorkspace(){
       <button type="button" className="text-sm underline" onClick={()=>setCurrentView("aqvora-cash-collections")}>
         Open cash collection workspace
       </button>
+      {isIsolatedReceiptQueueEnabled()&&<button type="button"
+        aria-expanded={showQueue} onClick={()=>setShowQueue(v=>!v)}
+        className="ml-3 rounded-lg border border-border-standard px-3 py-2 text-sm">
+        {showQueue?"Hide work queue":"Browse company cash & receipts"}
+      </button>}
     </header>
+    {showQueue&&<CashReceiptWorkQueue mode="both" context={context}
+      disabled={busy||Boolean(pending)||recoveryFault}
+      onCashSelected={id=>{setCashInput(id);void inspectCash(id);}}
+      onReceiptSelected={id=>{setReceiptInput(id);void inspectReceipt(id);}}/>}
     {error&&<p role="alert" className="rounded-lg border border-red-300 p-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
     {notice&&<p role="status" className="rounded-lg border border-border-standard p-3 text-sm">{notice}</p>}
     {recoveryFault&&<p role="alert" className="text-sm">Corrupt or unavailable original recovery data. New draft creation blocked.</p>}
