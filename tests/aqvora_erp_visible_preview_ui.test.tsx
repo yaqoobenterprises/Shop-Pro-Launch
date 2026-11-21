@@ -39,6 +39,10 @@ describe("AQVORA visible ERP demo",()=>{
     expect(screen.getByText(/Bank verified: NO/)).toBeTruthy();
     pick("Receivables");
     expect(screen.getByText(/Rs 17,000.00/)).toBeTruthy();
+    const roadmap=screen.getByRole("button",{name:"ROADMAP"});
+    expect(roadmap.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(roadmap);
+    expect(roadmap.getAttribute("aria-expanded")).toBe("true");
     pick("Purchases & Payables Planned");
     expect(screen.getByText(/Not included in this tested ERP workflow/)).toBeTruthy();
   });
