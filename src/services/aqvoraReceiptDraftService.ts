@@ -1,8 +1,9 @@
 /** Isolated staging ONLY: receipt draft and maker/checker transitions; NO posting RPC. */
 import type {
-  CreateCustomerReceiptRequest,CustomerReceipt,ReceiptTransitionRequest,
+  CreateCustomerReceiptRequest,CustomerReceipt,ReceiptTransitionRequest,ReceiptAllocationInput,
 } from "../accounting/receiptContracts";
 import {planCustomerReceiptAllocations} from "../accounting/receiptDraftAllocations";
+import {readPendingReceiptDraft} from "../accounting/pendingReceiptDraft";
 import {money,object,uuid} from "../accounting/receiptReadPrimitives";
 import {getSupabaseClient} from "../lib/supabase";
 import {loadIsolatedCashCollection,loadIsolatedCustomerReceipt,
@@ -42,26 +43,40 @@ function same(actual:unknown,expected:unknown,label:string):void{
 /** A failed or lost response must retry exactly the same stored intent and payload. */
 export async function createIsolatedCustomerReceiptDraft(
   context:IsolatedReceivablesContext,request:CreateCustomerReceiptRequest,
+  options:{recoverExisting?:boolean}={},
 ):Promise<VerifiedReceiptDetails> {
   if(!isIsolatedReceiptDraftEnabled())throw new Error("Customer receipt drafts disabled.");
   same(request.p_organization_id,context.organizationId,"company");
   uuid(request.p_intent_key,"original receipt draft intent");
   uuid(request.p_collection_id,"controlled cash");
+  // A lost-ACK replay must not fail merely because an invoice was settled AFTER
+  // the original creation. Recovery skips stale preflight checks only when the
+  // exact original request is still locked in this actor's browser storage.
+  const recovering=options.recoverExisting===true;
+  if(recovering){
+    const stored=readPendingReceiptDraft(context.organizationId,context.userId);
+    if(!stored || JSON.stringify(stored.request)!==JSON.stringify(request)){
+      throw new Error("Recovery requires the original frozen receipt draft intent.");
+    }
+  }
   const cash=await loadIsolatedCashCollection(context,request.p_collection_id);
   if(cash.collection.created_by!==context.userId || cash.attestation!=="dual_control" ||
-     cash.linkedPostedReceiptId!==null){
+     (!recovering && cash.linkedPostedReceiptId!==null)){
     throw new Error("Only the cash claim maker may allocate independently confirmed, unposted cash.");
   }
-  const invoiceContext={
-    ...context,customerId:cash.collection.customer_id,
-    asOfDate:cash.collection.business_date,
-  };
-  const page=await collectIsolatedOpenInvoices(invoiceContext);
-  if(!page.complete||page.source.authorized_user_id!==context.userId){
-    throw new Error("Complete authorized invoice source required.");
+  let allocations:ReceiptAllocationInput[]=request.p_allocations;
+  if(!recovering){
+    const invoiceContext={
+      ...context,customerId:cash.collection.customer_id,
+      asOfDate:cash.collection.business_date,
+    };
+    const page=await collectIsolatedOpenInvoices(invoiceContext);
+    if(!page.complete||page.source.authorized_user_id!==context.userId){
+      throw new Error("Complete authorized invoice source required.");
+    }
+    allocations=planCustomerReceiptAllocations(
+      cash.collection,page.invoices,request.p_allocations);
   }
-  const allocations=planCustomerReceiptAllocations(
-    cash.collection,page.invoices,request.p_allocations);
   // Request is canonical and immutable across an uncertain financial source response.
   if(JSON.stringify(allocations)!==JSON.stringify(request.p_allocations)){
     throw new Error("Original receipt allocations must be canonical UUID order.");
@@ -81,7 +96,7 @@ export async function createIsolatedCustomerReceiptDraft(
   })){
     same(saved[field as keyof CustomerReceipt],want,field);
   }
-  if(saved.state!=="draft" || saved.allocations.length!==allocations.length){
+  if(saved.allocations.length!==allocations.length){
     throw new Error("Original receipt draft did not return a complete unposted source.");
   }
   for(const [index,expected] of allocations.entries()){
