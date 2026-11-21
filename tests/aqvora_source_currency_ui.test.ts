@@ -154,7 +154,7 @@ describe("Source-certified company currency interpretation (#78)",()=>{
     expect(()=>requireMatchingInvoicePolicyForReport(source,current)).not.toThrow();
     expect(formatCertifiedSourceMoney("60",{...source,display_complete:false}))
       .toBe("PKR 60 minor units");
-    expect(formatCertifiedSourceMoney("60",{...source,currency_policy:null}))
+    expect(formatCertifiedSourceMoney("60",{...source,currency_policy:null,display_complete:false}))
       .toBe("PKR 60 minor units");
     expect(()=>formatCertifiedSourceMoney("150",{
       ...source,currency_policy:null,display_complete:true,
