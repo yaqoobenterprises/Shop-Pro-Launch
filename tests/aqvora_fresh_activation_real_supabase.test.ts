@@ -123,9 +123,37 @@ describe.skipIf(!statusPath)("Real local Supabase new-company owner MFA/activati
     denied(await rpc(outsider,"approve_aqvora_fresh_finance_activation",approve));
     denied(await rpc({...checker,token:checker.lowToken},
       "approve_aqvora_fresh_finance_activation",approve));
-    // Temporary fixture-only owner membership, not a production invitation.
-    await db.query("INSERT INTO public.organization_members(organization_id,user_id,role,is_active) VALUES($1,$2,'OWNER',true)",
-      [freshOrg,checker.id]);
+    // Real owner-only invitation RPC (NO privileged membership insert).
+    // Invite code is delivered out of band: the recipient's confirmed Auth
+    // email and current MFA AAL2 session are both required for acceptance.
+    const checkerEmail=(await db.query<{email:string}>(
+      "SELECT email FROM auth.users WHERE id=$1",[checker.id])).rows[0].email;
+    const invitePayload={p_organization_id:freshOrg,p_invite_intent:randomUUID(),
+      p_invitee_email:checkerEmail};
+    denied(await rpc(null,"create_aqvora_fresh_owner_invite",invitePayload));
+    denied(await rpc(outsider,"create_aqvora_fresh_owner_invite",invitePayload));
+    denied(await rpc({...owner,token:owner.lowToken},
+      "create_aqvora_fresh_owner_invite",invitePayload));
+    const invite=succeeded(await rpc(owner,"create_aqvora_fresh_owner_invite",
+      invitePayload));
+    expect(invite.status).toBe("awaiting_verified_owner_acceptance");
+    expect(succeeded(await rpc(owner,"create_aqvora_fresh_owner_invite",
+      invitePayload))).toEqual(invite);
+    denied(await rpc(owner,"create_aqvora_fresh_owner_invite",
+      {...invitePayload,p_invitee_email:"different@example.test"}));
+    const acceptPayload={p_organization_id:freshOrg,
+      p_invitation_id:invite.invitation_id};
+    denied(await rpc(null,"accept_aqvora_fresh_owner_invite",acceptPayload));
+    denied(await rpc(owner,"accept_aqvora_fresh_owner_invite",acceptPayload));
+    denied(await rpc(outsider,"accept_aqvora_fresh_owner_invite",acceptPayload));
+    denied(await rpc({...checker,token:checker.lowToken},
+      "accept_aqvora_fresh_owner_invite",acceptPayload));
+    const accepted=succeeded(await rpc(checker,"accept_aqvora_fresh_owner_invite",
+      acceptPayload));
+    expect(accepted.status).toBe("verified_owner_joined");
+    expect(accepted.accepted_by).toBe(checker.id);
+    expect(succeeded(await rpc(checker,"accept_aqvora_fresh_owner_invite",
+      acceptPayload))).toEqual(accepted);
     const results=await Promise.all([
       rpc(checker,"approve_aqvora_fresh_finance_activation",approve),
       rpc(checker,"approve_aqvora_fresh_finance_activation",approve),

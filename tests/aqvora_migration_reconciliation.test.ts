@@ -40,6 +40,7 @@ const deployedOrder = [
   "20261121130100_aqvora_fresh_company_creation_rpc.sql",
   "20261121130200_aqvora_fresh_activation_evidence.sql",
   "20261121130300_aqvora_fresh_dual_owner_activation_rpc.sql",
+  "20261121130400_aqvora_verified_second_owner_invitation.sql",
 ];
 const org = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const actor = "11111111-1111-4111-8111-111111111111";
@@ -136,6 +137,9 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           anon_register:boolean;anon_checker:boolean;authenticated_register:boolean;
           authenticated_approve:boolean;private_function:boolean;
           origin_select:boolean;approval_insert:boolean;enable_insert:boolean;
+          anon_invite:boolean;anon_accept:boolean;authenticated_invite:boolean;
+          authenticated_accept:boolean;private_invite_select:boolean;
+          private_accept_insert:boolean;
         }>(`SELECT
           has_function_privilege('anon',
             'public.create_aqvora_fresh_company(uuid,text,text,text,text)','EXECUTE') anon_register,
@@ -152,12 +156,27 @@ describe.skipIf(!databaseUrl)("AQVORA full migration order on disposable Postgre
           has_table_privilege('authenticated',
             'private.aqvora_finance_activation_approvals','INSERT') approval_insert,
           has_table_privilege('authenticated',
-            'public.aqvora_enabled_companies','INSERT') enable_insert`);
+            'public.aqvora_enabled_companies','INSERT') enable_insert,
+          has_function_privilege('anon',
+            'public.create_aqvora_fresh_owner_invite(uuid,uuid,text)','EXECUTE') anon_invite,
+          has_function_privilege('anon',
+            'public.accept_aqvora_fresh_owner_invite(uuid,uuid)','EXECUTE') anon_accept,
+          has_function_privilege('authenticated',
+            'public.create_aqvora_fresh_owner_invite(uuid,uuid,text)','EXECUTE') authenticated_invite,
+          has_function_privilege('authenticated',
+            'public.accept_aqvora_fresh_owner_invite(uuid,uuid)','EXECUTE') authenticated_accept,
+          has_table_privilege('authenticated',
+            'private.aqvora_fresh_owner_invitations','SELECT') private_invite_select,
+          has_table_privilege('authenticated',
+            'private.aqvora_fresh_owner_invite_acceptances','INSERT') private_accept_insert`);
         expect(freshGrants.rows[0]).toEqual({
           anon_register:false,anon_checker:false,
           authenticated_register:true,authenticated_approve:true,
           private_function:false,origin_select:false,
           approval_insert:false,enable_insert:false,
+          anon_invite:false,anon_accept:false,authenticated_invite:true,
+          authenticated_accept:true,private_invite_select:false,
+          private_accept_insert:false,
         });
         const enrollment = await client.query<{ n: number }>(
           "SELECT count(*)::int AS n FROM public.aqvora_enabled_companies",
