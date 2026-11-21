@@ -15,6 +15,7 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:release:e2e": "node scripts/run_release_e2e.mjs",
     "test:watch": "vitest",
     "check:size": "node scripts/check_file_sizes.mjs",
     "check:strict": "tsc -p tsconfig.strict.json --noEmit",
