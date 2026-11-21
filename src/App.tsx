@@ -116,6 +116,7 @@ const MainShell: React.FC = () => {
   if (currentView === "aqvora-erp-preview") return <Suspense fallback={<div role="status">Loading AQVORA ERP review…</div>}><FinanceDesignPreview
     onClose={()=>setCurrentView("chat")}
     unifiedCashbook={unifiedWorkspaceReviewEnabled()}
+    cashbookIsDemo={isDemoMode}
     stagingLinks={getStagingFinanceNavItems({isCloudAccount,isDemoMode,role:user?.role})}
     onOpenStaging={setCurrentView}/></Suspense>;
 
