@@ -22,7 +22,7 @@ import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
 import {getStagingFinanceNavItems} from "./components/accounting/stagingFinanceNavigation";
 import {
-  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, FreshFinanceSetupWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
+  ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, FreshFinanceSetupWorkspace, AuthorizedJournalWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
 } from "./components/accounting/FinanceLazyRoutes";
 const FinanceDesignPreview = lazy(() => import("./components/accounting/FinanceDesignPreview").then(m=>({default:m.FinanceDesignPreview})));
 const ChatView = lazy(() =>
@@ -139,6 +139,7 @@ const MainShell: React.FC = () => {
         return <SalesDraftsWorkspace />;
       case "aqvora-gl-tb": return <GeneralLedgerTrialBalanceWorkspace />;
       case "aqvora-finance-setup": return <FreshFinanceSetupWorkspace />;
+      case "aqvora-manual-journal": return <AuthorizedJournalWorkspace />;
       case "aqvora-sales-lifecycle": return <SalesInvoiceLifecycleWorkspace />;
       case "aqvora-cash-collections": return <CashCollectionWorkspace />;
       case "aqvora-receipt-drafts": return <CustomerReceiptDraftWorkspace />;
