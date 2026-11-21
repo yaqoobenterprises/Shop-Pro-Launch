@@ -220,6 +220,9 @@ describe("Fresh AQVORA provenance, independent AAL2 owner activation & exact fir
       await rejected(db,approveSql,
         [FRESH,MAKER_KEY,CHECK_KEY,ATTEST],/idempotency key payload/i);
 
+      // The internal immutable approval table is intentionally NOT visible
+      // to authenticated users. Inspect its count only as test fixture owner.
+      await db.exec("RESET ROLE");
       const state=await db.query<{fresh_enabled:number;legacy_enabled:number;
         approved_count:number;fresh_postings:number}>(
         "SELECT (SELECT count(*)::int FROM public.aqvora_enabled_companies WHERE organization_id=$1) fresh_enabled,"+
@@ -233,6 +236,7 @@ describe("Fresh AQVORA provenance, independent AAL2 owner activation & exact fir
 
       // The FIRST real entry is separate from activation. No invented
       // opening cash, owner capital or revenue was silently posted.
+      await db.exec("SET LOCAL ROLE authenticated");
       await login(MAKER);
       const lines=[
         {account_id:CASH,debit_minor:"10000",credit_minor:"0"},
