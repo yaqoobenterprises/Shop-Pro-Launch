@@ -84,14 +84,22 @@ function journal(kind, srcId, date, periodId, cashAccountId, contraAccountId,
   if (debitAccount === creditAccount || amount <= 0n) {
     throw new Error('Invalid same-account or zero-amount candidate');
   }
-  const revision = sourceRevision.slice(0, 32);
+  // V2 journal RPC accepts at most 160 characters. Keep the complete
+  // source identity/revision on the PRIVATE candidate, and use its canonical
+  // SHA-256 digest as the bounded, deterministic server idempotency key.
+  const intentBasis = {
+    source_project_ref: source.source_project_ref,
+    source_organization_id: source.organization_id,
+    source_kind: kind,
+    source_id: srcId,
+    source_revision_sha256: sourceRevision,
+  };
   return {
     status: 'UNPOSTED_REVIEW_CANDIDATE', source_kind: kind, source_id: srcId,
     source_organization_id: source.organization_id,
     source_project_ref: source.source_project_ref,
     source_revision_sha256: sourceRevision,
-    intent_key: 'legacy:' + source.source_project_ref + ':' + source.organization_id +
-      ':' + kind + ':' + srcId + ':' + revision,
+    intent_key: 'legacy:' + sha256(canonical(intentBasis)),
     business_date: date, target_company_id: source.target_company_id,
     period_id: periodId, currency: 'PKR',
     lines: [
