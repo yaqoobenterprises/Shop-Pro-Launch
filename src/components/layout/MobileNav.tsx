@@ -9,6 +9,7 @@ import {
   FileText,
   FilePlus2,
   BookOpenCheck,
+  ClipboardCheck,
   Sparkles,
   Settings,
   Wallet,
@@ -19,6 +20,7 @@ import { useI18n } from "../../i18n";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
 import { isIsolatedVerifiedFinancialReadEnabled } from "../../services/aqvoraVerifiedFinancialReadService";
+import { isIsolatedInvoiceLifecycleEnabled } from "../../services/aqvoraSalesLifecycleService";
 
 const primaryItems: Array<{
   id: AppView;
@@ -53,11 +55,14 @@ export const MobileNav: React.FC = () => {
     !isDemoMode && (user?.role === "OWNER" || user?.role === "MANAGER");
   const showFinance = isIsolatedVerifiedFinancialReadEnabled() && isCloudAccount &&
     !isDemoMode && (user?.role === "OWNER" || user?.role === "MANAGER");
+  const showApprovals = isIsolatedInvoiceLifecycleEnabled() && isCloudAccount &&
+    !isDemoMode && (user?.role === "OWNER" || user?.role === "MANAGER");
   const availableSecondary: typeof secondaryItems = [
     ...secondaryItems,
     ...(showReceivables ? [{id:"aqvora-receivables" as AppView,label:"Receivables",icon:FileText}] : []),
     ...(showDrafts ? [{id:"aqvora-sales-drafts" as AppView,label:"Service drafts",icon:FilePlus2}] : []),
     ...(showFinance ? [{id:"aqvora-gl-tb" as AppView,label:"GL & Trial Balance",icon:BookOpenCheck}] : []),
+    ...(showApprovals ? [{id:"aqvora-sales-lifecycle" as AppView,label:"Invoice approvals",icon:ClipboardCheck}] : []),
   ];
 
   const navigate = (view: AppView) => {
@@ -109,7 +114,7 @@ export const MobileNav: React.FC = () => {
               className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
             >
               {availableSecondary.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : id === "aqvora-receivables" ? "Receivables" : id === "aqvora-gl-tb" ? "GL & Trial Balance" : "Service drafts";
+                const label = id === "accounts" ? t("nav.accounts") : id === "settings" ? t("nav.settings") : id === "aqvora-receivables" ? "Receivables" : id === "aqvora-gl-tb" ? "GL & Trial Balance" : id === "aqvora-sales-lifecycle" ? "Invoice approvals" : "Service drafts";
                 return (
                   <button
                     key={id}
@@ -158,7 +163,8 @@ export const MobileNav: React.FC = () => {
               currentView === "accounts" ||
               currentView === "aqvora-receivables" ||
               currentView === "aqvora-sales-drafts" ||
-              currentView === "aqvora-gl-tb"
+              currentView === "aqvora-gl-tb" ||
+              currentView === "aqvora-sales-lifecycle"
             ) ?
               "bg-primary/[0.07] text-primary"
             : "text-text-muted hover:bg-surface-container-low"
