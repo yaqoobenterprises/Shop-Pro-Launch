@@ -54,6 +54,16 @@ function removeDateFromAmountText(content: string): string {
   return content.replace(datePattern, " ");
 }
 
+function isExplicitVoidCommand(question: string): boolean {
+  const target = String.raw`(?:the\s+)?(?:transaction|entry|record|sale|expense|this|that|it)`;
+  const verb = String.raw`(?:void|delete|remove|cancel)`;
+  const explicitDate = String.raw`(?:20\d{2}-(?:0?[1-9]|1[0-2])-(?:0?[1-9]|[12]\d|3[01])|(?:[0-2]?\d|3[01])[-/.](?:0?[1-9]|1[0-2])[-/.]20\d{2}|(?:[0-2]?\d|3[01])\s+(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)(?:\.?[,]?\s+20\d{2})?)`;
+  return new RegExp(String.raw`\b(?:please\s+)?${verb}\s+${target}\b`, "i").test(question) ||
+    new RegExp(String.raw`\b${verb}\s+${explicitDate}\b`, "i").test(question) ||
+    /\b(?:transaction|entry|record|sale|expense)\s+(?:ko\s+)?(?:void|delete|remove|cancel)\s+(?:kar\s*do|karo|kardein|karen|do|please)\b/i.test(question) ||
+    /\b(?:void|delete|remove|cancel)\s+(?:kar\s*do|karo|kardein|karen)\b/i.test(question);
+}
+
 export async function prepareLedgerMateAction(
   content: string,
   messages: ChatMessage[],
@@ -62,7 +72,8 @@ export async function prepareLedgerMateAction(
   const question = content.toLowerCase();
   const isCreate = /\b(add|record|enter|save|jama|likh\s*do|darj)\b/.test(question);
   const isEdit = /\b(edit|change|update|correct|tabdeel|theek\s*kar|badal)\b/.test(question) || /\b[\d,]+(?:\.\d{1,2})?\s*(?:to|se|ko)\s*[\d,]+(?:\.\d{1,2})?\s*(?:kar\s*do)?\b/.test(question);
-  const isVoid = /\b(delete|remove|void|hata|hatao|cancel|mita)\b/.test(question);
+  const isVoid = isExplicitVoidCommand(question) ||
+    (/\b(hatao|mita)\b/.test(question) && /\b(transaction|entry|record|sale|expense)\b/.test(question));
   if (!isCreate && !isEdit && !isVoid) return null;
   if (Number(isCreate) + Number(isEdit) + Number(isVoid) > 1) {
     return { clarification: "I found more than one possible ledger action. Please send only one request: add, edit, or void." };
@@ -97,7 +108,7 @@ export async function prepareLedgerMateAction(
     const categoryMatches = categoryHint ? activeCategories.filter((item) => item.name.toLowerCase().includes(categoryHint)) : [];
     if (categoryHint && categoryMatches.length > 1) return { clarification: `Multiple ${categoryHint} categories are available. Please name the exact category shown in Shop Pro.` };
     if (categoryHint && categoryMatches.length === 0) {
-      return { clarification: `No active ${type} category matches “${categoryHint}”. Please name an existing Shop Pro category before recording this entry.` };
+      return { clarification: `No active ${type} category matches â€œ${categoryHint}â€. Please name an existing Shop Pro category before recording this entry.` };
     }
     const defaults = activeCategories.filter((item) => item.is_default);
     const category = categoryMatches[0] || (defaults.length === 1 ? defaults[0] : activeCategories.length === 1 ? activeCategories[0] : null);
@@ -146,7 +157,7 @@ export async function prepareLedgerMateAction(
     const transaction = matches[0];
     return { pending: { kind: "edit", transaction, amountPaisa: newPaisa, preview: [
       `Type: ${transaction.type}`, `Date: ${transaction.business_date}`, `Category: ${transaction.category_name || "Uncategorised"}`,
-      `Payment account: ${transaction.account_name || "Unknown"}`, `Amount: ${formatAmount(oldPaisa)} → ${formatAmount(newPaisa)}`,
+      `Payment account: ${transaction.account_name || "Unknown"}`, `Amount: ${formatAmount(oldPaisa)} â†’ ${formatAmount(newPaisa)}`,
     ].join("\n") } };
   }
 

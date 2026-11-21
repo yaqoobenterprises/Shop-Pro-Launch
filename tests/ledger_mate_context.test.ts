@@ -1,17 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { Transaction } from "../src/types/ledger";
+import type { AuditLogEntry, Transaction } from "../src/types/ledger";
 
 vi.mock("../src/services/ledgerService", () => ({
   ledgerService: {
     getAllFilteredTransactions: vi.fn(),
+    getFilteredTransactions: vi.fn(),
+    getVoidAuditEvents: vi.fn(),
     getMonthlySummary: vi.fn(),
     getMonthlyReport: vi.fn(),
     getPaymentAccounts: vi.fn(),
+    getCategories: vi.fn(),
   },
 }));
 
 import { ledgerService } from "../src/services/ledgerService";
-import { buildLedgerMateContext } from "../src/services/ledgerMateContext";
+import { buildLedgerMateAnalysis, buildLedgerMateContext } from "../src/services/ledgerMateContext";
 
 const mockLedger = vi.mocked(ledgerService);
 
@@ -46,9 +49,12 @@ describe("LedgerMate verified Shop Pro context", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLedger.getAllFilteredTransactions.mockResolvedValue([]);
+    mockLedger.getFilteredTransactions.mockResolvedValue({ transactions: [], count: 0 });
+    mockLedger.getVoidAuditEvents.mockResolvedValue({ events: [], count: 0 });
     mockLedger.getMonthlySummary.mockResolvedValue(null);
     mockLedger.getMonthlyReport.mockResolvedValue([]);
     mockLedger.getPaymentAccounts.mockResolvedValue([]);
+    mockLedger.getCategories.mockResolvedValue([]);
   });
 
   it("retrieves exact historical daily records and sums integer paisa", async () => {
@@ -83,7 +89,22 @@ describe("LedgerMate verified Shop Pro context", () => {
       { requireCloudSource: true },
     );
     expect(context).toContain("Keyword-matched service records: 2; income 200000 paisa; expenses 20000 paisa");
-    expect(context).toContain("Income categories among matching service records: Stamp Paper 200000 paisa");
+    expect(context).toContain("Income categories among matched service records: Stamp Paper 200000 paisa");
+  });
+
+  it("answers a service income question from matching historical records, not the whole ledger total", async () => {
+    mockLedger.getAllFilteredTransactions.mockResolvedValue([
+      transaction("stamp-income", "income", 125000, "2025-02-03", "Stamp Paper"),
+      transaction("stamp-expense", "expense", 20000, "2025-02-04", "Stamp supplies"),
+      transaction("print-income", "income", 75000, "2025-02-05", "Printing"),
+    ]);
+
+    const analysis = await buildLedgerMateAnalysis("Stamp paper se kitni earning hui?", [], "2026-11-17");
+
+    expect(analysis.directAnswer).toContain("Rs 1,250.00");
+    expect(analysis.directAnswer).not.toContain("Rs 2,000.00");
+    expect(analysis.directAnswer).toContain("ab tak");
+    expect(analysis.reportMarkdown).toContain("Ab tak");
   });
 
   it("calculates month-over-month figures from the two monthly ledger summaries", async () => {
@@ -116,7 +137,7 @@ describe("LedgerMate verified Shop Pro context", () => {
 
     const context = await buildLedgerMateContext("Cash aur bank balance kitna hai?", [], "2026-11-17");
 
-    expect(context).toContain("total cash 125000 paisa; total bank 75000 paisa");
+    expect(context).toContain("cash 125000 paisa; bank 75000 paisa");
     expect(context).toContain("these are balances, not profit");
   });
 
@@ -127,5 +148,50 @@ describe("LedgerMate verified Shop Pro context", () => {
 
     await expect(buildLedgerMateContext("5 Nov 2026 ki sale kitni thi?", [], "2026-11-17"))
       .rejects.toThrow("No cached totals were used");
+  });
+
+  it("answers a short void follow-up from the inherited day and the audit history", async () => {
+    const event: AuditLogEntry = {
+      id: "void-event-1",
+      transaction_id: "voided-sale-1",
+      action: "void",
+      old_data: { id: "voided-sale-1", type: "income", amount_paisa: 12000, category_id: "stamp", business_date: "2026-11-17" },
+      new_data: { id: "voided-sale-1", type: "income", amount_paisa: 12000, category_id: "stamp", business_date: "2026-11-17", status: "voided", void_reason: "Duplicate entry" },
+      changed_by: "current-user",
+      changed_by_name: "Shop Owner",
+      created_at: "2026-11-17T08:00:00.000Z",
+    };
+    mockLedger.getVoidAuditEvents.mockResolvedValue({ events: [event], count: 1 });
+    mockLedger.getCategories.mockResolvedValue([{ id: "stamp", name: "Stamp Paper", kind: "income", unusual_amount_limit_paisa: 0, is_default: false, is_active: true, display_order: 1, created_at: "2026-01-01" }]);
+
+    const analysis = await buildLedgerMateAnalysis("kuch void hua?", [
+      { role: "user", content: "Aaj ki total sale kitni hai?" },
+      { role: "assistant", content: "Aaj ki total sale Rs 120.00 hai." },
+    ], "2026-11-17");
+
+    expect(mockLedger.getVoidAuditEvents).toHaveBeenCalledWith({
+      startAt: "2026-11-17T00:00:00+05:00",
+      beforeAt: "2026-11-18T00:00:00+05:00",
+      limit: 8,
+    }, { requireCloudSource: true });
+    expect(analysis.directAnswer).toContain("1 transaction void hui");
+    expect(analysis.reportMarkdown).toContain("Stamp Paper");
+    expect(analysis.reportMarkdown).toContain("Duplicate entry");
+    expect(mockLedger.getAllFilteredTransactions).not.toHaveBeenCalled();
+  });
+
+  it("uses an exact monthly audit count instead of reporting that void data is missing", async () => {
+    mockLedger.getVoidAuditEvents.mockResolvedValue({ events: [], count: 2 });
+
+    const analysis = await buildLedgerMateAnalysis("is month kitni transactions voided hui?", [], "2026-11-17");
+
+    expect(mockLedger.getVoidAuditEvents).toHaveBeenCalledWith({
+      startAt: "2026-11-01T00:00:00+05:00",
+      beforeAt: "2026-12-01T00:00:00+05:00",
+      limit: 8,
+    }, { requireCloudSource: true });
+    expect(analysis.directAnswer).toContain("2 transactions void hui hain");
+    expect(analysis.reportMarkdown).toContain("2");
+    expect(analysis.reportMarkdown).toContain("matching void records gine hain");
   });
 });

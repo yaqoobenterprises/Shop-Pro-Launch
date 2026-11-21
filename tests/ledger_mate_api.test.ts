@@ -72,7 +72,7 @@ describe("LedgerMate Groq API boundary", () => {
     vi.stubGlobal("fetch", fetchMock);
     const res = responseStub();
 
-    await handler({ method: "POST", headers: { authorization: "Bearer valid" }, body: { messages: [{ role: "user", content: "Income?" }], context: "verified data" } } as never, res as never);
+    await handler({ method: "POST", headers: { authorization: "Bearer valid" }, body: { messages: [{ role: "user", content: "is month kitni transactions voided hui?" }], context: "verified data" } } as never, res as never);
 
     expect(res.statusCode).toBe(200);
     expect(res.headers["Content-Type"]).toContain("text/event-stream");
@@ -81,6 +81,9 @@ describe("LedgerMate Groq API boundary", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
     const providerRequest = fetchMock.mock.calls[1][1] as RequestInit;
     expect((providerRequest.headers as Record<string, string>).Authorization).toBe("Bearer server-only-key");
+    const providerBody = JSON.parse(String(providerRequest.body));
+    expect(providerBody.messages[0].content).toContain("Roman Urdu using Latin letters only");
+    expect(providerBody.messages[0].content).toContain("Do not switch to Urdu/Arabic script");
   });
 
   it("reports ready only when the configured model is available", async () => {

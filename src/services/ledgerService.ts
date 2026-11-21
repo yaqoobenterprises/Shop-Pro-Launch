@@ -16,6 +16,7 @@ import {
   AccountLedgerEntry,
   LedgerAccount,
   TransactionDraft,
+  AuditLogEntry,
 } from '../types/ledger';
 import { getKarachiBusinessDate } from '../lib/dates';
 import { SeedCategory, SEED_CATEGORIES } from '../parser/matcher';
@@ -1485,6 +1486,41 @@ export class LedgerService {
     } while (offset < count);
 
     return transactions;
+  }
+
+  /** Read void events from the immutable audit trail using the signed-in user's RLS scope. */
+  async getVoidAuditEvents(
+    filter: { startAt?: string; beforeAt?: string; limit?: number; offset?: number } = {},
+    options: LedgerReadOptions = {},
+  ): Promise<{ events: AuditLogEntry[]; count: number }> {
+    const principal = getSecurityPrincipal();
+    if (options.requireCloudSource) await requireAuthoritativeCloudRead(principal, 'Shop Pro void audit history');
+    if (!principal) throw new Error('Sign in before loading Shop Pro void audit history.');
+    if (!isOnline() || !isSupabaseConfigured()) {
+      throw new Error('Shop Pro void audit history is available only from the connected cloud ledger.');
+    }
+    if (!options.requireCloudSource && !(await hasConfiguredCloudSession(principal.id))) throw new SupabaseSessionRequiredError();
+
+    const limit = Math.min(Math.max(Math.trunc(filter.limit || 50), 1), 1000);
+    const offset = Math.max(Math.trunc(filter.offset || 0), 0);
+    let query = getSupabaseClient()
+      .from('audit_log')
+      .select('id, transaction_id, action, old_data, new_data, changed_by, changed_by_name, created_at', { count: 'exact' })
+      .eq('action', 'void');
+
+    if (filter.startAt) query = query.gte('created_at', filter.startAt);
+    if (filter.beforeAt) query = query.lt('created_at', filter.beforeAt);
+
+    const { data, error, count } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) {
+      throw new Error('Shop Pro could not retrieve void history from the cloud audit trail.', { cause: error });
+    }
+    if (count === null) {
+      throw new Error('Shop Pro did not return an exact count for void audit history.');
+    }
+    return { events: (data || []) as AuditLogEntry[], count };
   }
 
   /**
