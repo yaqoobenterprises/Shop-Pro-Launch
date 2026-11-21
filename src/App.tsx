@@ -21,6 +21,7 @@ import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalMod
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
 import {getStagingFinanceNavItems} from "./components/accounting/stagingFinanceNavigation";
+import {unifiedWorkspaceReviewEnabled} from "./config/unifiedWorkspace";
 import {
   ReceivablesWorkspace, SalesDraftsWorkspace, GeneralLedgerTrialBalanceWorkspace, SalesInvoiceLifecycleWorkspace, CashCollectionWorkspace, CustomerReceiptDraftWorkspace,
 } from "./components/accounting/FinanceLazyRoutes";
@@ -46,12 +47,10 @@ const LedgerSettingsView = lazy(() =>
 const AccountsView = lazy(() =>
   import("./components/accounts/AccountsView").then((module) => ({ default: module.AccountsView })),
 );
-
 const I18nPreferenceSync: React.FC = () => {
   const { user, isCloudAccount } = useAuth();
   const { setLanguage } = useI18n();
   const languageEnabled = isFeatureEnabled("languageUr");
-
   useEffect(() => {
     if (!languageEnabled || !user?.id) return;
     let active = true;
@@ -83,7 +82,7 @@ const MainShell: React.FC = () => {
   }, [companySetupEnabled, isDemoMode, user?.id, user?.role, organization.id, organization.region_configured]);
 
   useEffect(() => {
-    if (currentView === "aqvora-erp-preview") return;
+    if (currentView === "aqvora-erp-preview" && !unifiedWorkspaceReviewEnabled()) return;
     let syncInFlight: Promise<void> | undefined;
     const synchronizeOfflineWork = () => {
       if (syncInFlight) return;
@@ -115,7 +114,9 @@ const MainShell: React.FC = () => {
   }, [currentView]);
 
   if (currentView === "aqvora-erp-preview") return <Suspense fallback={<div role="status">Loading AQVORA ERP review…</div>}><FinanceDesignPreview
-    onClose={()=>setCurrentView("dashboard")}
+    onClose={()=>setCurrentView("chat")}
+    unifiedCashbook={unifiedWorkspaceReviewEnabled()}
+    cashbookIsDemo={isDemoMode}
     stagingLinks={getStagingFinanceNavItems({isCloudAccount,isDemoMode,role:user?.role})}
     onOpenStaging={setCurrentView}/></Suspense>;
 

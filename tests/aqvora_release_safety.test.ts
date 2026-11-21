@@ -38,5 +38,8 @@ describe("AQVORA release-safe experience",()=>{
     expect(()=>assertAQVORAReleaseSafety({
       VITE_ENABLE_AQVORA_STAGING_RECEIPT_DRAFTS:"true",
     },"production")).toThrow(/VITE_ENABLE_AQVORA_STAGING_RECEIPT_DRAFTS/);
+    expect(()=>assertAQVORAReleaseSafety({
+      VITE_AQVORA_UNIFIED_WORKSPACE_PREVIEW:"true",
+    },"production")).toThrow(/VITE_AQVORA_UNIFIED_WORKSPACE_PREVIEW/);
   });
 });

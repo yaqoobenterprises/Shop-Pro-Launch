@@ -17,7 +17,7 @@ describe("AQVORA visible ERP demo",()=>{
     expect(screen.getByText("Business overview")).toBeTruthy();
     expect(screen.getByText(/Rs 23,000.00/)).toBeTruthy();
     expect(screen.getAllByText(/Rs 17,000.00/).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Sample company/)).toBeTruthy();
+    expect(screen.getByText(/Sample ERP company/)).toBeTruthy();
   });
   it("navigates real chart/journal/GL/TB sample React screens",()=>{
     render(<FinanceDesignPreview onClose={vi.fn()}/>);

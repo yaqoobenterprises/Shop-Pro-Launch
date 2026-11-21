@@ -16,6 +16,15 @@ import type {StagingFinanceNavItem} from "./stagingFinanceNavigation";
 import {sampleChart,sampleCompany,sampleJournals} from "./financeSampleData";
 import "./FinanceDesignPreview.css";
 import "./ErpSampleShowcase.css";
+const Cashbook = React.lazy(() =>
+  import("../chat/ChatView").then(module=>({default:module.ChatView})),
+);
+const RecordedOverview = React.lazy(() =>
+  import("../dashboard/LedgerDashboardView").then(m=>({default:m.LedgerDashboardView})),
+);
+const RecordedReports = React.lazy(() =>
+  import("../reports/LedgerReportsView").then(m=>({default:m.LedgerReportsView})),
+);
 
 const icons:Record<ErpReviewPage,LucideIcon>={
   overview:LayoutDashboard,customers:Users,sales:FileText,
@@ -32,12 +41,16 @@ interface Props {
   onClose:()=>void;
   stagingLinks?:StagingFinanceNavItem[];
   onOpenStaging?:(id:AppView)=>void;
+  unifiedCashbook?:boolean;
+  cashbookIsDemo?:boolean;
 }
 
 export const FinanceDesignPreview:React.FC<Props>=({
-  onClose,stagingLinks=[],onOpenStaging,
+  onClose,stagingLinks=[],onOpenStaging,unifiedCashbook=false,cashbookIsDemo=false,
 })=>{
-  const [page,setPage]=useState<ErpReviewPage>("overview");
+  const [page,setPage]=useState<ErpReviewPage|"cashbook"|"cashbook-reports">(
+    unifiedCashbook?"cashbook":"overview",
+  );
   const [roadmapOpen,setRoadmapOpen]=useState(false);
   const [ledgerAccountId,setLedgerAccountId]=useState<string|undefined>();
   const mainRef=useRef<HTMLDivElement>(null);
@@ -50,36 +63,64 @@ export const FinanceDesignPreview:React.FC<Props>=({
     journals:sampleJournals,
   }),[]);
   useEffect(()=>{
-    const esc=(event:KeyboardEvent)=>{if(event.key==="Escape")onClose();};
+    const esc=(event:KeyboardEvent)=>{if(event.key==="Escape"&&!unifiedCashbook)onClose();};
     window.addEventListener("keydown",esc);
     return ()=>window.removeEventListener("keydown",esc);
-  },[onClose]);
+  },[onClose,unifiedCashbook]);
   useEffect(()=>{if(typeof mainRef.current?.scrollTo==="function") mainRef.current.scrollTo({top:0,behavior:"auto"});},[page]);
   const selected=erpReviewGroups.flatMap(group=>group.pages).find(item=>item.id===page);
+  const recorded=unifiedCashbook&&["cashbook","cashbook-reports","overview"].includes(page);
   const navigate=(next:ErpReviewPage)=>setPage(next);
 
-  return <div className="aq-finance" role="dialog" aria-modal="true"
-    aria-label="AQVORA interactive ERP sample preview">
+  return <div className="aq-finance"
+    role={unifiedCashbook?"region":"dialog"}
+    aria-modal={unifiedCashbook?undefined:true}
+    aria-label={unifiedCashbook?"AQVORA unified workspace review":"AQVORA interactive ERP sample preview"}>
     <div className="aq-finance__shell">
       <header className="aq-finance__topbar">
         <div className="aq-finance__identity">
           <img src="/assets/aqvora-symbol.svg" alt="" aria-hidden="true"/>
-          <div><strong>AQVORA</strong><span>Unified ERP Review</span></div>
+          <div><strong>AQVORA</strong>
+            <span>{unifiedCashbook?"Unified workspace · review mode":"Unified ERP Review"}</span></div>
         </div>
         <div className="aq-finance__topbar-right">
-          <span className="aq-finance__sample-flag">Illustrative company · No live records</span>
+          <span className="aq-finance__sample-flag">{recorded
+            ?(cashbookIsDemo?"Demo Cashbook · No real company data":
+              "Recorded Cashbook activity · not V2 posted accounting")
+            :"Illustrative ERP company · No live records"}</span>
           <button type="button" className="aq-finance__close"
             onClick={onClose} title="Return to legacy cashbook">
-            <X size={19} aria-hidden="true"/><span>Exit to legacy Cashbook</span>
+            <X size={19} aria-hidden="true"/>
+            <span>{unifiedCashbook?"Return to classic Cashbook":"Exit to legacy Cashbook"}</span>
           </button>
         </div>
       </header>
       <div className="aq-erp-preview-banner" role="status">
-        <strong>DESIGN & LOGIC REVIEW</strong>
-        <span>Sample company · PKR · Real V2 posting and cloud connection OFF · Never actual bank/ledger data</span>
+        <strong>{recorded?"YOUR ACCOUNT DATA":"DESIGN & LOGIC REVIEW"}</strong>
+        <span>{recorded
+          ?(cashbookIsDemo
+            ?"Demo Cashbook and reports. No real company data or certified V2 journals."
+            :page==="cashbook"
+              ?"Original Cashbook. Saving entries changes your actual account data. Never enter test transactions here."
+              :"Existing Cashbook reports. These are not certified V2 journals or accrual P&L.")
+          :"Sample ERP company · PKR · V2 posting OFF here · Never actual Cashbook or bank data"}</span>
       </div>
       <div className="aq-finance__body">
-        <aside className="aq-finance__navigation" aria-label="AQVORA ERP preview navigation">
+        <aside className="aq-finance__navigation"
+          aria-label={unifiedCashbook?"AQVORA unified navigation":"AQVORA ERP preview navigation"}>
+          {unifiedCashbook&&<div className="aq-erp-nav-group" aria-label="Existing Cashbook">
+            <span>QUICK ENTRY</span>
+            <button type="button" aria-label="Cashbook" aria-current={page==="cashbook"?"page":undefined}
+              onClick={()=>setPage("cashbook")}>
+              <Wallet size={17} aria-hidden="true"/><span>Cashbook</span>
+              <small className="aq-erp-nav-soon">Your records</small>
+            </button>
+            <button type="button" aria-current={page==="cashbook-reports"?"page":undefined}
+              onClick={()=>setPage("cashbook-reports")}>
+              <FileSpreadsheet size={17} aria-hidden="true"/>
+              <span>Cashbook Reports</span>
+            </button>
+          </div>}
           {erpReviewGroups.map(group=><div key={group.label} className="aq-erp-nav-group">
             {group.label==="ROADMAP"?<button type="button"
               className="aq-erp-section-toggle" aria-expanded={roadmapOpen}
@@ -94,6 +135,8 @@ export const FinanceDesignPreview:React.FC<Props>=({
                 <Icon size={17} aria-hidden="true"/>
                 <span>{entry.label}</span>
                 {!entry.implemented&&<small className="aq-erp-nav-soon">Planned</small>}
+                {unifiedCashbook&&entry.implemented&&entry.id!=="overview"&&
+                  <small className="aq-erp-nav-soon" aria-hidden="true">Sample</small>}
               </button>;
             })}
           </div>)}
@@ -113,16 +156,26 @@ export const FinanceDesignPreview:React.FC<Props>=({
             })}
           </div>}
         </aside>
-        <div className="aq-finance__main" ref={mainRef}>
+        <div className={`aq-finance__main${page==="cashbook"?" aq-finance__main--cashbook":""}`}
+          ref={mainRef}>
           <div className="aq-finance__mobile-tabs" role="navigation"
             aria-label="AQVORA review pages">
+            {unifiedCashbook&&<>
+              <button type="button" aria-current={page==="cashbook"?"page":undefined}
+                onClick={()=>setPage("cashbook")}>Cashbook · Your records</button>
+              <button type="button" aria-current={page==="cashbook-reports"?"page":undefined}
+                onClick={()=>setPage("cashbook-reports")}>Cashbook Reports</button>
+            </>}
             {erpReviewGroups.flatMap(group=>group.pages).map(entry=><button
               type="button" key={entry.id} aria-current={page===entry.id?"page":undefined}
               onClick={()=>navigate(entry.id)}>
-              {entry.label}{!entry.implemented?" · Planned":""}
+              {entry.label}{!entry.implemented?" · Planned":unifiedCashbook&&entry.id!=="overview"?" · Sample":""}
             </button>)}
           </div>
-          {page==="overview"&&<ErpSampleOverview onNavigate={navigate}/>}
+          {unifiedCashbook&&page==="cashbook"&&<div className="aq-finance__cashbook"><React.Suspense fallback={<p role="status">Loading your Cashbook…</p>}><Cashbook/></React.Suspense></div>}
+          {!unifiedCashbook&&page==="overview"&&<ErpSampleOverview onNavigate={navigate}/>}
+          {unifiedCashbook&&page==="overview"&&<React.Suspense fallback={<p role="status">Loading recorded activity…</p>}><RecordedOverview/></React.Suspense>}
+          {unifiedCashbook&&page==="cashbook-reports"&&<React.Suspense fallback={<p role="status">Loading recorded reports…</p>}><RecordedReports/></React.Suspense>}
           {page==="chart"&&<ChartExplorer accounts={sampleChart} isSample/>}
           {page==="journal"&&<JournalComposer accounts={sampleChart}
             initialDate={sampleCompany.asOfDate} policy={policy}/>}
@@ -131,14 +184,15 @@ export const FinanceDesignPreview:React.FC<Props>=({
             selectedAccountId={ledgerAccountId}/>}
           {page==="trial"&&<TrialBalancePanel snapshot={report}
             onOpenLedger={id=>{setLedgerAccountId(id);setPage("ledger");}}/>}
-          {!["overview","chart","journal","ledger","trial"].includes(page)&&
+          {page!=="cashbook"&&page!=="cashbook-reports"&&
+            !["overview","chart","journal","ledger","trial"].includes(page)&&
             <ErpSampleOperations key={page} page={page} onNavigate={navigate}/>}
-          <p className="aq-erp-synthetic-caption">
+          {!recorded&&<p className="aq-erp-synthetic-caption">
             Review-only visual workflow. Functional staging RPCs exist in separate
             audited modules, but are intentionally not activated in this sample preview.
-          </p>
+          </p>}
           <span className="sr-only" aria-live="polite">
-            Current preview page: {selected?.label}
+            Current workspace page: {page==="cashbook"?"Cashbook":page==="cashbook-reports"?"Recorded Cashbook reports":selected?.label}
           </span>
         </div>
       </div>
