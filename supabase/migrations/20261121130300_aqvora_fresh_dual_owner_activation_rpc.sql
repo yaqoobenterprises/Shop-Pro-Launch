@@ -108,10 +108,14 @@ BEGIN
   -- A revoked maker/removed maker does not keep an approval request alive.
   PERFORM 1 FROM auth.sessions
     WHERE id=original.maker_session_id AND user_id=original.maker_id FOR SHARE;
-  IF NOT FOUND OR NOT EXISTS(
-    SELECT 1 FROM public.organization_members WHERE
-      organization_id=p_organization_id AND user_id=original.maker_id
-      AND role='OWNER' AND is_active=true) THEN
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE='42501',
+      MESSAGE='Original finance maker lost active OWNER or session authorization';
+  END IF;
+  PERFORM 1 FROM public.organization_members
+    WHERE organization_id=p_organization_id AND user_id=original.maker_id
+      AND role='OWNER' AND is_active=true FOR SHARE;
+  IF NOT FOUND THEN
     RAISE EXCEPTION USING ERRCODE='42501',
       MESSAGE='Original finance maker lost active OWNER or session authorization';
   END IF;
