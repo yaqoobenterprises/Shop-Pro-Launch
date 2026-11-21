@@ -5,11 +5,14 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig, loadEnv } from 'vite';
 import { FEATURES } from './src/config/features';
 import { isServerSupabaseKey } from './src/lib/supabaseSecurity';
+import { assertAQVORAReleaseSafety } from './scripts/aqvora-release-safety.mjs';
 
 const projectDirectory = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  assertAQVORAReleaseSafety({ ...env, ...process.env },
+    process.env.VERCEL_ENV ?? process.env.AQVORA_RELEASE_TARGET ?? env.AQVORA_RELEASE_TARGET);
   const unsafeViteKey = Object.entries(env).some(
     ([name, value]) => name.startsWith('VITE_') && isServerSupabaseKey(value),
   );
