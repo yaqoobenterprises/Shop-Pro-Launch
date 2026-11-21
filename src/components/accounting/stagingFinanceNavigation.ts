@@ -3,13 +3,14 @@
  * This does NOT grant SQL authorization: every operation requires live server checks.
  */
 import type { ComponentType } from "react";
-import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, } from "lucide-react";
+import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, ReceiptText, } from "lucide-react";
 import type { AppView } from "../../context/AppContext";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
 import { isIsolatedInvoiceLifecycleEnabled } from "../../services/aqvoraSalesLifecycleService";
 import { isIsolatedVerifiedFinancialReadEnabled } from "../../services/aqvoraVerifiedFinancialReadService";
 import { isIsolatedCashCollectionEnabled } from "../../services/aqvoraCashCollectionOperations";
+import { isIsolatedReceiptDraftEnabled } from "../../services/aqvoraReceiptDraftService";
 
 export interface StagingFinanceNavItem {
   id: AppView;
@@ -36,6 +37,9 @@ export function getStagingFinanceNavItems(flags:{
   }
   if(isIsolatedCashCollectionEnabled()){
     result.push({id:"aqvora-cash-collections",label:"Cash collections",icon:HandCoins});
+  }
+  if(isIsolatedReceiptDraftEnabled()){
+    result.push({id:"aqvora-receipt-drafts",label:"Customer receipts",icon:ReceiptText});
   }
   return result;
 }
