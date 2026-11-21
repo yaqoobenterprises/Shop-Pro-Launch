@@ -4,11 +4,10 @@
  * Financial statements MUST NOT treat these unapproved candidates as posted.
  */
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { readFile, realpath, writeFile } from 'node:fs/promises';
+import { dirname, isAbsolute, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { reconcileLegacySourceSnapshot } from './aqvora_legacy_source_reconcile.mjs';
-import { writePrivateSnapshot } from './aqvora_legacy_snapshot_export.mjs';
 
 const UUID = /^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i;
 const TREATMENTS = Object.freeze({
@@ -271,6 +270,31 @@ function numericMinorOpening(v) {
   return neg ? -n : n;
 }
 
+/**
+ * Write an unposted candidate review, NOT a seven-table legacy source snapshot.
+ * This is deliberately separate from writePrivateSnapshot(), whose seven-array
+ * contract must stay strict. Never write private customer data into Git.
+ */
+export async function writePrivateJournalReview(path, review) {
+  if (!isAbsolute(path)) throw new Error('Private journal review path must be absolute');
+  if (review?.summary?.status !== 'UNPOSTED_ACCOUNTING_REVIEW_ONLY'
+      || review.summary.posting_allowed !== false
+      || review.summary.erp_books_updated !== false
+      || !Array.isArray(review.candidates) || !Array.isArray(review.exceptions)
+      || !Array.isArray(review.source_account_coverage)) {
+    throw new Error('Only complete, unposted journal review files are allowed');
+  }
+  const target = resolve(path);
+  const repository = await realpath(resolve(dirname(fileURLToPath(import.meta.url)), '..'));
+  const parent = await realpath(dirname(target));
+  if (parent === repository || parent.startsWith(repository + sep)) {
+    throw new Error('Refusing to write sensitive review inside Git repository');
+  }
+  const content = JSON.stringify(review, null, 2) + '\n';
+  await writeFile(target, content, { flag: 'wx', mode: 0o600 });
+  return { bytes: Buffer.byteLength(content) };
+}
+
 async function cli(args) {
   const opts = {};
   if (args.length % 2) throw new Error('Expected paired CLI arguments');
@@ -288,7 +312,7 @@ async function cli(args) {
     readFile(resolve(opts['--policy']), 'utf8').then(JSON.parse),
   ]);
   const result = planLegacyJournalDryRun(snapshot, policy);
-  await writePrivateSnapshot(opts['--out'], result);
+  await writePrivateJournalReview(opts['--out'], result);
   // Never log journal-level source IDs, personal text or accounts.
   console.log(JSON.stringify(result.summary, null, 2));
 }
