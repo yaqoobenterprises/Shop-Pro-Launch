@@ -1,4 +1,5 @@
 import {readFileSync} from "node:fs";
+import {resolve} from "node:path";
 import {runInNewContext} from "node:vm";
 import {describe,expect,it,vi} from "vitest";
 
@@ -31,7 +32,7 @@ function workerHarness(){
     addEventListener:(event:string,handler:Handler)=>handlers.set(event,handler),
     skipWaiting:vi.fn(),clients:{claim:vi.fn()},
   };
-  const source=readFileSync(new URL("../public/sw.js",import.meta.url),"utf8");
+  const source=readFileSync(resolve(process.cwd(),"public/sw.js"),"utf8");
   runInNewContext(source,{
     self,caches:storage,fetch:fetcher,URL,Promise,Set,
     Response:{error:()=>({ok:false,error:true})},
