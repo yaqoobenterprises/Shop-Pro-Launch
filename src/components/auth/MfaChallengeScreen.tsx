@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { AuthFrame } from "./AuthFrame";
 
+/** Presentational challenge only. Factor selection, membership and session assurance remain server-owned. */
 export const MfaChallengeScreen: React.FC = () => {
   const { verifyMfaChallenge, cancelMfaChallenge } = useAuth();
   const [code, setCode] = useState("");
@@ -10,28 +12,68 @@ export const MfaChallengeScreen: React.FC = () => {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isVerifying) return;
+    if (!/^\d{6}$/.test(code)) {
+      setError("Enter the 6-digit code from your authenticator app.");
+      return;
+    }
     setError(null);
     setIsVerifying(true);
-    const result = await verifyMfaChallenge(code);
-    if (!result.success) setError(result.error || "That code could not be verified.");
-    setIsVerifying(false);
+    try {
+      const result = await verifyMfaChallenge(code);
+      if (!result.success) {
+        setError(result.error || "That code could not be verified.");
+      }
+    } catch {
+      setError("Verification could not be completed. Try again.");
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   return (
-    <main className="auth-screen flex min-h-dvh items-center justify-center bg-surface px-4 py-10 font-sans text-on-surface">
-      <section className="auth-card workspace-panel w-full max-w-md p-6 sm:p-8">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/[0.08] text-primary"><ShieldCheck className="h-6 w-6" /></div>
-        <div className="text-center">
-          <h1 className="text-xl font-bold tracking-tight text-on-surface">Verify your account</h1>
-          <p className="mt-2 text-sm text-text-muted">Enter the current 6-digit code from your authenticator app to continue.</p>
+    <AuthFrame>
+      <main className="auth-card aq-auth__card">
+        <div className="aq-auth__heading">
+          <span className="aq-auth__security-icon"><ShieldCheck size={21} aria-hidden="true" /></span>
+          <h1>Verify your account</h1>
+          <p>Enter your current authenticator code to continue securely.</p>
         </div>
-        {error && <p role="alert" className="mt-5 rounded-lg border border-danger-border bg-danger-bg p-3 text-xs text-danger">{error}</p>}
-        <form onSubmit={(event) => void submit(event)} className="mt-6 space-y-4">
-          <label className="settings-field block"><span>Authenticator code</span><input required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9 ]{6,8}" maxLength={8} autoFocus value={code} onChange={(event) => setCode(event.target.value.replace(/[^0-9 ]/g, ""))} placeholder="000000" className="text-center font-mono text-xl tracking-[0.4em]" /></label>
-          <button type="submit" disabled={isVerifying} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white hover:bg-primary-hover disabled:opacity-60"><LockKeyhole className="h-4 w-4" />{isVerifying ? "Verifying…" : "Verify and continue"}</button>
-          <button type="button" onClick={() => void cancelMfaChallenge()} className="min-h-10 w-full rounded-lg px-3 text-xs font-semibold text-secondary hover:bg-surface-container-low">Cancel and sign out</button>
+        <form onSubmit={(event) => void submit(event)} noValidate>
+          <div className="aq-auth__field">
+            <label className="aq-auth__field-label" htmlFor="aq-mfa-code">6-digit authenticator code</label>
+            <input
+              id="aq-mfa-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              type="text"
+              maxLength={6}
+              pattern="[0-9]{6}"
+              autoFocus
+              required
+              value={code}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? "aq-mfa-error" : "aq-mfa-hint"}
+              onChange={(event) => {
+                setCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                setError(null);
+              }}
+              placeholder="000000"
+              className="aq-auth__code-input"
+            />
+            {!error && <p id="aq-mfa-hint" className="aq-auth__field-note">Open your authenticator app and enter the latest code.</p>}
+          </div>
+          {error && <p id="aq-mfa-error" role="alert" className="aq-auth__feedback" data-tone="error">{error}</p>}
+          <button type="submit" className="aq-auth__submit" aria-busy={isVerifying} disabled={isVerifying || code.length !== 6}>
+            <LockKeyhole size={17} aria-hidden="true" />
+            {isVerifying ? "Verifying…" : "Verify and continue"}
+          </button>
+          <button type="button" disabled={isVerifying}
+            onClick={() => void cancelMfaChallenge()} className="aq-auth__cancel">
+            Cancel and sign out
+          </button>
         </form>
-      </section>
-    </main>
+      </main>
+    </AuthFrame>
   );
 };

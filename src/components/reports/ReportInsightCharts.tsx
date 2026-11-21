@@ -7,7 +7,7 @@ interface ReportInsightChartsProps {
   expenseCategories: ReportCategoryBucket[];
 }
 
-const EXPENSE_PALETTE = ["#14765e", "#5688a0", "#b96d45", "#809b77", "#7c78a8", "#8a9ba8"];
+const EXPENSE_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
 
 export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
   trend,
