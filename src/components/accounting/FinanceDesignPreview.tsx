@@ -15,6 +15,7 @@ import type {AppView} from "../../context/AppContext";
 import type {StagingFinanceNavItem} from "./stagingFinanceNavigation";
 import {sampleChart,sampleCompany,sampleJournals} from "./financeSampleData";
 import "./FinanceDesignPreview.css";
+import "./ErpSampleShowcase.css";
 const Cashbook = React.lazy(() =>
   import("../chat/ChatView").then(module=>({default:module.ChatView})),
 );
@@ -24,7 +25,6 @@ const RecordedOverview = React.lazy(() =>
 const RecordedReports = React.lazy(() =>
   import("../reports/LedgerReportsView").then(m=>({default:m.LedgerReportsView})),
 );
-import "./ErpSampleShowcase.css";
 
 const icons:Record<ErpReviewPage,LucideIcon>={
   overview:LayoutDashboard,customers:Users,sales:FileText,
