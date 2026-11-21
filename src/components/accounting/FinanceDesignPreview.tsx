@@ -42,10 +42,11 @@ interface Props {
   stagingLinks?:StagingFinanceNavItem[];
   onOpenStaging?:(id:AppView)=>void;
   unifiedCashbook?:boolean;
+  cashbookIsDemo?:boolean;
 }
 
 export const FinanceDesignPreview:React.FC<Props>=({
-  onClose,stagingLinks=[],onOpenStaging,unifiedCashbook=false,
+  onClose,stagingLinks=[],onOpenStaging,unifiedCashbook=false,cashbookIsDemo=false,
 })=>{
   const [page,setPage]=useState<ErpReviewPage|"cashbook"|"cashbook-reports">(
     unifiedCashbook?"cashbook":"overview",
@@ -84,7 +85,8 @@ export const FinanceDesignPreview:React.FC<Props>=({
         </div>
         <div className="aq-finance__topbar-right">
           <span className="aq-finance__sample-flag">{recorded
-            ?"Recorded Cashbook activity · not V2 posted accounting"
+            ?(cashbookIsDemo?"Demo Cashbook · No real company data":
+              "Recorded Cashbook activity · not V2 posted accounting")
             :"Illustrative ERP company · No live records"}</span>
           <button type="button" className="aq-finance__close"
             onClick={onClose} title="Return to legacy cashbook">
@@ -96,7 +98,11 @@ export const FinanceDesignPreview:React.FC<Props>=({
       <div className="aq-erp-preview-banner" role="status">
         <strong>{recorded?"YOUR ACCOUNT DATA":"DESIGN & LOGIC REVIEW"}</strong>
         <span>{recorded
-          ?"Existing Cashbook records and reports. These are not certified V2 journals or accrual P&L."
+          ?(cashbookIsDemo
+            ?"Demo Cashbook and reports. No real company data or certified V2 journals."
+            :page==="cashbook"
+              ?"Original Cashbook. Saving entries changes your actual account data. Never enter test transactions here."
+              :"Existing Cashbook reports. These are not certified V2 journals or accrual P&L.")
           :"Sample ERP company · PKR · V2 posting OFF here · Never actual Cashbook or bank data"}</span>
       </div>
       <div className="aq-finance__body">
