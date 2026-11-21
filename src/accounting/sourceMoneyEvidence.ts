@@ -45,6 +45,9 @@ export function requireMatchingInvoicePolicyForReport(
   source:SourceMoneyEvidence, evidence:CurrencyReportEvidence|null,
 ):void{
   const policy=source.currency_policy;
+  if(evidence?.display_complete===true&&(!policy||source.display_complete===false)){
+    throw new Error("Invoice source lacks policy proof required by certified complete report.");
+  }
   if(!policy)return;
   validateCurrencyUnitPolicy(policy,{organizationId:source.organization_id,
     currency:source.currency,asOfDate:source.business_date});
