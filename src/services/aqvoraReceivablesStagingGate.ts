@@ -29,7 +29,8 @@ export type ReceivablesReadRpc =
   | "get_aqvora_customer_receipt"
   | "lookup_aqvora_customer_receipt_issue"
   | "list_aqvora_customers"
-  | "get_aqvora_sales_invoice";
+  | "get_aqvora_sales_invoice"
+  | "lookup_aqvora_sales_issue";
 
 export function isIsolatedReceivablesReadEnabled(): boolean {
   if (import.meta.env.VITE_ENABLE_AQVORA_VERIFIED_AR_READS !== "true" ||
