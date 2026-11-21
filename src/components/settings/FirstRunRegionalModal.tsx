@@ -214,7 +214,9 @@ export const FirstRunRegionalModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="flex items-start gap-2 text-sm text-text-muted">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
               <p>No opening balances or accounting transactions will be created.
-                Chart of Accounts, fiscal year and opening balances are separate verified steps.</p>
+                Fresh AQVORA books start with zero posted entries. Your old Cashbook CSV stays
+                separate for optional, manually reviewed entries later.
+                Chart of Accounts and fiscal periods are separate verified steps.</p>
             </div>
           </section>
         )}
