@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { InvoiceOpenBalance } from "../../accounting/receiptContracts";
-import {formatCertifiedSourceMoney} from "../../accounting/currencyReportEvidence";
+import {formatCertifiedSourceMoney} from "../../accounting/sourceMoneyEvidence";
 import { loadIsolatedInvoiceOpenBalance } from "../../services/aqvoraReceivablesReadService";
 import type { IsolatedReceivablesContext } from "../../services/aqvoraReceivablesStagingGate";
 
