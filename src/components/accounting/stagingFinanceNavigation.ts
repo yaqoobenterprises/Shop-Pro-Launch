@@ -3,12 +3,13 @@
  * This does NOT grant SQL authorization: every operation requires live server checks.
  */
 import type { ComponentType } from "react";
-import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, ReceiptText, } from "lucide-react";
+import { BookOpenCheck, ClipboardCheck, FilePlus2, FileText, HandCoins, ReceiptText, Landmark, } from "lucide-react";
 import type { AppView } from "../../context/AppContext";
 import { isIsolatedReceivablesReadEnabled } from "../../services/aqvoraReceivablesStagingGate";
 import { isIsolatedSalesDraftCreationEnabled } from "../../services/aqvoraStagingSalesDraftService";
 import { isIsolatedInvoiceLifecycleEnabled } from "../../services/aqvoraSalesLifecycleService";
 import { isIsolatedVerifiedFinancialReadEnabled } from "../../services/aqvoraVerifiedFinancialReadService";
+import { isFreshFinanceSetupStagingEnabled } from "../../services/aqvoraFreshFinanceSetupService";
 import { isIsolatedCashCollectionEnabled } from "../../services/aqvoraCashCollectionOperations";
 import { isIsolatedReceiptDraftEnabled } from "../../services/aqvoraReceiptDraftService";
 
@@ -23,6 +24,9 @@ export function getStagingFinanceNavItems(flags:{
   if (!flags.isCloudAccount || flags.isDemoMode ||
       (flags.role!=="OWNER"&&flags.role!=="MANAGER"))return [];
   const result:StagingFinanceNavItem[]=[];
+  if(flags.role==="OWNER"&&isFreshFinanceSetupStagingEnabled()){
+    result.push({id:"aqvora-finance-setup",label:"Finance setup",icon:Landmark});
+  }
   if(isIsolatedReceivablesReadEnabled()){
     result.push({id:"aqvora-receivables",label:"Receivables",icon:FileText});
   }
