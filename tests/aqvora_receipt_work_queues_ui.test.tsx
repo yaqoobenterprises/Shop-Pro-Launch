@@ -76,6 +76,30 @@ describe("AQVORA source-backed cash/receipt queue UI",()=>{
     expect(mock.cash.mock.calls[1][1]).toBe(cashId);
     expect(mock.cash.mock.calls[2][1]).toBe(cashId);
   });
+  it("drops stale results across company and user switch and unlocks the new queue",async()=>{
+    let resolveOld:(value:unknown)=>void=()=>{};
+    mock.cash.mockImplementationOnce(()=>new Promise(resolve=>{resolveOld=resolve;}))
+      .mockResolvedValueOnce(page([{
+        ...cash(),id:receiptId,collection_number:"CC-9",
+      }]));
+    const {rerender}=render(<CashReceiptWorkQueue mode="cash" context={ctx}
+      disabled={false} onCashSelected={mock.onCash}/>);
+    fireEvent.click(screen.getByRole("button",{name:"Load / refresh"}));
+    const nextContext={...ctx,organizationId:"55555555-5555-4555-8555-555555555555",
+      userId:"66666666-6666-4666-8666-666666666666"};
+    rerender(<CashReceiptWorkQueue mode="cash" context={nextContext}
+      disabled={false} onCashSelected={mock.onCash}/>);
+    const load=await waitFor(()=>screen.getByRole("button",{
+      name:"Load / refresh",
+    })) as HTMLButtonElement;
+    await waitFor(()=>expect(load.disabled).toBe(false));
+    fireEvent.click(load);
+    await waitFor(()=>expect(screen.getByText(/CC-9 · draft/)).toBeTruthy());
+    resolveOld(page([cash()]));
+    await waitFor(()=>expect(screen.queryByText(/CC-1 · draft/)).toBeNull());
+    expect(screen.getByText(/CC-9 · draft/)).toBeTruthy();
+    expect(mock.cash.mock.calls[1][0].organizationId).toBe(nextContext.organizationId);
+  });
   it("shows server errors without stale data and blocks navigation when recovery is locked",async()=>{
     mock.receipts.mockRejectedValueOnce(new Error("AAL2 session revoked"));
     render(<CashReceiptWorkQueue mode="receipts" context={ctx}
