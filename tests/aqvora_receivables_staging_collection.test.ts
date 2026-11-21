@@ -160,11 +160,13 @@ describe("AQVORA all-or-nothing source-token-fenced open-invoice collection",()=
       source(),
       {...source(),...evidence,currency_policy:{...p,fingerprint:"b".repeat(64)}},
     ]){
+      mock.rpc.mockReset(); // Each scenario starts with a fresh network-response sequence.
       mock.rpc.mockResolvedValueOnce({data:firstPage,error:null})
         .mockResolvedValueOnce({data:{...second(),source:secondSource},error:null});
       await expect(collectIsolatedOpenInvoices(context,{pageSize:1}))
         .rejects.toThrow(/currency|policy/i);
     }
+    mock.rpc.mockReset();
     mock.rpc.mockResolvedValueOnce({data:first(),error:null})
       .mockResolvedValueOnce({data:{...second(),source:{...source(),...evidence}},error:null});
     await expect(collectIsolatedOpenInvoices(context,{pageSize:1}))
