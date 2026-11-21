@@ -148,4 +148,3 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' SET timezone='UTC' AS $$
 $$;
 REVOKE ALL ON FUNCTION private.aqvora_receipt_audit_valid(uuid,text,uuid,bigint,text,uuid,jsonb),
   private.aqvora_cash_source_valid(uuid,uuid),private.aqvora_customer_receipt_source_valid(uuid,uuid) FROM PUBLIC,anon,authenticated;
-

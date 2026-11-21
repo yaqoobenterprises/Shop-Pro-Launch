@@ -17,7 +17,7 @@ Complete verification run: [44873165474](https://github.com/yaqoobenterprises/Sh
 
 New issue-specific coverage totals 46 tests: 29 application/SQL contracts, 9 independent PostgreSQL and 8 real Auth/PostgREST cases. Existing source and recovery tests also have added policy assertions.
 
-Local currency contract suite: 29 passed. Local TypeScript/strict/lint/size/build passed. An initial local full-suite invocation without the documented CI environment failed 14 legacy cloud-fixture cases; the two affected suites passed all 31 tests after using the CI test URL/key. A final full local rerun uses that environment. A standalone local npm audit endpoint failed TLS/network twice; npm ci and the CI audit reported zero vulnerabilities. No dependency or test was removed to hide either result.
+Local currency contract suite: 29 passed. Local TypeScript/strict/lint/size/build passed. An initial local full-suite invocation without the documented CI environment failed 14 legacy cloud-fixture cases; the two affected suites passed all 31 tests after using the CI test URL/key. The final full local rerun passed 514 tests with 67 environment-gated cases using that environment. A standalone local npm audit endpoint failed TLS/network twice; npm ci and the CI audit reported zero vulnerabilities. No dependency or test was removed to hide either result.
 
 The first PR migration/recovery job failed because a new inspection assertion ran under the authenticated application role and correctly could not read the private policy table. Moving only that assertion to the maintenance context fixed it; fresh/deployed installation and the full logical restore then passed. Application/real Auth jobs passed in that first run as well.
 
