@@ -9,8 +9,9 @@ import {
 } from "../../services/aqvoraVerifiedFinancialReadService";
 import { listIsolatedPostingAccounts } from "../../services/aqvoraPostingAccountsReadService";
 import { GLTBReportPanel } from "./GLTBReportPanel";
+import { CertifiedManagementPnLPanel } from "./CertifiedManagementPnLPanel";
 
-type Mode="gl"|"tb";
+type Mode="gl"|"tb"|"pnl";
 interface Result{
   key:string; mode:Mode; data:GeneralLedgerRead|VerifiedTrialBalance;
 }
@@ -84,11 +85,11 @@ export function GeneralLedgerTrialBalanceWorkspace(){
       currency:organization.currency,fromDate:from,toDate:to,
     };
     try{
-      const data=mode==="tb"
-        ?await loadIsolatedVerifiedTrialBalance(context,{pageSize:100,maxPages:100})
-        :await loadIsolatedVerifiedGeneralLedger({
+      const data=mode==="gl"
+        ?await loadIsolatedVerifiedGeneralLedger({
           ...context,accountId,
-        },{pageSize:100,maxPages:100});
+        },{pageSize:100,maxPages:100})
+        :await loadIsolatedVerifiedTrialBalance(context,{pageSize:100,maxPages:100});
       if(current===reportGeneration.current)setResult({key,mode,data});
     }catch(reason){
       if(current===reportGeneration.current)setError(reason instanceof Error
@@ -117,7 +118,7 @@ export function GeneralLedgerTrialBalanceWorkspace(){
     </header>
     <div role="group" aria-label="Financial report type" className="flex flex-wrap gap-2">
       {([
-        ["tb","Trial Balance"],["gl","General Ledger"],
+        ["tb","Trial Balance"],["gl","General Ledger"],["pnl","Profit & Loss"],
       ] as const).map(([id,label])=>(
         <button key={id} type="button" aria-pressed={mode===id}
           onClick={()=>{invalidate();setMode(id);}}
@@ -163,7 +164,12 @@ export function GeneralLedgerTrialBalanceWorkspace(){
     {accountsLoading&&<p role="status">Loading authorized posting accounts…</p>}
     {accountsError&&<p role="alert">{accountsError}</p>}
     {error&&<p role="alert" className="text-sm text-red-700 dark:text-red-300">{error}</p>}
-    {displayed&&<GLTBReportPanel currency={organization.currency}
-      mode={displayed.mode} report={displayed.data}/>}
+    {displayed&&(displayed.mode==="pnl"
+      ? "totals" in displayed.data
+        ? <CertifiedManagementPnLPanel currency={organization.currency}
+            report={displayed.data}/>
+        : <p role="alert">Certified P&L requires a complete verified Trial Balance.</p>
+      : <GLTBReportPanel currency={organization.currency}
+          mode={displayed.mode} report={displayed.data}/> )}
   </div>;
 }
