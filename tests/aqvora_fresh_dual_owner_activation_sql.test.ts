@@ -95,6 +95,9 @@ describe("Fresh AQVORA provenance, independent AAL2 owner activation & exact fir
         [CREATE_KEY,"Altered legal name","Pakistan","PKR","Asia/Karachi"],
         /idempotency key changed/i);
 
+      // Provenance is private by design: the authenticated OWNER cannot
+      // SELECT it directly. Inspect source counts as the fixture superuser.
+      await db.exec("RESET ROLE");
       const empty=await db.query<{journals:number;cash_accounts:number;origins:number;
         enabled:number;old_open:string}>(
         "SELECT (SELECT count(*)::int FROM public.aqvora_journals WHERE organization_id=$1) journals,"+
