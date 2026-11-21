@@ -76,6 +76,7 @@ export const Sidebar: React.FC = () => {
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
   ];
 
+  navItems.unshift({id:"aqvora-erp-preview",label:"AQVORA ERP Preview",icon:LayoutDashboard});
   navItems.push(...getStagingFinanceNavItems({
     isDemoMode, isCloudAccount, role:user?.role,
   }));
