@@ -6,6 +6,7 @@ const OTHER = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 const CASH = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const BANK = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const CAT = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+const CAT_EXP = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const txId = (n: number) => '11111111-1111-4111-8111-' + String(n).padStart(12, '0');
 const entryId = (n: number) => '22222222-2222-4222-8222-' + String(n).padStart(12, '0');
 const trId = txId(99);
@@ -21,7 +22,8 @@ type Snapshot = {
 function sample(): Snapshot {
   const tx = (n: number, type: string, amount: string, status: string, raw: string) => ({
     id: txId(n), organization_id: ORG, account_id: CASH,
-    category_id: CAT, type, amount_paisa: amount, status,
+    category_id: type === 'expense' ? CAT_EXP : CAT, type, amount_paisa: amount, status,
+    account_posted: true,
     business_date: '2026-11-19', raw_text: raw, idempotency_key: 'key-' + n,
     voided_at: status === 'voided' ? '2026-11-20T00:00:00Z' : null,
     void_reason: status === 'voided' ? 'correction' : null,
@@ -66,7 +68,10 @@ function sample(): Snapshot {
       { id: auditId(1), organization_id: ORG, transaction_id: txId(3), action: 'void' },
       { id: auditId(2), organization_id: ORG, transaction_id: txId(4), action: 'edit' },
     ],
-    categories: [{ id: CAT, organization_id: ORG, name: 'Printing', kind: 'income' }],
+    categories: [
+      { id: CAT, organization_id: ORG, name: 'Printing', kind: 'income' },
+      { id: CAT_EXP, organization_id: ORG, name: 'Supplies', kind: 'expense' },
+    ],
     transaction_drafts: [{ id: auditId(3), organization_id: ORG, amount_paisa: '75',
       type: 'expense', idempotency_key: 'draft-private' }],
   };
@@ -162,6 +167,27 @@ describe('AQVORA source account-ledger reconciliation (pure local, NO posting)',
     expect(a.summary.source_snapshot_sha256).toBe(
       reconcileLegacySourceSnapshot(sample(), 'legacy-shop-one').summary.source_snapshot_sha256);
     expect(() => reconcileLegacySourceSnapshot(sample(), '../unsafe')).toThrow(/namespace/);
+  });
+
+  it('flags stale account posting status and category accounting mismatches', () => {
+    const a = sample();
+    a.transactions[0].account_posted = false;
+    a.transactions[1].category_id = CAT;
+    a.account_transfers[0].account_posted = false;
+    const report = reconcileLegacySourceSnapshot(a, 'legacy-shop-one');
+    expect(report.summary.issue_counts.transaction_missing_legacy_posting_status).toBe(1);
+    expect(report.summary.issue_counts.transaction_category_kind_mismatch).toBe(1);
+    expect(report.summary.issue_counts.transfer_missing_legacy_posting_status).toBe(1);
+    expect(report.summary.erp_posting_allowed).toBe(false);
+  });
+
+  it('has a canonical fingerprint independent of source JSON property and collection order', () => {
+    const a = sample();
+    const b = sample();
+    b.transactions.reverse();
+    b.payment_accounts[0] = Object.fromEntries(Object.entries(b.payment_accounts[0]).reverse());
+    expect(reconcileLegacySourceSnapshot(a, 'legacy-shop-one').summary.source_snapshot_sha256)
+      .toBe(reconcileLegacySourceSnapshot(b, 'legacy-shop-one').summary.source_snapshot_sha256);
   });
 
   it('detects independent opening-balance evidence disagreement', () => {
