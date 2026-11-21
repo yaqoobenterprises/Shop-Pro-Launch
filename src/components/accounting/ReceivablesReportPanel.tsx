@@ -1,8 +1,8 @@
 import type { ReceivablesReconciliation, InvoiceOpenBalance } from "../../accounting/receiptContracts";
-import {
-  formatCertifiedReportMoney,formatCertifiedSourceMoney,
-  validateReportCurrencyEvidence,requireMatchingInvoicePolicyForReport,
-} from "../../accounting/currencyReportEvidence";
+import {formatCertifiedReportMoney,validateReportCurrencyEvidence}
+  from "../../accounting/currencyReportEvidence";
+import {formatCertifiedSourceMoney,requireMatchingInvoicePolicyForReport}
+  from "../../accounting/sourceMoneyEvidence";
 
 interface Props {
   currency: string;
