@@ -130,6 +130,7 @@ describe.skipIf(!statusPath)("Real local Supabase new-company owner MFA/activati
       "SELECT email FROM auth.users WHERE id=$1",[checker.id])).rows[0].email;
     const invitePayload={p_organization_id:freshOrg,p_invite_intent:randomUUID(),
       p_invitee_email:checkerEmail};
+    denied(await rpc(null,"create_aqvora_fresh_owner_invite",invitePayload));
     denied(await rpc(outsider,"create_aqvora_fresh_owner_invite",invitePayload));
     denied(await rpc({...owner,token:owner.lowToken},
       "create_aqvora_fresh_owner_invite",invitePayload));
@@ -138,8 +139,11 @@ describe.skipIf(!statusPath)("Real local Supabase new-company owner MFA/activati
     expect(invite.status).toBe("awaiting_verified_owner_acceptance");
     expect(succeeded(await rpc(owner,"create_aqvora_fresh_owner_invite",
       invitePayload))).toEqual(invite);
+    denied(await rpc(owner,"create_aqvora_fresh_owner_invite",
+      {...invitePayload,p_invitee_email:"different@example.test"}));
     const acceptPayload={p_organization_id:freshOrg,
       p_invitation_id:invite.invitation_id};
+    denied(await rpc(null,"accept_aqvora_fresh_owner_invite",acceptPayload));
     denied(await rpc(owner,"accept_aqvora_fresh_owner_invite",acceptPayload));
     denied(await rpc(outsider,"accept_aqvora_fresh_owner_invite",acceptPayload));
     denied(await rpc({...checker,token:checker.lowToken},
