@@ -156,8 +156,7 @@ export function validateReportCurrencyEvidence(
       throw new Error("Currency report contains incompatible historical unit scales.");
     }
   }
-  // Compare currency evidence, excluding request metadata such as observed_at.
-  // Callers still enforce tenant, authorization, snapshot and source consistency.
+  // Exclude per-read observed_at; callers still check tenant, authorization and snapshot.
   const onlyEvidence=(value:Record<string,unknown>|CurrencyReportEvidence)=>
     Object.fromEntries(EVIDENCE_KEYS.map(key=>[key,value[key]])) as unknown as CurrencyReportEvidence;
   const normalized=onlyEvidence(source);
