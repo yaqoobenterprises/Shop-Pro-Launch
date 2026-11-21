@@ -11,6 +11,8 @@ Existing legacy Overview, Reports, Accounts, Entries and LedgerMate code remains
 ## Verified UI flow to test
 The preview flag VITE_AQVORA_UNIFIED_WORKSPACE_PREVIEW=true starts within a single shell on the original authenticated Cashbook ChatView. Business Overview loads real existing LedgerDashboardView recorded activity. Cashbook Reports loads real LedgerReportsView source transactions. Other ERP review pages are labeled sample. Classic Cashbook exit remains available. This flag is forbidden in a production build until separately approved.
 
+IMPORTANT: In preview, if signed in to the real company, the embedded original Cashbook still has real write controls. A preview hostname is NOT a sandbox: real entries will change the original business data. Display a visible warning and do not enter test records without a separately authorized synthetic account.
+
 ## Critical data boundary and future migration (NOT DONE)
 Legacy financial rows use amount_paisa, Cashbook account balances, date/status, offline drafts and transaction IDs. V2 needs approved company currency precision, immutable balanced journals, authorized CoA, fiscal year, source idempotency, approvals and certified posting records. Copying legacy rows directly as ERP journals or showing old balance as a verified V2 TB is incorrect.
 
