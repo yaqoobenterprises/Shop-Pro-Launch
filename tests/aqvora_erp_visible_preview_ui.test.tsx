@@ -37,9 +37,9 @@ describe("AQVORA visible ERP demo",()=>{
     pick("Customer Receipts");
     expect(screen.getByText("RC-S001")).toBeTruthy();
     expect(screen.getByText(/Bank verified: NO/)).toBeTruthy();
-    pick("Accounts Receivable");
+    pick("Receivables");
     expect(screen.getByText(/Rs 17,000.00/)).toBeTruthy();
-    pick("Purchases & Payables");
+    pick("Purchases & Payables Planned");
     expect(screen.getByText(/Not included in this tested ERP workflow/)).toBeTruthy();
   });
   it("has a clear safe way back to legacy UI",()=>{
