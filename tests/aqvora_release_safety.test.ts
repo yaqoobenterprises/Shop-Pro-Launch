@@ -5,7 +5,7 @@ import {assertAQVORAReleaseSafety,forbiddenAQVORAReleaseFlags}
 
 describe("AQVORA release-safe experience",()=>{
   it("preserves the original working ledger as the installed default",()=>{
-    expect(initialAQVORAView(false)).toBe("chat");
+    expect(initialAQVORAView(false)).toBe("dashboard");
     expect(initialAQVORAView(true)).toBe("aqvora-erp-preview");
   });
   it("refuses all accidentally enabled V2 staging/ERP sample flags in production",()=>{
