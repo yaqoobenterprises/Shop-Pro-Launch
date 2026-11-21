@@ -31,9 +31,9 @@ export function GLTBReportPanel({currency,report,mode}:Props){
         <div className="rounded-xl border border-border-standard bg-surface-bright p-4">
           <h2 className="font-semibold">{report.account.code} · {report.account.name}</h2>
           <p className="mt-2 text-sm">Opening: {signed(report.openingMinor)}</p>
-          <p className="text-sm">Debit: {signed(report.debitMinor,currency)}
-            {" · "}Credit: {signed(report.creditMinor,currency)}</p>
-          <p className="font-semibold">Closing: {signed(report.closingMinor,currency)}</p>
+          <p className="text-sm">Debit: {signed(report.debitMinor)}
+            {" · "}Credit: {signed(report.creditMinor)}</p>
+          <p className="font-semibold">Closing: {signed(report.closingMinor)}</p>
         </div>
         <div className="overflow-x-auto rounded-xl border border-border-standard bg-surface-bright">
           <table className="w-full min-w-[760px] text-left text-sm">
@@ -60,9 +60,9 @@ export function GLTBReportPanel({currency,report,mode}:Props){
                       {row.source_id??row.journal_id}
                     </div>
                   </td>
-                  <td className="p-3">{signed(row.debit_minor,currency)}</td>
-                  <td className="p-3">{signed(row.credit_minor,currency)}</td>
-                  <td className="p-3 font-semibold">{signed(row.running_balance_minor,currency)}</td>
+                  <td className="p-3">{signed(row.debit_minor)}</td>
+                  <td className="p-3">{signed(row.credit_minor)}</td>
+                  <td className="p-3 font-semibold">{signed(row.running_balance_minor)}</td>
                 </tr>
               ))}
               {report.rows.length===0&&(
@@ -89,18 +89,18 @@ export function GLTBReportPanel({currency,report,mode}:Props){
             {report.rows.map(row=>(
               <tr key={row.account.id} className="border-b border-border-standard">
                 <td className="p-3">{row.account.code} · {row.account.name}</td>
-                <td className="p-3">{signed(row.debit_minor,currency)}</td>
-                <td className="p-3">{signed(row.credit_minor,currency)}</td>
-                <td className="p-3">{signed(row.closing_debit_minor,currency)}</td>
-                <td className="p-3">{signed(row.closing_credit_minor,currency)}</td>
+                <td className="p-3">{signed(row.debit_minor)}</td>
+                <td className="p-3">{signed(row.credit_minor)}</td>
+                <td className="p-3">{signed(row.closing_debit_minor)}</td>
+                <td className="p-3">{signed(row.closing_credit_minor)}</td>
               </tr>
             ))}
             <tr className="border-t-2 border-border-standard font-bold">
               <th scope="row" className="p-3">Certified totals</th>
-              <td className="p-3">{signed(report.totals.debit_minor,currency)}</td>
-              <td className="p-3">{signed(report.totals.credit_minor,currency)}</td>
-              <td className="p-3">{signed(report.totals.closing_debit_minor,currency)}</td>
-              <td className="p-3">{signed(report.totals.closing_credit_minor,currency)}</td>
+              <td className="p-3">{signed(report.totals.debit_minor)}</td>
+              <td className="p-3">{signed(report.totals.credit_minor)}</td>
+              <td className="p-3">{signed(report.totals.closing_debit_minor)}</td>
+              <td className="p-3">{signed(report.totals.closing_credit_minor)}</td>
             </tr>
           </tbody>
         </table>
