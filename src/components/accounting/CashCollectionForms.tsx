@@ -4,14 +4,14 @@ import { formatExactCurrencyMinor } from "../../accounting/formatExactCurrencyMi
 
 interface CreateProps {
   customers:SalesCustomer[]; selectedCustomer:string; amount:string; date:string;
-  currency:string;busy:boolean;locked:boolean;onCustomer:(v:string)=>void;
+  currency:string;busy:boolean;locked:boolean;blocked:boolean;onCustomer:(v:string)=>void;
   onAmount:(v:string)=>void;onDate:(v:string)=>void;onCreate:()=>void;
 }
 export function CashClaimCreateForm(p:CreateProps) {
   return <form aria-label="Create controlled cash claim"
     className="space-y-3 rounded-xl border border-border-standard bg-surface-bright p-4"
     onSubmit={event=>{event.preventDefault();p.onCreate();}}>
-    <h2 className="text-lg font-semibold">Record cash received</h2>
+    <h2 className="text-lg font-semibold">Record cash claim</h2>
     <p className="text-xs text-text-muted">
       Stage 1: this creates an unconfirmed cash claim, not a bank deposit,
       posted cash account or settled customer invoice.
@@ -36,9 +36,9 @@ export function CashClaimCreateForm(p:CreateProps) {
         onChange={e=>p.onAmount(e.target.value)}
         className="mt-1 min-h-11 w-full rounded-md border border-border-standard bg-surface-bright px-3" />
     </label>
-    <button type="submit" disabled={p.busy || p.customers.every(c=>!c.is_active)}
+    <button type="submit" disabled={p.busy || p.blocked || (!p.locked && p.customers.every(c=>!c.is_active))}
       className="rounded-lg bg-primary px-4 py-3 font-semibold text-white disabled:opacity-50">
-      {p.busy?"Saving…":p.locked?"Retry original cash claim":"Save unconfirmed cash claim"}
+      {p.busy?"Saving…":p.blocked?"Recovery blocked":p.locked?"Retry original cash claim":"Save unconfirmed cash claim"}
     </button>
   </form>;
 }
