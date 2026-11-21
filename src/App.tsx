@@ -82,6 +82,7 @@ const MainShell: React.FC = () => {
   }, [companySetupEnabled, isDemoMode, user?.id, user?.role, organization.id, organization.region_configured]);
 
   useEffect(() => {
+    if (currentView === "aqvora-erp-preview") return;
     let syncInFlight: Promise<void> | undefined;
     const synchronizeOfflineWork = () => {
       if (syncInFlight) return;
@@ -110,11 +111,12 @@ const MainShell: React.FC = () => {
       window.removeEventListener("online", synchronizeOfflineWork);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [currentView]);
+
+  if (currentView === "aqvora-erp-preview") return <Suspense fallback={<div role="status">Loading AQVORA ERP review…</div>}><FinanceDesignPreview onClose={()=>setCurrentView("dashboard")}/></Suspense>;
 
   const renderActiveView = () => {
     switch (currentView) {
-      case "aqvora-erp-preview": return <FinanceDesignPreview onClose={()=>setCurrentView("dashboard")}/>;
       case "chat":
         return <ChatView />;
       case "ai":
@@ -237,14 +239,12 @@ const WorkspaceGate: React.FC = () => {
     );
   }
 
-  // If password recovery is active, show password reset form
   if (isPasswordRecovery) {
     return <AuthScreen />;
   }
 
   if (mfaChallengeRequired) return <MfaChallengeScreen />;
 
-  // If no active user session and not in demo mode
   if (!user && !isDemoMode) {
     if (authMode) {
       return (
