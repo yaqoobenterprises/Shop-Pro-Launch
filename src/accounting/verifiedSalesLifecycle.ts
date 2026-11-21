@@ -67,6 +67,17 @@ export function verifySalesLifecycleInvoice(
   if (!["draft", "submitted", "approved", "issued", "cancelled"].includes(String(v.state))) {
     throw new Error("Invalid sales invoice state.");
   }
+  if (v.state === "draft" && (v.fingerprint !== null || v.approved_by !== null ||
+      v.customer_snapshot !== null || v.policy_snapshot !== null)) {
+    throw new Error("Unsubmitted draft cannot claim financial approval evidence.");
+  }
+  if (v.state === "submitted" && v.approved_by !== null) {
+    throw new Error("Submitted invoice cannot claim a checker approval.");
+  }
+  if (v.state === "cancelled" &&
+      (typeof v.cancel_reason !== "string" || !v.cancel_reason.trim())) {
+    throw new Error("Cancelled invoice must retain an audit reason.");
+  }
   const committed = v.state === "submitted" || v.state === "approved" || v.state === "issued";
   if (committed) {
     if (typeof v.fingerprint !== "string" || !HASH.test(v.fingerprint) ||
@@ -99,7 +110,7 @@ export function verifySalesLifecycleInvoice(
     }
     same(receipt.invoice_id, v.id, "receipt invoice");
     same(exact(receipt.issued_revision, "issued revision"), revision, "issued revision");
-    exact(receipt.source_revision, "approved revision", true);
+    same(exact(receipt.source_revision, "approved revision", true), revision - 1n, "approved revision");
     uuid(receipt.posted_by, "posting actor");
     const sums = object(v.reconciliation, "sales reconciliation");
     if (sums.source_complete !== true || sums.settlements_supported !== true ||
