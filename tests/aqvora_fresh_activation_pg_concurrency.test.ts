@@ -18,7 +18,7 @@ const PERIOD="77777777-7777-4777-8777-777777777777";
 const ATTEST="I APPROVE THE NEW ZERO-OPENING AQVORA COMPANY FINANCE WRITER";
 type Receipt={organization_id:string;status:string;activated_at?:string;checker_intent?:string};
 const connections=new Set<Client>();
-let admin:Client;let organization="";
+let admin:Client;let inspector:Client;let organization="";
 const dbUrl=(db:string)=>{const u=new URL(base!);u.pathname="/"+db;return u.toString();};
 async function open(db=DB){
   const c=new Client({connectionString:dbUrl(db)});
@@ -40,7 +40,7 @@ async function asUser(user:string){
 }
 async function blocked(c:Client){
   for(let i=0;i<90;i++){
-    const r=await admin.query<{waiting:boolean}>(
+    const r=await inspector.query<{waiting:boolean}>(
       "SELECT cardinality(pg_blocking_pids($1))>0 waiting",[c.processID]);
     if(r.rows[0].waiting)return;
     await new Promise(done=>setTimeout(done,20));
@@ -81,7 +81,7 @@ describe.skipIf(!base)("AQVORA new-company and checker approval true PostgreSQL 
       try{await c.query(readFileSync(new URL(file,folder),"utf8"));}
       catch(e){throw new Error("Migration failed on disposable PostgreSQL: "+file,{cause:e});}
     }
-    await close(c);
+    inspector=c;
   },45000);
   afterAll(async()=>{
     for(const c of [...connections])if(c!==admin)await close(c);
@@ -112,16 +112,16 @@ describe.skipIf(!base)("AQVORA new-company and checker approval true PostgreSQL 
   },20000);
 
   it("rejects checker activation after maker's Auth session is revoked mid-flight",async()=>{
-    await admin.query("INSERT INTO public.organization_members(organization_id,user_id,role,is_active) VALUES($1,$2,'OWNER',true)",[organization,CHECKER]);
+    await inspector.query("INSERT INTO public.organization_members(organization_id,user_id,role,is_active) VALUES($1,$2,'OWNER',true)",[organization,CHECKER]);
     for(const [code,name,cls,side] of [
       ["1010","Cash","asset","debit"],["2010","Payables","liability","credit"],
       ["3010","Capital","equity","credit"],["4010","Revenue","revenue","credit"],
       ["5010","COGS","cost_of_sales","debit"],["6010","Expenses","expense","debit"],
     ]){
-      await admin.query("INSERT INTO public.aqvora_accounts(organization_id,code,name,account_class,normal_side,is_posting) VALUES($1,$2,$3,$4,$5,true)",[organization,code,name,cls,side]);
+      await inspector.query("INSERT INTO public.aqvora_accounts(organization_id,code,name,account_class,normal_side,is_posting) VALUES($1,$2,$3,$4,$5,true)",[organization,code,name,cls,side]);
     }
-    await admin.query("INSERT INTO public.aqvora_periods(organization_id,id,starts_on,ends_on,state) VALUES($1,$2,'2026-01-01','2026-12-31','open')",[organization,PERIOD]);
-    await admin.query(currencySeedSql(organization,MAKER));
+    await inspector.query("INSERT INTO public.aqvora_periods(organization_id,id,starts_on,ends_on,state) VALUES($1,$2,'2026-01-01','2026-12-31','open')",[organization,PERIOD]);
+    await inspector.query(currencySeedSql(organization,MAKER));
     const maker=await asUser(MAKER);
     try{
       expect((await propose(maker)).rows[0].r.status).toBe("awaiting_independent_owner_approval");
@@ -139,7 +139,7 @@ describe.skipIf(!base)("AQVORA new-company and checker approval true PostgreSQL 
       const result=await admin.query<{n:number}>("SELECT count(*)::int n FROM public.aqvora_enabled_companies WHERE organization_id=$1",[organization]);
       expect(result.rows[0].n).toBe(0);
     }finally{await close(checker);await close(revoker);}
-    await admin.query("INSERT INTO auth.sessions(id,user_id) VALUES($1,$1)",[MAKER]);
+    await inspector.query("INSERT INTO auth.sessions(id,user_id) VALUES($1,$1)",[MAKER]);
   },20000);
 
   it("serializes two checker intents; immutable receipt and enabled row commit exactly once",async()=>{
