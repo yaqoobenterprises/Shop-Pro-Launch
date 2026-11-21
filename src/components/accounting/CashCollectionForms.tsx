@@ -13,7 +13,7 @@ export function CashClaimCreateForm(p:CreateProps) {
     onSubmit={event=>{event.preventDefault();p.onCreate();}}>
     <h2 className="text-lg font-semibold">Record cash received</h2>
     <p className="text-xs text-text-muted">
-      Stage 1: this creates an **unconfirmed cash claim**, not a bank deposit,
+      Stage 1: this creates an unconfirmed cash claim, not a bank deposit,
       posted cash account or settled customer invoice.
     </p>
     <label className="block text-sm">Customer
