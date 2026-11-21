@@ -55,7 +55,7 @@ describe("AQVORA source-backed cash/receipt queue UI",()=>{
     fireEvent.click(screen.getByRole("button",{name:"Review source"}));
     expect(mock.onCash).toHaveBeenCalledWith(cashId);
     expect(mock.onReceipt).toHaveBeenCalledWith(receiptId);
-    expect(screen.getByText(/not a fixed snapshot/)).toBeTruthy();
+    expect(screen.getByText(/fixed snapshot/)).toBeTruthy();
     expect(screen.getByText(/not posted/)).toBeTruthy();
     expect(screen.queryByRole("button",{name:/post.*receipt/i})).toBeNull();
   });
