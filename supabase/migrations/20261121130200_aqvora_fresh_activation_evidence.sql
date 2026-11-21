@@ -42,6 +42,14 @@ BEGIN
     OR EXISTS(SELECT 1 FROM public.transaction_drafts WHERE organization_id=p_org)
     OR EXISTS(SELECT 1 FROM public.stock_movements WHERE organization_id=p_org)
     OR EXISTS(SELECT 1 FROM public.account_transactions WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.sales WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.sale_items WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.expenses WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.products WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.services WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.customers WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.daily_closings WHERE organization_id=p_org)
+    OR EXISTS(SELECT 1 FROM public.review_queue WHERE organization_id=p_org)
   THEN
     RAISE EXCEPTION USING ERRCODE='23514',
       MESSAGE='Fresh finance activation requires zero legacy and V2 financial activity';
