@@ -143,9 +143,11 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
     await first.query("DELETE FROM public.aqvora_enabled_companies WHERE organization_id=$1", [org]);
     const waiting = await asUser();
     const pending = post(waiting, key());
+    // Attach rejection observer before releasing the competing transaction.
+    const pendingRejected = expect(pending).rejects.toThrow("not enabled");
     await waitUntilBlocked(waiting);
     await first.query("COMMIT");
-    await expect(pending).rejects.toThrow("not enabled");
+    await pendingRejected;
     await close(first); await close(waiting);
     await admin.query("INSERT INTO public.aqvora_enabled_companies VALUES ($1)", [org]);
   }, 30000);
@@ -203,9 +205,10 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
     const competing = post(changed, changedIntent, [
       { ...lines[0], debit_minor: "1" }, { ...lines[1], credit_minor: "1" },
     ]);
+    const competingRejected = expect(competing).rejects.toThrow("Idempotency key payload mismatch");
     await waitUntilBlocked(changed);
     await original.query("COMMIT");
-    await expect(competing).rejects.toThrow("Idempotency key payload mismatch");
+    await competingRejected;
     await close(original); await close(changed);
   }, 30000);
 
@@ -235,9 +238,10 @@ describe.skipIf(!databaseUrl)("AQVORA independent PostgreSQL sessions", () => {
     const reversal = await reverse(first, original.journal_id, key());
     const second = await asUser();
     const pending = reverse(second, original.journal_id, key());
+    const reversalRejected = expect(pending).rejects.toThrow();
     await waitUntilBlocked(second);
     await first.query("COMMIT");
-    await expect(pending).rejects.toThrow();
+    await reversalRejected;
     await close(first); await close(second);
     const foreign = await asUser(otherOwner);
     await expect(post(foreign, key(), lines, org)).rejects.toThrow("not authorized");
