@@ -8,12 +8,13 @@ const h=vi.hoisted(()=>({
   createAccount:vi.fn(),
   createPeriod:vi.fn(),
   role:"OWNER" as string,
+  currentOrg:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
 }));
 const ORG="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 vi.mock("../src/context/AuthContext",()=>({
   useAuth:()=>({
     user:{id:"11111111-1111-4111-8111-111111111111",role:h.role},
-    organization:{id:ORG,currency:"PKR",timezone:"Asia/Karachi"},
+    organization:{id:h.currentOrg,currency:"PKR",timezone:"Asia/Karachi"},
     isCloudAccount:true,isDemoMode:false,
   }),
 }));
@@ -38,6 +39,7 @@ const snapshot={
 beforeEach(()=>{
   vi.clearAllMocks();
   h.role="OWNER";
+  h.currentOrg=ORG;
   h.allowed.mockReturnValue(true);
   h.load.mockResolvedValue(snapshot);
   h.createAccount.mockResolvedValue(snapshot.accounts[0]);
@@ -96,6 +98,27 @@ describe("AQVORA owner-only fresh finance setup interface",()=>{
     view.rerender(<FreshFinanceSetupWorkspace/>);
     expect(screen.queryByRole("button",{name:"Create verified account"})).toBeNull();
     expect(h.load).not.toHaveBeenCalled();
+  });
+
+  it("discards old-tenant mutation results after the user changes companies",async()=>{
+    let resolveOld:((value:unknown)=>void)|undefined;
+    h.createAccount.mockImplementation(()=>new Promise(resolve=>{resolveOld=resolve;}));
+    const view=render(<FreshFinanceSetupWorkspace/>);
+    await screen.findByText(/Certified 0 posted journals/);
+    fireEvent.change(screen.getByRole("textbox",{name:"Account code"}),{
+      target:{value:"1020"},
+    });
+    fireEvent.change(screen.getByRole("textbox",{name:"Account name"}),{
+      target:{value:"Operating Bank"},
+    });
+    fireEvent.click(screen.getByRole("button",{name:"Create verified account"}));
+    await waitFor(()=>expect(h.createAccount).toHaveBeenCalledOnce());
+    h.currentOrg="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    view.rerender(<FreshFinanceSetupWorkspace/>);
+    await waitFor(()=>expect(h.load).toHaveBeenCalledTimes(2));
+    resolveOld?.({});
+    await waitFor(()=>expect(h.load).toHaveBeenCalledTimes(3));
+    expect(screen.queryByText(/Account created and independently re-read/)).toBeNull();
   });
 
   it("never displays a green zero after a certification failure",async()=>{
