@@ -80,7 +80,6 @@ export function reconcileLegacySourceSnapshot(snapshot, sourceKey) {
   const byAccount = new Map(), byTransaction = new Map(), byTransfer = new Map();
   const balanceTotals = { displayed: 0n, ledger: 0n, openings: 0n, economic: 0n };
   const ledgerEntries = [...entryMap.values()];
-  const postings = [];
 
   for (const entry of ledgerEntries) {
     const delta = integerMinor(entry.amount_paisa, 'ledger amount');
