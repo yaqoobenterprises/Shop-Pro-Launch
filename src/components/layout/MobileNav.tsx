@@ -6,7 +6,7 @@ import {
   LockKeyhole,
   MoreHorizontal,
   Receipt,
-  Sparkles,
+  MessageCircle,
   Settings,
   Wallet,
 } from "lucide-react";
@@ -19,7 +19,7 @@ const primaryItems: Array<{
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: "ai", label: "LedgerMate AI", icon: Sparkles },
+  { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
   { id: "chat", label: "Ledger", icon: Receipt },
   { id: "dashboard", label: "Overview", icon: LayoutDashboard },
   { id: "sales", label: "Entries", icon: List },

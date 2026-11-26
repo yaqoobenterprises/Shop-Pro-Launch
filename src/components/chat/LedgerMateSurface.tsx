@@ -1,7 +1,7 @@
 import React, { type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import {
   ArrowUp, Bot, Check, ChevronDown, CircleHelp, Copy, History, LoaderCircle,
-  MessageSquarePlus, RefreshCw, Send, Sparkles, Trash2, WalletCards, X,
+  MessageSquarePlus, RefreshCw, Send, MessageCircle, Trash2, WalletCards, X,
 } from "lucide-react";
 import { MarkdownMessage } from "./LedgerMateMarkdown";
 import type { PendingAction } from "../../services/ledgerMateActionService";
@@ -55,10 +55,10 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
   <section className="ledgermate" aria-label="LedgerMate AI">
     <header className="lm-header">
       <div className="lm-brand-row">
-        <div className="lm-mark"><Sparkles aria-hidden="true" /></div>
+        <div className="lm-mark"><MessageCircle aria-hidden="true" /></div>
         <div className="lm-title-group">
           <h1>LedgerMate AI</h1>
-          <p>Smart Financial Assistant <span className={`lm-status-dot ${online ? "is-online" : ""}`} />{checking ? "Connecting" : online ? "Online" : "Offline"}</p>
+          <p><span className={`lm-status-dot ${online ? "is-online" : ""}`} />{checking ? "Connecting" : online ? "Online" : "Offline"}</p>
         </div>
         <span className="lm-model">{healthModel}</span>
       </div>
@@ -75,7 +75,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
             <div className="lm-history-popover" role="dialog" aria-label="Chat history">
               <div className="lm-popover-heading"><span>Recent conversations</span><button type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X aria-hidden="true" /></button></div>
               <div className="lm-history-list">
-                {threads.length === 0 && <p className="lm-history-empty">Your conversations will appear here.</p>}
+                {threads.length === 0 && <p className="lm-history-empty">No conversations</p>}
                 {threads.map((thread) => <button key={thread.id} type="button" className={`lm-history-item ${thread.id === activeThread?.id ? "is-active" : ""}`} onClick={() => onChooseThread(thread)}>
                   <span className="lm-history-icon"><Bot aria-hidden="true" /></span>
                   <span className="lm-history-copy"><strong>{thread.title}</strong><small>{thread.localOnly ? "Saved on this device" : new Intl.DateTimeFormat("en-PK", { dateStyle: "medium" }).format(new Date(thread.updated_at))}</small></span>
@@ -97,14 +97,12 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
 
     <div className="lm-messages" aria-live="polite" aria-relevant="additions text">
       {messages.length === 0 && <div className="lm-empty-state">
-        <div className="lm-empty-icon"><Sparkles aria-hidden="true" /></div>
-        <p className="lm-eyebrow">Shop Pro financial intelligence</p>
-        <h2>What would you like to understand?</h2>
-        <p className="lm-empty-copy">Ask about your income, expenses, balances, services, or any date in your ledger.</p>
+        <div className="lm-empty-icon"><MessageCircle aria-hidden="true" /></div>
+        <h2>New conversation</h2>
         <div className="lm-suggestions">{promptSuggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSend(undefined, suggestion)} disabled={!online || checking || syncStatus === "loading"}><span>{suggestion}</span><ArrowUp aria-hidden="true" /></button>)}</div>
       </div>}
       {messages.map((message, index) => <article key={message.id || `${message.createdAt}-${index}`} className={`lm-message-row ${message.role}`}>
-        {message.role === "assistant" && <div className="lm-avatar"><Sparkles aria-hidden="true" /></div>}
+        {message.role === "assistant" && <div className="lm-avatar"><MessageCircle aria-hidden="true" /></div>}
         <div className="lm-message-main">
           <div className={`lm-bubble ${message.role}`}>
             {message.role === "assistant" ? message.content ? <MarkdownMessage content={message.content} /> : <span className="lm-streaming-caret" aria-label="LedgerMate is responding" /> : <p>{message.content}</p>}
@@ -138,7 +136,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
       <div className="lm-composer">
         <textarea ref={textareaRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
-        }} placeholder="Ask LedgerMate about your shop's finances…" rows={1} maxLength={12000} disabled={sending || syncStatus === "loading" || Boolean(pendingAction)} aria-label="Message LedgerMate AI" />
+        }} placeholder="Ask about your finances…" rows={1} maxLength={12000} disabled={sending || syncStatus === "loading" || Boolean(pendingAction)} aria-label="Message LedgerMate AI" />
         <button className="lm-send-button" type="submit" aria-label="Send message" disabled={!input.trim() || !online || checking || sending || syncStatus === "loading" || Boolean(pendingAction)}>{sending ? <LoaderCircle className="lm-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}</button>
       </div>
       <div className="lm-composer-hint"><span>Enter to send <kbd>↵</kbd><span className="lm-hint-divider">·</span>Shift + Enter for a new line</span><span>AI can make mistakes. Verify important records.</span></div>

@@ -204,14 +204,12 @@ export const AccountsView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div className="accounts-page-heading">
-          <span className="kicker">CASH & BANK MANAGEMENT</span>
           <h1>Accounts</h1>
-          <p>Monitor cash, bank and digital wallet balances in one place.</p>
         </div>
 
         <div className="title-actions">
           <div className="balance-total">
-            <small>TOTAL LIQUIDITY</small>
+            <small>Total balance</small>
             <strong>
               <AnimatedAmount amountPaisa={totalBalancePaisa} loading={isLoading && accounts.length === 0} />
             </strong>
@@ -242,7 +240,6 @@ export const AccountsView: React.FC = () => {
           onClick={() => setActiveTool((current) => current === "transfer" ? null : "transfer")}>
           <ArrowLeftRight className="h-4 w-4" aria-hidden="true"/> Move money
         </button>
-        <span>Payment accounts are separate from the Chart of Accounts.</span>
       </div>
       {/* Account Grid */}
       <div className="account-grid">

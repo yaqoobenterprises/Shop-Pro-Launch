@@ -170,9 +170,7 @@ export const LedgerDashboardView: React.FC = () => {
     <div className="page-content overview-page aq-overview">
       <div className="page-title">
         <div className="overview-page-heading">
-          <span className="kicker">CASHBOOK OVERVIEW</span>
           <h1>Business overview</h1>
-          <p>Recorded activity and balances, with their correct date basis.</p>
         </div>
         <OverviewPeriodControls
           period={period}
@@ -196,16 +194,16 @@ export const LedgerDashboardView: React.FC = () => {
       )}
 
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Cash & bank" scope="Latest loaded account balances" icon={Wallet}
+        <OverviewMetricCard label="Cash & bank" scope="Current balance" icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Income" scope="Selected cashbook period" icon={TrendingUp}
+        <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp}
           amountPaisa={activeIncome}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Expenses" scope="Selected cashbook period" icon={ArrowDownLeft}
+        <OverviewMetricCard label="Expenses" scope={selectedRangeLabel} icon={ArrowDownLeft}
           amountPaisa={activeExpense}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Operating result" scope="Cashbook basis · not accrual P&L" icon={ArrowUpRight}
+        <OverviewMetricCard label="Operating result" scope="Cashbook basis" icon={ArrowUpRight}
           amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "positive"}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
@@ -217,7 +215,6 @@ export const LedgerDashboardView: React.FC = () => {
               <h2>Income & expenses</h2>
               <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
-            <span className="aq-overview__basis">Cashbook</span>
           </div>
           {period !== "day" ? (
             isLoading ? <p className="aq-overview__empty" role="status">Loading chart…</p>
@@ -235,9 +232,7 @@ export const LedgerDashboardView: React.FC = () => {
                         </div>
                         <div>
                           <h3>No income or expenses recorded for this date.</h3>
-                          <p>{dailyData?.transaction_count
-                            ? `${dailyData.transaction_count} other recorded entries exist for this day.`
-                            : "Your books are clear for the selected date."} Explore a wider period for recorded trends.</p>
+                          {Boolean(dailyData?.transaction_count) && <p>{dailyData?.transaction_count} other entries</p>}
                         </div>
                         <button type="button" onClick={() => setPeriod("week")}>
                           View weekly trends <ArrowUpRight size={16} aria-hidden="true" />
@@ -257,19 +252,16 @@ export const LedgerDashboardView: React.FC = () => {
                         <div className="aq-day-insights__metric">
                           <span>Day operating result</span>
                           <strong>{formatPaisa(activeProfit)}</strong>
-                          <small>Income less expenses · cashbook basis</small>
+                          <small>Income less expenses</small>
                         </div>
                         <div className="aq-day-insights__metric">
                           <span>Recorded entries</span>
                           <strong>{dailyData?.transaction_count ?? 0}</strong>
-                          <small>Selected business date</small>
                         </div>
                       </div>
                     </div>
                     )
                   )}
-              {!(period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense) &&
-                <p className="aq-overview__note">Select Week, Month or Custom to explore a time-series chart.</p>}
             </div>
           )}
         </section>
@@ -284,7 +276,7 @@ export const LedgerDashboardView: React.FC = () => {
           {isLoading ? <p className="aq-overview__empty" role="status">Loading categories…</p>
             : loadError ? <p className="aq-overview__empty">Category breakdown unavailable.</p>
               : expenseBreakdowns.length === 0 ? (
-                <p className="aq-overview__empty">No active expenses for this date. Recorded expenses will appear here.</p>
+                <p className="aq-overview__empty">No expenses for this period.</p>
               ) : (
                 <>
                   <div className="aq-overview__donut-wrap">
@@ -321,10 +313,10 @@ export const LedgerDashboardView: React.FC = () => {
 
       <div className="aq-overview__details">
         <section className="panel transactions-panel">
-          <div className="panel-heading"><h2>Cash & bank accounts</h2><span className="aq-overview__basis">Balances as loaded</span></div>
+          <div className="panel-heading"><h2>Cash & bank accounts</h2><span className="aq-overview__basis">Current balances</span></div>
           {isLoading ? <p role="status" className="aq-overview__empty">Loading accounts…</p>
             : loadError ? <p className="aq-overview__empty">Accounts unavailable.</p>
-              : activeAccounts.length === 0 ? <p className="aq-overview__empty">No active shop accounts are available. Set up an account to see balances.</p>
+              : activeAccounts.length === 0 ? <p className="aq-overview__empty">No active accounts.</p>
                 : <ul aria-label="Current balances by account" className="aq-overview__accounts">
                     {activeAccounts.map((acc) => (
                       <li className="transaction" key={acc.id}>

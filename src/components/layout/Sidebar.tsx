@@ -15,7 +15,7 @@ import {
   PanelLeftOpen,
   Receipt,
   Settings,
-  Sparkles,
+  MessageCircle,
   Wallet,
 } from "lucide-react";
 
@@ -70,7 +70,7 @@ export const Sidebar: React.FC = () => {
   const navItems: { id: AppView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "dashboard", label: t("nav.overview"), icon: LayoutDashboard },
     { id: "sales", label: t("nav.entries"), icon: Receipt },
-    { id: "ai", label: "LedgerMate AI", icon: Sparkles },
+    { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
     { id: "chat", label: t("nav.ledger"), icon: MessageSquare },
     { id: "reports", label: t("nav.reports"), icon: BarChart3 },
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },

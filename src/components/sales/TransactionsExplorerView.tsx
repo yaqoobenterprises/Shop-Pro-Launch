@@ -163,9 +163,7 @@ export const TransactionsExplorerView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div className="entries-page-heading">
-          <span className="kicker">TRANSACTION REGISTER</span>
           <h1>Entries</h1>
-          <p>Review, filter and export your recorded shop transactions.</p>
         </div>
 
         <div className="title-actions">

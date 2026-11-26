@@ -11,17 +11,17 @@ html .app-shell .overview-page .aq-metric {
   border: 1px solid transparent;
   padding: 1rem;
   background: var(--surface-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   color: var(--ink);
   transform: none;
 }
 html .app-shell .overview-page .aq-metric:nth-child(1) {
-  background: #4d4b4c;
+  background: #17654e;
   color: #ffffff;
 }
-html .app-shell .overview-page .aq-metric:nth-child(2) { background: #ecfffd; }
-html .app-shell .overview-page .aq-metric:nth-child(3) { background: #feeaf5; }
-html .app-shell .overview-page .aq-metric:nth-child(4) { background: #ffffff; }
+html .app-shell .overview-page .aq-metric:nth-child(2) { background: var(--surface-card); }
+html .app-shell .overview-page .aq-metric:nth-child(3) { background: var(--surface-card); }
+html .app-shell .overview-page .aq-metric:nth-child(4) { background: var(--surface-card); }
 html .app-shell .overview-page .aq-metric .metric-top span {
   color: inherit;
   font-size: .8rem;
@@ -54,12 +54,12 @@ html .app-shell .overview-page .aq-metric .aq-metric__scope {
   font-size: .66rem;
 }
 html .app-shell .overview-page .aq-metric:nth-child(1) .aq-metric__scope { opacity: .82; }
-html .app-shell .overview-page .aq-metric:nth-child(3) .metric-top svg { color: #94557d; }
+html .app-shell .overview-page .aq-metric:nth-child(3) .metric-top svg { color: #9b5544; }
 html .app-shell .overview-page .aq-metric:nth-child(2) .metric-top svg { color: #176b54; }
 html .app-shell .overview-page .aq-metric--negative:nth-child(4) .metric-amount { color: #ad4250; }
-html.dark .app-shell .overview-page .aq-metric:nth-child(1) { background: #3e3e48; color: #ffffff; }
-html.dark .app-shell .overview-page .aq-metric:nth-child(2) { background: #28423f; color: #f1fbf9; }
-html.dark .app-shell .overview-page .aq-metric:nth-child(3) { background: #473645; color: #fff0f6; }
+html.dark .app-shell .overview-page .aq-metric:nth-child(1) { background: #245441; color: var(--surface-card); }
+html.dark .app-shell .overview-page .aq-metric:nth-child(2) { background: var(--surface-card); color: var(--ink); }
+html.dark .app-shell .overview-page .aq-metric:nth-child(3) { background: var(--surface-card); color: var(--ink); }
 html.dark .app-shell .overview-page .aq-metric:nth-child(4) { background: var(--surface-card); color: var(--ink); }
 html.dark .app-shell .overview-page .aq-metric:nth-child(2) .metric-top svg { color: #84dfc8; }
 html.dark .app-shell .overview-page .aq-metric:nth-child(3) .metric-top svg { color: #f4accf; }

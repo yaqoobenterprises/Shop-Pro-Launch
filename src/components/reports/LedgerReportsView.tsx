@@ -115,9 +115,7 @@ export const LedgerReportsView: React.FC = () => {
     <main className="page-content reports-page reports-modern">
       <header className="reports-modern__hero">
         <div>
-          <span className="reports-modern__eyebrow">FINANCIAL INTELLIGENCE</span>
           <h1>Reports</h1>
-          <p>Explore your shop performance, inspect category trends and export a polished workbook.</p>
         </div>
         <button type="button" className="reports-modern__export" onClick={handleExport} disabled={isExporting || isLoading}>
           <FileSpreadsheet size={17} aria-hidden="true" />
@@ -138,30 +136,30 @@ export const LedgerReportsView: React.FC = () => {
 
       <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
         <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
-          <span>OPERATING RESULT</span><TrendingUp size={18} aria-hidden="true" />
+          <span>Operating result</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.net_profit_paisa)}</strong>
           <small>Cashbook basis · not accrual P&L</small>
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--income">
-          <span>TOTAL INCOME</span><TrendingUp size={18} aria-hidden="true" />
+          <span>Income</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.income_paisa)}</strong>
-          <small>{totals.transaction_count.toLocaleString()} matching entries</small>
+          
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--expense">
-          <span>TOTAL EXPENSES</span><TrendingDown size={18} aria-hidden="true" />
+          <span>Expenses</span><TrendingDown size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.expense_paisa)}</strong>
-          <small>Operating outflow</small>
+          
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--count">
-          <span>TRANSACTIONS</span><FileSpreadsheet size={18} aria-hidden="true" />
+          <span>Transactions</span><FileSpreadsheet size={18} aria-hidden="true" />
           <strong>{isLoading ? "—" : totals.transaction_count.toLocaleString()}</strong>
-          <small>Active records in this report</small>
+          
         </article>
       </section>
 
       <section className="reports-modern__chart-panel">
         <div className="reports-modern__section-heading">
-          <div><span className="reports-modern__section-kicker">PERFORMANCE</span><h2>Cash flow over time</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
+          <div><h2>Cash flow over time</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
           <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
         {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
@@ -184,26 +182,26 @@ export const LedgerReportsView: React.FC = () => {
 
       <div className="reports-modern__analysis-grid">
         <section className="reports-modern__table-panel">
-          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">BY CATEGORY</span><h2>Category performance</h2><p>Highest activity first</p></div></div>
+          <div className="reports-modern__section-heading"><div><h2>Category performance</h2></div></div>
           {categoryBreakdown.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
             {categoryBreakdown.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={`reports-modern__type-badge type-${item.type}`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
           </tbody></table></div>}
         </section>
 
         <section className="reports-modern__table-panel">
-          <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">NON-OPERATING</span><h2>Other cash movements</h2><p>Separated from operating profit</p></div></div>
+          <div className="reports-modern__section-heading"><div><h2>Other cash movements</h2></div></div>
           <div className="reports-modern__movement-list">
             <div><span>Capital introduced</span><strong>{formatPaisa(totals.capital_in_paisa)}</strong></div>
             <div><span>Owner drawings</span><strong>{formatPaisa(totals.withdrawal_paisa)}</strong></div>
             <div><span>Cash adjustments in</span><strong>{formatPaisa(totals.adjustment_in_paisa)}</strong></div>
             <div><span>Cash adjustments out</span><strong>{formatPaisa(totals.adjustment_out_paisa)}</strong></div>
           </div>
-          <p className="reports-modern__footnote">Operating result equals recorded income less operating expenses on the selected cashbook basis. Capital, drawings and adjustments are excluded; this is not an accrual P&L.</p>
+          <p className="reports-modern__footnote">Operating result = income − operating expenses (cashbook basis, not accrual P&L).</p>
         </section>
       </div>
 
       <section className="reports-modern__table-panel reports-modern__transactions">
-        <div className="reports-modern__section-heading"><div><span className="reports-modern__section-kicker">AUDITABLE DETAIL</span><h2>Transaction register</h2><p>All filtered active entries are included in Excel export.</p></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
+        <div className="reports-modern__section-heading"><div><h2>Transaction register</h2></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
         {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
           {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
         </tbody></table></div>}
@@ -218,7 +216,7 @@ export const LedgerReportsView: React.FC = () => {
           </div>
         </nav>}
       </section>
-      <p className="reports-modern__footer-note">Report generated from active ledger records · Date boundaries use the shop business date.</p>
+      <p className="reports-modern__footer-note">Active entries · Shop business dates</p>
     </main>
   );
 };

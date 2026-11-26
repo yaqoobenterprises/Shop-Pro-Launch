@@ -1,43 +1,43 @@
-/* AQVORA workspace redesign — reference pastel shell, scoped to signed-in app. */
+/* Shared signed-in workspace palette. */
 .app-shell {
-  --soft: #e7e6eb;
-  --paper: #e7e6eb;
-  --surface: #e7e6eb;
+  --soft: #f5f7f6;
+  --paper: #f5f7f6;
+  --surface: #f5f7f6;
   --surface-card: #ffffff;
   --surface-bright: #ffffff;
-  --surface-2: #f2f1f5;
-  --surface-dim: #f2f1f5;
-  --surface-container-low: #f2f1f5;
+  --surface-2: #eaf0ed;
+  --surface-dim: #eaf0ed;
+  --surface-container-low: #eaf0ed;
   --surface-container-lowest: #ffffff;
   --surface-variant: #eff5f3;
   --input-bg: #ffffff;
-  --ink: #35383e;
-  --ink-2: #51535c;
-  --muted: #666a75;
-  --faint: #7a7c87;
-  --line: #dcdde3;
-  --line-strong: #cdd0d8;
-  --forest: #176b54;
+  --ink: #183a31;
+  --ink-2: #385348;
+  --muted: #52665d;
+  --faint: #65796f;
+  --line: #dce5df;
+  --line-strong: #baccc1;
+  --forest: #17654e;
   --forest-hover: #0f5744;
-  --green: #176b54;
-  --accent-ink: #176b54;
-  --mint: #ecfffd;
+  --green: #17654e;
+  --accent-ink: #17654e;
+  --mint: #e5f3eb;
   --tint: #ebf8f5;
   --tint-2: #ddf3ee;
   --good-bg: #e5f8f3;
   --good-line: #c5e8df;
-  --insight-bg: #efeeff;
-  --featured: #4d4b4c;
-  --report-tint-1: #ecfffd;
-  --report-tint-2: #feeaf5;
-  --report-tint-3: #f1efff;
+  --insight-bg: #e6f0e9;
+  --featured: #17654e;
+  --report-tint-1: #e5f3eb;
+  --report-tint-2: #f6ece7;
+  --report-tint-3: #e8f0eb;
   --bar-muted: #c4c3d0;
   --track: #edeef2;
-  --chart-line: #9189df;
-  --chart-stroke: #9189df;
-  --chart-lavender: #9189df;
-  --chart-teal: #55cdbb;
-  --chart-pink: #f58fcc;
+  --chart-line: #17654e;
+  --chart-stroke: #17654e;
+  --chart-lavender: #17654e;
+  --chart-teal: #80b3a5;
+  --chart-pink: #b58a62;
   --chart-grid: #e8e8ed;
   --glass: rgba(255,255,255,.96);
   --header-bg: rgba(255,255,255,.96);
@@ -59,23 +59,23 @@
   color: var(--ink);
 }
 html.dark .app-shell {
-  --soft: #181923;
-  --paper: #181923;
-  --surface: #181923;
-  --surface-card: #252731;
-  --surface-bright: #252731;
-  --surface-2: #30323e;
-  --surface-dim: #30323e;
-  --surface-container-low: #30323e;
-  --surface-container-lowest: #252731;
+  --soft: #151e1a;
+  --paper: #151e1a;
+  --surface: #151e1a;
+  --surface-card: #202e27;
+  --surface-bright: #202e27;
+  --surface-2: #2a3931;
+  --surface-dim: #2a3931;
+  --surface-container-low: #2a3931;
+  --surface-container-lowest: #202e27;
   --surface-variant: #303540;
-  --input-bg: #292b36;
-  --ink: #f1f0f6;
-  --ink-2: #d4d4dd;
-  --muted: #b5b5c4;
-  --faint: #a5a5b5;
-  --line: #444554;
-  --line-strong: #575767;
+  --input-bg: #27372e;
+  --ink: #edf5ef;
+  --ink-2: #d2e3d8;
+  --muted: #b5c9bc;
+  --faint: #a8bbae;
+  --line: #405348;
+  --line-strong: #587263;
   --forest: #79dbc0;
   --forest-hover: #96e7d0;
   --green: #79dbc0;
@@ -85,16 +85,16 @@ html.dark .app-shell {
   --tint-2: #26463f;
   --good-bg: #264039;
   --good-line: #3b5b53;
-  --insight-bg: #383350;
-  --featured: #42414b;
+  --insight-bg: #2a3d32;
+  --featured: #244538;
   --report-tint-1: #263b3b;
-  --report-tint-2: #413541;
-  --report-tint-3: #35344c;
+  --report-tint-2: #41352f;
+  --report-tint-3: #2a3c33;
   --bar-muted: #626474;
   --track: #3a3c4b;
-  --chart-line: #aca5fc;
-  --chart-stroke: #aca5fc;
-  --chart-lavender: #aca5fc;
+  --chart-line: #93d3b1;
+  --chart-stroke: #93d3b1;
+  --chart-lavender: #93d3b1;
   --chart-teal: #6dd9c8;
   --chart-pink: #f99fd1;
   --chart-grid: #3d4050;
@@ -144,7 +144,7 @@ html .app-shell #app-sidebar .sidebar-section-label {
   color: var(--muted);
   font-size: .63rem;
   font-weight: 670;
-  letter-spacing: .075em;
+  letter-spacing: 0;
   padding: .7rem .8rem .5rem;
 }
 html .app-shell #app-sidebar nav {
@@ -258,7 +258,7 @@ html .app-shell .account-grid > * {
   border-color: var(--line);
   border-radius: .78rem;
   background: var(--surface-card);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 html .app-shell .mobile-bottom-nav { background: var(--surface-card); border-color: var(--line); }
 html .app-shell .mobile-bottom-nav > button[aria-current="page"] {
