@@ -90,10 +90,10 @@ describe('real-data dashboard charts', () => {
     render(<LedgerDashboardView />);
 
     await waitFor(() => expect(
-      screen.getByText(/No active expenses for this date/),
+      screen.getByText(/No expenses for this period/),
     ).toBeTruthy());
     expect(screen.queryByRole('list', { name: 'Expense totals by category' })).toBeNull();
-    expect(screen.getByText(/No active shop accounts are available/)).toBeTruthy();
+    expect(screen.getByText(/No active accounts/)).toBeTruthy();
   });
 
   it('plots daily cash flow for the selected month and exposes the date range modes', async () => {
