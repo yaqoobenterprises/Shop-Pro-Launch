@@ -262,8 +262,8 @@ html .app-shell .account-grid > * {
 }
 html .app-shell .mobile-bottom-nav { background: var(--surface-card); border-color: var(--line); }
 html .app-shell .mobile-bottom-nav > button[aria-current="page"] {
-  background: var(--surface-2);
-  color: var(--ink);
+  background: var(--good-bg);
+  color: var(--forest);
 }
 html .app-shell .sidebar nav button:hover:not(.active),
 html .app-shell .sidebar-bottom > button:hover:not(.active) { transform: none; }

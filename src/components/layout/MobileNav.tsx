@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   BarChart3,
   LayoutDashboard,
@@ -19,11 +19,10 @@ const primaryItems: Array<{
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
-  { id: "chat", label: "Ledger", icon: Receipt },
   { id: "dashboard", label: "Overview", icon: LayoutDashboard },
+  { id: "accounts", label: "Accounts", icon: Wallet },
+  { id: "chat", label: "Ledger", icon: Receipt },
   { id: "sales", label: "Entries", icon: List },
-  { id: "reports", label: "Reports", icon: BarChart3 },
 ];
 
 const secondaryItems: Array<{
@@ -31,7 +30,8 @@ const secondaryItems: Array<{
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: "accounts", label: "Accounts", icon: Wallet },
+  { id: "reports", label: "Reports", icon: BarChart3 },
+  { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -40,6 +40,8 @@ export const MobileNav: React.FC = () => {
   const { lock, hasPinSetup } = useAuth();
   const { t } = useI18n();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
+  const isSecondaryActive = secondaryItems.some(({ id }) => id === currentView);
 
   const navigate = (view: AppView) => {
     setCurrentView(view);
@@ -49,10 +51,17 @@ export const MobileNav: React.FC = () => {
   return (
     <nav
       aria-label="Main navigation"
-      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-border-standard bg-surface-bright px-1 pt-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && isMoreOpen) {
+          event.stopPropagation();
+          setIsMoreOpen(false);
+          moreButtonRef.current?.focus();
+        }
+      }}
+      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border-standard bg-surface-bright px-1 pt-1.5 pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       {primaryItems.map(({ id, icon: Icon }) => {
-        const label = id === "ai" ? "LedgerMate AI"
+        const label = id === "accounts" ? t("nav.accounts")
           : id === "chat" ? t("nav.ledger")
           : id === "dashboard" ? t("nav.overview")
           : id === "sales" ? t("nav.entries")
@@ -64,7 +73,7 @@ export const MobileNav: React.FC = () => {
             type="button"
             aria-current={isActive ? "page" : undefined}
             onClick={() => navigate(id)}
-            className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors ${
+            className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold transition-colors ${
               isActive ? "bg-primary/[0.07] text-primary" : (
                 "text-text-muted hover:bg-surface-container-low"
               )
@@ -90,12 +99,13 @@ export const MobileNav: React.FC = () => {
               className="absolute bottom-[calc(100%+0.625rem)] right-1 z-10 w-56 rounded-xl border border-border-standard bg-surface-bright p-1.5 shadow-level-2"
             >
               {secondaryItems.map(({ id, icon: Icon }) => {
-                const label = id === "accounts" ? t("nav.accounts") : t("nav.settings");
+                const label = id === "reports" ? t("nav.reports") : id === "ai" ? "LedgerMate AI" : t("nav.settings");
                 return (
                   <button
                     key={id}
                     type="button"
-                    onClick={() => navigate(id)}
+                    aria-current={currentView === id ? "page" : undefined}
+                    onClick={() => { navigate(id); moreButtonRef.current?.focus(); }}
                     className={`flex min-h-11 w-full items-center gap-3 rounded-md px-3 text-left text-sm transition-colors ${
                       currentView === id ?
                         "bg-primary/[0.07] font-semibold text-primary"
@@ -128,15 +138,14 @@ export const MobileNav: React.FC = () => {
         )}
         <button
           type="button"
+          ref={moreButtonRef}
           aria-expanded={isMoreOpen}
           aria-controls={isMoreOpen ? "mobile-more-menu" : undefined}
           aria-label="More navigation options"
           onClick={() => setIsMoreOpen((open) => !open)}
-          className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[10px] font-semibold transition-colors ${
+          className={`relative z-10 flex min-h-12 min-w-0 flex-col items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-semibold transition-colors ${
             (
-              isMoreOpen ||
-              currentView === "settings" ||
-              currentView === "accounts"
+              isMoreOpen || isSecondaryActive
             ) ?
               "bg-primary/[0.07] text-primary"
             : "text-text-muted hover:bg-surface-container-low"

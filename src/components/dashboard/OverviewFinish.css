@@ -29,14 +29,11 @@ html .app-shell .overview-page .metrics {
 html .app-shell .overview-page .aq-metric {
   min-height: clamp(9rem, 10.8vw, 9.85rem);
   padding: clamp(1.05rem, 1.45vw, 1.45rem);
-  border: 0;
+  border: 1px solid var(--line);
   border-radius: .78rem;
   box-shadow: none;
 }
-html .app-shell .overview-page .aq-metric:hover {
-  box-shadow: 0 4px 12px rgba(53, 49, 67, .05);
-  border: 0;
-}
+html .app-shell .overview-page .aq-metric:first-child { border-color: transparent; }
 html .app-shell .overview-page .aq-metric .metric-top {
   gap: .6rem;
   align-items: center;
@@ -61,8 +58,8 @@ html .app-shell .overview-page .aq-metric--negative .metric-amount {
 }
 html .app-shell .overview-page .aq-metric .aq-metric__scope {
   color: inherit;
-  opacity: .7;
-  font-size: .69rem;
+  opacity: 1;
+  font-size: .75rem;
   line-height: 1.5;
   margin-top: .7rem;
 }

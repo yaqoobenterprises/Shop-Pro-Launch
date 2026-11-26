@@ -1,4 +1,4 @@
-/* AQVORA Overview v2: explicit date scope, purposeful no-data states, quiet dark/light rhythm. */
+/* Overview layout, compact summaries and empty states. */
 html .app-shell .overview-page .page-title {
   background: transparent;
   border: 0;
@@ -19,7 +19,7 @@ html .app-shell .overview-page .overview-page-heading p {
   font-size: 12px;
   color: var(--muted);
 }
-html .app-shell .overview-page .aq-metric { min-height: 150px; }
+html .app-shell .overview-page .aq-metric { min-height: 128px; }
 html .app-shell .overview-page .aq-overview__visuals {
   align-items: start;
   gap: 16px;
@@ -29,11 +29,11 @@ html .app-shell .overview-page .panel {
   border: 1px solid var(--line);
   padding: clamp(18px, 1.8vw, 26px);
   border-radius: 15px;
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
 }
 html .app-shell .overview-page .aq-overview__visuals > .panel.cash-panel--empty,
 html .app-shell .overview-page .aq-overview__visuals > .panel.aq-overview__distribution--empty {
-  min-height: 264px;
+  min-height: 0;
 }
 html .app-shell .overview-page .cash-panel--empty .aq-overview__day {
   min-height: 0;
@@ -45,8 +45,8 @@ html .app-shell .overview-page .aq-day-no-activity {
   align-items: center;
   flex-wrap: wrap;
   gap: 15px;
-  min-height: 150px;
-  padding: 19px 0 6px;
+  min-height: 0;
+  padding: 12px 0 6px;
 }
 html .app-shell .overview-page .aq-day-no-activity__symbol {
   display: grid;
@@ -100,17 +100,17 @@ html .app-shell .overview-page .aq-day-no-activity button:focus-visible {
 html .app-shell .overview-page .aq-overview__distribution--empty > .aq-overview__empty {
   margin: 25px 0 0;
   min-height: 0;
-  padding: 22px 17px;
-  border: 1px dashed var(--line-strong);
-  border-radius: 11px;
-  background: var(--surface-2);
+  padding: 8px 0 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--muted);
   line-height: 1.65;
   font-size: 12px;
   text-align: start;
 }
 html .app-shell .overview-page .cash-panel--day:not(.cash-panel--empty) {
-  min-height: 350px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
@@ -180,6 +180,11 @@ html .app-shell .overview-page .aq-overview__details .health-panel { min-height:
 }
 @media (max-width: 700px) {
   html .app-shell .overview-page .page-title { align-items: start; }
+  html .app-shell .overview-page .aq-metric { min-height: 112px; }
+  html .app-shell .overview-page .aq-metric:first-child { grid-column: 1 / -1; }
+  html .app-shell .overview-page .aq-metric:last-child { grid-column: 1 / -1; }
+  html .app-shell .overview-page .aq-metric:first-child .metric-amount { font-size: clamp(1.75rem, 7vw, 2.25rem); }
+  html .app-shell .overview-page .aq-metric .metric-amount { overflow-wrap: anywhere; }
   html .app-shell .overview-page .aq-day-no-activity button { width: 100%; }
   html .app-shell .overview-page .cash-panel--day:not(.cash-panel--empty) { min-height: 0; }
   html .app-shell .overview-page .aq-day-insights { gap: 8px; }
