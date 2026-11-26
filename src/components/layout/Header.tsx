@@ -13,6 +13,7 @@ import {
 import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
+import { APP_NAME } from "../../config/app";
 import "./WorkspaceChrome.css";
 import "./WorkspacePastel.css";
 
