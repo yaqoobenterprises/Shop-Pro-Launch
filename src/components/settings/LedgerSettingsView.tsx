@@ -595,13 +595,9 @@ export const LedgerSettingsView: React.FC = () => {
       {/* Header */}
       <div className="workspace-header page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="settings-page-heading">
-          <span className="kicker">WORKSPACE PREFERENCES</span>
           <h1 className="text-xl font-bold tracking-tight text-on-surface">
             Settings
           </h1>
-          <p className="mt-1 text-xs text-text-muted">
-            Manage your account, preferences, shop setup, and data.
-          </p>
         </div>
       </div>
 

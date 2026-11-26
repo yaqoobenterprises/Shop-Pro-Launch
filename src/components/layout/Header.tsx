@@ -13,7 +13,6 @@ import {
 import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
-import { APP_NAME } from "../../config/app";
 import "./WorkspaceChrome.css";
 import "./WorkspacePastel.css";
 
@@ -79,7 +78,6 @@ export const Header: React.FC = () => {
     <header className="app-header workspace-header" dir={dir}>
       <div className="workspace-context">
         <div className="workspace-context__copy">
-          <span className="workspace-context__eyebrow">{APP_NAME} <span aria-hidden="true">/</span> WORKSPACE</span>
           <span className="workspace-context__title">{pageTitle}</span>
         </div>
       </div>

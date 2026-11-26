@@ -178,7 +178,6 @@ export const Sidebar: React.FC = () => {
           </div>
           <div className="brand-copy min-w-0" data-sidebar-label>
             <strong className="truncate">{APP_NAME}</strong>
-            <span data-sidebar-label>FINANCIAL WORKSPACE</span>
           </div>
         </div>
         <button
@@ -196,7 +195,6 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav id="primary-navigation" aria-label="Main navigation">
-        <div className="sidebar-section-label" data-sidebar-label>WORKSPACE</div>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -218,7 +216,6 @@ export const Sidebar: React.FC = () => {
       </nav>
 
       <div className="sidebar-bottom">
-        <div className="sidebar-section-label sidebar-section-label--bottom" data-sidebar-label>ACCOUNT</div>
         <button
           type="button"
           className={currentView === "settings" ? "active" : ""}
