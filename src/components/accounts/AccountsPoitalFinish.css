@@ -85,3 +85,5 @@ html .app-shell .accounts-page .accounts-tools--focused .account-tool-panel { bo
 html .app-shell .accounts-page .account-tool-panel fieldset { min-width:0; border:0; padding:0; }
 html .app-shell .accounts-page .aq-accounts-insights__panel { min-height:0; border:1px solid var(--line); border-radius:var(--radius-card); box-shadow:none; }
 html .app-shell .accounts-page .aq-accounts-insights__track > div { background:var(--primary); }
+
+html .app-shell .accounts-page .account-card .metric-amount.account-negative { color:var(--danger); }
