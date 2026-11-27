@@ -57,6 +57,7 @@ jobs:
           const records = [];
           const interactions = [];
           const financialChecks = [];
+          const reportingChecks = [];
           const theme = process.env.AUDIT_THEME;
           async function capture(page, width, surface, errors) {
             const metrics = await page.evaluate(() => ({
@@ -194,12 +195,43 @@ jobs:
                     await entry.waitFor();
                     await entry.fill('sale 500');
                     await page.getByRole('button',{name:'Send entry',exact:true}).click();
-                    const review = page.getByRole('dialog',{name:/review|confirm|check/i}).first();
+                    const review = page.getByRole('dialog',{name:/review|confirm|check|clarify/i}).first();
                     await review.waitFor();
                     await review.getByRole('button',{name:'Cancel',exact:true}).click();
                     await review.waitFor({state:'hidden'});
                     financialChecks.push({width,passed:true});
                   } catch(e) { financialChecks.push({width,step,error:String(e)}); }
+                  let reportStep = 'account tools';
+                  try {
+                    const openAccounts = chrome.getByRole('button',{name:'Accounts',exact:true});
+                    await openAccounts.click();
+                    await page.waitForURL('**/workspace/accounts');
+                    const move = page.getByRole('button',{name:'Move money',exact:true});
+                    await move.waitFor();
+                    await page.waitForFunction(() => Array.from(document.querySelectorAll('button')).some(button => button.textContent?.trim() === 'Move money' && !button.disabled));
+                    await move.click();
+                    await page.getByRole('heading',{name:'Transfer funds',exact:true}).waitFor();
+                    await page.getByLabel('Amount',{exact:true}).fill('25.50');
+                    await move.click(); // never submit money movement during browser audit
+                    reportStep = 'account history';
+                    await page.getByRole('button',{name:/View transactions for/}).first().click();
+                    await page.waitForURL('**/workspace/sales');
+                    await page.getByRole('region',{name:'Transaction filters'}).waitFor();
+                    reportStep = 'report scope';
+                    if (width < 768) {
+                      await navigation.getByRole('button',{name:'More navigation options'}).click();
+                      await page.getByRole('dialog',{name:'More navigation'}).getByRole('button',{name:'Reports',exact:true}).click();
+                    } else await chrome.getByRole('button',{name:'Reports',exact:true}).click();
+                    await page.waitForURL('**/workspace/reports');
+                    await page.getByRole('heading',{name:'Reports',exact:true}).waitFor();
+                    await page.getByRole('button',{name:'Last 7 days',exact:true}).click();
+                    await page.getByRole('heading',{name:'Activity by account',exact:true}).waitFor();
+                    await page.getByText('View exact trend values',{exact:true}).click();
+                    await page.getByRole('table',{name:'Filtered period totals'}).waitFor();
+                    await page.getByRole('button',{name:'Export to Excel',exact:true}).waitFor();
+                    if (!(await page.getByRole('button',{name:'Export to Excel',exact:true}).isEnabled())) throw new Error('Report export not ready after loading');
+                    reportingChecks.push({width,passed:true});
+                  } catch(e) { reportingChecks.push({width,step:reportStep,error:String(e)}); }
                 } catch (e) { records.push({width,error:String(e)}); }
                 finally { await context.close(); }
               }
@@ -208,10 +240,13 @@ jobs:
               fs.writeFileSync('browser-audit/measurements.json',JSON.stringify(records,null,2));
               fs.writeFileSync('browser-audit/interactions.json',JSON.stringify(interactions,null,2));
               fs.writeFileSync('browser-audit/financial-checks.json',JSON.stringify(financialChecks,null,2));
+              fs.writeFileSync('browser-audit/reporting-checks.json',JSON.stringify(reportingChecks,null,2));
             }
             console.log(JSON.stringify(records,null,2));
             console.log(JSON.stringify(interactions,null,2));
             console.log(JSON.stringify(financialChecks,null,2));
+            console.log(JSON.stringify(reportingChecks,null,2));
+            if (reportingChecks.length !== widths.length || reportingChecks.some(r => !r.passed)) process.exitCode = 1;
             if (financialChecks.length !== widths.length || financialChecks.some(r => !r.passed)) process.exitCode = 1;
             if (interactions.length !== widths.length || interactions.some(r => !r.passed)) process.exitCode = 1;
             if (records.some(r => r.error || r.skipped || r.pageErrors?.length || r.theme !== theme || r.canvas !== (theme === 'dark' ? '#151922' : '#f5f6f8') || r.documentWidth > r.viewport || (r.mainWidth !== null && r.mainScrollWidth > r.mainWidth))) process.exitCode = 1;
