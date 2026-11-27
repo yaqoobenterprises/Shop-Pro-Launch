@@ -205,3 +205,67 @@ html .app-shell #app-sidebar.is-collapsed .sidebar-toggle { position: static; op
 html .app-shell #app-sidebar.is-collapsed .side-brand:hover .brand-mark,
 html .app-shell #app-sidebar.is-collapsed .side-brand:focus-within .brand-mark { visibility: visible; opacity: 1; }
 html .app-shell #app-sidebar.is-collapsed .sidebar-bottom > button { border: 0; }
+
+/* Phase 03: task-first shell, with desktop sidebar, tablet rail and phone dock. */
+html .app-shell #app-sidebar { background: var(--surface-card); gap: 0; }
+html .app-shell #app-sidebar .side-brand { min-width: 0; gap: .25rem; padding: .5rem .3rem .85rem; margin-bottom: .35rem; }
+html .app-shell #app-sidebar .brand { min-width: 0; gap: .55rem; }
+html .app-shell #app-sidebar .brand-copy { min-width: 0; }
+html .app-shell #app-sidebar .brand-copy strong { font-size: .99rem; font-weight: 720; letter-spacing: -.03em; }
+html .app-shell #app-sidebar .brand-copy > span { font-size: .67rem; font-weight: 500; letter-spacing: 0; }
+html .app-shell #app-sidebar .sidebar-section-label { font-size: .69rem; text-transform: none; letter-spacing: 0; font-weight: 650; }
+html .app-shell #app-sidebar nav { align-content: start; flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+html .app-shell #app-sidebar nav button,
+html .app-shell #app-sidebar .sidebar-bottom > button { flex-shrink: 0; min-height: 44px; font-size: .85rem; }
+html .app-shell #app-sidebar nav button.active,
+html .app-shell #app-sidebar .sidebar-bottom > button.active { background: var(--tint); color: var(--accent-ink); font-weight: 650; }
+html .app-shell #app-sidebar nav button.active::before,
+html .app-shell #app-sidebar .sidebar-bottom > button.active::before { background: var(--primary); }
+html .app-shell #app-sidebar.is-collapsed .side-brand { width: 100%; padding: 0; }
+html .app-shell #app-sidebar.is-collapsed nav button { min-height: 44px; }
+html .app-shell #app-sidebar .sidebar-bottom { padding-top: .5rem; }
+html .app-shell header.app-header.workspace-header {
+  min-height: 3.75rem; height: 3.75rem; flex-basis: 3.75rem;
+  padding-inline: clamp(.75rem, 1.6vw, 1.5rem); gap: .5rem; backdrop-filter: none;
+}
+html .app-shell header .workspace-context__title { font-size: .875rem; font-weight: 650; }
+html .app-shell header .header-actions { display: flex; flex: 0 0 auto; align-items: center; gap: .45rem; }
+html .app-shell header .workspace-profile-trigger { width: 44px; height: 44px; }
+html .app-shell header .header-mobile-entry { display: none; }
+html .app-shell header .header-profile-menu { border-radius: var(--radius-card); }
+html .app-shell header .header-profile-menu .profile-menu-action { min-height: 44px; font-size: .85rem; }
+html .app-shell .connection-pill--online { background: var(--surface-2); color: var(--ink-2); border-color: var(--line); }
+@media (min-width: 768px) and (max-width: 1023px) {
+  html .app-shell .header-search-trigger kbd { display: none; }
+}
+@media (max-width: 767px) {
+  html .app-shell header.app-header.workspace-header { padding-inline: .5rem; gap: .35rem; }
+  html .app-shell header .header-actions { gap: .25rem; }
+  html .app-shell header .header-mobile-entry {
+    display: grid; place-items: center; min-width: 44px; min-height: 44px;
+    background: var(--primary); color: var(--on-primary); border-radius: var(--radius-control);
+  }
+  html .app-shell header .header-icon-button { display: none; }
+  html .app-shell header .connection-pill { border: 0; min-width: 1rem; width: auto; padding: .25rem; background: transparent; }
+  html .app-shell header .connection-pill > span:last-child { display: none; }
+  html .app-shell header .connection-pill--offline > span:last-child { display: inline; font-size: .64rem; }
+  html .app-shell .mobile-bottom-nav {
+    grid-template-columns: repeat(5, minmax(0,1fr));
+    min-height: calc(4rem + env(safe-area-inset-bottom));
+    padding: .3rem .25rem env(safe-area-inset-bottom); gap: .125rem;
+    border-radius: 0; box-shadow: none; backdrop-filter: none;
+  }
+  html .app-shell .mobile-bottom-nav > .mobile-nav-item {
+    display: flex; min-width: 0; min-height: 54px; flex-direction: column;
+    align-items: center; justify-content: center; gap: .25rem;
+    padding: .25rem 0; color: var(--muted); font-size: .63rem; font-weight: 600;
+    border-radius: var(--radius-control);
+  }
+  html .app-shell .mobile-bottom-nav > .mobile-nav-item span {
+    display: block; max-width: 100%; line-height: 1.15; white-space: normal; overflow-wrap: anywhere;
+  }
+  html .app-shell .mobile-bottom-nav > .mobile-nav-item[aria-current] {
+    color: var(--accent-ink); background: var(--tint); font-weight: 700;
+  }
+  html .app-shell .demo-workspace-banner { min-height: 40px; }
+}
