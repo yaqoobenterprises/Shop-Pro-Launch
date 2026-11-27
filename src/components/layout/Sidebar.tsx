@@ -173,9 +173,7 @@ export const Sidebar: React.FC = () => {
       <div className="side-brand">
         <div className="brand">
           <div className="brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
+            <img src="/assets/shop-plus-mark.svg" alt="" />
           </div>
           <div className="brand-copy min-w-0" data-sidebar-label>
             <strong className="truncate">{APP_NAME}</strong>
