@@ -10,7 +10,7 @@ interface Props {
 }
 
 const label = (type: LedgerAccount["type"]) =>
-  type === "CASH" ? "Cash" : type === "BANK" ? "Bank" : "Wallet";
+  type === "CASH" ? "Cash" : type === "BANK" ? "Bank" : type === "DIGITAL_WALLET" ? "Wallet" : "Other";
 
 /** Read-only legacy payment-account distribution, never an accrual balance sheet. */
 export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, isRefreshing }) => {
@@ -26,9 +26,9 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
     <section className="aq-accounts-insights__panel">
       <div className="aq-accounts-insights__heading">
         <div>
-          <span>YOUR MONEY / ACCOUNT ALLOCATION</span>
+          <span>ACCOUNT ALLOCATION</span>
           <h2>Balance distribution</h2>
-          <p>Positive, active account balances currently loaded.</p>
+          <p>Share of positive active balances only; zero and negative balances are excluded.</p>
         </div>
         <button type="button" onClick={onRefresh} disabled={isRefreshing}
           aria-label="Refresh payment-account balances">
@@ -61,12 +61,13 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
       </div>
       <dl>
         <div><dt>Active accounts</dt><dd>{active.length}</dd></div>
-        <div><dt>Inactive accounts</dt><dd>{accounts.length - active.length}</dd></div>
+        <div><dt>Loaded inactive accounts</dt><dd>{accounts.length - active.length}</dd></div>
+        <div><dt>Active accounts below zero</dt><dd>{active.filter(a => a.balance_paisa < 0).length}</dd></div>
         <div><dt>Primary account</dt><dd>{active.find((a) => a.is_default)?.name || "Not selected"}</dd></div>
       </dl>
       <div className="aq-accounts-insights__scope">
         <ArrowUpRight size={17} aria-hidden="true"/>
-        <p>These are operational cash/bank/wallet balances, not reconciled bank statements or a V2 Chart of Accounts.</p>
+        <p>These are operational cash/bank/wallet balances, not reconciled bank statements or a formal balance sheet.</p>
       </div>
     </section>
   </div>;
