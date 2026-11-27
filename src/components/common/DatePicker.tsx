@@ -96,6 +96,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     };
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
         setIsOpen(false);
         inputRef.current?.focus();
       }
@@ -193,6 +195,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <div
           id={`${id || "date-picker"}-calendar`}
           ref={popoverRef}
+          data-shop-plus-popover
           role="dialog"
           aria-label={`${ariaLabel} calendar`}
           className="date-picker-popover fixed z-[90] w-[292px] rounded-xl border border-border-standard bg-surface-bright p-3 text-on-surface shadow-level-3"
@@ -259,7 +262,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             </button>
           </div>
         </div>,
-        document.body,
+        inputRef.current?.closest("[data-shop-plus-dialog]") ?? document.body,
       )}
     </>
   );
