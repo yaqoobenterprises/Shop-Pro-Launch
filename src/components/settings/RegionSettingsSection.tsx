@@ -6,6 +6,24 @@ import { getCurrencyConfig } from '../../regional/currencies';
 import { getSupabaseClient, hasConfiguredCloudSession, isSupabaseConfigured } from '../../lib/supabase';
 import { useI18n } from '../../i18n';
 import { Globe } from 'lucide-react';
+import { getOfflineQueue } from '../../services/offlineQueue';
+import { getOfflineDrafts } from '../../services/offlineDraftStore';
+import { getOfflineAccountOperations } from '../../services/offlineAccountStore';
+
+async function hasFinancialHistory(organizationId: string): Promise<boolean> {
+  const client = getSupabaseClient();
+  const [transactions, ledger, drafts, transfers, balances, queue, localDrafts, accountOps] = await Promise.all([
+    client.from('transactions').select('id',{count:'exact',head:true}).eq('organization_id',organizationId),
+    client.from('account_ledger_entries').select('id',{count:'exact',head:true}).eq('organization_id',organizationId),
+    client.from('transaction_drafts').select('id',{count:'exact',head:true}).eq('organization_id',organizationId),
+    client.from('account_transfers').select('id',{count:'exact',head:true}).eq('organization_id',organizationId),
+    client.from('payment_accounts').select('id',{count:'exact',head:true}).eq('organization_id',organizationId).or('opening_balance.neq.0,balance_paisa.neq.0'),
+    getOfflineQueue(), getOfflineDrafts(organizationId), getOfflineAccountOperations(organizationId),
+  ] as const);
+  const reads = [transactions,ledger,drafts,transfers,balances];
+  if (reads.some(result => result.error || result.count === null)) throw new Error('Financial history could not be verified.');
+  return reads.some(result => (result.count ?? 0)>0) || queue.some(item=>item.organizationId===organizationId) || localDrafts.length>0 || accountOps.length>0;
+}
 
 const CURRENCY_OPTIONS = [
   'PKR', 'USD', 'INR', 'BDT', 'LKR', 'NPR', 'AED', 'SAR', 'QAR', 'TRY',
@@ -53,19 +71,8 @@ export const RegionSettingsSection: React.FC = () => {
       }
 
       try {
-        const [{ count: transactionCount, error: transactionError }, { count: ledgerCount, error: ledgerError }] = await Promise.all([
-          getSupabaseClient()
-            .from('transactions')
-            .select('id', { count: 'exact', head: true })
-            .eq('organization_id', organization.id),
-          getSupabaseClient()
-            .from('account_ledger_entries')
-            .select('id', { count: 'exact', head: true })
-            .eq('organization_id', organization.id),
-        ]);
-        if (transactionError) throw transactionError;
-        if (ledgerError) throw ledgerError;
-        if (isMounted) setHasEntries((transactionCount ?? 0) > 0 || (ledgerCount ?? 0) > 0);
+        const hasHistory = await hasFinancialHistory(organization.id);
+        if (isMounted) setHasEntries(hasHistory);
       } catch (error) {
         console.error('Could not verify whether shop entries exist:', error);
         if (isMounted) setHasEntries(true);
@@ -110,6 +117,7 @@ export const RegionSettingsSection: React.FC = () => {
         throw new Error('Your cloud session is missing or has expired. Sign in again to save shop settings.');
       }
       if (hasCloudSession) {
+        if (await hasFinancialHistory(organization.id)) { setHasEntries(true); throw new Error('Currency is locked because financial records or pending operations exist.'); }
         const { data, error } = await getSupabaseClient()
           .from('organizations')
           .update(updates)
