@@ -76,6 +76,7 @@ describe("AQVORA real payment-account page", () => {
     await waitFor(() => expect(screen.getAllByText("Cash Drawer").length).toBeGreaterThan(0));
     expect(screen.getByRole("button",{name:"New account"})).toBeDisabled();
     expect(screen.getByRole("button",{name:"Move money"})).toBeDisabled();
+    fireEvent.click(screen.getByRole("button",{name:"Actions for Cash Drawer"}));
     expect(screen.getByRole("button",{name:"Edit Cash Drawer"})).toBeDisabled();
   });
 });

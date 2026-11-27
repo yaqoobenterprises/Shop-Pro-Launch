@@ -179,3 +179,16 @@ html body .app-shell :where(.aq-metric,.account-card,.reports-modern__kpi) {tran
 @media(max-width:767px){html body .app-shell .app-header.workspace-header {height:auto;min-height:0;flex-basis:auto;}html body .app-shell .overview-page .overview-filter-controls {justify-content:flex-start;width:100%;}html body .app-shell .shop-plus-transactions .filter-panel {grid-template-columns:repeat(2,minmax(0,1fr));}html body .app-shell .overview-page .aq-metric {padding:11px!important;min-height:92px!important;}html body .app-shell .finance-donut {grid-template-columns:minmax(110px,145px) minmax(0,1fr);gap:9px;}}
 @media(max-width:390px){html body .app-shell .finance-donut {grid-template-columns:minmax(0,1fr);}html body .app-shell .finance-donut__graphic {max-width:155px;}}
 @media(prefers-reduced-motion:reduce){html body .app-shell *,html body .app-shell *::before,html body .app-shell *::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}html body .app-shell :where(.aq-metric,.account-card,.reports-modern__kpi):hover,html body .app-shell button:active {transform:none!important;}}
+
+html body .app-shell .settings-layout {grid-template-columns:minmax(0,1fr)!important;gap:10px;}
+html body .app-shell .settings-nav {display:flex!important;flex-wrap:wrap;gap:5px;padding:5px!important;background:transparent!important;}
+html body .app-shell .settings-nav-group {display:contents!important;}
+html body .app-shell .settings-nav-label {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+html body .app-shell .settings-nav-item {width:auto!important;min-height:42px;flex:0 1 auto;padding:9px 12px;}
+html body .app-shell .settings-content {max-width:900px;width:100%;}
+html body .app-shell .ledger-composer__chip {min-height:36px!important;padding-inline:10px!important;}
+html body .app-shell .ledger-composer__hint:not(:focus-within) {margin-block:0!important;}
+html body .app-shell .account-actions {flex-wrap:wrap;}
+html body .app-shell .overview-page .aq-overview__accounts+.finance-donut .finance-donut__legend {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+html body .app-shell .overview-page .aq-overview__accounts+.finance-donut .finance-donut__legend:focus-within {position:static;width:auto;height:auto;overflow:visible;clip:auto;}
+html body .app-shell .overview-page .aq-overview__accounts+.finance-donut {grid-template-columns:minmax(0,1fr);}

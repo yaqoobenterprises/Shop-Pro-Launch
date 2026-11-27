@@ -163,7 +163,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
         id="ledger-entry-hint"
         className="ledger-composer__hint mx-auto mt-2.5 flex w-full max-w-4xl flex-wrap items-center justify-between gap-x-3 gap-y-1 text-[11px] text-text-muted"
       >
-        <span className="hidden sm:inline">{t("chat.enterHint")}</span>
+        <span className="sr-only">{t("chat.enterHint")}</span>
       </div>
     </div>
   );

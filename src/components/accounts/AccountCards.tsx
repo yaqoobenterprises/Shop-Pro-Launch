@@ -1,5 +1,5 @@
 import React from "react";
-import { Banknote, Landmark, Check, Pencil, Power, WalletCards } from "lucide-react";
+import { Banknote, Landmark, Check, Pencil, Power, WalletCards, MoreHorizontal } from "lucide-react";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import type { LedgerAccount } from "../../types/ledger";
 import { findAccountProvider } from "../../lib/accountProviders";
@@ -14,6 +14,7 @@ interface Props {
  onExplore?: (accountId: string) => void;
 }
 export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editingName, setEditingAccountId, setEditingName, handleSaveName, handleDeactivate, canDeactivate, canManage, busy, isLoading, loadFailed, onExplore}) => {
+  const [expanded,setExpanded]=React.useState<string|null>(null);
   return <>{accounts.map((acc) => {
           const brand = findAccountProvider(acc.name);
           const accountMarkLabel = brand?.name
@@ -55,6 +56,8 @@ export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editi
                   )}
                 </div>
                 <div className="account-actions">
+                  <button type="button" className="account-action-button" aria-label={`Actions for ${acc.name}`} aria-expanded={expanded===acc.id || isEditing} onClick={()=>setExpanded(old=>old===acc.id?null:acc.id)}><MoreHorizontal aria-hidden="true"/></button>
+                  {(expanded===acc.id || isEditing) && <>
                   <button
                     type="button"
                     onClick={() => {
@@ -86,6 +89,7 @@ export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editi
                   >
                     <Power aria-hidden="true" />
                   </button>
+                  </>}
                 </div>
               </div>
 

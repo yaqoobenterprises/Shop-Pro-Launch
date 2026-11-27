@@ -10,7 +10,7 @@ export function financialSlices(items:readonly Slice[]) {
  const slices=valid.map((item,index)=>{const share=Number(item.amount)/Number(total)*100;const result={...item,share,offset,color:DONUT_COLORS[index%DONUT_COLORS.length]};offset+=share;return result;});
  return {total:Number(total),slices};
 }
-export function FinancialDonut({items,label,centerLabel="Total"}:{items:readonly Slice[];label:string;centerLabel?:string}){
+export function FinancialDonut({items,label,centerLabel="Total",legendLabel}:{items:readonly Slice[];label:string;centerLabel?:string;legendLabel?:string}){
  const {total,slices}=financialSlices(items);
  const [active,setActive]=useState<string|null>(null);
  const selected=slices.find(item=>item.key===active);
@@ -23,6 +23,6 @@ export function FinancialDonut({items,label,centerLabel="Total"}:{items:readonly
    </svg>
    <div className="finance-donut__center"><span>{selected?selected.label:centerLabel}</span><strong>{formatRecordedPaisa(selected?.amount??total)}</strong>{selected&&<small>{selected.share.toFixed(1)}%</small>}</div>
   </div>
-  <ul className="finance-donut__legend" aria-label={label+" values"}>{slices.map(item=><li key={item.key}><button type="button" onFocus={()=>setActive(item.key)} onBlur={()=>setActive(null)} onMouseEnter={()=>setActive(item.key)} onMouseLeave={()=>setActive(null)} onClick={()=>setActive(previous=>previous===item.key?null:item.key)}><i style={{background:item.color}}/><span>{item.label}</span><strong>{formatRecordedPaisa(item.amount)}</strong><small>{item.share.toFixed(1)}%</small></button></li>)}</ul>
+  <ul className="finance-donut__legend" aria-label={legendLabel??label+" values"}>{slices.map(item=><li key={item.key}><button type="button" onFocus={()=>setActive(item.key)} onBlur={()=>setActive(null)} onMouseEnter={()=>setActive(item.key)} onMouseLeave={()=>setActive(null)} onClick={()=>setActive(previous=>previous===item.key?null:item.key)}><i style={{background:item.color}}/><span>{item.label}</span><strong>{formatRecordedPaisa(item.amount)}</strong><small>{item.share.toFixed(1)}%</small></button></li>)}</ul>
  </div>;
 }

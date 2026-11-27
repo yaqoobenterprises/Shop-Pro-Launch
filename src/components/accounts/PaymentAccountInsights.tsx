@@ -2,7 +2,6 @@ import React from "react";
 import { ArrowUpRight, RefreshCw, ShieldCheck } from "lucide-react";
 import type { LedgerAccount } from "../../types/ledger";
 import { FinancialDonut } from "../common/FinancialDonut";
-import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 
 interface Props {
   accounts: readonly LedgerAccount[];
@@ -10,18 +9,12 @@ interface Props {
   isRefreshing?: boolean;
 }
 
-const label = (type: LedgerAccount["type"]) =>
-  type === "CASH" ? "Cash" : type === "BANK" ? "Bank" : type === "DIGITAL_WALLET" ? "Wallet" : "Other";
-
 /** Read-only legacy payment-account distribution, never an accrual balance sheet. */
 export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, isRefreshing }) => {
   const active = accounts.filter((a) => a.is_active);
   const positive = active.filter((a) =>
     Number.isSafeInteger(a.balance_paisa) && a.balance_paisa > 0);
-  const total = positive.reduce((n, a) => n + BigInt(a.balance_paisa), 0n);
   const sorted = [...positive].sort((a, b) => b.balance_paisa - a.balance_paisa);
-  const percent = (paisa: number) =>
-    total > 0n ? Number((BigInt(paisa) * 1000n) / total) / 10 : 0;
 
   return <div className="aq-accounts-insights" aria-label="Payment account insights">
     <section className="aq-accounts-insights__panel">
@@ -35,20 +28,7 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
           <RefreshCw size={16} aria-hidden="true"/> Refresh
         </button>
       </div>
-      {sorted.length>0 && <FinancialDonut label="Positive balances" centerLabel="Positive balances" items={sorted.map(account=>({key:account.id,label:account.name,amount:account.balance_paisa}))}/>}
-      {sorted.length ? <ul className="aq-accounts-insights__bars" aria-label="Positive balance allocation">
-        {sorted.map((account) => <li key={account.id}>
-          <div className="aq-accounts-insights__row">
-            <span><i aria-hidden="true"/><strong>{account.name}</strong>
-              <small>{label(account.type)}</small></span>
-            <span><strong>{formatPaisa(account.balance_paisa)}</strong>
-              <small>{percent(account.balance_paisa).toFixed(1)}%</small></span>
-          </div>
-          <div className="aq-accounts-insights__track" aria-hidden="true">
-            <div style={{ width: `${percent(account.balance_paisa)}%` }} />
-          </div>
-        </li>)}
-      </ul> :
+      {sorted.length ? <FinancialDonut label="Positive balances" legendLabel="Positive balance allocation" centerLabel="Positive balances" items={sorted.map(account=>({key:account.id,label:account.name,amount:account.balance_paisa}))}/> :
         <p className="aq-accounts-insights__empty">
           No positive active balances available.
         </p>}
