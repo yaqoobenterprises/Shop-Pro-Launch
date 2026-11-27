@@ -211,3 +211,7 @@ html .app-shell .overview-page .overview-revenue-list { list-style: none; margin
 html .app-shell .overview-page .overview-revenue-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: .85rem; }
 html .app-shell .overview-page .overview-revenue-list li:last-child { border-bottom: 0; }
 @media (max-width: 1023px) { html .app-shell .overview-page .overview-metric-scope { display: none; } }
+
+/* Verified contrast repair for highlighted and neutral metric cards. */
+html .app-shell .overview-page .aq-metric .metric-top span,
+html .app-shell .overview-page .aq-metric .aq-metric__scope { color:var(--ink); opacity:1; }
