@@ -15,7 +15,7 @@ export const ToastContainer: React.FC = () => {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full">
+    <div className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-[var(--layer-toast)] flex flex-col gap-2 pointer-events-none md:inset-x-auto md:end-5 md:bottom-5 md:w-full md:max-w-sm">
       {toasts.map((toast) => {
         const icons = {
           success: <CheckCircle2 className="h-5 w-5 text-success shrink-0" />,
@@ -36,8 +36,9 @@ export const ToastContainer: React.FC = () => {
         return (
           <div
             key={toast.id}
+            role={toast.type === "error" ? "alert" : "status"}
             className={cn(
-              "pointer-events-auto flex items-start gap-3 rounded-xl border p-4 shadow-level-2 transition-all animate-in slide-in-from-bottom-3",
+              "toast-note pointer-events-auto flex items-start gap-3 rounded-[var(--radius-control)] border p-3 shadow-level-2",
               borders[toast.type],
             )}
           >
@@ -53,10 +54,12 @@ export const ToastContainer: React.FC = () => {
               )}
             </div>
             <button
+              type="button"
+              aria-label="Dismiss notification"
               onClick={() => removeToast(toast.id)}
-              className="text-text-muted hover:text-on-surface transition-colors cursor-pointer"
+              className="grid min-h-11 min-w-11 shrink-0 place-items-center rounded-md text-text-muted hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         );
