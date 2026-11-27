@@ -183,7 +183,7 @@ export function isThisYear(dateStr: string): boolean {
 export function serializeCSV(headers: string[], rows: (string | number)[][]): string {
   const encodeCell = (value: string | number) => {
     let text = String(value ?? '');
-    if (typeof value === 'string' && /^[\t\r\n ]*[=+\-@]/.test(text)) {
+    if (typeof value === 'string' && (/^[\s\uFEFF]*[=+\-@＝＋－＠]/u.test(text) || /^[\t\r\n]/.test(text))) {
       text = `'${text}`;
     }
     return `"${text.replace(/"/g, '""')}"`;
@@ -209,6 +209,8 @@ export function exportToCSV(
   link.setAttribute('href', url);
   link.setAttribute('download', `${filename}-${dateSuffix}.csv`);
   document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try { link.click(); } finally {
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 }
