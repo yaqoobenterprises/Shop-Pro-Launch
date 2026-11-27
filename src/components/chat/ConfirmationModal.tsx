@@ -171,18 +171,20 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const cancelRef = useRef(onCancel);
   const savingRef = useRef(false);
   const submitLock = useRef(false);
+  const reviewOptions = useRef({ accounts, categories });
+  reviewOptions.current = { accounts, categories };
   cancelRef.current = onCancel;
   savingRef.current = isSavingSingle || isSavingBatch;
 
   useEffect(() => {
-    setSingle(result ? makeEntryDraft(result, accounts, categories) : null);
+    setSingle(result ? makeEntryDraft(result, reviewOptions.current.accounts, reviewOptions.current.categories) : null);
     setValidationError(null);
-  }, [result, accounts, categories]);
+  }, [result]);
 
   useEffect(() => {
-    setRows(batchEntries?.map((entry) => makeEntryDraft(entry, accounts, categories)) || []);
+    setRows(batchEntries?.map((entry) => makeEntryDraft(entry, reviewOptions.current.accounts, reviewOptions.current.categories)) || []);
     setValidationError(null);
-  }, [batchEntries, accounts, categories]);
+  }, [batchEntries]);
 
   useEffect(() => {
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
@@ -190,7 +192,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       ?.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), button:not([disabled])')
       ?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !savingRef.current) {
+      if (event.key === "Escape" && !event.defaultPrevented && !savingRef.current && !submitLock.current) {
         cancelRef.current();
       }
       if (event.key === "Tab" && dialog) {
