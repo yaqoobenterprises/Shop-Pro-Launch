@@ -135,8 +135,8 @@ export function resolveLedgerMatePeriods(
   previousMessages: Array<{ role: string; content: string }>,
   currentDate: string,
 ): LedgerMatePeriodResolution {
-  if (!/\b(income|expense|expenses|sale|sales|profit|result|balance|cash|bank|wallet|transaction|transactions|entry|entries|record|records|earning|kamai|kharcha|kharch|category|service|total|compare|comparison|farq|stamp|print|printing|capital|withdrawal|adjustment|amount|kitn[aiye]|details?)\b/i.test(question)) return { periods: [], inheritedFromHistory: false };
   const current = explicitPeriod(question, currentDate);
+  if (!current && !/\b(income|expense|expenses|sale|sales|profit|result|balance|cash|bank|wallet|transaction|transactions|entry|entries|record|records|earning|kamai|kharcha|kharch|category|service|total|compare|comparison|farq|stamp|print|printing|capital|withdrawal|adjustment|amount|kitn[aiye]|details?|report)\b/i.test(question)) return { periods: [], inheritedFromHistory: false };
   const prior = findPreviousPeriod(previousMessages, currentDate);
 
   if (isComparison(question)) {
