@@ -13,3 +13,7 @@
 - Added `tests/workspace_navigation.test.tsx` for route round trips, callback URL protection, state restoration and repeated entry focus requests.
 - Added isolated `.github/workflows/shop-plus-navigation-audit.yml` for both themes at eight widths, screenshot geometry and browser URL/Back/Forward, new-entry focus, keyboard search and collapse/More behavior. External requests blocked and only sample data used.
 - Current Phase 03 checks are pending. Manual keyboard/assistive technology, live authentication, tablet hardware, browser zoom, production hosting verification and full transaction filter/scroll preservation remain release gates. Do not merge until current CI and browser audit have been reviewed.
+
+## Phase 03 verification follow-up
+
+[CI run 45955473710](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45955473710) passed all checks with 383 tests across 62 files. [Navigation audit 45955433142](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45955433142) passed desktop and tablet interactions in both themes but failed at 320, 375 and 390 px: a nested fixed-position More dialog was outside the viewport. Phase 04 moved that dialog to a body portal and updated the test's role-scoped locator. The corrected behavior is pending browser verification. Do not mark the original run as passing.
