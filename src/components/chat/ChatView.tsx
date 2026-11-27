@@ -62,6 +62,7 @@ export const ChatView: React.FC = () => {
     transaction_count: 0,
   });
 
+  const [hasLoadedDay, setHasLoadedDay] = useState(false);
   const [dayLoadError, setDayLoadError] = useState<string | null>(null);
   const loadRequestId = useRef(0);
 
@@ -104,6 +105,7 @@ export const ChatView: React.FC = () => {
       setParserCategories(categories);
       setSuggestedCategories(categorySuggestions);
       setSummary(sum);
+      setHasLoadedDay(true);
 
       setDayLoadError(null);
     } catch (err) {
@@ -147,6 +149,7 @@ export const ChatView: React.FC = () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener(OFFLINE_SYNC_COMPLETE_EVENT, handleOfflineSyncComplete);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      loadRequestId.current += 1;
       unsubscribe();
     };
   }, [loadDayData]);
@@ -315,7 +318,7 @@ export const ChatView: React.FC = () => {
       const result = await ledgerService.postTransactionDraft(draft.id, accountId);
       await loadDayData();
       showToast(
-        "success",
+        result.isQueuedOffline ? "warning" : "success",
         result.isQueuedOffline ? "Posting queued" : "Balance updated",
         result.isQueuedOffline
           ? "This entry will post to the selected account when you reconnect."
@@ -389,6 +392,8 @@ export const ChatView: React.FC = () => {
       {/* 1. Today Strip with Income, Expense, Net */}
       <TodayStrip
         summary={summary}
+        loading={!hasLoadedDay && !dayLoadError}
+        unavailable={Boolean(dayLoadError)}
         onOpenInstallHelp={() => setShowInstallHelp(true)}
       />
 
@@ -410,19 +415,6 @@ export const ChatView: React.FC = () => {
           </button>
         </div>
       )}
-
-      {/* 2. Chat Feed (Bubbles) */}
-      <ChatFeed
-        transactions={transactions}
-        drafts={drafts}
-        accounts={accounts}
-        canManageTransactions={canManageTransactions}
-        onEdit={(tx) => setEditingTransaction(tx)}
-        onVoid={(tx) => setVoidingTransaction(tx)}
-        onRestore={handleRestore}
-        onAssignDraft={handleAssignDraft}
-        onStartEntry={activeEntryInput === "chat" ? () => document.getElementById("ledger-entry")?.focus() : undefined}
-      />
 
       {entryMode === "both" && (
         <div role="group" aria-label={t("entry.switchMode")} className="mx-auto mt-2 flex w-full max-w-4xl gap-2 px-3 sm:px-5">
@@ -459,6 +451,20 @@ export const ChatView: React.FC = () => {
           focusRequestId={newEntryRequestId}
         />
       )}
+
+      <ChatFeed
+        transactions={transactions}
+        drafts={drafts}
+        accounts={accounts}
+        canManageTransactions={canManageTransactions}
+        onEdit={(tx) => setEditingTransaction(tx)}
+        onVoid={(tx) => setVoidingTransaction(tx)}
+        onRestore={handleRestore}
+        onAssignDraft={handleAssignDraft}
+        onStartEntry={activeEntryInput === "chat" ? () => document.getElementById("ledger-entry")?.focus() : undefined}
+        loading={!hasLoadedDay && !dayLoadError}
+        unavailable={Boolean(dayLoadError)}
+      />
 
       {/* 4. Undo Toast (6-Second countdown) */}
       {undoState && (
