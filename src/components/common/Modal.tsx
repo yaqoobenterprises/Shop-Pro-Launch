@@ -33,7 +33,7 @@ export const Modal: React.FC<ModalProps> = ({
     if (!isOpen || !panel) return;
     const previousFocus = document.activeElement;
     openDialogs.push(panel);
-    closeRef.current?.focus();
+    (panel.querySelector<HTMLElement>("[data-dialog-initial-focus]") ?? closeRef.current)?.focus();
     const isTop = () => openDialogs.at(-1) === panel;
     const containFocus = (event: FocusEvent) => {
       if (isTop() && event.target instanceof Node && !panel.contains(event.target)) {
