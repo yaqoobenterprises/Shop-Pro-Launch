@@ -8,15 +8,9 @@ import React, {
 import { useAuth } from "./AuthContext";
 import { EntryMode, getUserPreferences } from "../services/userPreferencesService";
 import { isFeatureEnabled } from "../config/features";
+import { readWorkspaceView, workspacePath, type WorkspaceView } from "../lib/workspaceNavigation";
 
-export type AppView =
-  | "chat"
-  | "ai"
-  | "dashboard"
-  | "sales"
-  | "accounts"
-  | "reports"
-  | "settings";
+export type AppView = WorkspaceView;
 
 export interface ToastMessage {
   id: string;
@@ -46,6 +40,7 @@ interface AppContextType {
   isShortcutsHelpOpen: boolean;
   setIsShortcutsHelpOpen: (open: boolean) => void;
   newEntryRequestId: number;
+  startNewEntry: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -55,7 +50,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { user } = useAuth();
   const entryModesEnabled = isFeatureEnabled("entryModes");
-  const [currentView, setCurrentView] = useState<AppView>("dashboard"); // Default to Modern Shop Ledger Chat
+  const [currentView, setView] = useState<AppView>(() => readWorkspaceView(window.location.pathname) ?? "dashboard");
+  const setCurrentView = useCallback((view: AppView) => {
+    setView(view);
+    // Never overwrite OAuth callbacks, recovery tokens or unrelated routes.
+    const { pathname, search, hash } = window.location;
+    if (!search && !hash && (pathname === "/" || readWorkspaceView(pathname))) {
+      const target = workspacePath(view);
+      if (pathname !== target) window.history.pushState(null, "", target);
+    }
+  }, []);
+  useEffect(() => {
+    const restoreView = () => {
+      const view = readWorkspaceView(window.location.pathname);
+      if (view || window.location.pathname === "/") {
+        setView(view ?? "dashboard");
+        setIsCommandPaletteOpen(false);
+        setIsShortcutsHelpOpen(false);
+        setIsQuickExpenseOpen(false);
+      }
+    };
+    window.addEventListener("popstate", restoreView);
+    return () => window.removeEventListener("popstate", restoreView);
+  }, []);
   const [entryMode, setEntryMode] = useState<EntryMode>("chat");
   const [dataVersion, setDataVersion] = useState<number>(1);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -106,7 +123,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const startNewEntry = useCallback(() => {
     setCurrentView("chat");
     setNewEntryRequestId((requestId) => requestId + 1);
-  }, []);
+  }, [setCurrentView]);
 
   useEffect(() => {
     if (currentView !== "chat") setNewEntryRequestId(0);
@@ -115,6 +132,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Global Keyboard Shortcuts (Ctrl+K, Ctrl+N, Ctrl+Shift+E, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.isComposing || !user) return;
+      if (e.key !== "Escape" && document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       // Ctrl+K -> Command Palette
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -159,6 +178,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     isQuickExpenseOpen,
     isShortcutsHelpOpen,
     startNewEntry,
+    user,
   ]);
 
   return (
@@ -180,6 +200,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         isShortcutsHelpOpen,
         setIsShortcutsHelpOpen,
         newEntryRequestId,
+        startNewEntry,
       }}
     >
       {children}
