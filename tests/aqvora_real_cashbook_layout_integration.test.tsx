@@ -43,4 +43,13 @@ describe("AQVORA real Cashbook Poital.finish integration",()=>{
     render(<ChatFeed {...emptyProps} transactions={[]}/>);
     expect(screen.queryByRole("button",{name:/Record an entry/})).toBeNull();
   });
+  it("does not claim an empty day before loading or after a failed read", () => {
+    const {rerender}=render(<ChatFeed {...emptyProps} transactions={[]} loading/>);
+    expect(screen.getByText("Loading activity…")).toBeTruthy();
+    expect(screen.queryByText("No entries today")).toBeNull();
+    rerender(<ChatFeed {...emptyProps} transactions={[]} unavailable/>);
+    expect(screen.getByText(/Activity unavailable/)).toBeTruthy();
+    expect(screen.queryByText("No entries today")).toBeNull();
+  });
+
 });
