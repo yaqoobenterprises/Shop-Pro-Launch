@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { BarChart3, LayoutDashboard, List, MoreHorizontal, Receipt, MessageCircle, Settings, Wallet } from "lucide-react";
 import { useApp, type AppView } from "../../context/AppContext";
 import { useI18n } from "../../i18n";
@@ -52,7 +53,7 @@ export const MobileNav: React.FC = () => {
         <MoreHorizontal className="h-5 w-5" aria-hidden="true" />
         <span>{t("nav.more")}</span>
       </button>
-      <Modal isOpen={isMoreOpen} title="More navigation" onClose={() => setIsMoreOpen(false)} maxWidth="sm">
+      {createPortal(<Modal isOpen={isMoreOpen} title="More navigation" onClose={() => setIsMoreOpen(false)} maxWidth="sm">
         <div className="grid gap-1">
           {secondaryItems.map(({ id, label, icon: Icon }) => (
             <button key={id} type="button" aria-current={currentView === id ? "page" : undefined}
@@ -62,7 +63,7 @@ export const MobileNav: React.FC = () => {
             </button>
           ))}
         </div>
-      </Modal>
+      </Modal>, document.body)}
     </nav>
   );
 };
