@@ -124,9 +124,9 @@ const MainShell: React.FC = () => {
       case "sales":
         return <TransactionsExplorerView key={`${organization.id}:${user?.id || "demo"}`} />;
       case "reports":
-        return <LedgerReportsView cloudOnly={isCloudAccount && !isDemoMode} />;
+        return <LedgerReportsView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} />;
       case "accounts":
-        return <AccountsView demo={isDemoMode} canManage={isDemoMode || hasPermission(user?.role, "MANAGE_BUSINESS_CONFIG")} canTransfer={isDemoMode || hasPermission(user?.role, "ACCOUNT_TRANSFER")} onExplore={accountId => { saveTransactionView({ ...emptyTransactionView(), account: accountId }); setCurrentView("sales"); }} />;
+        return <AccountsView key={`${organization.id}:${user?.id || "demo"}`} demo={isDemoMode} canManage={isDemoMode || hasPermission(user?.role, "MANAGE_BUSINESS_CONFIG")} canTransfer={isDemoMode || hasPermission(user?.role, "ACCOUNT_TRANSFER")} onExplore={accountId => { saveTransactionView({ ...emptyTransactionView(), account: accountId }); setCurrentView("sales"); }} />;
       case "settings":
         return <LedgerSettingsView />;
       default:
