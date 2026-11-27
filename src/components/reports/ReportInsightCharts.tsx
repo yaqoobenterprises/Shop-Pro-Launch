@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { useRegion } from "../../regional/region";
-import { formatPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 import type { ReportCategoryBucket, ReportTrendBucket } from "../../lib/reportAnalytics";
 
 interface ReportInsightChartsProps {
