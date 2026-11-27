@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { ledgerService } from "../../services/ledgerService";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
-import { formatPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
 import "./OverviewAnalytics.css";
@@ -11,7 +11,7 @@ import "./OverviewFinish.css";
 import "./OverviewRealFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
 import { OverviewAreaChart } from "./OverviewAreaChart";
-import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
+import { assertReportAmounts, buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import {
   DailySummary,
@@ -59,6 +59,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOn
       if (period === "day" && cloudOnly) {
         const records = await ledgerService.getAllFilteredTransactions({ startDate: currentDate, endDate: currentDate, status: "active" }, { requireCloudSource: true });
         if (currentRequestId !== requestId.current) return;
+        assertReportAmounts(records);
         setDailyData({ business_date: currentDate, ...calculateReportTotals(records) });
         setBreakdowns(buildReportCategoryBreakdown(records).map(item => ({ business_date: currentDate, type: item.type, category_id: item.category_id || "uncategorized", category_name: item.category_name, total_paisa: item.total_paisa, entry_count: item.entry_count })));
       } else if (period === "day") {
@@ -79,6 +80,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOn
         const filters = { startDate, endDate, status: "active" as const };
         const records = cloudOnly ? await ledgerService.getAllFilteredTransactions(filters, { requireCloudSource: true }) : await ledgerService.getAllFilteredTransactions(filters);
         if (currentRequestId !== requestId.current) return;
+        assertReportAmounts(records);
         setRangeSummary(calculateReportTotals(records));
         setRangeTrend(buildReportTrend(records, startDate, endDate));
         setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
@@ -97,6 +99,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOn
         const filters = { startDate, endDate, status: "active" as const };
         const records = cloudOnly ? await ledgerService.getAllFilteredTransactions(filters, { requireCloudSource: true }) : await ledgerService.getAllFilteredTransactions(filters);
         if (currentRequestId !== requestId.current) return;
+        assertReportAmounts(records);
         setRangeSummary(calculateReportTotals(records));
         setRangeTrend(buildReportTrend(records, startDate, endDate));
         setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
@@ -137,10 +140,9 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOn
   const activeAdjOut = activeSummary?.adjustment_out_paisa || 0;
 
   const activeAccounts = accounts.filter((account) => account.is_active);
-  const totalBalancePaisa = activeAccounts.reduce(
-    (sum, account) => sum + (Number(account.balance_paisa) || 0),
-    0,
-  );
+  const balanceValues = activeAccounts.map(account => account.balance_paisa);
+  const exactBalance = balanceValues.every(Number.isSafeInteger) ? balanceValues.reduce((sum,value)=>sum+BigInt(value),0n) : null;
+  const totalBalancePaisa = exactBalance !== null && exactBalance <= BigInt(Number.MAX_SAFE_INTEGER) && exactBalance >= BigInt(Number.MIN_SAFE_INTEGER) ? Number(exactBalance) : NaN;
 
   const expenseBreakdowns = useMemo(
     () => breakdowns.filter((b) => b.type === "expense" && b.total_paisa > 0),
