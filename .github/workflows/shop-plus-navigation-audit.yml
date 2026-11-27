@@ -19,6 +19,12 @@ on:
       - src/services/ledgerMate*.ts
       - src/services/useLedgerMateChatHistory.ts
       - api/ai-chat.js
+      - src/lib/money.ts
+      - src/lib/reportAnalytics.ts
+      - src/regional/**
+      - src/components/common/**
+      - src/components/dashboard/**
+      - src/components/layout/**
   workflow_dispatch:
 
 permissions:
@@ -47,7 +53,7 @@ jobs:
       - run: npm ci
       - name: Install isolated browser tooling
         run: |
-          npm install --prefix "$RUNNER_TEMP/shop-plus-audit" --no-save playwright@1.56.1
+          npm install --prefix "$RUNNER_TEMP/shop-plus-audit" --no-save playwright@1.56.1 axe-core@4.10.3
           "$RUNNER_TEMP/shop-plus-audit/node_modules/.bin/playwright" install --with-deps chromium
       - name: Build and serve candidate
         run: |
@@ -67,12 +73,19 @@ jobs:
           const fs = require('node:fs');
           const widths = [320, 375, 390, 768, 1024, 1280, 1440, 1920];
           const records = [];
+          const accessibility = [];
           const interactions = [];
           const financialChecks = [];
           const reportingChecks = [];
           const assistantSettingsChecks = [];
           const theme = process.env.AUDIT_THEME;
           async function capture(page, width, surface, errors) {
+            if (!(await page.evaluate(() => Boolean(window.axe)))) await page.addScriptTag({path: process.env.RUNNER_TEMP + "/shop-plus-audit/node_modules/axe-core/axe.min.js"});
+            const audit = await page.evaluate(async () => {
+              const result = await window.axe.run(document, {runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"]}});
+              return {violations:result.violations.map(v=>({id:v.id,impact:v.impact,help:v.help,helpUrl:v.helpUrl,targets:v.nodes.map(n=>n.target).slice(0,20)})),incomplete:result.incomplete.map(v=>({id:v.id,count:v.nodes.length})),passes:result.passes.length};
+            });
+            accessibility.push({width,surface,...audit});
             const metrics = await page.evaluate(() => ({
               viewport: window.innerWidth,
               documentWidth: document.documentElement.scrollWidth,
@@ -97,7 +110,7 @@ jobs:
                 await context.addInitScript(preference => localStorage.setItem('yaqoob-theme', preference), theme);
                 await context.route('**/*', route => {
                   const url = new URL(route.request().url());
-                  return url.origin === 'http://127.0.0.1:4173' ? route.continue() : route.abort();
+                  return url.origin === 'http://127.0.0.1:4173' && !url.pathname.startsWith('/api/') ? route.continue() : route.abort();
                 });
                 const page = await context.newPage();
                 page.setDefaultTimeout(12000);
@@ -263,6 +276,7 @@ jobs:
                     await history.waitFor();
                     await history.getByRole('button',{name:'Close history'}).click();
                     await history.waitFor({state:'hidden'});
+                    await page.waitForFunction(()=>document.activeElement?.id==='lm-history-trigger');
                     settingsStep='settings navigation';
                     await openSecondary('Settings','settings');
                     const settingsNav=page.getByRole('navigation',{name:'Settings sections'});
@@ -294,12 +308,15 @@ jobs:
             } finally {
               await browser.close();
               fs.writeFileSync('browser-audit/measurements.json',JSON.stringify(records,null,2));
+              fs.writeFileSync('browser-audit/accessibility.json',JSON.stringify(accessibility,null,2));
               fs.writeFileSync('browser-audit/interactions.json',JSON.stringify(interactions,null,2));
               fs.writeFileSync('browser-audit/financial-checks.json',JSON.stringify(financialChecks,null,2));
               fs.writeFileSync('browser-audit/reporting-checks.json',JSON.stringify(reportingChecks,null,2));
               fs.writeFileSync('browser-audit/assistant-settings-checks.json',JSON.stringify(assistantSettingsChecks,null,2));
             }
             console.log(JSON.stringify(records,null,2));
+            console.log('AXE SUMMARY '+JSON.stringify(accessibility.map(r=>({width:r.width,surface:r.surface,violations:r.violations.map(v=>({id:v.id,impact:v.impact,targets:v.targets.slice(0,2)})),incomplete:r.incomplete.length,passes:r.passes}))));
+            if (accessibility.length !== widths.length*8 || accessibility.some(r=>r.violations.length)) process.exitCode = 1;
             console.log(JSON.stringify(interactions,null,2));
             console.log(JSON.stringify(financialChecks,null,2));
             console.log(JSON.stringify(reportingChecks,null,2));
