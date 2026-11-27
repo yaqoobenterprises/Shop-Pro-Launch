@@ -2,6 +2,7 @@ import type { Category, Transaction } from "../../types/ledger";
 import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
 import type { ReportTrendBucket, TrendGrouping } from "../../lib/reportAnalytics";
 import { calculateReportTotals, buildReportCategoryBreakdown } from "../../lib/reportAnalytics";
+import { buildReportAccountBreakdown } from "../../lib/reportAccountBreakdown";
 import type { WorkbookSheet } from "../../lib/premiumXlsx";
 
 export interface ReportsWorkbookInput {
@@ -14,6 +15,7 @@ export interface ReportsWorkbookInput {
   trend: ReportTrendBucket[];
   grouping: TrendGrouping;
   sourceScope?: string;
+  currency?: string;
 }
 
 const rupees = (paisa: number) => paisa / 100;
@@ -29,6 +31,7 @@ const typeLabel = (type: string): string => ({
 
 export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: WorkbookSheet[]; fileName: string } => {
   const { transactions, categories, fromDate, toDate, type, categoryId, trend, grouping } = input;
+  const currency = input.currency || "PKR";
   const totals = calculateReportTotals(transactions);
   const categoryBreakdown = buildReportCategoryBreakdown(transactions);
   const rangeLabel = `${fromDate} – ${toDate}`;
@@ -38,7 +41,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
   const metadata = [
     `Type: ${typeLabel(type)}`,
     `Category: ${categoryLabel}`,
-    "Active transactions only",
+    "Active transactions only; internal transfers excluded",
     input.sourceScope || "Available records; completeness not verified",
   ].join(" · ");
   const transactionRows = [...transactions]
@@ -72,7 +75,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       title: "SHOP PLUS | FINANCIAL REPORT",
       subtitle: `Reporting period: ${rangeLabel}`,
       metadata: `${metadata} · Generated ${getKarachiBusinessDate()}`,
-      columns: [{ header: "Metric", width: 29 }, { header: "Amount (Rs)", width: 20, kind: "money" }, { header: "Entries", width: 13, kind: "number" }, { header: "Context", width: 42 }],
+      columns: [{ header: "Metric", width: 29 }, { header: `Amount (${currency})`, width: 20, kind: "money" }, { header: "Entries", width: 13, kind: "number" }, { header: "Context", width: 42 }],
       rows: summaryRows,
       freezeRows: 5,
     },
@@ -80,14 +83,14 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       name: "Transactions",
       title: "TRANSACTION REGISTER",
       subtitle: `Full filtered register · ${rangeLabel}`,
-      metadata: `${metadata} · ${transactions.length} records · Amounts in Pakistani Rupees`,
+      metadata: `${metadata} · ${transactions.length} records · Amounts in ${currency}`,
       columns: [
         { header: "Business date", width: 16, kind: "date" },
         { header: "Time", width: 13 },
         { header: "Type", width: 17 },
         { header: "Category", width: 23 },
         { header: "Account", width: 22 },
-        { header: "Amount (Rs)", width: 18, kind: "money" },
+        { header: `Amount (${currency})`, width: 18, kind: "money" },
         { header: "Description", width: 42 },
         { header: "Notes", width: 30 },
         { header: "Transaction ID", width: 38 },
@@ -105,7 +108,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
         { header: "Category", width: 28 },
         { header: "Transaction type", width: 20 },
         { header: "Entries", width: 13, kind: "number" },
-        { header: "Total (Rs)", width: 18, kind: "money" },
+        { header: `Total (${currency})`, width: 18, kind: "money" },
       ],
       rows: categoryBreakdown.map((item) => ({
         values: [item.category_name, item.type.replace("_", " "), item.entry_count, rupees(item.total_paisa)],
@@ -114,15 +117,24 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       freezeRows: 5,
     },
     {
+      name: "Account activity",
+      title: "FILTERED ACCOUNT ACTIVITY",
+      subtitle: `Recorded income and expenses · ${rangeLabel}`,
+      metadata: `${metadata} · Not an account balance or transfer register`,
+      columns: [{header:"Account",width:28},{header:"Account ID",width:38},{header:`Income (${currency})`,width:20,kind:"money"},{header:`Expenses (${currency})`,width:20,kind:"money"},{header:`Operating result (${currency})`,width:24,kind:"money"},{header:"Entries",width:12,kind:"number"}],
+      rows: buildReportAccountBreakdown(transactions).map(row => ({values:[row.name,row.accountId,rupees(row.income_paisa),rupees(row.expense_paisa),rupees(row.net_profit_paisa),row.transaction_count]})),
+      autoFilter:true, freezeRows:5,
+    },
+    {
       name: "Trend",
       title: "CASH FLOW TREND",
       subtitle: `${grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} totals · ${rangeLabel}`,
       metadata: `${metadata} · Operating result is cashbook income less recorded expenses; not accrual profit.`,
       columns: [
         { header: "Period", width: 22 },
-        { header: "Income (Rs)", width: 18, kind: "money" },
-        { header: "Expenses (Rs)", width: 18, kind: "money" },
-        { header: "Operating result (Rs)", width: 18, kind: "money" },
+        { header: `Income (${currency})`, width: 18, kind: "money" },
+        { header: `Expenses (${currency})`, width: 18, kind: "money" },
+        { header: `Operating result (${currency})`, width: 18, kind: "money" },
         { header: "Transactions", width: 16, kind: "number" },
       ],
       rows: trend.map((bucket) => ({
