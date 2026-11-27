@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useRegion } from "../../regional/region";
 import { formatPaisa } from "../../lib/money";
 import type { ReportCategoryBucket, ReportTrendBucket } from "../../lib/reportAnalytics";
 
@@ -13,6 +14,7 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
   trend,
   expenseCategories,
 }) => {
+  const { region } = useRegion();
   const expenseCategoryTotal = expenseCategories.reduce(
     (sum, item) => sum + item.total_paisa,
     0,
@@ -52,7 +54,7 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
       return { x, y, value, label: trend[index].label, title: trend[index].title };
     });
     return {
-      points,
+      points, min, max,
       pointString: points.map((point) => `${point.x},${point.y}`).join(" "),
       zeroY: 84 - ((0 - min) / span) * 68,
       labelIndices: [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])],
@@ -64,25 +66,26 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
       <section className="reports-modern__table-panel reports-modern__profit-panel">
         <div className="reports-modern__section-heading">
           <div>
-            <span className="reports-modern__section-kicker">PROFITABILITY</span>
-            <h2>Net profit trend</h2>
+            <span className="reports-modern__section-kicker">CASHBOOK RESULT</span>
+            <h2>Operating result trend</h2>
             <p>Income minus operating expenses, grouped by the selected date range</p>
           </div>
-          <span className="reports-modern__chart-unit">PKR</span>
+          <span className="reports-modern__chart-unit">{region.currency}</span>
         </div>
         {!profitChart ? (
-          <div className="reports-modern__empty">No profit data for this reporting range.</div>
+          <div className="reports-modern__empty">No operating result data for this reporting range.</div>
         ) : (
           <>
-            <div className="reports-modern__profit-chart" role="img" aria-label="Net profit trend chart">
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <p className="reports-source-note">Scale: {formatPaisa(profitChart.min)} to {formatPaisa(profitChart.max)} · zero reference shown</p>
+            <div className="reports-modern__profit-chart" role="img" aria-label="Operating result trend chart">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
                 <line x1="3" y1="16" x2="97" y2="16" className="reports-modern__profit-gridline" />
                 <line x1="3" y1="50" x2="97" y2="50" className="reports-modern__profit-gridline" />
                 <line x1="3" y1={profitChart.zeroY} x2="97" y2={profitChart.zeroY} className="reports-modern__profit-zero" />
                 <line x1="3" y1="84" x2="97" y2="84" className="reports-modern__profit-gridline" />
                 <polyline points={profitChart.pointString} className="reports-modern__profit-line" />
                 {profitChart.points.map((point) => (
-                  <circle key={point.title} cx={point.x} cy={point.y} r="1.35" className="reports-modern__profit-point">
+                  <circle key={point.title} cx={point.x} cy={point.y} r="1" vectorEffect="non-scaling-stroke" className="reports-modern__profit-point">
                     <title>{point.title}: {formatPaisa(point.value)}</title>
                   </circle>
                 ))}
