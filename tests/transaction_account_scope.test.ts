@@ -55,4 +55,18 @@ describe('transaction account scope', () => {
     await expect(ledgerService.transferBetweenAccounts({fromAccountId:"account-1",toAccountId:"account-2",amountPaisa:100})).rejects.toThrow(/permission denied/i);
     expect(client).not.toHaveBeenCalled();
   });
+  it("applies inclusive amount bounds before pagination and export, with stable amount sorting",async()=>{
+    Object.defineProperty(navigator,"onLine",{value:false,configurable:true});
+    setSecurityPrincipal({id:creatorId,organizationId,role:"OWNER",fullName:"Test Owner"});
+    for(const [id,amount] of [["a",100],["b",1250],["c",1250],["d",2000]] as const) {
+      await enqueueForTest(makeQueuedTransaction({id:"bound-"+id,idempotencyKey:"bound-key-"+id,amountPaisa:amount}));
+    }
+    const filter={minAmountPaisa:1250,maxAmountPaisa:2000,sort:"amount-high" as const};
+    const first=await ledgerService.getFilteredTransactions({...filter,limit:1,offset:0});
+    expect(first.count).toBe(3);
+    expect(first.transactions[0].amount_paisa).toBe(2000);
+    const all=await ledgerService.getAllFilteredTransactions(filter);
+    expect(all.map(row=>row.amount_paisa)).toEqual([2000,1250,1250]);
+    expect(all.slice(1).map(row=>row.id)).toEqual([...all.slice(1).map(row=>row.id)].sort());
+  });
 });

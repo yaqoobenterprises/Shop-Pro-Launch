@@ -24,6 +24,11 @@ on:
       - src/regional/**
       - src/components/common/**
       - src/components/dashboard/**
+      - src/lib/transactionFilters.ts
+      - src/lib/overviewComparison.ts
+      - src/services/accountHistoryService.ts
+      - public/sw.js
+      - public/manifest.json
       - src/components/layout/**
   workflow_dispatch:
 

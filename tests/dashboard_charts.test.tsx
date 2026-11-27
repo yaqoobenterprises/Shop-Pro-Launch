@@ -143,4 +143,20 @@ describe('real-data dashboard charts', () => {
     expect(daily).not.toHaveBeenCalled();
   });
 
+  it("loads the immediately preceding posted period only on request",async()=>{
+    const today=getKarachiBusinessDate();
+    const previous=new Date(Date.parse(today+"T00:00:00Z")-86400000).toISOString().slice(0,10);
+    vi.spyOn(ledgerService,"getPaymentAccounts").mockResolvedValue([]);
+    const fetch=vi.spyOn(ledgerService,"getAllFilteredTransactions").mockResolvedValueOnce([makeTransaction("current","income",125050,today)]).mockResolvedValueOnce([makeTransaction("previous","income",10000,previous)]);
+    const recent=vi.spyOn(ledgerService,"getFilteredTransactions").mockResolvedValue({transactions:[makeTransaction("latest","income",125050,today)],count:1});
+    render(<LedgerDashboardView cloudOnly/>);
+    const load=await screen.findByRole("button",{name:"Load comparison & activity"});
+    expect(fetch).toHaveBeenCalledTimes(1);
+    fireEvent.click(load);
+    const values=await screen.findByRole("region",{name:"Period comparison values"});
+    expect(values.textContent).toContain("Rs 1,250.50");
+    expect(values.textContent).toContain("Rs 100");
+    expect(fetch).toHaveBeenCalledWith({startDate:previous,endDate:previous,status:"active"},{requireCloudSource:true});
+    expect(recent).toHaveBeenCalledWith({startDate:today,endDate:today,status:"active",sort:"newest",limit:5,offset:0},{requireCloudSource:true});
+  });
 });
