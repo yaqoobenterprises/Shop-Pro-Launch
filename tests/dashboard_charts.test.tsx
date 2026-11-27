@@ -117,4 +117,30 @@ describe('real-data dashboard charts', () => {
       status: 'active',
     });
   });
+  it('uses only posted records for cloud overview and never substitutes queued summaries', async () => {
+    const today = getKarachiBusinessDate();
+    const accounts = vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
+    const daily = vi.spyOn(ledgerService, 'getDailySummary');
+    const history = vi.spyOn(ledgerService, 'getAllFilteredTransactions').mockResolvedValue([
+      makeTransaction('posted-income', 'income', 30000, today),
+      makeTransaction('posted-expense', 'expense', 10000, today),
+    ]);
+    render(<LedgerDashboardView cloudOnly />);
+    const income = await screen.findByRole('list', { name: 'Income totals by category' });
+    expect(income.textContent).toContain('Printing');
+    expect(accounts).toHaveBeenCalledWith({ requireCloudSource: true });
+    expect(history).toHaveBeenCalledWith({ startDate: today, endDate: today, status: 'active' }, { requireCloudSource: true });
+    expect(daily).not.toHaveBeenCalled();
+    expect(screen.getByText(/Posted cloud records only/)).toBeTruthy();
+  });
+
+  it('shows unavailable state rather than a local zero if cloud balances cannot be read', async () => {
+    vi.spyOn(ledgerService, 'getPaymentAccounts').mockRejectedValue(new Error('Reconnect to load balances'));
+    const daily = vi.spyOn(ledgerService, 'getDailySummary');
+    render(<LedgerDashboardView cloudOnly />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Reconnect to load balances');
+    expect(screen.queryByText(/No active accounts/)).toBeNull();
+    expect(daily).not.toHaveBeenCalled();
+  });
+
 });
