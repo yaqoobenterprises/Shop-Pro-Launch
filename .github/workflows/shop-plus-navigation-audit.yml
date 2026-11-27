@@ -1,4 +1,4 @@
-name: Shop Plus navigation browser audit
+name: Shop Plus financial workspace browser audit
 
 on:
   push:
@@ -55,6 +55,7 @@ jobs:
           const widths = [320, 375, 390, 768, 1024, 1280, 1440, 1920];
           const records = [];
           const interactions = [];
+          const financialChecks = [];
           const theme = process.env.AUDIT_THEME;
           async function capture(page, width, surface, errors) {
             const metrics = await page.evaluate(() => ({
@@ -158,6 +159,46 @@ jobs:
                     }
                     interactions.push({width,passed:true});
                   } catch(e) { interactions.push({width,error:String(e)}); }
+                  let step = 'open transactions';
+                  try {
+                    const openTransactions = chrome.getByRole('button',{name:'Transactions',exact:true});
+                    await openTransactions.click();
+                    await page.waitForURL('**/workspace/sales');
+                    const filters = page.getByRole('region',{name:'Transaction filters'});
+                    await filters.waitFor();
+                    step = 'search matching demo descriptions';
+                    const search = filters.getByRole('searchbox',{name:'Search transactions'});
+                    await search.fill('sale');
+                    await filters.getByRole('button',{name:'Search',exact:true}).click();
+                    await page.locator('.shop-plus-transactions .table-row').first().waitFor();
+                    await page.waitForFunction(() => Array.from(document.querySelectorAll('.shop-plus-transactions .table-row')).every(row => row.getAttribute('aria-label')?.toLowerCase().includes('sale')) && document.querySelectorAll('.shop-plus-transactions .table-row').length > 0);
+                    step = 'restore filter after navigation';
+                    await chrome.getByRole('button',{name:'Overview',exact:true}).click();
+                    await page.waitForURL('**/workspace/dashboard');
+                    await openTransactions.click();
+                    await page.waitForURL('**/workspace/sales');
+                    await search.waitFor();
+                    if ((await search.inputValue()) !== 'sale') throw new Error('Search filter was not retained');
+                    step = 'reject reversed dates';
+                    await filters.getByLabel('From business date').fill('2026-11-27');
+                    await filters.getByLabel('To business date').fill('2026-11-26');
+                    await page.getByRole('alert').filter({hasText:'From date must be on or before To date.'}).waitFor();
+                    if (!(await page.getByRole('button',{name:'Export filtered CSV',exact:true}).isDisabled())) throw new Error('Export must be disabled for invalid range');
+                    await filters.getByRole('button',{name:'Reset',exact:true}).click();
+                    if ((await search.inputValue()) !== '') throw new Error('Reset did not clear search');
+                    step = 'review without posting';
+                    await (width >= 768 ? chrome : page.locator('header.app-header')).getByRole('button',{name:'New entry',exact:true}).click();
+                    await page.waitForURL('**/workspace/chat');
+                    const entry = page.locator('#ledger-entry');
+                    await entry.waitFor();
+                    await entry.fill('sale 500');
+                    await page.getByRole('button',{name:'Send entry',exact:true}).click();
+                    const review = page.getByRole('dialog',{name:/review|confirm|check/i}).first();
+                    await review.waitFor();
+                    await review.getByRole('button',{name:'Cancel',exact:true}).click();
+                    await review.waitFor({state:'hidden'});
+                    financialChecks.push({width,passed:true});
+                  } catch(e) { financialChecks.push({width,step,error:String(e)}); }
                 } catch (e) { records.push({width,error:String(e)}); }
                 finally { await context.close(); }
               }
@@ -165,9 +206,12 @@ jobs:
               await browser.close();
               fs.writeFileSync('browser-audit/measurements.json',JSON.stringify(records,null,2));
               fs.writeFileSync('browser-audit/interactions.json',JSON.stringify(interactions,null,2));
+              fs.writeFileSync('browser-audit/financial-checks.json',JSON.stringify(financialChecks,null,2));
             }
             console.log(JSON.stringify(records,null,2));
             console.log(JSON.stringify(interactions,null,2));
+            console.log(JSON.stringify(financialChecks,null,2));
+            if (financialChecks.length !== widths.length || financialChecks.some(r => !r.passed)) process.exitCode = 1;
             if (interactions.length !== widths.length || interactions.some(r => !r.passed)) process.exitCode = 1;
             if (records.some(r => r.error || r.skipped || r.pageErrors?.length || r.theme !== theme || r.canvas !== (theme === 'dark' ? '#151922' : '#f5f6f8') || r.documentWidth > r.viewport || (r.mainWidth !== null && r.mainScrollWidth > r.mainWidth))) process.exitCode = 1;
           })().catch(error => { console.error(error); process.exitCode=1; });
@@ -176,7 +220,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: shop-plus-navigation-${{ matrix.theme }}
+          name: shop-plus-financial-workspace-${{ matrix.theme }}
           path: browser-audit/
           if-no-files-found: warn
           retention-days: 14
