@@ -135,7 +135,6 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
       <header className="reports-modern__hero">
         <div>
           <h1>Reports</h1>
-          <p>Cashbook analysis of the applied filters, not an accrual profit and loss statement.</p>
         </div>
         <button type="button" className="reports-modern__export" onClick={handleExport} disabled={isExporting || !ready || region.currency !== "PKR"}>
           <FileSpreadsheet size={17} aria-hidden="true" />
@@ -158,9 +157,9 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
 
       <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
         <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
-          <span>Filtered operating result</span><TrendingUp size={18} aria-hidden="true" />
+          <span>Cashbook result</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{amount(totals.net_profit_paisa)}</strong>
-          <small>Cashbook basis · not accrual P&L</small>
+          <small className="sr-only">Cashbook basis · not accrual P&L</small>
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--income">
           <span>Income</span><TrendingUp size={18} aria-hidden="true" />
@@ -182,7 +181,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
       {ready && <>
       <section className="reports-modern__chart-panel">
         <div className="reports-modern__section-heading">
-          <div><h2>Recorded income and expenses</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
+          <div><h2>Cash flow</h2></div>
           <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
         {trend.length > 0 && <p className="reports-source-note">Scale: {formatPaisa(0)} to {formatPaisa(chartMax)}</p>}
@@ -207,14 +206,14 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
 
       <div className="reports-modern__analysis-grid">
         <section className="reports-modern__table-panel">
-          <div className="reports-modern__section-heading"><div><h2>Category performance</h2></div></div>
+          <div className="reports-modern__section-heading"><div><h2>Categories</h2></div></div>
           {categoryBreakdown.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Category breakdown"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
             {categoryBreakdown.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={`reports-modern__type-badge type-${item.type}`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
           </tbody></table></div>}
         </section>
 
         <section className="reports-modern__table-panel">
-          <div className="reports-modern__section-heading"><div><h2>Other cash movements</h2></div></div>
+          <div className="reports-modern__section-heading"><div><h2>Cash movements</h2></div></div>
           <div className="reports-modern__movement-list">
             <div><span>Capital introduced</span><strong>{formatPaisa(totals.capital_in_paisa)}</strong></div>
             <div><span>Owner drawings</span><strong>{formatPaisa(totals.withdrawal_paisa)}</strong></div>
@@ -226,11 +225,11 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
       </div>
 
       <section className="reports-modern__table-panel">
-        <div className="reports-modern__section-heading"><div><h2>Activity by account</h2><p>Filtered recorded entries, excluding transfers; not closing balances.</p></div></div>
+        <div className="reports-modern__section-heading"><div><h2 aria-label="Activity by account">Account activity</h2></div></div>
         {accountBreakdown.length ? <div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Account activity"><table><thead><tr><th scope="col">Account</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th><th scope="col">Entries</th></tr></thead><tbody>{accountBreakdown.map(row => <tr key={row.accountId}><th scope="row">{row.name}</th><td>{formatPaisa(row.income_paisa)}</td><td>{formatPaisa(row.expense_paisa)}</td><td>{formatPaisa(row.net_profit_paisa)}</td><td>{row.transaction_count}</td></tr>)}</tbody></table></div> : <p className="reports-modern__empty">No account activity for these filters.</p>}
       </section>
       <section className="reports-modern__table-panel reports-modern__transactions">
-        <div className="reports-modern__section-heading"><div><h2>Transaction register</h2></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
+        <div className="reports-modern__section-heading"><div><h2>Transactions</h2></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
         {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Transaction register"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
           {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Account unavailable"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
         </tbody></table></div>}

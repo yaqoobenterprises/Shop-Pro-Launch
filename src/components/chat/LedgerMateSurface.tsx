@@ -106,8 +106,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
     <div className="lm-messages" tabIndex={0} role="log" aria-label="Conversation messages" aria-live={sending ? "off" : "polite"} aria-relevant="additions">
       {messages.length === 0 && <div className="lm-empty-state">
         <div className="lm-empty-icon"><MessageCircle aria-hidden="true" /></div>
-        <h2>What would you like to understand?</h2>
-        <p>Ask in English or Roman Urdu about recorded income, expenses, accounts or categories.</p>
+        <h2>Ask LedgerMate</h2>
         <div className="lm-suggestions">{promptSuggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSend(undefined, suggestion)} disabled={!online || checking || syncStatus === "loading"}><span>{suggestion}</span><ArrowUp aria-hidden="true" /></button>)}</div>
       </div>}
       {messages.map((message, index) => <article key={message.id || `${message.createdAt}-${index}`} className={`lm-message-row ${message.role}`}>

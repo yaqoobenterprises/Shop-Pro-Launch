@@ -84,7 +84,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   return (
     <div className="ledger-composer cashbook-composer border-t border-border-standard px-3 py-3 sm:px-5 sm:py-4">
       <div className="cashbook-composer__heading">
-        <div><h2>Record a transaction</h2><p>Enter an amount and description. Review the parsed entry before posting.</p></div>
+        <div><h2>New entry</h2></div>
       </div>
       <div className="ledger-composer__quick-actions mx-auto mb-2.5 flex w-full max-w-4xl items-center gap-2 overflow-x-auto pb-1.5 text-xs">
         {categories.length > 0 ? categories.map((category) => (

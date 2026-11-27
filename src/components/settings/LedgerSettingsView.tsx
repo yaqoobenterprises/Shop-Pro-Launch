@@ -534,7 +534,6 @@ export const LedgerSettingsView: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight text-on-surface">
             Settings
           </h1>
-          <p className="settings-intro">Manage your profile, security, preferences and shop data.</p>
         </div>
       </div>
 
@@ -596,7 +595,6 @@ export const LedgerSettingsView: React.FC = () => {
           <div className="settings-icon"><Sun className="h-4 w-4" /></div>
           <div>
             <h2 className="text-sm font-semibold text-on-surface">{t("settings.appearance")}</h2>
-            <p className="mt-0.5 text-xs text-text-muted">{t("settings.chooseTheme")}</p>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:max-w-lg">
@@ -803,7 +801,6 @@ export const LedgerSettingsView: React.FC = () => {
             <div className="settings-icon"><Download className="h-4 w-4" /></div>
             <div>
               <h2 className="text-sm font-semibold text-on-surface">{t("settings.dataTools")}</h2>
-              <p className="mt-0.5 text-xs text-text-muted">{t("settings.dataToolsDescription")}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">

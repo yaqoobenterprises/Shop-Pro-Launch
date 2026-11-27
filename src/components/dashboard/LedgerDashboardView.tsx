@@ -152,16 +152,6 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
   );
   const revenueCategories = breakdowns.filter(item => item.type === "income" && item.total_paisa > 0).sort((a,b) => b.total_paisa - a.total_paisa);
   const expenseBreakdownTotal = expenseBreakdowns.reduce((sum, item) => sum + item.total_paisa, 0);
-  const expenseDonutBackground = useMemo(() => {
-    if (expenseBreakdownTotal <= 0) return "conic-gradient(var(--line) 0deg 360deg)";
-    let cumulative = 0;
-    const stops = expenseBreakdowns.map((item, index) => {
-      const start = cumulative;
-      cumulative += (item.total_paisa / expenseBreakdownTotal) * 100;
-      return `${EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length]} ${start}% ${cumulative}%`;
-    });
-    return `conic-gradient(${stops.join(", ")})`;
-  }, [expenseBreakdowns, expenseBreakdownTotal]);
 
   const today = getKarachiBusinessDate();
   const monthEnd = new Date(Date.UTC(Number(currentDate.slice(0,4)),Number(currentDate.slice(5,7)),0)).toISOString().slice(0,10);
@@ -179,7 +169,6 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
       <div className="page-title">
         <div className="overview-page-heading">
           <h1>Business overview</h1>
-          <p>Current account balances and recorded cashbook activity are shown separately.</p>
         </div>
         <OverviewPeriodControls
           period={period}
@@ -202,9 +191,9 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
         </div>
       )}
 
-      <div className="overview-metric-scope"><span>Account position</span><span>Selected period · {selectedRangeLabel}</span></div>
+      <div className="overview-metric-scope"><span>Account position</span><span>{selectedRangeLabel}</span></div>
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Cash & bank" scope={cloudOnly ? "Current cloud balance" : "Current available balance"} icon={Wallet}
+        <OverviewMetricCard label="Balances" scope={cloudOnly ? "Current cloud balance" : "Current available balance"} icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp}
@@ -242,7 +231,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
                           <TrendingUp size={21} strokeWidth={1.7} aria-hidden="true" />
                         </div>
                         <div>
-                          <h3>No income or expenses in the available records for this date.</h3>
+                          <h3>No income or expenses</h3>
                           {Boolean(dailyData?.transaction_count) && <p>{dailyData?.transaction_count} other entries</p>}
                         </div>
                         <button type="button" onClick={() => setPeriod("week")}>
@@ -280,20 +269,20 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
         <section className={`panel aq-overview__distribution ${!isLoading && !loadError && expenseBreakdowns.length === 0 ? "aq-overview__distribution--empty" : ""}`}>
           <div className="panel-heading">
             <div>
-              <h2>Expenses by category</h2>
+              <h2>Expense mix</h2>
               <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
           </div>
           {isLoading ? <p className="aq-overview__empty" role="status">Loading categories…</p>
             : loadError ? <p className="aq-overview__empty">Category breakdown unavailable.</p>
               : expenseBreakdowns.length === 0 ? (
-                <p className="aq-overview__empty">No expenses for this period in the available records.</p>
+                <p className="aq-overview__empty">No expenses for this period</p>
               ) : (
                 <>
                   <div className="aq-overview__donut-wrap">
-                    <div className="expense-donut" role="img"
-                      aria-label={`Expense category distribution. Total ${formatPaisa(expenseBreakdownTotal)}`}
-                      style={{ background: expenseDonutBackground }}>
+                    <div className="expense-donut expense-stack" role="img"
+                      aria-label={`Expense category distribution. Total ${formatPaisa(expenseBreakdownTotal)}`}>
+                      <div className="expense-stack__bar" aria-hidden="true">{expenseBreakdowns.map((item,index)=><span key={item.category_id} style={{flexGrow:item.total_paisa/expenseBreakdownTotal,background:EXPENSE_CHART_PALETTE[index%EXPENSE_CHART_PALETTE.length]}} />)}</div>
                       <div className="expense-donut__center">
                         <strong>{formatPaisa(expenseBreakdownTotal)}</strong>
                         <span>Total recorded</span>
@@ -322,14 +311,14 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
         </section>
       </div>
 
-      <section className="panel overview-revenue"><div className="panel-heading"><div><h2>Revenue categories</h2><p className="overview-chart-range">{selectedRangeLabel}</p></div></div>
+      <section className="panel overview-revenue"><div className="panel-heading"><div><h2>Income mix</h2><p className="overview-chart-range">{selectedRangeLabel}</p></div></div>
         {isLoading ? <p role="status">Loading categories…</p> : loadError ? <p>Categories unavailable.</p> : revenueCategories.length === 0 ? <p>No income categories in the available records.</p> : <ul className="overview-revenue-list" aria-label="Income totals by category">{revenueCategories.slice(0,5).map((item) => <li key={item.category_id}><span>{item.category_name}</span><strong className="num">{formatPaisa(item.total_paisa)}</strong></li>)}</ul>}
         {!isLoading && !loadError && activeSummary && revenueCategories.reduce((total,item) => total + item.total_paisa,0) !== activeIncome && <p className="aq-overview__coverage">Category totals differ from the income summary. Review the source entries.</p>}
       </section>
       {cloudOnly && !isLoading && !loadError && activeSummary && selectedStart <= selectedEnd && <OverviewActivity key={`${selectedStart}:${selectedEnd}`} start={selectedStart} end={selectedEnd} current={activeSummary} onExplore={onExplore} />}
       <div className="aq-overview__details">
         <section className="panel transactions-panel">
-          <div className="panel-heading"><h2>Cash & bank accounts</h2><span className="aq-overview__basis">Current balances</span></div>
+          <div className="panel-heading"><h2>Accounts</h2><span className="aq-overview__basis">Current balances</span></div>
           {isLoading ? <p role="status" className="aq-overview__empty">Loading accounts…</p>
             : loadError ? <p className="aq-overview__empty">Accounts unavailable.</p>
               : activeAccounts.length === 0 ? <p className="aq-overview__empty">No active accounts.</p>
@@ -344,7 +333,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
                   </ul>}
         </section>
         <section className="panel health-panel">
-          <div className="panel-heading"><h2>Capital & adjustments</h2></div>
+          <div className="panel-heading"><h2>Cash movements</h2></div>
           <div className="health-items">
             <span>Capital introduced<strong><AnimatedAmount amountPaisa={activeCapital} loading={isLoading} error={Boolean(loadError) || !activeSummary} /></strong></span>
             <span>Owner drawings<strong><AnimatedAmount amountPaisa={activeWithdrawal} loading={isLoading} error={Boolean(loadError) || !activeSummary} /></strong></span>

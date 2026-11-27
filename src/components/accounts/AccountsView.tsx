@@ -215,12 +215,11 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
       <div className="page-title">
         <div className="accounts-page-heading">
           <h1>Accounts</h1>
-          <p>Manage recorded balances and internal money movement.</p>
         </div>
 
         <div className="title-actions">
           <div className="balance-total">
-            <small>Total active recorded balance</small>
+            <small>Active balance</small>
             <strong>
               <AnimatedAmount amountPaisa={totalBalancePaisa} loading={isLoading} error={loadFailed} />
             </strong>
@@ -260,7 +259,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
             <span className="account-tool-icon" aria-hidden="true">
               <Plus className="h-4 w-4" />
             </span>
-            <h2>Add an account</h2>
+            <h2>Add account</h2>
           </div>
 
           <form onSubmit={handleCreateAccount}>

@@ -22,7 +22,7 @@ export const OverviewMetricCard: React.FC<OverviewMetricCardProps> = ({
   state,
   tone = "default",
 }) => (
-  <article className={`metric aq-metric aq-metric--${tone}`}>
+  <article className={`metric aq-metric aq-metric--${tone}`} title={scope}>
     <div className="metric-top">
       <span>{label}</span>
       <Icon aria-hidden="true" />
@@ -34,6 +34,6 @@ export const OverviewMetricCard: React.FC<OverviewMetricCardProps> = ({
         <AnimatedAmount amountPaisa={amountPaisa} loading={state === "loading"} />
       )}
     </strong>
-    <span className="aq-metric__scope">{scope}</span>
+    <span className="sr-only">{scope}</span>
   </article>
 );

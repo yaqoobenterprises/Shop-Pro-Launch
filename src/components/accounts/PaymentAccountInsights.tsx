@@ -26,9 +26,8 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
     <section className="aq-accounts-insights__panel">
       <div className="aq-accounts-insights__heading">
         <div>
-          <span>ACCOUNT ALLOCATION</span>
           <h2>Balance distribution</h2>
-          <p>Share of positive active balances only; zero and negative balances are excluded.</p>
+          <p className="sr-only">Share of positive active balances only; zero and negative balances are excluded.</p>
         </div>
         <button type="button" onClick={onRefresh} disabled={isRefreshing}
           aria-label="Refresh payment-account balances">
@@ -49,15 +48,14 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
         </li>)}
       </ul> :
         <p className="aq-accounts-insights__empty">
-          No positive active balances available. The chart does not infer or invent money.
+          No positive active balances available.
         </p>}
     </section>
 
     <section className="aq-accounts-insights__panel aq-accounts-insights__status">
       <div>
-        <span className="aq-accounts-insights__eyebrow"><ShieldCheck size={16} aria-hidden="true"/> REGISTER STATUS</span>
-        <h2>Accounts at a glance</h2>
-        <p>Manage where cashbook payments are recorded.</p>
+        <span className="aq-accounts-insights__eyebrow"><ShieldCheck size={20} aria-hidden="true"/></span>
+        <h2>Account status</h2>
       </div>
       <dl>
         <div><dt>Active accounts</dt><dd>{active.length}</dd></div>
@@ -67,7 +65,7 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
       </dl>
       <div className="aq-accounts-insights__scope">
         <ArrowUpRight size={17} aria-hidden="true"/>
-        <p>These are operational cash/bank/wallet balances, not reconciled bank statements or a formal balance sheet.</p>
+        <p className="sr-only">These are operational cash/bank/wallet balances, not reconciled bank statements or a formal balance sheet.</p>
       </div>
     </section>
   </div>;

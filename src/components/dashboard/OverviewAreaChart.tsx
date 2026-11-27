@@ -52,20 +52,21 @@ export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
           const y = TOP + tick * PLOT_H / 4;
           return (
             <g key={tick}>
-              <line x1={LEFT} x2={W - 12} y1={y} y2={y} stroke="var(--chart-grid)" strokeDasharray="4 5" />
+              <line x1={LEFT} x2={W - 12} y1={y} y2={y} stroke="var(--chart-grid)" opacity=".45" />
               <text x={LEFT - 10} y={y + 4} textAnchor="end" fill="var(--muted)" fontSize="11">{formatPaisa(value)}</text>
             </g>
           );
         })}
-        <path d={model.income} stroke="var(--chart-lavender)" fill="none" strokeWidth="2.6" strokeLinecap="round" />
-        <path d={model.expense} stroke="var(--chart-teal)" strokeDasharray="6 4" fill="none" strokeWidth="2.6" strokeLinecap="round" />
+        <path d={`${model.income} L ${model.positions.at(-1)?.x} ${TOP+PLOT_H} L ${model.positions[0]?.x} ${TOP+PLOT_H} Z`} fill="var(--chart-lavender)" opacity=".10"/>
+        <path d={model.income} stroke="var(--chart-lavender)" fill="none" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={model.expense} stroke="var(--chart-pink)" strokeDasharray="6 4" fill="none" strokeWidth="3" strokeLinecap="round" />
         {model.positions.map((point, i) => (
           <g key={rows[i].key}>
             <circle cx={point.x} cy={point.yIncome} r={active === i ? 5 : 2} fill="var(--chart-lavender)" tabIndex={0}
               aria-label={`${rows[i].title} income: ${formatPaisa(rows[i].income_paisa)}`}
               onFocus={() => setActive(i)} onBlur={() => setActive(null)}
               onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}><title>{`Income: ${formatPaisa(rows[i].income_paisa)}`}</title></circle>
-            <circle cx={point.x} cy={point.yExpense} r={active === i ? 5 : 2} fill="var(--chart-teal)" tabIndex={0}
+            <circle cx={point.x} cy={point.yExpense} r={active === i ? 5 : 2} fill="var(--chart-pink)" tabIndex={0}
               aria-label={`${rows[i].title} expenses: ${formatPaisa(rows[i].expense_paisa)}`}
               onFocus={() => setActive(i)} onBlur={() => setActive(null)}
               onMouseEnter={() => setActive(i)} onMouseLeave={() => setActive(null)}><title>{`Expenses: ${formatPaisa(rows[i].expense_paisa)}`}</title></circle>
@@ -77,7 +78,7 @@ export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
       </svg>
       <div className="aq-chart__tooltip" aria-live="polite">
         {selected ? <span><strong>{selected.title}</strong> · Income {formatPaisa(selected.income_paisa)} · Expenses {formatPaisa(selected.expense_paisa)}</span>
-          : <span>Focus or hover over a point to inspect amounts.</span>}
+          : <span className="sr-only">Focus or hover over a point to inspect amounts.</span>}
       </div>
       <div className="sr-only" aria-hidden="true">
         {rows.map((row) => (

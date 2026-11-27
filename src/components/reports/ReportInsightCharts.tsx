@@ -31,16 +31,6 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
       : top;
   }, [expenseCategories, expenseCategoryTotal]);
 
-  const expenseDonutBackground = useMemo(() => {
-    if (expenseCategoryTotal <= 0) return "conic-gradient(var(--line) 0deg 360deg)";
-    let cumulative = 0;
-    const stops = visibleExpenseCategories.map((item, index) => {
-      const start = cumulative;
-      cumulative += (item.total_paisa / expenseCategoryTotal) * 100;
-      return `${EXPENSE_PALETTE[index % EXPENSE_PALETTE.length]} ${start}% ${cumulative}%`;
-    });
-    return `conic-gradient(${stops.join(", ")})`;
-  }, [visibleExpenseCategories, expenseCategoryTotal]);
 
   const profitChart = useMemo(() => {
     if (trend.length === 0) return null;
@@ -66,9 +56,7 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
       <section className="reports-modern__table-panel reports-modern__profit-panel">
         <div className="reports-modern__section-heading">
           <div>
-            <span className="reports-modern__section-kicker">CASHBOOK RESULT</span>
-            <h2>Operating result trend</h2>
-            <p>Income minus operating expenses, grouped by the selected date range</p>
+            <h2>Operating result</h2>
           </div>
           <span className="reports-modern__chart-unit">{region.currency}</span>
         </div>
@@ -103,9 +91,7 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
       <section className="reports-modern__table-panel reports-modern__expense-panel">
         <div className="reports-modern__section-heading">
           <div>
-            <span className="reports-modern__section-kicker">SPENDING MIX</span>
-            <h2>Expenses by category</h2>
-            <p>Where operating spend is going</p>
+            <h2>Expense mix</h2>
           </div>
         </div>
         {visibleExpenseCategories.length === 0 ? (
@@ -113,11 +99,11 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
         ) : (
           <div className="reports-modern__expense-layout">
             <div
-              className="reports-modern__expense-donut"
+              className="reports-modern__expense-donut expense-stack"
               role="img"
               aria-label={`Expense distribution, total ${formatPaisa(expenseCategoryTotal)}`}
-              style={{ background: expenseDonutBackground }}
             >
+              <div className="expense-stack__bar" aria-hidden="true">{visibleExpenseCategories.map((item,index)=><span key={item.key} style={{flexGrow:item.total_paisa/expenseCategoryTotal,background:EXPENSE_PALETTE[index%EXPENSE_PALETTE.length]}}/>)}</div>
               <div>
                 <strong>{formatPaisa(expenseCategoryTotal)}</strong>
                 <span>Total spend</span>
