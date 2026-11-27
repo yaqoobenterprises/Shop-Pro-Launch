@@ -84,19 +84,3 @@ html .app-shell #app-sidebar.is-collapsed .sidebar-bottom > button {
     transition: none;
   }
 }
-.app-shell #app-sidebar nav button.nav-item-ledgermate:not(.active) {
-  border: 1px solid color-mix(in srgb, #368879 22%, transparent);
-  background: linear-gradient(120deg, color-mix(in srgb, #348a78 8%, transparent), color-mix(in srgb, #2e6883 5%, transparent));
-  color: #286e63;
-}
-
-.app-shell #app-sidebar nav button.nav-item-ledgermate.active {
-  border: 1px solid color-mix(in srgb, #5fb9a0 35%, transparent);
-  background: linear-gradient(120deg, #287c6f, #245f6f);
-  color: #fff;
-  box-shadow: 0 4px 12px #256c6325, inset 0 1px #ffffff26;
-}
-
-.app-shell #app-sidebar nav button.nav-item-ledgermate svg {
-  color: inherit;
-}
