@@ -6,6 +6,7 @@ on:
       - feat/shop-plus-foundation-20261127
     paths:
       - .github/workflows/shop-plus-navigation-audit.yml
+      - src/components/sales/TransactionsExplorerView.tsx
   workflow_dispatch:
 
 permissions:
