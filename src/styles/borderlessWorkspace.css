@@ -192,3 +192,24 @@ html body .app-shell .account-actions {flex-wrap:wrap;}
 html body .app-shell .overview-page .aq-overview__accounts+.finance-donut .finance-donut__legend {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
 html body .app-shell .overview-page .aq-overview__accounts+.finance-donut .finance-donut__legend:focus-within {position:static;width:auto;height:auto;overflow:visible;clip:auto;}
 html body .app-shell .overview-page .aq-overview__accounts+.finance-donut {grid-template-columns:minmax(0,1fr);}
+
+/* Financial chart interaction system. Motion reveals shape, never changes stored numbers. */
+.finance-trend {min-width:0;width:100%;color:var(--ink);}
+.finance-trend__summary {display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;min-height:50px;padding:8px 10px;margin-bottom:6px;background:var(--surface-2);border-radius:10px;font-size:11px;}
+.finance-trend__period {font-weight:650;flex:1 1 100%;color:var(--muted);}
+.finance-trend__metric {display:flex;align-items:center;gap:5px;flex-wrap:wrap;color:var(--muted);}
+.finance-trend__metric strong {color:var(--ink);font-size:13px;font-variant-numeric:tabular-nums;}
+.finance-trend__metric i {display:inline-block;width:8px;height:8px;border-radius:3px;}
+.finance-trend__svg {display:block;width:100%;height:auto;min-width:0;overflow:hidden;cursor:crosshair;touch-action:pan-y;}
+.finance-trend__series {animation:chart-reveal .35s ease-out both;}
+.finance-trend__series rect,.finance-trend__series circle {transition:opacity .16s ease,r .16s ease;}
+.finance-trend__navigation {display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:3px;}
+.finance-trend__navigation button {min-width:36px;min-height:36px;border:0!important;background:var(--surface-2);color:var(--ink);padding:5px 10px;border-radius:8px;font-size:12px;}
+.finance-trend__navigation button:disabled {opacity:.45;}
+.finance-trend__navigation button:hover:not(:disabled) {background:var(--tint);}
+.finance-donut__segment {cursor:pointer;transition:stroke-width .18s ease,opacity .18s ease;animation:chart-reveal .35s ease-out both;}
+.finance-donut__legend button[aria-pressed=true] {background:var(--tint);}
+.finance-donut__legend button:hover {transform:translateX(2px);}
+.finance-chart-empty {padding:16px;color:var(--muted);font-size:12px;}
+@keyframes chart-reveal {from{opacity:.25}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.finance-trend__series,.finance-donut__segment {animation:none!important;transition:none!important;}.finance-donut__legend button:hover {transform:none!important;}}
