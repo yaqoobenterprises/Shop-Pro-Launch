@@ -257,3 +257,6 @@ html .app-shell .lm-message-tools button:focus-visible, html .app-shell .lm-hist
   html .app-shell .lm-conversation-meta { flex-wrap:wrap; gap:4px; padding-block:6px; }
   html .app-shell .lm-composer textarea { font-size:16px; }
 }
+
+html .app-shell .lm-sync,html .app-shell .lm-sync.loading,html .app-shell .lm-sync.local,html .app-shell .lm-sync.error { background:var(--surface-card); color:var(--ink); border:1px solid var(--line); }
+html .app-shell .lm-messages:focus-visible { outline:2px solid var(--primary); outline-offset:-2px; }
