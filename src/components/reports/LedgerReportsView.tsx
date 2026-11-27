@@ -15,9 +15,11 @@ import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
 import "./ReportsAnalytics.css";
 import "./ReportsRealFinish.css";
+import { useRegion } from "../../regional/region";
 import { ReportInsightCharts } from "./ReportInsightCharts";
 
-export const LedgerReportsView: React.FC = () => {
+export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly = false }) => {
+  const { region } = useRegion();
   const today = getKarachiBusinessDate();
   const currentYearStart = `${today.slice(0, 4)}-01-01`;
   const [filters, setFilters] = useState<ReportFilters>({
@@ -30,6 +32,8 @@ export const LedgerReportsView: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [loadedFilters, setLoadedFilters] = useState<ReportFilters | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [transactionPage, setTransactionPage] = useState(0);
   const rowsPerPage = 15;
@@ -49,16 +53,21 @@ export const LedgerReportsView: React.FC = () => {
     const id = ++requestId.current;
     setIsLoading(true);
     setLoadError(null);
+    setExportError(null);
+    setTransactions([]);
+    setLoadedFilters(null);
     try {
-      const rows = await ledgerService.getAllFilteredTransactions({
+      const query = {
         startDate: filters.fromDate,
         endDate: filters.toDate,
         type: filters.type,
         categoryId: filters.categoryId,
-        status: "active",
-      });
+        status: "active" as const,
+      };
+      const rows = cloudOnly ? await ledgerService.getAllFilteredTransactions(query, { requireCloudSource: true }) : await ledgerService.getAllFilteredTransactions(query);
       if (id !== requestId.current) return;
       setTransactions(rows);
+      setLoadedFilters(filters);
       setTransactionPage(0);
     } catch (error) {
       if (id !== requestId.current) return;
@@ -67,14 +76,16 @@ export const LedgerReportsView: React.FC = () => {
     } finally {
       if (id === requestId.current) setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, cloudOnly]);
 
-  useEffect(() => { void loadReport(); }, [loadReport]);
+  useEffect(() => { void loadReport(); return () => { requestId.current += 1; }; }, [loadReport]);
+  const ready = !isLoading && !loadError && loadedFilters === filters;
+  const amount = (paisa: number) => ready ? formatPaisa(paisa) : loadError ? "Unavailable" : "Loading…";
 
   const totals = useMemo(() => calculateReportTotals(transactions), [transactions]);
   const trend = useMemo(
-    () => buildReportTrend(transactions, filters.fromDate, filters.toDate),
-    [transactions, filters.fromDate, filters.toDate],
+    () => ready && transactions.length ? buildReportTrend(transactions, filters.fromDate, filters.toDate) : [],
+    [transactions, filters.fromDate, filters.toDate, ready],
   );
   const categoryBreakdown = useMemo(
     () => buildReportCategoryBreakdown(transactions),
@@ -88,6 +99,8 @@ export const LedgerReportsView: React.FC = () => {
     [categoryBreakdown],
   );
   const handleExport = () => {
+    if (!ready || isExporting || region.currency !== "PKR") return;
+    setExportError(null);
     setIsExporting(true);
     try {
       const workbook = buildReportsWorkbook({
@@ -99,10 +112,11 @@ export const LedgerReportsView: React.FC = () => {
         categoryId: filters.categoryId,
         trend,
         grouping,
+        sourceScope: cloudOnly ? "Posted cloud records only" : "Available local or demo records; completeness not verified",
       });
       downloadPremiumXlsx(workbook.sheets, workbook.fileName);
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Could not create the Excel workbook.");
+      setExportError(error instanceof Error ? error.message : "Could not create the Excel workbook.");
     } finally {
       setIsExporting(false);
     }
@@ -112,12 +126,13 @@ export const LedgerReportsView: React.FC = () => {
   const safePage = Math.min(transactionPage, pageCount - 1);
   const visibleTransactions = transactions.slice(safePage * rowsPerPage, (safePage + 1) * rowsPerPage);
   return (
-    <main className="page-content reports-page reports-modern">
+    <div className="page-content reports-page reports-modern">
       <header className="reports-modern__hero">
         <div>
           <h1>Reports</h1>
+          <p>Cashbook analysis of the applied filters, not an accrual profit and loss statement.</p>
         </div>
-        <button type="button" className="reports-modern__export" onClick={handleExport} disabled={isExporting || isLoading}>
+        <button type="button" className="reports-modern__export" onClick={handleExport} disabled={isExporting || !ready || region.currency !== "PKR"}>
           <FileSpreadsheet size={17} aria-hidden="true" />
           {isExporting ? "Preparing Excel…" : "Export to Excel"}
           <Download size={15} aria-hidden="true" />
@@ -132,42 +147,46 @@ export const LedgerReportsView: React.FC = () => {
         onApply={setFilters}
       />
 
-      {loadError && <div role="alert" className="reports-modern__error reports-modern__load-error">{loadError}</div>}
+      <p className="reports-source-note">{cloudOnly ? "Posted cloud records only; queued entries excluded." : "Available local or demo records only; completeness not verified."} Internal transfers are excluded from this transaction report.</p>
+      {region.currency !== "PKR" && <p className="reports-source-note">Excel export is disabled because the existing workbook supports PKR only.</p>}
+      {exportError && <div role="alert" className="reports-modern__error">{exportError}</div>}
+      {loadError && <div role="alert" className="reports-modern__error reports-modern__load-error">{loadError} <button type="button" className="button button-secondary" onClick={() => void loadReport()}>Retry</button></div>}
 
       <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
         <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
           <span>Operating result</span><TrendingUp size={18} aria-hidden="true" />
-          <strong>{isLoading ? "Loading…" : formatPaisa(totals.net_profit_paisa)}</strong>
+          <strong>{amount(totals.net_profit_paisa)}</strong>
           <small>Cashbook basis · not accrual P&L</small>
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--income">
           <span>Income</span><TrendingUp size={18} aria-hidden="true" />
-          <strong>{isLoading ? "Loading…" : formatPaisa(totals.income_paisa)}</strong>
+          <strong>{amount(totals.income_paisa)}</strong>
           
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--expense">
           <span>Expenses</span><TrendingDown size={18} aria-hidden="true" />
-          <strong>{isLoading ? "Loading…" : formatPaisa(totals.expense_paisa)}</strong>
+          <strong>{amount(totals.expense_paisa)}</strong>
           
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--count">
           <span>Transactions</span><FileSpreadsheet size={18} aria-hidden="true" />
-          <strong>{isLoading ? "—" : totals.transaction_count.toLocaleString()}</strong>
+          <strong>{ready ? totals.transaction_count.toLocaleString() : loadError ? "Unavailable" : "Loading…"}</strong>
           
         </article>
       </section>
 
+      {ready && <>
       <section className="reports-modern__chart-panel">
         <div className="reports-modern__section-heading">
-          <div><h2>Cash flow over time</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
+          <div><h2>Recorded income and expenses</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
           <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
         {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
           <div className="reports-modern__trend-scroll">
             <div className="reports-modern__trend" style={{ gridTemplateColumns: `repeat(${trend.length}, minmax(36px, 1fr))` }}>
               {trend.map((bucket) => {
-                const incomeHeight = bucket.income_paisa > 0 ? Math.max(3, (bucket.income_paisa / chartMax) * 100) : 0;
-                const expenseHeight = bucket.expense_paisa > 0 ? Math.max(3, (bucket.expense_paisa / chartMax) * 100) : 0;
+                const incomeHeight = bucket.income_paisa > 0 ? (bucket.income_paisa / chartMax) * 100 : 0;
+                const expenseHeight = bucket.expense_paisa > 0 ? (bucket.expense_paisa / chartMax) * 100 : 0;
                 return <div className="reports-modern__trend-item" key={bucket.key} title={`${bucket.title}\nIncome: ${formatPaisa(bucket.income_paisa)}\nExpenses: ${formatPaisa(bucket.expense_paisa)}`}>
                   <div className="reports-modern__bar-area"><span className="reports-modern__bar is-income" style={{ height: `${incomeHeight}%` }} /><span className="reports-modern__bar is-expense" style={{ height: `${expenseHeight}%` }} /></div>
                   <span className="reports-modern__trend-label">{bucket.label}</span>
@@ -176,6 +195,7 @@ export const LedgerReportsView: React.FC = () => {
             </div>
           </div>
         )}
+        {trend.length > 0 && <details className="report-trend-data"><summary>View exact trend values</summary><div className="reports-modern__table-scroll"><table><caption className="sr-only">Filtered period totals</caption><thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th></tr></thead><tbody>{trend.map(bucket => <tr key={bucket.key}><th scope="row">{bucket.label}</th><td>{formatPaisa(bucket.income_paisa)}</td><td>{formatPaisa(bucket.expense_paisa)}</td><td>{formatPaisa(bucket.net_profit_paisa)}</td></tr>)}</tbody></table></div></details>}
       </section>
 
       <ReportInsightCharts trend={trend} expenseCategories={expenseCategories} />
@@ -203,7 +223,7 @@ export const LedgerReportsView: React.FC = () => {
       <section className="reports-modern__table-panel reports-modern__transactions">
         <div className="reports-modern__section-heading"><div><h2>Transaction register</h2></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
         {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
-          {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
+          {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Account unavailable"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
         </tbody></table></div>}
         {transactions.length > rowsPerPage && <nav className="reports-modern__pager" aria-label="Transaction register pagination">
           <span>Showing {safePage * rowsPerPage + 1}–{Math.min((safePage + 1) * rowsPerPage, transactions.length)} of {transactions.length.toLocaleString()} records · All are included in export</span>
@@ -216,7 +236,8 @@ export const LedgerReportsView: React.FC = () => {
           </div>
         </nav>}
       </section>
+      </>}
       <p className="reports-modern__footer-note">Active entries · Shop business dates</p>
-    </main>
+    </div>
   );
 };
