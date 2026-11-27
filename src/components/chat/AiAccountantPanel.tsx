@@ -3,6 +3,7 @@ import type { DailySummary } from "../../types/ledger";
 import { useApp } from "../../context/AppContext";
 import { ledgerService } from "../../services/ledgerService";
 import { updateSyncedAiAccountantMessage } from "../../services/aiAccountantChatService";
+import { tryDirectLedgerAnswer } from "../../services/ledgerMateDirectAnswer";
 import { buildLedgerMateContext } from "../../services/ledgerMateContext";
 import { prepareLedgerMateAction, type PendingAction } from "../../services/ledgerMateActionService";
 import { useLedgerMateChatHistory } from "../../services/useLedgerMateChatHistory";
@@ -54,6 +55,7 @@ export const AiAccountantPanel: React.FC<{
     if (workRef.current || sending || actionBusy || pendingAction?.submitted) return;
     workRef.current = true;
     setPendingAction(null);
+    setLastFailed(null);
     setInput("");
     try {
       await chat.createThread();
@@ -68,6 +70,7 @@ export const AiAccountantPanel: React.FC<{
     if (workRef.current || sending || actionBusy || pendingAction?.submitted) return;
     workRef.current = true;
     setPendingAction(null);
+    setLastFailed(null);
     setHistoryOpen(false);
     try { await chat.activateThread(thread); } finally { workRef.current = false; }
   };
@@ -122,19 +125,20 @@ export const AiAccountantPanel: React.FC<{
     chat.setError(null);
     const assistantId = makeLocalId();
     const previousMessage = replaceIndex === undefined ? undefined : chat.messagesRef.current[replaceIndex];
-    const draftMessage: ChatMessage = { id: assistantId, role: "assistant", content: "", createdAt: now() };
+    const draftMessage: ChatMessage = { id: assistantId, role: "assistant", content: "", createdAt: now(), transient: true };
     if (replaceIndex === undefined) chat.setMessages(baseMessages);
-    else chat.setMessages((current) => current.map((item, index) => index === replaceIndex ? { ...previousMessage!, content: "" } : item));
+    // Retain the previous complete response during regeneration.
 
     try {
-      const context = await buildLedgerMateContext(question, baseMessages.slice(0, -1), summary.business_date, currency);
+      const direct = isCloudAccount ? await tryDirectLedgerAnswer(question,currency,summary.business_date) : null;
+      const context = direct ? "" : await buildLedgerMateContext(question, baseMessages.slice(0, -1), summary.business_date, currency);
       controller.signal.throwIfAborted();
       let result: Awaited<ReturnType<typeof sendLedgerMateMessage>>;
       try {
-        result = await sendLedgerMateMessage(baseMessages, context, (delta) => {
+        result = direct ? {reply:direct,model:"application"} : await sendLedgerMateMessage(baseMessages.filter(item => !item.transient && item.content.trim()), context, (delta) => {
           if (controller.signal.aborted || !mounted.current || activeThreadRef.current !== threadId) return;
           chat.setMessages((current) => {
-            if (replaceIndex !== undefined) return current.map((item, index) => index === replaceIndex ? { ...item, content: item.content + delta } : item);
+            if (replaceIndex !== undefined) return current;
             const exists = current.some((item) => item.id === assistantId);
             return exists ? current.map((item) => item.id === assistantId ? { ...item, content: item.content + delta } : item) : [...current, { ...draftMessage, content: delta }];
           });
@@ -143,10 +147,12 @@ export const AiAccountantPanel: React.FC<{
         if (!controller.signal.aborted) setLastFailed(question);
         throw providerError;
       }
-      if (activeThreadRef.current !== threadId) return;
-      setHealth({ status: "ready", provider: "Groq", model: result.model });
+      controller.signal.throwIfAborted();
+      if (!mounted.current || activeThreadRef.current !== threadId) return;
+      abortRef.current = null;
+      if (!direct) setHealth({ status: "ready", provider: "Groq", model: result.model });
       const finalMessage: ChatMessage = replaceIndex === undefined
-        ? { ...draftMessage, content: result.reply }
+        ? { ...draftMessage, content: result.reply, transient: false }
         : { ...previousMessage!, content: result.reply, createdAt: now() };
       if (replaceIndex !== undefined && finalMessage.id && !finalMessage.id.startsWith("local-")) {
         try {
@@ -210,12 +216,18 @@ export const AiAccountantPanel: React.FC<{
         chat.setMessages((current) => [...current, synced]);
         return;
       }
+      if (!actionsEnabled && /^(?:please\s+)?(?:add|record|enter|save|edit|change|update|delete|remove|void)\s+(?:a\s+|the\s+)?(?:sale|income|expense|transaction|entry)\b/i.test(content)) {
+        const reply = await chat.syncMessage({role:"assistant",content:"LedgerMate is in read-only mode. No entry was created or changed. Use Cashbook or Transactions, or enable reviewed ledger actions if available.",createdAt:now()});
+        chat.setMessages(current => [...current,reply]);
+        return;
+      }
       await runAssistant(content, nextMessages, undefined, true);
     } catch (sendError) {
+      setLastFailed(content);
       chat.setError(sendError instanceof Error ? sendError.message : "Could not prepare your request.");
     } finally {
       workRef.current = false;
-      setSending(false);
+      if (mounted.current) setSending(false);
     }
   };
 
