@@ -77,7 +77,6 @@ function makeEntryDraft(
       }
     }
   }
-
   return {
     entry,
     type: entry.type,
@@ -119,7 +118,6 @@ function toParseResult(
     return null;
   }
   if (draft.businessDate > getKarachiBusinessDate()) return null;
-
   const category = categories.find((item) => item.id === draft.categoryId);
   if (
     (draft.type === "income" || draft.type === "expense") &&
@@ -175,17 +173,14 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   reviewOptions.current = { accounts, categories };
   cancelRef.current = onCancel;
   savingRef.current = isSavingSingle || isSavingBatch;
-
   useEffect(() => {
     setSingle(result ? makeEntryDraft(result, reviewOptions.current.accounts, reviewOptions.current.categories) : null);
     setValidationError(null);
   }, [result]);
-
   useEffect(() => {
     setRows(batchEntries?.map((entry) => makeEntryDraft(entry, reviewOptions.current.accounts, reviewOptions.current.categories)) || []);
     setValidationError(null);
   }, [batchEntries]);
-
   useEffect(() => {
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
     dialog
@@ -213,9 +208,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [result, batchEntries]);
-
   if (!result && !isBatch) return null;
-
   const renderEditor = (
     draft: EntryDraft,
     onChange: (next: EntryDraft) => void,
@@ -425,7 +418,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     );
   };
-
   if (!isBatch && result && single) {
     const hasOptions = Boolean(result.options?.length);
     const resolved = toParseResult(single, categories);
@@ -557,7 +549,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     );
   }
-
   if (isBatch && batchEntries) {
     const hasInvalidRows = rows.length !== batchEntries.length || rows.some((row) => {
       const parsed = toParseResult(row, categories);
@@ -686,6 +677,5 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     );
   }
-
   return null;
 };
