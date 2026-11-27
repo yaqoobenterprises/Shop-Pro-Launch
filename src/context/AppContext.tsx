@@ -57,7 +57,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const { pathname, search, hash } = window.location;
     if (!search && !hash && (pathname === "/" || readWorkspaceView(pathname))) {
       const target = workspacePath(view);
-      if (pathname !== target) window.history.pushState(null, "", target);
+      if (pathname !== target) {
+        try { window.history.pushState(null, "", target); } catch { /* Navigation still works in restricted browser contexts. */ }
+      }
     }
   }, []);
   useEffect(() => {
@@ -67,7 +69,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setView(view ?? "dashboard");
         setIsCommandPaletteOpen(false);
         setIsShortcutsHelpOpen(false);
-        setIsQuickExpenseOpen(false);
+        // Keep any open financial form intact; history changes only the underlying view.
       }
     };
     window.addEventListener("popstate", restoreView);
@@ -133,7 +135,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.isComposing || !document.querySelector(".app-shell")) return;
-      if (e.key !== "Escape" && document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       // Ctrl+K -> Command Palette
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
