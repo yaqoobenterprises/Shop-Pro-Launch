@@ -92,7 +92,17 @@ export async function runAuthenticatedBrowser({api,key,owner,foreign}) {
     assert.ok(!contents.includes("Concurrent draft"));
     await navigate("Accounts");
     await page.getByRole("button",{name:"Show history"}).click();
-    await page.getByRole("region",{name:"Posted account movements"}).waitFor();
+    // Registration seeds accounts without postings; select the fixture account explicitly.
+    const history=page.getByRole("region",{name:"Account posting history"});
+    const accountPicker=history.getByRole("combobox",{name:"History account"});
+    await history.getByRole("button",{name:"Refresh history"}).waitFor();
+    await page.waitForFunction(()=>{const section=document.querySelector('[aria-label="Account posting history"]');return section && !section.querySelector('button[disabled]')?.textContent?.includes("Refresh history") && section.querySelector('[role="combobox"]')?.textContent?.trim()!=="Select account";});
+    await accountPicker.click();
+    await page.getByRole("option",{name:"Synthetic cash",exact:true}).click();
+    const movements=history.getByRole("region",{name:"Posted account movements"});
+    await movements.waitFor();
+    assert.ok(await movements.getByRole("row").count()>1);
+    assert.ok((await movements.innerText()).includes("2020-11-19"));
     await navigate("LedgerMate AI");
     await page.getByText("AI available",{exact:true}).waitFor();
     await page.getByRole("textbox",{name:"Message LedgerMate AI"}).fill("Hello");
@@ -101,7 +111,7 @@ export async function runAuthenticatedBrowser({api,key,owner,foreign}) {
     await page.getByRole("button",{name:"Ask question again"}).waitFor();
     assert.equal(providerPosts,1);
     await page.getByRole("button",{name:"Open account menu"}).click();
-    await page.getByRole("button",{name:"Sign Out",exact:true}).click();
+    await page.getByRole("button",{name:/^Sign out$/i}).click();
     await page.getByRole("button",{name:"Sign in",exact:true}).filter({visible:true}).first().waitFor();
     await login(foreign);
     await navigate("Transactions");
