@@ -8,9 +8,11 @@ import {
   LogOut,
   Sun,
   Moon,
+  Monitor,
   Search,
 } from "lucide-react";
-import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
+import { nextThemePreference, setThemePreference } from "../../lib/theme";
+import { useThemePreference } from "../../lib/useThemePreference";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import { APP_NAME } from "../../config/app";
@@ -22,7 +24,7 @@ export const Header: React.FC = () => {
   const { currentView, setCurrentView, setIsCommandPaletteOpen } = useApp();
   const { t, dir } = useI18n();
 
-  const [theme, setTheme] = useState<ThemePreference>(() => getSavedTheme());
+  const theme = useThemePreference();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === "undefined" ? true : navigator.onLine,
@@ -40,9 +42,7 @@ export const Header: React.FC = () => {
     : t("nav.settings");
 
   const toggleTheme = () => {
-    const nextTheme: ThemePreference = theme === "dark" ? "light" : "dark";
-    setTheme(nextTheme);
-    applyTheme(nextTheme);
+    setThemePreference(nextThemePreference(theme));
   };
 
   useEffect(() => {
@@ -111,11 +111,11 @@ export const Header: React.FC = () => {
           className="header-icon-button"
           onClick={toggleTheme}
           aria-label={t("landing.switchTheme")}
-          title={t("landing.switchTheme")}
+          title={`${t("landing.switchTheme")} (${theme})`}
         >
           {theme === "dark"
             ? <Sun className="h-4 w-4" aria-hidden="true" />
-            : <Moon className="h-4 w-4" aria-hidden="true" />}
+             : theme === "system" ? <Monitor className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
         </button>
 
         <div className="relative" ref={menuRef}>
