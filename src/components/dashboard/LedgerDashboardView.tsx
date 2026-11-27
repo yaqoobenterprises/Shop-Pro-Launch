@@ -125,6 +125,7 @@ export const LedgerDashboardView: React.FC = () => {
 
   useEffect(() => {
     void loadData();
+    return () => { requestId.current += 1; };
   }, [loadData]);
 
   const activeSummary = period === "day" ? dailyData : rangeSummary;
@@ -146,6 +147,7 @@ export const LedgerDashboardView: React.FC = () => {
     () => breakdowns.filter((b) => b.type === "expense" && b.total_paisa > 0),
     [breakdowns],
   );
+  const revenueCategories = breakdowns.filter(item => item.type === "income" && item.total_paisa > 0).sort((a,b) => b.total_paisa - a.total_paisa);
   const expenseBreakdownTotal = expenseBreakdowns.reduce((sum, item) => sum + item.total_paisa, 0);
   const expenseDonutBackground = useMemo(() => {
     if (expenseBreakdownTotal <= 0) return "conic-gradient(var(--line) 0deg 360deg)";
@@ -171,6 +173,7 @@ export const LedgerDashboardView: React.FC = () => {
       <div className="page-title">
         <div className="overview-page-heading">
           <h1>Business overview</h1>
+          <p>Current account balances and recorded cashbook activity are shown separately.</p>
         </div>
         <OverviewPeriodControls
           period={period}
@@ -193,8 +196,9 @@ export const LedgerDashboardView: React.FC = () => {
         </div>
       )}
 
+      <div className="overview-metric-scope"><span>Account position</span><span>Selected period · {selectedRangeLabel}</span></div>
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Cash & bank" scope="Current balance" icon={Wallet}
+        <OverviewMetricCard label="Cash & bank" scope="Current recorded balance" icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp}
@@ -203,11 +207,12 @@ export const LedgerDashboardView: React.FC = () => {
         <OverviewMetricCard label="Expenses" scope={selectedRangeLabel} icon={ArrowDownLeft}
           amountPaisa={activeExpense}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Operating result" scope="Cashbook basis" icon={ArrowUpRight}
+        <OverviewMetricCard label="Operating result" scope={`${selectedRangeLabel} · cashbook basis`} icon={ArrowUpRight}
           amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "positive"}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
 
+      <p className="overview-source-note">Cashbook figures may include queued entries or incomplete local data; they are not verified accrual profit or a bank statement.</p>
       <div className="aq-overview__visuals">
         <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""} ${period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense ? "cash-panel--empty" : ""}`}>
           <div className="panel-heading">
@@ -219,7 +224,7 @@ export const LedgerDashboardView: React.FC = () => {
           {period !== "day" ? (
             isLoading ? <p className="aq-overview__empty" role="status">Loading chart…</p>
               : loadError ? <p className="aq-overview__empty">Chart unavailable.</p>
-                : <OverviewAreaChart rows={trendRows} range={selectedRangeLabel} />
+                : !activeIncome && !activeExpense ? <p className="aq-overview__empty">No income or expenses in the available records for this period.</p> : <OverviewAreaChart rows={trendRows} range={selectedRangeLabel} />
           ) : (
             <div className="aq-overview__day">
               {isLoading ? <p role="status">Loading activity…</p>
@@ -311,6 +316,10 @@ export const LedgerDashboardView: React.FC = () => {
         </section>
       </div>
 
+      <section className="panel overview-revenue"><div className="panel-heading"><div><h2>Revenue categories</h2><p className="overview-chart-range">{selectedRangeLabel}</p></div></div>
+        {isLoading ? <p role="status">Loading categories…</p> : loadError ? <p>Categories unavailable.</p> : revenueCategories.length === 0 ? <p>No income categories in the available records.</p> : <ul className="overview-revenue-list" aria-label="Income totals by category">{revenueCategories.slice(0,5).map((item) => <li key={item.category_id}><span>{item.category_name}</span><strong className="num">{formatPaisa(item.total_paisa)}</strong></li>)}</ul>}
+        {!isLoading && !loadError && activeSummary && revenueCategories.reduce((total,item) => total + item.total_paisa,0) !== activeIncome && <p className="aq-overview__coverage">Category totals differ from the income summary. Review the source entries.</p>}
+      </section>
       <div className="aq-overview__details">
         <section className="panel transactions-panel">
           <div className="panel-heading"><h2>Cash & bank accounts</h2><span className="aq-overview__basis">Current balances</span></div>
@@ -320,7 +329,7 @@ export const LedgerDashboardView: React.FC = () => {
                 : <ul aria-label="Current balances by account" className="aq-overview__accounts">
                     {activeAccounts.map((acc) => (
                       <li className="transaction" key={acc.id}>
-                        <span className="transaction-icon">{acc.type === "CASH" ? "CA" : acc.type === "BANK" ? "BA" : "WL"}</span>
+                        
                         <div><strong>{acc.name}</strong><small>{acc.type}{acc.is_default ? " · Primary" : ""}</small></div>
                         <strong className="num">{formatPaisa(acc.balance_paisa)}</strong>
                       </li>
