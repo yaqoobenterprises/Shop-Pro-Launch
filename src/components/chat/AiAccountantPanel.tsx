@@ -16,7 +16,9 @@ export const AiAccountantPanel: React.FC<{
   userId: string;
   organizationId: string;
   isCloudAccount: boolean;
-}> = ({ summary, userId, organizationId, isCloudAccount }) => {
+  currency?: string;
+  canPrepareActions?: boolean;
+}> = ({ summary, userId, organizationId, isCloudAccount, currency = "PKR", canPrepareActions = false }) => {
   const { showToast } = useApp();
   const chat = useLedgerMateChatHistory({ userId, organizationId, isCloudAccount });
   const [input, setInput] = useState("");
@@ -24,6 +26,10 @@ export const AiAccountantPanel: React.FC<{
   const [checking, setChecking] = useState(true);
   const [sending, setSending] = useState(false);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [actionsEnabled, setActionsEnabled] = useState(false);
+  const [lastFailed, setLastFailed] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
   const [actionBusy, setActionBusy] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [showActionDetails, setShowActionDetails] = useState(false);
@@ -40,11 +46,12 @@ export const AiAccountantPanel: React.FC<{
     finally { setChecking(false); }
   }, []);
 
-  useEffect(() => { void refreshHealth(); }, [refreshHealth]);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [chat.messages]);
+  useEffect(() => { mounted.current = true; void refreshHealth(); return () => { mounted.current = false; abortRef.current?.abort(); }; }, [refreshHealth]);
+  useEffect(() => { const scroller = endRef.current?.closest(".lm-messages");
+    if (scroller && scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 220) endRef.current?.scrollIntoView({ behavior: "instant", block: "end" }); }, [chat.messages]);
 
   const createThread = async () => {
-    if (workRef.current || sending || actionBusy) return;
+    if (workRef.current || sending || actionBusy || pendingAction?.submitted) return;
     workRef.current = true;
     setPendingAction(null);
     setInput("");
@@ -58,20 +65,22 @@ export const AiAccountantPanel: React.FC<{
 
   const chooseThread = async (thread: LocalThread) => {
     if (thread.id === chat.activeThreadId) { setHistoryOpen(false); return; }
-    if (sending || actionBusy) return;
+    if (workRef.current || sending || actionBusy || pendingAction?.submitted) return;
+    workRef.current = true;
     setPendingAction(null);
     setHistoryOpen(false);
-    await chat.activateThread(thread);
+    try { await chat.activateThread(thread); } finally { workRef.current = false; }
   };
 
   const confirmPendingAction = async () => {
-    if (!pendingAction || actionBusy || workRef.current) return;
+    if (!canPrepareActions || !actionsEnabled || !pendingAction || actionBusy || workRef.current) return;
     workRef.current = true;
     setActionBusy(true);
     chat.setError(null);
     setPendingAction((current) => current ? { ...current, submitted: true } : current);
     try {
       let response: string;
+      let queued = false;
       if (pendingAction.kind === "create") {
         const draft = pendingAction.draftId
           ? { id: pendingAction.draftId }
@@ -79,9 +88,10 @@ export const AiAccountantPanel: React.FC<{
         if (!pendingAction.draftId) setPendingAction((current) => current?.kind === "create" ? { ...current, draftId: draft.id } : current);
         const posted = await ledgerService.postTransactionDraft(draft.id, pendingAction.accountId);
         if (!posted.transaction && !posted.isQueuedOffline) throw new Error("Transaction could not be verified after posting.");
+        queued = posted.isQueuedOffline;
         response = posted.isQueuedOffline
-          ? "Entry offline queue mein save ho gayi hai. Internet aane par Shop Pro sync karega."
-          : "Transaction Shop Pro ledger mein save ho gayi hai.";
+          ? "Entry offline queue mein save ho gayi hai. Internet aane par Shop Plus sync karega."
+          : "Transaction Shop Plus ledger mein save ho gayi hai.";
       } else if (pendingAction.kind === "edit") {
         await ledgerService.editTransaction(pendingAction.transaction.id, { amount_paisa: pendingAction.amountPaisa }, pendingAction.transaction.updated_at);
         response = "Transaction update ho gayi hai. Audit history bhi record ho gayi.";
@@ -92,7 +102,7 @@ export const AiAccountantPanel: React.FC<{
       const synced = await chat.syncMessage({ role: "assistant", content: response, createdAt: now() });
       chat.setMessages((current) => [...current, synced]);
       setPendingAction(null);
-      showToast("success", "Ledger updated", "Shop Pro confirmed the transaction action.");
+      showToast(queued ? "warning" : "success", queued ? "Entry queued" : "Ledger updated", queued ? "Awaiting synchronization." : "Shop Plus confirmed the transaction action.");
     } catch (actionError) {
       chat.setError(actionError instanceof Error ? `${actionError.message} No success was reported.` : "Ledger action failed. No success was reported.");
     } finally {
@@ -102,9 +112,12 @@ export const AiAccountantPanel: React.FC<{
   };
 
   const runAssistant = async (question: string, baseMessages: ChatMessage[], replaceIndex?: number, lockHeld = false) => {
-    if ((workRef.current && !lockHeld) || sending || !question.trim() || !online) return;
+    if ((workRef.current && !lockHeld) || (sending && !lockHeld) || !question.trim() || !online) return;
     if (!lockHeld) workRef.current = true;
+    const controller = new AbortController();
+    abortRef.current = controller;
     const threadId = activeThreadRef.current;
+    setLastFailed(null);
     setSending(true);
     chat.setError(null);
     const assistantId = makeLocalId();
@@ -114,19 +127,20 @@ export const AiAccountantPanel: React.FC<{
     else chat.setMessages((current) => current.map((item, index) => index === replaceIndex ? { ...previousMessage!, content: "" } : item));
 
     try {
-      const context = await buildLedgerMateContext(question, baseMessages.slice(0, -1), summary.business_date);
+      const context = await buildLedgerMateContext(question, baseMessages.slice(0, -1), summary.business_date, currency);
+      controller.signal.throwIfAborted();
       let result: Awaited<ReturnType<typeof sendLedgerMateMessage>>;
       try {
         result = await sendLedgerMateMessage(baseMessages, context, (delta) => {
-          if (activeThreadRef.current !== threadId) return;
+          if (controller.signal.aborted || !mounted.current || activeThreadRef.current !== threadId) return;
           chat.setMessages((current) => {
             if (replaceIndex !== undefined) return current.map((item, index) => index === replaceIndex ? { ...item, content: item.content + delta } : item);
             const exists = current.some((item) => item.id === assistantId);
             return exists ? current.map((item) => item.id === assistantId ? { ...item, content: item.content + delta } : item) : [...current, { ...draftMessage, content: delta }];
           });
-        });
+        }, controller.signal);
       } catch (providerError) {
-        setHealth((current) => ({ status: "offline", provider: "Groq", model: current?.model || "openai/gpt-oss-20b" }));
+        if (!controller.signal.aborted) setLastFailed(question);
         throw providerError;
       }
       if (activeThreadRef.current !== threadId) return;
@@ -147,16 +161,18 @@ export const AiAccountantPanel: React.FC<{
         finalMessage.id = saved.id || finalMessage.id;
       }
       chat.setMessages((current) => replaceIndex === undefined
-        ? current.map((item) => item.id === assistantId ? finalMessage : item)
+        ? (current.some(item => item.id === assistantId) ? current.map((item) => item.id === assistantId ? finalMessage : item) : [...current, finalMessage])
         : current.map((item, index) => index === replaceIndex ? finalMessage : item));
     } catch (requestError) {
-      if (activeThreadRef.current === threadId) {
+      if (mounted.current && activeThreadRef.current === threadId) {
         if (replaceIndex === undefined) chat.setMessages((current) => current.filter((item) => item.id !== assistantId));
         else if (previousMessage) chat.setMessages((current) => current.map((item, index) => index === replaceIndex ? previousMessage : item));
-        chat.setError(requestError instanceof Error ? requestError.message : "LedgerMate could not complete this request. Please try again.");
+        setLastFailed(question);
+        chat.setError(controller.signal.aborted ? "Response stopped. No incomplete answer was saved." : requestError instanceof Error ? requestError.message : "LedgerMate could not complete this request. Please try again.");
       }
     } finally {
-      if (activeThreadRef.current === threadId) setSending(false);
+      if (abortRef.current === controller) abortRef.current = null;
+      if (mounted.current && activeThreadRef.current === threadId) setSending(false);
       if (!lockHeld) workRef.current = false;
     }
   };
@@ -182,7 +198,7 @@ export const AiAccountantPanel: React.FC<{
       chat.setMessages(nextMessages.slice());
     }
     try {
-      const action = await prepareLedgerMateAction(content, chat.messages, summary);
+      const action = actionsEnabled && canPrepareActions ? await prepareLedgerMateAction(content, chat.messages, summary) : null;
       if (action && "clarification" in action) {
         const synced = await chat.syncMessage({ role: "assistant", content: action.clarification, createdAt: now() });
         chat.setMessages((current) => [...current, synced]);
@@ -190,7 +206,7 @@ export const AiAccountantPanel: React.FC<{
       }
       if (action && "pending" in action) {
         setPendingAction(action.pending);
-        const synced = await chat.syncMessage({ role: "assistant", content: "Please review the transaction details below. Shop Pro will make no ledger change unless you press Confirm.", createdAt: now() });
+        const synced = await chat.syncMessage({ role: "assistant", content: "Please review the transaction details below. Shop Plus will make no ledger change unless you press Confirm.", createdAt: now() });
         chat.setMessages((current) => [...current, synced]);
         return;
       }
@@ -204,7 +220,7 @@ export const AiAccountantPanel: React.FC<{
   };
 
   const regenerate = async (index: number) => {
-    if (workRef.current || sending || chat.messages[index]?.role !== "assistant") return;
+    if (workRef.current || sending || pendingAction || chat.messages[index]?.role !== "assistant") return;
     let userIndex = index - 1;
     while (userIndex >= 0 && chat.messages[userIndex].role !== "user") userIndex -= 1;
     if (userIndex < 0) return;
@@ -230,7 +246,13 @@ export const AiAccountantPanel: React.FC<{
     sending={sending}
     actionBusy={actionBusy}
     syncStatus={chat.syncStatus}
-    healthModel={health?.model || "openai/gpt-oss-20b"}
+    actionsEnabled={actionsEnabled}
+    canPrepareActions={canPrepareActions}
+    canRetry={Boolean(lastFailed)}
+    canStop={Boolean(abortRef.current)}
+    onToggleActions={() => { if (!workRef.current && !pendingAction) setActionsEnabled(value => !value); }}
+    onStop={() => abortRef.current?.abort()}
+    onRetry={() => { if (lastFailed && !workRef.current) { const last = chat.messages.at(-1); if (last?.role === "user" && last.content === lastFailed) void runAssistant(lastFailed, chat.messages); else setInput(lastFailed); } }}
     input={input}
     pendingAction={pendingAction}
     historyOpen={historyOpen}
@@ -243,7 +265,7 @@ export const AiAccountantPanel: React.FC<{
     setShowActionDetails={setShowActionDetails}
     onCreateThread={() => { void createThread(); }}
     onChooseThread={(thread) => { void chooseThread(thread); }}
-    onClearHistory={() => { void chat.clearHistory(sending, actionBusy); }}
+    onClearHistory={() => { if (!workRef.current && !pendingAction) void chat.clearHistory(sending, actionBusy); }}
     onSend={(event, suggestion) => { void handleSend(event, suggestion); }}
     onCopy={(content) => { void copyMessage(content); }}
     onRegenerate={(index) => { void regenerate(index); }}
