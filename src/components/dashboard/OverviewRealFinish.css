@@ -191,3 +191,23 @@ html .app-shell .overview-page .aq-overview__details .health-panel { min-height:
 @media (prefers-reduced-motion: reduce) {
   html .app-shell .overview-page .aq-day-compare__track i { transition: none; }
 }
+/* Ledger Ink overview: current position distinct from period performance. */
+html .app-shell .overview-page .overview-metric-scope { display: grid; grid-template-columns: 1fr 3fr; gap: 12px; margin: 0 0 8px; color: var(--muted); font-size: .76rem; font-weight: 650; }
+html .app-shell .overview-page .aq-metric { min-height: 108px; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface-card); box-shadow: none; color: var(--ink); }
+html .app-shell .overview-page .aq-metric:first-child { background: var(--tint); border-color: var(--accent-line); }
+html .app-shell .overview-page .aq-metric .metric-amount { color: var(--ink); font-size: clamp(18px,2.4vw,30px); overflow-wrap: anywhere; }
+html .app-shell .overview-page .aq-metric--negative .metric-amount { color: var(--danger); }
+html .app-shell .overview-page .aq-metric--positive .metric-amount { color: var(--green); }
+html .app-shell .overview-page .animated-amount-value { white-space: normal; overflow-wrap: anywhere; }
+html .app-shell .overview-page .panel { padding: clamp(12px,1.5vw,20px); border-radius: var(--radius-card); box-shadow: none; }
+html .app-shell .overview-page .overview-source-note { font-size: .75rem; color: var(--muted); margin: 10px 0 14px; }
+html .app-shell .overview-page .aq-overview__visuals > .panel.cash-panel--empty,
+html .app-shell .overview-page .aq-overview__visuals > .panel.aq-overview__distribution--empty,
+html .app-shell .overview-page .aq-day-no-activity { min-height: 0; }
+html .app-shell .overview-page .aq-day-no-activity button { background: var(--primary); color: var(--on-primary); }
+html .app-shell .overview-page .aq-day-no-activity button:hover { background: var(--primary-hover); }
+html .app-shell .overview-page .overview-revenue { margin-block: 14px; }
+html .app-shell .overview-page .overview-revenue-list { list-style: none; margin: 0; padding: 0; }
+html .app-shell .overview-page .overview-revenue-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: .85rem; }
+html .app-shell .overview-page .overview-revenue-list li:last-child { border-bottom: 0; }
+@media (max-width: 1023px) { html .app-shell .overview-page .overview-metric-scope { display: none; } }
