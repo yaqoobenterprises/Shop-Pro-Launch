@@ -170,6 +170,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const [validationError, setValidationError] = useState<string | null>(null);
   const cancelRef = useRef(onCancel);
   const savingRef = useRef(false);
+  const submitLock = useRef(false);
   cancelRef.current = onCancel;
   savingRef.current = isSavingSingle || isSavingBatch;
 
@@ -449,7 +450,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       (!single.entry.reason || single.selectedOption || !hasOptions);
 
     const submitSingle = async () => {
-      if (!resolved || !canSubmit || isSavingSingle) return;
+      if (!resolved || !canSubmit || isSavingSingle || submitLock.current) return;
+      submitLock.current = true;
       setIsSavingSingle(true);
       setValidationError(null);
       try {
@@ -459,6 +461,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           error instanceof Error ? error.message : "Entry could not be posted.",
         );
       } finally {
+        submitLock.current = false;
         setIsSavingSingle(false);
       }
     };
@@ -567,12 +570,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     });
 
     const submitBatch = async () => {
-      if (hasInvalidRows || isSavingBatch) return;
+      if (hasInvalidRows || isSavingBatch || submitLock.current) return;
       const entries = rows.map((row) => toParseResult(row, categories));
       const validEntries = entries.filter(
         (entry): entry is ParseResult => entry !== null,
       );
       if (validEntries.length !== entries.length) return;
+      submitLock.current = true;
       setValidationError(null);
       try {
         await onConfirmBatch(
@@ -583,6 +587,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         setValidationError(
           error instanceof Error ? error.message : "Some entries could not be posted.",
         );
+      } finally {
+        submitLock.current = false;
       }
     };
 
