@@ -71,6 +71,8 @@ const MainShell: React.FC = () => {
   const { t } = useI18n();
   const regionSettingsEnabled = isFeatureEnabled("regionSettings");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
+  const mainRef = React.useRef<HTMLElement>(null);
+  useEffect(() => { mainRef.current?.scrollTo?.({ top: 0 }); }, [currentView]);
 
   useEffect(() => {
     setShowRegionalSetup(Boolean(
@@ -135,12 +137,13 @@ const MainShell: React.FC = () => {
       {isDemoMode && (
         <div
           role="status"
-          className="z-40 flex min-h-14 shrink-0 items-center justify-end border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
+          className="demo-workspace-banner z-30 flex min-h-10 shrink-0 items-center justify-between gap-2 border-b border-border-standard bg-surface-bright px-3 py-1 sm:px-5"
         >
+          <span className="min-w-0 text-xs text-text-muted">{t("app.sampleData")}</span>
           <button
             type="button"
             onClick={() => void exitDemoMode()}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {t("app.exitDemo")}
           </button>
@@ -149,7 +152,7 @@ const MainShell: React.FC = () => {
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
         <a
           href="#main-content"
-          className="sr-only z-50 rounded-md bg-white px-4 py-2 text-sm font-semibold text-primary shadow-level-2 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          className="sr-only z-50 rounded-md bg-surface-bright px-4 py-2 text-sm font-semibold text-primary shadow-level-2 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
           Skip to main content
         </a>
@@ -160,9 +163,10 @@ const MainShell: React.FC = () => {
         <div className="workspace flex flex-1 flex-col overflow-hidden min-w-0">
           <Header />
           <main
+            ref={mainRef}
             id="main-content"
             tabIndex={-1}
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[calc(3.25rem+env(safe-area-inset-bottom))] md:pb-0"
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0"
           >
             <Suspense
               fallback={
