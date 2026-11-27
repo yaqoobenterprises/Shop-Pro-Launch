@@ -121,13 +121,13 @@ const MainShell: React.FC = () => {
       case "ai":
         return <LedgerMateView />;
       case "dashboard":
-        return <LedgerDashboardView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} />;
+        return <LedgerDashboardView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} onExplore={(startDate,endDate)=>{saveTransactionView({...emptyTransactionView(),startDate,endDate,status:"active"});setCurrentView("sales");}} />;
       case "sales":
         return <TransactionsExplorerView key={`${organization.id}:${user?.id || "demo"}`} />;
       case "reports":
         return <LedgerReportsView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} />;
       case "accounts":
-        return <AccountsView key={`${organization.id}:${user?.id || "demo"}`} demo={isDemoMode} canManage={isDemoMode || hasPermission(user?.role, "MANAGE_BUSINESS_CONFIG")} canTransfer={isDemoMode || hasPermission(user?.role, "ACCOUNT_TRANSFER")} onExplore={accountId => { saveTransactionView({ ...emptyTransactionView(), account: accountId }); setCurrentView("sales"); }} />;
+        return <AccountsView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} demo={isDemoMode} canManage={isDemoMode || hasPermission(user?.role, "MANAGE_BUSINESS_CONFIG")} canTransfer={isDemoMode || hasPermission(user?.role, "ACCOUNT_TRANSFER")} onExplore={accountId => { saveTransactionView({ ...emptyTransactionView(), account: accountId }); setCurrentView("sales"); }} />;
       case "settings":
         return <LedgerSettingsView key={`${organization.id}:${user?.id || "demo"}`} />;
       default:

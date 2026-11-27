@@ -14,6 +14,7 @@ import { formatRecordedPaisa as formatPaisa, parseInputToPaisa } from "../../lib
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import "./AccountsPoitalFinish.css";
 import "./AccountInsights.css";
+import { AccountHistory } from "./AccountHistory";
 import { AccountCards } from "./AccountCards";
 import { PaymentAccountInsights } from "./PaymentAccountInsights";
 import { LedgerAccount } from "../../types/ledger";
@@ -23,7 +24,7 @@ import {
 
 type AccountKind = LedgerAccount["type"];
 
-export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean; demo?: boolean; onExplore?: (accountId: string) => void }> = ({ canManage = true, canTransfer = true, demo = false, onExplore }) => {
+export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean; demo?: boolean; cloudOnly?: boolean; onExplore?: (accountId: string) => void }> = ({ canManage = true, canTransfer = true, demo = false, cloudOnly = false, onExplore }) => {
   const mutationLock = useRef(false);
   const requestId = useRef(0);
   const [busy, setBusy] = useState(false);
@@ -412,6 +413,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
           canManage={canManage} busy={busy} isLoading={isLoading} loadFailed={loadFailed} onExplore={onExplore} />
       </div>
 
+      {cloudOnly && <AccountHistory />}
       {!loadFailed && !isLoading && accounts.length > 0 &&
         <PaymentAccountInsights accounts={accounts} onRefresh={() => { void loadAccounts(); }} isRefreshing={isLoading} />}
 

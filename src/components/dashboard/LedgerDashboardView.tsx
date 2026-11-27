@@ -10,6 +10,7 @@ import "./OverviewReference.css";
 import "./OverviewFinish.css";
 import "./OverviewRealFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
+import { OverviewActivity } from "./OverviewActivity";
 import { OverviewAreaChart } from "./OverviewAreaChart";
 import { assertReportAmounts } from "../../lib/reportAmountValidation";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
@@ -28,7 +29,7 @@ import {
 
 const EXPENSE_CHART_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
 
-export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly = false }) => {
+export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (start: string,end: string) => void }> = ({ cloudOnly = false, onExplore }) => {
   const [period, setPeriod] = useState<OverviewPeriod>("day");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
@@ -162,6 +163,9 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOn
     return `conic-gradient(${stops.join(", ")})`;
   }, [expenseBreakdowns, expenseBreakdownTotal]);
 
+  const today = getKarachiBusinessDate();
+  const monthEnd = new Date(Date.UTC(Number(currentDate.slice(0,4)),Number(currentDate.slice(5,7)),0)).toISOString().slice(0,10);
+  const [selectedStart,selectedEnd] = period === "day" ? [currentDate,currentDate] : period === "week" ? getWeekRangeForDate(currentDate) : period === "month" ? [currentDate.slice(0,7)+"-01",monthEnd > today && currentDate.slice(0,7)+"-01" <= today ? today : monthEnd] : [rangeStart,rangeEnd];
   const trendRows: ReportTrendBucket[] = rangeTrend;
   const selectedRangeLabel = period === "day"
     ? formatDisplayDate(currentDate)
@@ -322,6 +326,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOn
         {isLoading ? <p role="status">Loading categories…</p> : loadError ? <p>Categories unavailable.</p> : revenueCategories.length === 0 ? <p>No income categories in the available records.</p> : <ul className="overview-revenue-list" aria-label="Income totals by category">{revenueCategories.slice(0,5).map((item) => <li key={item.category_id}><span>{item.category_name}</span><strong className="num">{formatPaisa(item.total_paisa)}</strong></li>)}</ul>}
         {!isLoading && !loadError && activeSummary && revenueCategories.reduce((total,item) => total + item.total_paisa,0) !== activeIncome && <p className="aq-overview__coverage">Category totals differ from the income summary. Review the source entries.</p>}
       </section>
+      {cloudOnly && !isLoading && !loadError && activeSummary && selectedStart <= selectedEnd && <OverviewActivity key={`${selectedStart}:${selectedEnd}`} start={selectedStart} end={selectedEnd} current={activeSummary} onExplore={onExplore} />}
       <div className="aq-overview__details">
         <section className="panel transactions-panel">
           <div className="panel-heading"><h2>Cash & bank accounts</h2><span className="aq-overview__basis">Current balances</span></div>
