@@ -50,7 +50,7 @@ export function useLedgerMateChatHistory({ userId, organizationId, isCloudAccoun
     try { localStorage.setItem(threadListKey, JSON.stringify(limited)); } catch { /* optional local index */ }
   }, [threadListKey]);
   const saveMessages = useCallback((threadId: string, items: ChatMessage[]) => {
-    try { localStorage.setItem(`${storageRoot}.${threadId}`, JSON.stringify(items.slice(-CHAT_HISTORY_LIMIT))); }
+    try { localStorage.setItem(`${storageRoot}.${threadId}`, JSON.stringify(items.filter(item => !item.transient).slice(-CHAT_HISTORY_LIMIT))); }
     catch { setError("This browser could not save the chat locally."); }
   }, [storageRoot]);
 
@@ -143,7 +143,11 @@ export function useLedgerMateChatHistory({ userId, organizationId, isCloudAccoun
 
   const syncMessage = useCallback(async (message: ChatMessage): Promise<ChatMessage> => {
     const threadId = activeThreadRef.current;
-    if (!threadId || !isCloudAccount || threadId.startsWith("local-")) return message;
+    if (!threadId) return message;
+    if (!isCloudAccount || threadId.startsWith("local-")) {
+      if (message.role === "user") saveThreads(threadsRef.current.map(thread => thread.id === threadId ? { ...thread, title: thread.title === "New chat" ? titleFor(message.content) : thread.title, updated_at: message.createdAt } : thread));
+      return message;
+    }
     try {
       const id = await appendSyncedAiAccountantMessage({ userId, organizationId }, threadId, message);
       setSyncStatus("synced");
@@ -175,12 +179,13 @@ export function useLedgerMateChatHistory({ userId, organizationId, isCloudAccoun
 
   const clearHistory = async (sending: boolean, actionBusy: boolean) => {
     if (!activeThreadId || sending || actionBusy) return;
-    if (!window.confirm("Clear messages in this LedgerMate chat? This removes its synced chat messages only; Shop Pro transactions are not changed.")) return;
+    if (!window.confirm("Clear this conversation’s messages from this device and its synced history? Shop Plus transactions are not changed.")) return;
     try {
       if (isCloudAccount && activeThread && !activeThread.localOnly) {
         await clearSyncedAiAccountantHistory({ userId, organizationId }, activeThread.id);
       }
-      setMessages([]);
+      if (activeThreadRef.current === activeThreadId) setMessages([]);
+      saveMessages(activeThreadId, []);
       setError(null);
       setSyncStatus(activeThread?.localOnly ? "local" : "synced");
       showToast("success", "Chat cleared", "Only this conversation's messages were cleared.");
