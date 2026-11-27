@@ -1,6 +1,5 @@
 import React from "react";
 import { useApp, AppView } from "../../context/AppContext";
-import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { APP_NAME } from "../../config/app";
 import "./Sidebar.css";
@@ -52,7 +51,6 @@ const readSidebarCollapsed = () => {
 
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView, startNewEntry } = useApp();
-  const { isDemoMode } = useAuth();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
   const [desktopCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
@@ -182,7 +180,6 @@ export const Sidebar: React.FC = () => {
           </div>
           <div className="brand-copy min-w-0" data-sidebar-label>
             <strong className="truncate">{APP_NAME}</strong>
-            <span className="truncate">{isDemoMode ? "Demo workspace" : "Business workspace"}</span>
           </div>
         </div>
         <button

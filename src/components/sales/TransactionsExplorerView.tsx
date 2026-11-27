@@ -8,6 +8,7 @@ import { hasPermission } from "../../lib/permissions";
 import "./TransactionsWorkspace.css";
 import { Transaction, Category, LedgerAccount } from "../../types/ledger";
 import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
+import { WORKSPACE_TRANSACTION_SEARCH } from "../../lib/workspaceSearch";
 import { readAmountBounds, exactMajorUnits, type TransactionSort } from "../../lib/transactionFilters";
 import { useRegion } from "../../regional/region";
 import { useI18n } from "../../i18n";
@@ -17,6 +18,7 @@ import {
   Download,
   RefreshCw,
   Eye,
+  ArrowUpRight, ArrowDownLeft,
   Ban,
   Search,
 } from "lucide-react";
@@ -78,6 +80,11 @@ export const TransactionsExplorerView: React.FC = () => {
   useEffect(() => {
     saveTransactionView({ searchQuery, appliedSearch, account: selectedAccount, startDate, endDate, type: selectedType, category: selectedCategory, status: selectedStatus, page, minimum, maximum, sort });
   }, [saveTransactionView, searchQuery, appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus, page, minimum, maximum, sort]);
+  useEffect(()=>{
+    const search=(event:Event)=>{const query=(event as CustomEvent<string>).detail;if(typeof query!=="string")return;setSearchQuery(query);setAppliedSearch(query);setSelectedAccount("all");setStartDate("");setEndDate("");setSelectedType("all");setSelectedCategory("all");setSelectedStatus("all");setMinimum("");setMaximum("");setSort("newest");setPage(0);};
+    window.addEventListener(WORKSPACE_TRANSACTION_SEARCH,search);
+    return()=>window.removeEventListener(WORKSPACE_TRANSACTION_SEARCH,search);
+  },[]);
   const pageSize = 25;
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -205,7 +212,6 @@ export const TransactionsExplorerView: React.FC = () => {
       <div className="page-title">
         <div className="entries-page-heading">
           <h1>Transactions</h1>
-          <p>Review recorded activity and export the matching records.</p>
         </div>
 
         <div className="title-actions">
@@ -352,7 +358,7 @@ export const TransactionsExplorerView: React.FC = () => {
             <article className="table-row" key={tx.id} aria-label={`Transaction ${details.rawText}`}>
               <div>
                 <div>
-                  <strong>{details.rawText}</strong>
+                  <strong className="transaction-visual-name"><span className={`transaction-direction ${isIncome?"is-in":"is-out"}`} aria-hidden="true">{isIncome?<ArrowDownLeft size={17}/>:<ArrowUpRight size={17}/>}</span><span>{details.rawText}</span></strong>
                   <small>
                     {tx.category_name || "Uncategorized"} {details.note ? ` · ${details.note}` : ""}
                   </small>

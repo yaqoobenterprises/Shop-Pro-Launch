@@ -168,13 +168,13 @@ jobs:
                     await page.waitForURL('**/workspace/settings');
                     await page.goForward();
                     await page.waitForURL('**/workspace/chat');
-                    await page.getByRole('button',{name:'Search workspace navigation'}).click();
-                    const search = page.getByRole('searchbox',{name:'Search screens and actions'});
+                    const search = page.getByRole('searchbox',{name:'Search workspace',exact:true});
                     await search.waitFor();
+                    await page.keyboard.press('Control+k');
+                    await page.waitForFunction(() => document.activeElement?.id === 'workspace-search');
                     await search.fill('transactions');
-                    await search.press('ArrowDown');
-                    await page.waitForFunction(() => document.activeElement?.id === 'command-result-0');
-                    await page.keyboard.press('Enter');
+                    if (await page.getByRole('dialog').count()) throw new Error('Search must remain inline');
+                    await search.press('Enter');
                     await page.waitForURL('**/workspace/sales');
                     await page.getByRole('heading',{name:'Transactions',exact:true}).waitFor();
                     if (width >= 768) {

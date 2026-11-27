@@ -150,10 +150,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.defaultPrevented || e.isComposing || !document.querySelector(".app-shell")) return;
       if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
-      // Ctrl+K -> Command Palette
+      // Ctrl+K -> persistent inline search
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
+        document.getElementById("workspace-search")?.focus();
         return;
       }
 

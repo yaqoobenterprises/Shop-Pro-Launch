@@ -16,15 +16,28 @@ import { nextThemePreference, setThemePreference } from "../../lib/theme";
 import { useThemePreference } from "../../lib/useThemePreference";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
+import { resolveWorkspaceSearch, WORKSPACE_TRANSACTION_SEARCH } from "../../lib/workspaceSearch";
+import { emptyTransactionView } from "../../lib/transactionViewState";
 import { APP_NAME } from "../../config/app";
 import "./WorkspaceChrome.css";
 import "./WorkspacePastel.css";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();
-  const { currentView, setCurrentView, setIsCommandPaletteOpen, startNewEntry } = useApp();
+  const { currentView, setCurrentView, saveTransactionView, startNewEntry } = useApp();
   const { t, dir } = useI18n();
 
+  const [search,setSearch] = useState("");
+  const submitSearch = (event:React.FormEvent) => {
+    event.preventDefault();
+    const result=resolveWorkspaceSearch(search);
+    if(!result)return;
+    if(result.view==="sales") {
+      saveTransactionView({...emptyTransactionView(),searchQuery:result.query,appliedSearch:result.query});
+      if(currentView==="sales") window.dispatchEvent(new CustomEvent(WORKSPACE_TRANSACTION_SEARCH,{detail:result.query}));
+    }
+    setCurrentView(result.view); setSearch("");
+  };
   const theme = useThemePreference();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(() =>
@@ -100,20 +113,14 @@ export const Header: React.FC = () => {
           title={isOnline ? "Network available; not a confirmation of ledger synchronization" : "Network offline"}
         >
           <span className={`network-status-dot ${isOnline ? "network-status-dot--online" : "network-status-dot--offline"}`} aria-hidden="true" />
-          <span>{isOnline ? "Network online" : "Offline"}</span>
+          <span>{isOnline ? "Online" : "Offline"}</span>
         </div>
 
-        <button
-          type="button"
-          className="header-search-trigger"
-          onClick={() => setIsCommandPaletteOpen(true)}
-          aria-label="Search workspace navigation"
-          title="Find screens and actions (Ctrl+K)"
-        >
-          <Search className="h-4 w-4" aria-hidden="true" />
-          <span>Find a screen</span>
-          <kbd>Ctrl K</kbd>
-        </button>
+        <form className="workspace-inline-search" role="search" aria-label="Workspace search" onSubmit={submitSearch}>
+          <Search size={17} aria-hidden="true"/>
+          <input id="workspace-search" type="search" aria-label="Search workspace" placeholder="Search" value={search} onChange={event=>setSearch(event.target.value)} onKeyDown={event=>{if(event.key==="Escape"){setSearch("");event.stopPropagation();}}}/>
+          <button type="submit" aria-label="Submit search" disabled={!search.trim()}><Search size={16} aria-hidden="true"/></button>
+        </form>
 
         <button type="button" className="header-mobile-entry" aria-label="New entry" title="New entry" onClick={startNewEntry}>
           <Plus className="h-5 w-5" aria-hidden="true" />
@@ -147,7 +154,6 @@ export const Header: React.FC = () => {
               src={user?.avatar_url}
               name={displayName}
               size="md"
-              showBorder
             />
           </button>
 

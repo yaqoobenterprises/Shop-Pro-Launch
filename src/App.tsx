@@ -9,7 +9,6 @@ import { Sidebar } from "./components/layout/Sidebar";
 import { MobileNav } from "./components/layout/MobileNav";
 import { Header } from "./components/layout/Header";
 import { ToastContainer } from "./components/common/ToastContainer";
-import { CommandPalette } from "./components/layout/CommandPalette";
 import { ShortcutsHelpModal } from "./components/layout/ShortcutsHelpModal";
 import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
@@ -190,7 +189,6 @@ const MainShell: React.FC = () => {
 
       {/* Global Modals & Overlays */}
       <QuickExpenseModal />
-      <CommandPalette />
       <ShortcutsHelpModal />
       <ToastContainer />
       <FirstRunRegionalModal
