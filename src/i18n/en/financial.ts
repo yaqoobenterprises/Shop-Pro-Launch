@@ -22,7 +22,7 @@ export const english = {
   "dashboard.withdrawals": "Withdrawals",
   "dashboard.adjustmentIn": "Adjustment (+)",
   "dashboard.adjustmentOut": "Adjustment (-)",
-  "dashboard.netProfit": "Net profit",
+  "dashboard.netProfit": "Net result",
   "reports.eyebrow": "Financial reporting",
   "reports.month": "Month",
   "reports.income": "Income",

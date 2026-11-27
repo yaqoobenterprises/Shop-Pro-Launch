@@ -18,7 +18,7 @@ export const urdu = {
   "dashboard.overview": "کاروباری جائزہ",
   "dashboard.income": "آمدنی",
   "dashboard.expenses": "اخراجات",
-  "dashboard.netProfit": "خالص منافع",
+  "dashboard.netProfit": "خالص نتیجہ",
   "dashboard.capitalIn": "سرمایہ جمع",
   "dashboard.withdrawals": "رقم کی نکاسی",
   "dashboard.adjustmentIn": "اضافہ (+)",

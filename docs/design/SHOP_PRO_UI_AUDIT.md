@@ -14,7 +14,7 @@ The previous interface loaded 18 overlapping CSS skins, a large legacy layout st
 | Overview | KPI cards, real series sparklines, optional equal-length prior-period comparisons, ECharts cash flow and expense distribution, exact data and keyboard date selection | Daily summary, period filters, integer minor units, category totals and current account balances |
 | Cashbook | Consistent summary cards, activity register, category chips, composer, review/edit/void dialogs and explicit empty states | Parser, review before save, drafts, account assignment, undo, optimistic concurrency and offline queue |
 | Entries | Semantic TanStack table, column visibility/resizing, server pagination, date/type/category/status/search filters, detail and void actions | Scoped service query, newest-first server order, all-filtered CSV export and permissions |
-| Accounts | Clear balance cards, account controls, allocation bars, focused creation/transfer forms and deactivation confirmation | Providers, opening balances, zero-balance deactivation rule, offline replay and transfer service |
+| Accounts | Clear balance cards, account controls, allocation bars, focused creation/transfer dialogs and deactivation confirmation | Providers, opening balances, zero-balance deactivation rule, offline replay and transfer service |
 | Reports | Consistent filters/KPIs, ECharts trends/results/distribution, category tables and TanStack register | Full filtered workbook exports, report calculation and date grouping |
 | Report register | Full-result client sorting/search, sticky headers, pagination, column controls and selected-row CSV export | Selection is used for export only; no bulk financial mutations |
 | LedgerMate | Shared colors, typography, borders and surface treatment | Existing conversations, API/auth, pending action review, error/retry and read-only prompts |
@@ -36,3 +36,9 @@ The previous interface loaded 18 overlapping CSS skins, a large legacy layout st
 
 Implementation sources: [shadcn/ui](https://ui.shadcn.com/docs/components), [ECharts handbook](https://echarts.apache.org/handbook/en/basics/import/), [TanStack Table v8](https://tanstack.com/table/v8/docs/guide/pagination), [Motion accessibility](https://motion.dev/docs/react-accessibility).
 Design references: [Tremor blocks](https://blocks.tremor.so/blocks), [Tweakcn](https://tweakcn.com/editor/theme), [Google Fonts / Manrope](https://fonts.google.com/specimen/Manrope), [Lucide](https://lucide.dev/), [Untitled UI](https://www.untitledui.com/) and the publicly accessible [Mobbin](https://mobbin.com/) site. No paid components or proprietary assets were installed.
+
+## Verification
+
+The local regression suite passes 64 files / 385 tests, including ledger math, scoped reads, permissions, offline replay, concurrency, exports, transaction review and the new table/comparison checks. Production build, lint, strict TypeScript, file-size checks, token consistency and dependency audit pass. GitHub CI also passed the initial overhaul commit.
+
+Rendered desktop/mobile and light/dark browser QA remains unverified: the managed preview relay is unavailable, and Vercel protects the branch preview with sign-in. Automatic approval review rejected creating a share link because it would broaden access to anyone holding it. No deployment protection, audience or credentials were changed. PR #111 remains a draft pending preview access and visual review; production still runs the prior version.

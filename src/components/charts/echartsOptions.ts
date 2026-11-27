@@ -15,7 +15,7 @@ export function cashFlowOptions(rows: ReportTrendBucket[], mode: ChartMode, them
   const labels = { income_paisa: "Income", expense_paisa: "Expenses", net_profit_paisa: "Net result" };
   const colors = { income_paisa: theme.income, expense_paisa: theme.expense, net_profit_paisa: theme.result };
   return {
-    textStyle: { fontFamily: theme.font, color: theme.muted, fontSize: 11 },
+    textStyle: { fontFamily: theme.font, color: theme.muted, fontSize: 12 },
     grid: { left: 4, right: 12, top: 20, bottom: 8, containLabel: true },
     tooltip: { trigger: "axis", renderMode: "richText", confine: true, backgroundColor: theme.surface, borderColor: theme.border, textStyle: { fontFamily: theme.font, color: theme.text, fontSize: 12 }, valueFormatter: (v: unknown) => exactMoney(Number(v)) },
     xAxis: { type: "category", data: rows.map(r => r.label), boundaryGap: true, axisLine: { lineStyle: { color: theme.zero } }, axisTick: { show: false }, axisLabel: { margin: 16, hideOverlap: true, color: theme.muted } },

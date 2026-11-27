@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSubmissionGuard } from "../../hooks/useSubmissionGuard";
 import { Select } from "../common/Select";
 import { Modal } from "../common/Modal";
 import { Input } from "../common/Input";
@@ -32,8 +33,7 @@ export const QuickExpenseModal: React.FC = () => {
   const [referenceNumber, setReferenceNumber] = useState("");
   const [date, setDate] = useState(getKarachiBusinessDate());
   const [notes, setNotes] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const { busy: isSubmitting, run } = useSubmissionGuard();
   useEffect(() => {
     if (isQuickExpenseOpen) {
       let isCurrent = true;
@@ -120,17 +120,17 @@ export const QuickExpenseModal: React.FC = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const exp = await expenseRepo.createExpense(organization.id, {
-        category_id: targetCategoryId,
-        account_id: targetAccountId,
-        amount: numAmount,
-        description: description.trim(),
-        reference_number: referenceNumber.trim() || undefined,
-        date,
-        notes: notes.trim() || undefined,
-        entered_by: getProfileDisplayName(user),
+    await run(async () => {
+      try {
+        const exp = await expenseRepo.createExpense(organization.id, {
+          category_id: targetCategoryId,
+          account_id: targetAccountId,
+          amount: numAmount,
+          description: description.trim(),
+          reference_number: referenceNumber.trim() || undefined,
+          date,
+          notes: notes.trim() || undefined,
+          entered_by: getProfileDisplayName(user),
       });
 
       showToast(
@@ -146,9 +146,8 @@ export const QuickExpenseModal: React.FC = () => {
         "Expense Failed",
         err.message || "Could not record expense",
       );
-    } finally {
-      setIsSubmitting(false);
     }
+    });
   };
 
   const selectedAccount = accounts.find((a) => a.id === accountId);
@@ -156,6 +155,7 @@ export const QuickExpenseModal: React.FC = () => {
   return (
     <Modal
       isOpen={isQuickExpenseOpen}
+      isBusy={isSubmitting}
       onClose={() => setIsQuickExpenseOpen(false)}
       title="Log Business Expense"
       description="Record a business expense and its payment source."

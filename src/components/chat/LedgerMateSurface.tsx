@@ -1,3 +1,4 @@
+import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
 import React, { type Dispatch, type MutableRefObject, type SetStateAction } from "react";
 import {
   ArrowUp, Bot, Check, ChevronDown, CircleHelp, Copy, History, LoaderCircle,
@@ -66,13 +67,11 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
         <button type="button" className="lm-action-button" onClick={onCreateThread} disabled={sending || actionBusy}>
           <MessageSquarePlus aria-hidden="true" /><span>New chat</span>
         </button>
-        <div className="lm-history-anchor">
+        <Popover open={historyOpen} onOpenChange={setHistoryOpen}><PopoverTrigger asChild>
           <button type="button" className={`lm-action-button ${historyOpen ? "is-selected" : ""}`} onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen}>
             <History aria-hidden="true" /><span>History</span><ChevronDown className="lm-chevron" aria-hidden="true" />
-          </button>
-          {historyOpen && <>
-            <button type="button" className="lm-popover-scrim" aria-label="Close chat history" onClick={() => setHistoryOpen(false)} />
-            <div className="lm-history-popover" role="dialog" aria-label="Chat history">
+          </button></PopoverTrigger>
+            <PopoverContent align="end" className="lm-history-popover" aria-label="Chat history">
               <div className="lm-popover-heading"><span>Recent conversations</span><button type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X aria-hidden="true" /></button></div>
               <div className="lm-history-list">
                 {threads.length === 0 && <p className="lm-history-empty">No conversations</p>}
@@ -81,9 +80,8 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
                   <span className="lm-history-copy"><strong>{thread.title}</strong><small>{thread.localOnly ? "Saved on this device" : new Intl.DateTimeFormat("en-PK", { dateStyle: "medium" }).format(new Date(thread.updated_at))}</small></span>
                 </button>)}
               </div>
-            </div>
-          </>}
-        </div>
+            </PopoverContent>
+        </Popover>
         <button type="button" className="lm-icon-button" onClick={onClearHistory} disabled={!messages.length || sending || actionBusy} aria-label="Clear current chat" title="Clear chat">
           <Trash2 aria-hidden="true" /><span>Clear chat</span>
         </button>

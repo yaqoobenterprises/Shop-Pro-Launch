@@ -13,7 +13,7 @@ export function AppSidebar() {
   const [collapsed, setCollapsed] = useState(() => { try { return localStorage.getItem("shop-pro:sidebar") === "collapsed"; } catch { return false; } });
   const reduced = useReducedMotion();
   const toggle = () => { setCollapsed(!collapsed); try { localStorage.setItem("shop-pro:sidebar", collapsed ? "expanded" : "collapsed"); } catch { /* session only */ } };
-  return <motion.aside className="sp-sidebar" data-collapsed={collapsed} animate={{ width: collapsed ? 76 : 240 }} transition={{ duration: reduced ? 0 : .18 }} aria-label="Workspace sidebar">
+  return <motion.aside initial={false} className="sp-sidebar" data-collapsed={collapsed} animate={{ width: collapsed ? 76 : 240 }} transition={{ duration: reduced ? 0 : .18 }} aria-label="Workspace sidebar">
     <button className="sp-sidebar-brand" type="button" onClick={() => setCurrentView("dashboard")} aria-label="Shop Pro overview"><span><PanelsTopLeft size={22} /></span>{!collapsed && <strong>Shop Pro<span>Business workspace</span></strong>}</button>
     <div className="sp-sidebar-shop"><Building2 size={19} aria-hidden="true" />{!collapsed && <><span><strong>{organization.name}</strong><small>{isDemoMode ? "Demo workspace" : "Your workspace"}</small></span></>}</div>
     <Tooltip><TooltipTrigger asChild><Button className="sp-sidebar-new" onClick={startNewEntry} aria-label="New entry"><Plus size={17} />{!collapsed && "New entry"}</Button></TooltipTrigger>{collapsed && <TooltipContent side="right">New entry</TooltipContent>}</Tooltip>

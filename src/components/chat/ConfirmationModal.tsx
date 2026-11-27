@@ -1,3 +1,5 @@
+import { ReviewDialog } from "./ReviewDialog";
+import { DialogTitle } from "../ui/dialog";
 import React, { useEffect, useRef, useState } from "react";
 import { Select } from "../common/Select";
 import {
@@ -167,12 +169,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const [single, setSingle] = useState<EntryDraft | null>(null);
   const [rows, setRows] = useState<EntryDraft[]>([]);
   const [isSavingSingle, setIsSavingSingle] = useState(false);
+  const submissionRef = useRef(false);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const cancelRef = useRef(onCancel);
-  const savingRef = useRef(false);
-  cancelRef.current = onCancel;
-  savingRef.current = isSavingSingle || isSavingBatch;
-
   useEffect(() => {
     setSingle(result ? makeEntryDraft(result, accounts, categories) : null);
     setValidationError(null);
@@ -183,33 +181,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     setValidationError(null);
   }, [batchEntries, accounts, categories]);
 
-  useEffect(() => {
-    const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
-    dialog
-      ?.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), button:not([disabled])')
-      ?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !savingRef.current) {
-        cancelRef.current();
-      }
-      if (event.key === "Tab" && dialog) {
-        const focusable = dialog.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])',
-        );
-        const first = focusable.item(0);
-        const last = focusable.item(focusable.length - 1);
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [result, batchEntries]);
 
   if (!result && !isBatch) return null;
 
@@ -449,7 +420,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       (!single.entry.reason || single.selectedOption || !hasOptions);
 
     const submitSingle = async () => {
-      if (!resolved || !canSubmit || isSavingSingle) return;
+      if (!resolved || !canSubmit || isSavingSingle || submissionRef.current) return;
+      submissionRef.current = true;
       setIsSavingSingle(true);
       setValidationError(null);
       try {
@@ -459,6 +431,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           error instanceof Error ? error.message : "Entry could not be posted.",
         );
       } finally {
+        submissionRef.current = false;
         setIsSavingSingle(false);
       }
     };
@@ -477,24 +450,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       : CheckCircle;
 
     return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5"
-        onMouseDown={(event) => {
-          if (event.target === event.currentTarget && !isSavingSingle) onCancel();
-        }}
-      >
-        <section
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="transaction-entry-title"
-          className="flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border-standard bg-surface-bright shadow-level-3"
-        >
+      <ReviewDialog busy={isSavingSingle} onCancel={onCancel}>
           <header className="flex items-center justify-between border-b border-border-standard bg-surface-container-low px-5 py-4">
             <div className="flex items-center gap-2">
               <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-              <h2 id="transaction-entry-title" className="text-base font-bold text-on-surface">
+              <DialogTitle asChild><h2 id="transaction-entry-title" className="text-base font-bold text-on-surface">
                 {heading}
-              </h2>
+              </h2></DialogTitle>
             </div>
             <button
               type="button"
@@ -548,8 +510,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               </button>
             </div>
           </footer>
-        </section>
-      </div>
+      </ReviewDialog>
     );
   }
 
@@ -567,12 +528,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     });
 
     const submitBatch = async () => {
-      if (hasInvalidRows || isSavingBatch) return;
+      if (hasInvalidRows || isSavingBatch || submissionRef.current) return;
       const entries = rows.map((row) => toParseResult(row, categories));
       const validEntries = entries.filter(
         (entry): entry is ParseResult => entry !== null,
       );
       if (validEntries.length !== entries.length) return;
+      submissionRef.current = true;
       setValidationError(null);
       try {
         await onConfirmBatch(
@@ -583,23 +545,19 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         setValidationError(
           error instanceof Error ? error.message : "Some entries could not be posted.",
         );
+      } finally {
+        submissionRef.current = false;
       }
     };
 
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-5">
-        <section
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="batch-entry-title"
-          className="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border-standard bg-surface-bright shadow-level-3"
-        >
+      <ReviewDialog busy={isSavingBatch} onCancel={onCancel} batch>
           <header className="flex items-center justify-between border-b border-border-standard bg-surface-container-low px-5 py-4">
             <div className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-primary" aria-hidden="true" />
-              <h2 id="batch-entry-title" className="text-base font-bold text-on-surface">
+              <DialogTitle asChild><h2 id="batch-entry-title" className="text-base font-bold text-on-surface">
                 Review {batchEntries.length} entries together
-              </h2>
+              </h2></DialogTitle>
             </div>
             <button
               type="button"
@@ -674,8 +632,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                   : "Confirm & post all"}
             </button>
           </footer>
-        </section>
-      </div>
+      </ReviewDialog>
     );
   }
 

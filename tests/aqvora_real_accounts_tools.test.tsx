@@ -27,12 +27,14 @@ describe("AQVORA real payment-account page", () => {
     fireEvent.click(create);
     expect(create.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByRole("combobox", { name: "Account name" })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "Add an account" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Close", exact: true }));
     fireEvent.click(transfer);
     expect(create.getAttribute("aria-expanded")).toBe("false");
     expect(transfer.getAttribute("aria-expanded")).toBe("true");
     expect(screen.queryByRole("combobox", { name: "Account name" })).toBeNull();
     expect(screen.getByRole("button", { name: "Transfer funds" })).toBeTruthy();
-    fireEvent.click(transfer);
+    fireEvent.click(screen.getByRole("button", { name: "Close", exact: true }));
     expect(transfer.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByRole("button", { name: "Transfer funds" })).toBeNull();
   });

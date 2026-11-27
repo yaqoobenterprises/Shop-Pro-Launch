@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Receipt, Keyboard, Plus } from "lucide-react";
 import { useApp } from "../../context/AppContext";
 import { useI18n } from "../../i18n";
@@ -15,7 +15,8 @@ export const CommandPalette: React.FC = () => {
   const [query, setQuery] = useState("");
   const [detail, setDetail] = useState<Transaction | null>(null);
   const search = useWorkspaceSearch(query, isCommandPaletteOpen);
-  const run = (action: () => void) => { setIsCommandPaletteOpen(false); action(); };
+  useEffect(() => { if (!isCommandPaletteOpen) setQuery(""); }, [isCommandPaletteOpen]);
+  const run = (action: () => void) => { setQuery(""); setIsCommandPaletteOpen(false); action(); };
   return <><CommandDialog open={isCommandPaletteOpen} onOpenChange={open => { setIsCommandPaletteOpen(open); if (!open) setQuery(""); }}>
     <CommandInput value={query} onValueChange={setQuery} placeholder="Search screens, actions or entries…" aria-label="Search workspace" /><CommandList><CommandEmpty>No matching actions or screens.</CommandEmpty>
       <CommandGroup heading="Quick actions"><CommandItem onSelect={() => run(startNewEntry)}><Plus />New entry<CommandShortcut>Ctrl N</CommandShortcut></CommandItem><CommandItem onSelect={() => run(() => setIsQuickExpenseOpen(true))}><Receipt />{t("command.recordExpense")}<CommandShortcut>Ctrl ⇧ E</CommandShortcut></CommandItem><CommandItem onSelect={() => run(() => setIsShortcutsHelpOpen(true))}><Keyboard />{t("command.shortcuts")}</CommandItem></CommandGroup>

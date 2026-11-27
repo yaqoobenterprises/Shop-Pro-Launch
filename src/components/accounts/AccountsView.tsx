@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Modal } from "../common/Modal";
 import { useConfirmation } from "../common/useConfirmation";
 import { useSubmissionGuard } from "../../hooks/useSubmissionGuard";
 import { Select } from "../common/Select";
@@ -116,11 +117,11 @@ export const AccountsView: React.FC = () => {
       return;
     }
     await run(async () => {
-    try {
-      await ledgerService.createPaymentAccount({
-        name: accountName.trim(),
-        type: accountType,
-        openingBalancePaisa: parsed.paisa,
+      try {
+        await ledgerService.createPaymentAccount({
+          name: accountName.trim(),
+          type: accountType,
+          openingBalancePaisa: parsed.paisa,
       });
       setAccountName("");
       setOpeningAmount("");
@@ -151,12 +152,12 @@ export const AccountsView: React.FC = () => {
     }
 
     await run(async () => {
-    try {
-      await ledgerService.transferBetweenAccounts({
-        fromAccountId: sourceAccountId,
-        toAccountId: destinationAccountId,
-        amountPaisa: parsed.paisa,
-        notes: "Treasury transfer",
+      try {
+        await ledgerService.transferBetweenAccounts({
+          fromAccountId: sourceAccountId,
+          toAccountId: destinationAccountId,
+          amountPaisa: parsed.paisa,
+          notes: "Treasury transfer",
       });
       setTransferAmount("");
       setMessage("Funds transferred successfully.");
@@ -170,9 +171,9 @@ export const AccountsView: React.FC = () => {
   const handleSaveName = async (accountId: string) => {
     if (!editingName.trim()) return;
     await run(async () => {
-    try {
-      const isQueuedOffline = await ledgerService.updatePaymentAccount(accountId, {
-        name: editingName.trim(),
+      try {
+        const isQueuedOffline = await ledgerService.updatePaymentAccount(accountId, {
+          name: editingName.trim(),
       });
       setEditingAccountId("");
       setEditingName("");
@@ -195,9 +196,9 @@ export const AccountsView: React.FC = () => {
     setError("");
     setMessage("");
     await run(async () => {
-    try {
-      const isQueuedOffline = await ledgerService.updatePaymentAccount(account.id, {
-        is_active: !account.is_active,
+      try {
+        const isQueuedOffline = await ledgerService.updatePaymentAccount(account.id, {
+          is_active: !account.is_active,
       });
       setMessage(isQueuedOffline ? "Account change saved offline. It will sync when you reconnect." : account.is_active ? "Account deactivated." : "Account reactivated.");
       await loadAccounts();
@@ -344,6 +345,7 @@ export const AccountsView: React.FC = () => {
               {isEditing ? (
                 <input
                   type="text"
+                  aria-label={`${acc.name} account name`}
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   style={{
@@ -371,14 +373,8 @@ export const AccountsView: React.FC = () => {
       {!error && !isLoading && accounts.length > 0 &&
         <PaymentAccountInsights accounts={accounts} onRefresh={() => { void loadAccounts(); }} isRefreshing={isLoading} />}
 
-      {activeTool && <div className="account-tools accounts-tools--focused">
-        {activeTool === "add" && <section id="aq-account-create" className="panel account-tool-panel">
-          <div className="panel-heading account-tool-heading">
-            <span className="account-tool-icon" aria-hidden="true">
-              <Plus className="h-4 w-4" />
-            </span>
-            <h2>Add an account</h2>
-          </div>
+      {activeTool && <Modal isOpen isBusy={busy} onClose={() => { if (!busy) setActiveTool(null); }} title={activeTool === "add" ? "Add an account" : "Transfer funds"} maxWidth="lg">
+        {activeTool === "add" && <section id="aq-account-create" className="account-tool-panel">
 
           <form onSubmit={handleCreateAccount}>
             <div className="form-grid">
@@ -430,13 +426,7 @@ export const AccountsView: React.FC = () => {
           </form>
         </section>}
 
-        {activeTool === "transfer" && <section id="aq-account-transfer" className="panel account-tool-panel">
-          <div className="panel-heading account-tool-heading">
-            <span className="account-tool-icon" aria-hidden="true">
-              <ArrowLeftRight className="h-4 w-4" />
-            </span>
-            <h2>Transfer funds</h2>
-          </div>
+        {activeTool === "transfer" && <section id="aq-account-transfer" className="account-tool-panel">
 
           <form onSubmit={handleTransfer}>
             <div className="form-grid">
@@ -506,7 +496,7 @@ export const AccountsView: React.FC = () => {
             </div>
           </form>
         </section>}
-      </div>}
+      </Modal>}
     </main>
   );
 };
