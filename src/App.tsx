@@ -1,6 +1,8 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppProvider, useApp } from "./context/AppContext";
+import { hasPermission } from "./lib/permissions";
+import { emptyTransactionView } from "./lib/transactionViewState";
 import { I18nProvider, useI18n } from "./i18n";
 import { Sidebar } from "./components/layout/Sidebar";
 import { MobileNav } from "./components/layout/MobileNav";
@@ -66,7 +68,7 @@ const I18nPreferenceSync: React.FC = () => {
 };
 
 const MainShell: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, setCurrentView, saveTransactionView } = useApp();
   const { isDemoMode, isCloudAccount, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const regionSettingsEnabled = isFeatureEnabled("regionSettings");
@@ -122,9 +124,9 @@ const MainShell: React.FC = () => {
       case "sales":
         return <TransactionsExplorerView key={`${organization.id}:${user?.id || "demo"}`} />;
       case "reports":
-        return <LedgerReportsView />;
+        return <LedgerReportsView cloudOnly={isCloudAccount && !isDemoMode} />;
       case "accounts":
-        return <AccountsView />;
+        return <AccountsView demo={isDemoMode} canManage={isDemoMode || hasPermission(user?.role, "MANAGE_BUSINESS_CONFIG")} canTransfer={isDemoMode || hasPermission(user?.role, "ACCOUNT_TRANSFER")} onExplore={accountId => { saveTransactionView({ ...emptyTransactionView(), account: accountId }); setCurrentView("sales"); }} />;
       case "settings":
         return <LedgerSettingsView />;
       default:
