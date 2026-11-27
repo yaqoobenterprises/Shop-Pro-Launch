@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Select } from '../common/Select';
 import { useAuth } from '../../context/AuthContext';
 import { useRegion } from '../../regional/region';
@@ -22,6 +22,7 @@ export const RegionSettingsSection: React.FC = () => {
   const currencyOptions = CURRENCY_OPTIONS.includes(currency as (typeof CURRENCY_OPTIONS)[number])
     ? CURRENCY_OPTIONS
     : [currency, ...CURRENCY_OPTIONS];
+  const saveLock = useRef(false);
   const [hasEntries, setHasEntries] = useState(false);
   const [isCheckingEntries, setIsCheckingEntries] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -81,12 +82,14 @@ export const RegionSettingsSection: React.FC = () => {
 
   const handleCurrencyChange = async (event: { target: { value: string } }) => {
     const nextCurrency = event.target.value;
-    if (!isOwner || !organization?.id || nextCurrency === currency) return;
+    if (!isOwner || !organization?.id || nextCurrency === currency || hasEntries || isCheckingEntries || saveLock.current || !isCloudAccount) return;
 
     const previousCurrency = currency;
     const currencyConfig = getCurrencyConfig(nextCurrency);
     if (!currencyConfig) return;
 
+    if (!window.confirm(`Change shop currency to ${nextCurrency}? This changes display units, not historical amounts. Continue only for a new shop with no financial records.`)) return;
+    saveLock.current = true;
     setCurrency(nextCurrency);
     setIsSaving(true);
     setSaveError(null);
@@ -107,11 +110,11 @@ export const RegionSettingsSection: React.FC = () => {
         throw new Error('Your cloud session is missing or has expired. Sign in again to save shop settings.');
       }
       if (hasCloudSession) {
-        const { error } = await getSupabaseClient()
+        const { data, error } = await getSupabaseClient()
           .from('organizations')
           .update(updates)
-          .eq('id', organization.id);
-        if (error) throw new Error(error.message);
+          .eq('id', organization.id).select('id').maybeSingle();
+        if (error || !data) throw new Error(error?.message || 'Currency change could not be verified.');
       } else if (nextCurrency !== organization.currency) {
         throw new Error(t('settings.offlineCurrencyLocked'));
       }
@@ -122,7 +125,7 @@ export const RegionSettingsSection: React.FC = () => {
       setCurrency(previousCurrency);
       setSaveError(error instanceof Error ? error.message : t('region.saveFailed'));
     } finally {
-      setIsSaving(false);
+      saveLock.current = false; setIsSaving(false);
     }
   };
 
@@ -163,6 +166,7 @@ export const RegionSettingsSection: React.FC = () => {
           ) : null;
         })}
       </Select>
+      <p className="mt-2 text-xs text-text-muted">{isCheckingEntries ? "Checking existing financial records…" : hasEntries ? "Currency is locked when financial records exist or cannot be verified." : "Changing currency does not convert monetary amounts."}</p>
       {saveError && <p role="alert" className="mt-2 text-xs text-danger">{saveError}</p>}
     </section>
   );
