@@ -245,7 +245,7 @@ export const LedgerSettingsView: React.FC = () => {
 
   const handleAddCategory = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (categoriesReadOnly) return;
+    if (categoriesReadOnly || !canManage || categoryLock.current || isLoading) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo settings are read-only");
       return;
@@ -309,8 +309,9 @@ export const LedgerSettingsView: React.FC = () => {
     if (!principal) return;
 
     try {
+      categoryLock.current = true; setCategoryBusy(true);
       await requireSettingsCloudSession(principal.id);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("categories")
         .update({ is_active: true })
         .eq("id", category.id)
@@ -788,7 +789,7 @@ export const LedgerSettingsView: React.FC = () => {
                           onClick={() => handleRemoveCategory(cat)}
                           disabled={isDemo || !canManage || categoriesReadOnly || categoryBusy || isLoading}
                           className="flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border px-2.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-bg"
-                          title="Remove category"
+                          title="Archive category"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Remove
                         </button>
