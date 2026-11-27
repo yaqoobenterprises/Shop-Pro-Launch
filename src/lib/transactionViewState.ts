@@ -1,3 +1,5 @@
+import type { TransactionSort } from "./transactionFilters";
+
 /** In-memory view preferences only. Never persist transaction search text to browser storage. */
 export interface TransactionViewState {
   searchQuery: string;
@@ -9,6 +11,9 @@ export interface TransactionViewState {
   category: string;
   status: "active" | "voided" | "all";
   page: number;
+  minimum?: string;
+  maximum?: string;
+  sort?: TransactionSort;
 }
 export const emptyTransactionView = (): TransactionViewState => ({
   searchQuery: "", appliedSearch: "", account: "all", startDate: "", endDate: "",

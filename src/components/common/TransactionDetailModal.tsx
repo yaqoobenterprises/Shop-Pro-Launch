@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Modal } from "./Modal";
 import { Transaction } from "../../types/ledger";
-import { formatPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 import { formatBusinessDateTime } from "../../regional/format";
 import { getCurrencyConfig } from "../../regional/currencies";
 import { useRegion } from "../../regional/region";

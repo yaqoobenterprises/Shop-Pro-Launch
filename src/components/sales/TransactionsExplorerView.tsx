@@ -8,6 +8,7 @@ import { hasPermission } from "../../lib/permissions";
 import "./TransactionsWorkspace.css";
 import { Transaction, Category, LedgerAccount } from "../../types/ledger";
 import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
+import { readAmountBounds, exactMajorUnits, type TransactionSort } from "../../lib/transactionFilters";
 import { useRegion } from "../../regional/region";
 import { useI18n } from "../../i18n";
 import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
@@ -63,6 +64,11 @@ export const TransactionsExplorerView: React.FC = () => {
   const [startDate, setStartDate] = useState(initial.startDate);
   const [endDate, setEndDate] = useState(initial.endDate);
   const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
+  const [minimum, setMinimum] = useState(initial.minimum ?? "");
+  const [maximum, setMaximum] = useState(initial.maximum ?? "");
+  const [sort, setSort] = useState<TransactionSort>(initial.sort ?? "newest");
+  const {minAmountPaisa, maxAmountPaisa, error: amountError} = readAmountBounds(minimum,maximum);
+  const invalidFilters = invalidDateRange || Boolean(amountError);
   const [selectedType, setSelectedType] = useState(initial.type);
   const [selectedCategory, setSelectedCategory] = useState(initial.category);
   const [selectedStatus, setSelectedStatus] = useState<"active" | "voided" | "all">(initial.status);
@@ -70,8 +76,8 @@ export const TransactionsExplorerView: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [page, setPage] = useState(initial.page);
   useEffect(() => {
-    saveTransactionView({ searchQuery, appliedSearch, account: selectedAccount, startDate, endDate, type: selectedType, category: selectedCategory, status: selectedStatus, page });
-  }, [saveTransactionView, searchQuery, appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus, page]);
+    saveTransactionView({ searchQuery, appliedSearch, account: selectedAccount, startDate, endDate, type: selectedType, category: selectedCategory, status: selectedStatus, page, minimum, maximum, sort });
+  }, [saveTransactionView, searchQuery, appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus, page, minimum, maximum, sort]);
   const pageSize = 25;
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -86,8 +92,8 @@ export const TransactionsExplorerView: React.FC = () => {
     endDate: endDate || undefined,
     type: selectedType,
     categoryId: selectedCategory,
-    status: selectedStatus,
-  }), [appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus]);
+    status: selectedStatus, minAmountPaisa, maxAmountPaisa, sort,
+  }), [appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus, minAmountPaisa, maxAmountPaisa, sort]);
 
   const loadData = useCallback(async (requestedPage = page) => {
     const id = ++requestId.current;
@@ -95,7 +101,7 @@ export const TransactionsExplorerView: React.FC = () => {
     setLoadError("");
     setTransactions([]);
     setTotalCount(0);
-    if (invalidDateRange) { setIsLoading(false); return; }
+    if (invalidFilters) { setIsLoading(false); return; }
     try {
       const [cats, paymentAccounts] = await Promise.all([ledgerService.getCategories(), ledgerService.getPaymentAccounts()]);
       if (id !== requestId.current) return;
@@ -125,7 +131,7 @@ export const TransactionsExplorerView: React.FC = () => {
     } finally {
       if (id === requestId.current) setIsLoading(false);
     }
-  }, [page, getCurrentFilter, invalidDateRange, isCloudAccount, isDemoMode]);
+  }, [page, getCurrentFilter, invalidFilters, isCloudAccount, isDemoMode]);
 
   useEffect(() => {
     void loadData();
@@ -140,7 +146,7 @@ export const TransactionsExplorerView: React.FC = () => {
   };
 
   const handleExportCSV = async () => {
-    if (exportLock.current || invalidDateRange || isLoading || loadError || searchQuery.trim() !== appliedSearch) return;
+    if (exportLock.current || invalidFilters || isLoading || loadError || searchQuery.trim() !== appliedSearch) return;
     exportLock.current = true;
     setIsExporting(true);
     setExportError("");
@@ -150,6 +156,7 @@ export const TransactionsExplorerView: React.FC = () => {
       "Device Time",
       "Type",
       "Category",
+      "Account",
       t("currency.amountLabel", { currency: region.currency }),
       "Raw Text",
       "Status",
@@ -168,7 +175,8 @@ export const TransactionsExplorerView: React.FC = () => {
         tx.device_entry_time,
         tx.type,
         tx.category_name || "",
-        (tx.amount_paisa / 100).toFixed(2),
+        tx.account_name || "",
+        exactMajorUnits(tx.amount_paisa),
         tx.raw_text,
         tx.status,
         tx.void_reason || "",
@@ -206,7 +214,7 @@ export const TransactionsExplorerView: React.FC = () => {
             type="button"
             className="button button-secondary"
             onClick={handleExportCSV}
-            disabled={isExporting || isLoading || Boolean(loadError) || invalidDateRange || totalCount === 0 || searchQuery.trim() !== appliedSearch}
+            disabled={isExporting || isLoading || Boolean(loadError) || invalidFilters || totalCount === 0 || searchQuery.trim() !== appliedSearch}
           >
             <Download className="h-4 w-4" />
             {isExporting ? "Exporting..." : "Export filtered CSV"}
@@ -291,9 +299,15 @@ export const TransactionsExplorerView: React.FC = () => {
           <option value="voided">Voided Only</option>
         </Select>
 
+        <label className="transaction-date-filter">Minimum amount<input inputMode="decimal" value={minimum} onChange={e => {setMinimum(e.target.value); setPage(0);}} placeholder="0.00" /></label>
+        <label className="transaction-date-filter">Maximum amount<input inputMode="decimal" value={maximum} onChange={e => {setMaximum(e.target.value); setPage(0);}} placeholder="No limit" /></label>
+        <Select value={sort} aria-label="Sort transactions" onChange={e => {setSort(e.target.value as TransactionSort);setPage(0);}}>
+          <option value="newest">Newest recorded first</option><option value="oldest">Oldest recorded first</option><option value="amount-high">Highest amount first</option><option value="amount-low">Lowest amount first</option>
+        </Select>
         <button
           type="button"
           onClick={() => {
+            setMinimum(""); setMaximum(""); setSort("newest");
             setSearchQuery("");
             setAppliedSearch("");
             setSelectedAccount("all");
@@ -311,6 +325,7 @@ export const TransactionsExplorerView: React.FC = () => {
         </button>
       </section>
 
+      {amountError && <p role="alert" className="text-sm text-danger">{amountError}</p>}
       {invalidDateRange && <p role="alert" className="text-sm text-danger">From date must be on or before To date.</p>}
       {(!isCloudAccount || isDemoMode) && <p className="text-xs text-text-muted">{isDemoMode ? "Demo records only." : "Local records may be incomplete; cloud history is not verified."}</p>}
       {searchQuery.trim() !== appliedSearch && <p className="text-xs text-text-muted">Press Search to apply the typed description.</p>}
@@ -389,7 +404,7 @@ export const TransactionsExplorerView: React.FC = () => {
           );
         })}
 
-        {transactions.length === 0 && !isLoading && !loadError && !invalidDateRange && (
+        {transactions.length === 0 && !isLoading && !loadError && !invalidFilters && (
           <div className="empty-state">
             <strong>No transactions found</strong>
             <p>Try adjusting your search criteria or filters.</p>
@@ -405,7 +420,7 @@ export const TransactionsExplorerView: React.FC = () => {
 
         <div className="table-footer">
           <span role="status">
-            {isLoading ? "Loading…" : loadError || invalidDateRange ? "Results unavailable" : `${totalCount === 0 ? 0 : page * pageSize + 1}–${page * pageSize + transactions.length} of ${totalCount} transactions`}
+            {isLoading ? "Loading…" : loadError || invalidFilters ? "Results unavailable" : `${totalCount === 0 ? 0 : page * pageSize + 1}–${page * pageSize + transactions.length} of ${totalCount} transactions`}
           </span>
           <div>
             <button

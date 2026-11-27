@@ -10,7 +10,7 @@ import {
   ledgerService,
   OFFLINE_SYNC_COMPLETE_EVENT,
 } from "../../services/ledgerService";
-import { formatPaisa, parseInputToPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa, parseInputToPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import "./AccountsPoitalFinish.css";
 import "./AccountInsights.css";
