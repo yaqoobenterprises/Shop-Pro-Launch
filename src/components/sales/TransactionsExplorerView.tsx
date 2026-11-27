@@ -147,7 +147,7 @@ export const TransactionsExplorerView: React.FC = () => {
   const columns = useMemo(() => transactionColumns(setSelectedDetailTx, canManage ? setVoidingTx : undefined, t("transactions.account")), [t, canManage]);
 
   return (
-    <main className="page-content entries-page">
+    <div className="page-content entries-page">
       {/* Page Title */}
       <div className="page-title">
         <div className="entries-page-heading">
@@ -282,6 +282,6 @@ export const TransactionsExplorerView: React.FC = () => {
           setVoidingTx(tx);
         }}
       />
-    </main>
+    </div>
   );
 };

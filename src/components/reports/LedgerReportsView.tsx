@@ -108,7 +108,7 @@ export const LedgerReportsView: React.FC = () => {
   };
 
   return (
-    <main className="page-content reports-page reports-modern">
+    <div className="page-content reports-page reports-modern">
       <header className="reports-modern__hero">
         <div>
           <h1>Reports</h1><p className="sp-page-subtitle">Understand cash flow and category performance.</p>
@@ -191,6 +191,6 @@ export const LedgerReportsView: React.FC = () => {
         <p className="reports-modern__footnote">The workbook includes every entry matching the report filters.</p>
       </section>
       <p className="reports-modern__footer-note">Active entries · Shop business dates</p>
-    </main>
+    </div>
   );
 };

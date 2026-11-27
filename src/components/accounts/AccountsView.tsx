@@ -212,7 +212,7 @@ export const AccountsView: React.FC = () => {
   const totalBalancePaisa = accounts.reduce((sum, account) => sum + (account.is_active ? Number(account.balance_paisa) || 0 : 0), 0);
 
   return (
-    <main className="page-content accounts-page">
+    <div className="page-content accounts-page">
       {confirmationDialog}
       <div className="page-title">
         <div className="accounts-page-heading">
@@ -497,6 +497,6 @@ export const AccountsView: React.FC = () => {
           </form>
         </section>}
       </Modal>}
-    </main>
+    </div>
   );
 };
