@@ -37,12 +37,12 @@ interface UndoState {
 }
 
 export const ChatView: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isDemoMode } = useAuth();
   const { showToast, setCurrentView, entryMode, newEntryRequestId } = useApp();
   const { t } = useI18n();
   const currentUserId = user?.id || "offline-user";
   const currentUserName = getProfileDisplayName(user, "Shop Brother");
-  const canManageTransactions = hasPermission(user?.role, "VOID_EXPENSE");
+  const canManageTransactions = !isDemoMode && hasPermission(user?.role, "VOID_EXPENSE");
 
   // State
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -275,6 +275,8 @@ export const ChatView: React.FC = () => {
 
     if (parsed.entries.length === 1) {
       setActiveClarification(parsed.entries[0]);
+    } else {
+      throw new Error("No entry could be parsed. Enter an amount and description, then try again.");
     }
   };
 
