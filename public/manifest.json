@@ -5,8 +5,8 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#17654e",
-  "background_color": "#f5f7f6",
+  "theme_color": "#4655aa",
+  "background_color": "#f5f6f8",
   "icons": [
     {
       "src": "/assets/icon-192.png",
@@ -21,7 +21,7 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/logo.svg",
+      "src": "/assets/shop-plus-mark.svg",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any"
