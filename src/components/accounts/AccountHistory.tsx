@@ -1,4 +1,4 @@
-import React,{useEffect,useRef,useState} from "react";
+import React,{useEffect,useState} from "react";
 import { accountHistoryService } from "../../services/accountHistoryService";
 import { formatRecordedPaisa } from "../../lib/money";
 import { Select } from "../common/Select";
@@ -9,25 +9,24 @@ export function AccountHistory() {
   const [account,setAccount]=useState(""),[page,setPage]=useState(0),[count,setCount]=useState(0);
   const [rows,setRows]=useState<AccountLedgerEntry[]>([]),[loading,setLoading]=useState(false),[error,setError]=useState("");
   const [refresh,setRefresh]=useState(0);
-  const request=useRef(0);
   useEffect(()=>{
     if(!open)return;
-    const id=++request.current; setLoading(true);setError("");setRows([]);setCount(0);
+    let cancelled=false; setLoading(true);setError("");setRows([]);setCount(0);
     (async()=>{
       try {
         const choices=await accountHistoryService.accounts();
-        if(id!==request.current)return;
+        if(cancelled)return;
         setAccounts(choices);
         const selected=choices.find(item=>item.id===account)?.id || choices[0]?.id || "";
         if(selected!==account){setAccount(selected);setPage(0);return;}
         if(!selected)return;
         const result=await accountHistoryService.entries(selected,page);
-        if(id!==request.current)return;
+        if(cancelled)return;
         setRows(result.rows);setCount(result.count);
-      }catch{if(id===request.current)setError("Posted account history is unavailable. Reconnect and retry.");}
-      finally{if(id===request.current)setLoading(false);}
+      }catch{if(!cancelled)setError("Posted account history is unavailable. Reconnect and retry.");}
+      finally{if(!cancelled)setLoading(false);}
     })();
-    return()=>{request.current++;};
+    return()=>{cancelled=true;};
   },[open,account,page,refresh]);
   return <section className="panel mt-4" aria-label="Account posting history">
     <div className="panel-heading"><h2>Account posting history</h2><button type="button" className="button button-secondary" aria-expanded={open} onClick={()=>setOpen(!open)}>{open?"Hide history":"Show history"}</button></div>

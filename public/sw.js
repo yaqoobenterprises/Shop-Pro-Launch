@@ -1,11 +1,11 @@
-// AQVORA public app shell ONLY. Never persist customer data or API responses.
+// Shop Plus public app shell ONLY. Never persist customer data or API responses.
 // Keep workers waiting until existing tabs close to avoid interrupting offline work.
-const CACHE_NAME = 'aqvora-shell-v2';
-const OLD_AQVORA_PREFIXES = ['shop-pro-', 'aqvora-pwa-', 'aqvora-shell-'];
+const CACHE_NAME = 'shop-plus-shell-v1';
+const LEGACY_SHELL_PREFIXES = ['shop-pro-', 'aqvora-pwa-', 'aqvora-shell-'];
 const SHELL_ASSETS = [
   '/index.html',
   '/manifest.json',
-  '/assets/logo.svg',
+  '/assets/shop-plus-mark.svg',
   '/assets/icon-192.png',
   '/assets/icon-512.png'
 ];
@@ -39,7 +39,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
     await Promise.all(keys.filter((key) => key !== CACHE_NAME &&
-      OLD_AQVORA_PREFIXES.some((prefix) => key.startsWith(prefix)))
+      LEGACY_SHELL_PREFIXES.some((prefix) => key.startsWith(prefix)))
       .map((key) => caches.delete(key)));
     // Do not claim already-open tabs from another service-worker version.
   })());
