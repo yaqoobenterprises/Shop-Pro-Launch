@@ -29,11 +29,11 @@ function summarizePeriod(period: LedgerMatePeriod, transactions: Transaction[]):
   const withdrawals = sumPaisa(transactions, "withdrawal");
   const adjustmentIn = transactions
     .filter((transaction) => transaction.type === "adjustment" && transaction.adjustment_dir === "in")
-    .reduce((sum, transaction) => sum + BigInt(Math.trunc(Number(transaction.amount_paisa))), 0n)
+    .reduce((sum, transaction) => sum + BigInt(safeMinorUnits(transaction.amount_paisa)), 0n)
     .toString();
   const adjustmentOut = transactions
     .filter((transaction) => transaction.type === "adjustment" && transaction.adjustment_dir === "out")
-    .reduce((sum, transaction) => sum + BigInt(Math.trunc(Number(transaction.amount_paisa))), 0n)
+    .reduce((sum, transaction) => sum + BigInt(safeMinorUnits(transaction.amount_paisa)), 0n)
     .toString();
   const net = (BigInt(income) - BigInt(expense)).toString();
   return [
@@ -64,7 +64,7 @@ function groupIncomeByCategory(transactions: Transaction[]): Array<{ name: strin
     if (transaction.type !== "income") continue;
     const name = transaction.category_name || "Uncategorised";
     const current = categories.get(name) || { amount: 0n, count: 0 };
-    current.amount += BigInt(Math.trunc(Number(transaction.amount_paisa)));
+    current.amount += BigInt(safeMinorUnits(transaction.amount_paisa));
     current.count += 1;
     categories.set(name, current);
   }
@@ -99,6 +99,7 @@ export async function buildLedgerMateContext(
   // A greeting or non-financial message must never retrieve financial context.
   const financial = /\b(income|expense|expenses|sale|sales|profit|result|balance|cash|bank|wallet|transaction|transactions|entry|entries|record|records|earning|kamai|kharcha|kharch|category|service|total|compare|comparison|farq|stamp|print|printing|capital|withdrawal|adjustment|amount|kitn[aiye]|details?|report|business)\b/i.test(question);
   if (!financial) return "No financial data requested. Respond naturally to the current message; do not repeat earlier financial figures unless explicitly requested.";
+  if (/^(what (is|are)|explain|define|how (do|does|to|can))\b/i.test(question.trim()) && !/\b(my|our|today|yesterday|this month|this year|last month|last year|20\d{2})\b/i.test(question)) return "No financial data requested. Explain the concept without retrieving or inventing shop figures.";
   const resolution = resolveLedgerMatePeriods(question, previousMessages, currentDate);
   const asksTransactions = /\b(transaction|transactions|entry|entries|details|records|record|payment|sale|sales|income|expense|earning|kamai|kharcha|stamp|print|photocopy|service|category|business|kis service|sab se zyada)\b/i.test(question);
   const asksBalances = /\b(balance|cash|bank|wallet|cashbook|ra[ss]?id|account)\b/i.test(question);
