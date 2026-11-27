@@ -402,3 +402,13 @@
 }
 .aq-auth__pin-panel form > button[type="submit"]:hover:not(:disabled) { background: var(--primary-hover); }
 .aq-auth__pin-panel form > button[type="button"] { min-height: 44px; }
+
+/* Match the neutral-first workspace identity, without changing authentication. */
+html .aq-auth { background:var(--paper); color:var(--ink); }
+html .aq-auth__story { background:var(--surface-2); color:var(--ink); border-inline-end:1px solid var(--line); }
+html .aq-auth__story h2,html .aq-auth__brand { color:var(--ink); }
+html .aq-auth__story p,html .aq-auth__story-points,html .aq-auth__preview-note { color:var(--muted); }
+html .aq-auth__main { background:var(--paper); }
+html .aq-auth__card { border-radius:var(--radius-card); }
+html .aq-auth__submit { background:var(--primary); color:var(--on-primary); border-radius:var(--radius-control); min-height:44px; }
+html .aq-auth__submit:focus-visible,html .aq-auth__cancel:focus-visible { outline:2px solid var(--primary); outline-offset:3px; }
