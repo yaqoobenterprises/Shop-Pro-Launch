@@ -25,7 +25,7 @@ vi.mock("../src/services/ledgerMateAiService", () => ({
 import { AiAccountantPanel } from "../src/components/chat/AiAccountantPanel";
 import { prepareLedgerMateAction } from "../src/services/ledgerMateActionService";
 import { ledgerService } from "../src/services/ledgerService";
-import { sendLedgerMateMessage } from "../src/services/ledgerMateAiService";
+import { checkLedgerMateHealth, sendLedgerMateMessage } from "../src/services/ledgerMateAiService";
 
 const mockLedger = vi.mocked(ledgerService);
 const mockSend = vi.mocked(sendLedgerMateMessage);
@@ -205,5 +205,30 @@ describe("LedgerMate transaction confirmation gate", () => {
     expect(screen.getByText("First answer")).toBeTruthy();
     expect(mockSend).toHaveBeenCalledTimes(2);
     expect(mockLedger.createTransactionDraft).not.toHaveBeenCalled();
+  });
+  it("does not connect a sample-data demo to the cloud AI provider",async()=>{
+    render(<AiAccountantPanel summary={testSummary} userId="demo" organizationId="demo" isCloudAccount={false} providerDisabledReason="Cloud AI is not used in the sample-data demo."/>);
+    expect(await screen.findByText("Cloud AI is not used in the sample-data demo.")).toBeTruthy();
+    expect(screen.getByRole("textbox",{name:"Message LedgerMate AI"})).toBeDisabled();
+    expect(checkLedgerMateHealth).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+  it("does not resend earlier financial chat history when asking an unrelated question",async()=>{
+    mockSend.mockResolvedValueOnce({reply:"Recorded income 123.45",model:"test"}).mockResolvedValueOnce({reply:"Hello there",model:"test"});
+    mockLedger.getAllFilteredTransactions.mockResolvedValue([]);
+    mountPanel();
+    const input=await screen.findByRole("textbox",{name:"Message LedgerMate AI"});
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"today income"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText("Recorded income 123.45")).toBeTruthy();
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"Hello"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText("Hello there")).toBeTruthy();
+    const last=mockSend.mock.calls.at(-1)!;
+    expect(last[0]).toHaveLength(1);
+    expect(last[0][0]).toMatchObject({role:"user",content:"Hello"});
+    expect(last[1]).toContain("No financial data requested.");
   });
 });

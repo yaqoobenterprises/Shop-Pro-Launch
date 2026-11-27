@@ -18,7 +18,8 @@ export const AiAccountantPanel: React.FC<{
   isCloudAccount: boolean;
   currency?: string;
   canPrepareActions?: boolean;
-}> = ({ summary, userId, organizationId, isCloudAccount, currency = "PKR", canPrepareActions = false }) => {
+  providerDisabledReason?: string;
+}> = ({ summary, userId, organizationId, isCloudAccount, currency = "PKR", canPrepareActions = false, providerDisabledReason }) => {
   const { showToast } = useApp();
   const chat = useLedgerMateChatHistory({ userId, organizationId, isCloudAccount });
   const [input, setInput] = useState("");
@@ -37,14 +38,15 @@ export const AiAccountantPanel: React.FC<{
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const workRef = useRef(false);
-  const online = health?.status === "ready";
+  const online = !providerDisabledReason && health?.status === "ready";
 
   const refreshHealth = useCallback(async () => {
+    if (providerDisabledReason) { setHealth(null); setChecking(false); return; }
     setChecking(true);
     try { setHealth(await checkLedgerMateHealth()); }
     catch { setHealth({ status: "offline", model: "openai/gpt-oss-20b", provider: "Groq" }); }
     finally { setChecking(false); }
-  }, []);
+  }, [providerDisabledReason]);
 
   useEffect(() => { mounted.current = true; void refreshHealth(); return () => { mounted.current = false; abortRef.current?.abort(); }; }, [refreshHealth]);
   useEffect(() => { const scroller = endRef.current?.closest(".lm-messages");
@@ -132,7 +134,9 @@ export const AiAccountantPanel: React.FC<{
       controller.signal.throwIfAborted();
       let result: Awaited<ReturnType<typeof sendLedgerMateMessage>>;
       try {
-        result = direct ? {reply:direct,model:"application"} : await sendLedgerMateMessage(baseMessages.filter(item => !item.transient && item.content.trim()), context, (delta) => {
+        const providerMessages = baseMessages.filter(item => !item.transient && item.content.trim());
+        const scopedMessages = context.startsWith("No financial data requested.") ? providerMessages.slice(-1) : providerMessages;
+        result = direct ? {reply:direct,model:"application"} : await sendLedgerMateMessage(scopedMessages, context, (delta) => {
           if (controller.signal.aborted || !mounted.current || activeThreadRef.current !== threadId) return;
           chat.setMessages((current) => {
             const exists = current.some((item) => item.id === assistantId);
@@ -239,6 +243,7 @@ export const AiAccountantPanel: React.FC<{
     error={chat.error}
     online={online}
     checking={checking}
+    providerDisabledReason={providerDisabledReason}
     sending={sending}
     actionBusy={actionBusy}
     syncStatus={chat.syncStatus}

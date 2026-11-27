@@ -14,6 +14,7 @@ interface LedgerMateSurfaceProps {
   error: string | null;
   online: boolean;
   checking: boolean;
+  providerDisabledReason?: string;
   sending: boolean;
   actionBusy: boolean;
   syncStatus: "loading" | "synced" | "local" | "error";
@@ -53,7 +54,7 @@ const promptSuggestions = [
 ];
 
 export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
-  activeThread, threads, messages, error, online, checking, sending, actionBusy, syncStatus,
+  activeThread, threads, messages, error, online, checking, providerDisabledReason, sending, actionBusy, syncStatus,
   actionsEnabled, canPrepareActions, canStop, canRetry, onToggleActions, onStop, onRetry, input, pendingAction, historyOpen, showActionDetails, endRef, textareaRef,
   setInput, setError, setHistoryOpen, setShowActionDetails, onCreateThread, onChooseThread,
   onClearHistory, onSend, onCopy, onRegenerate, onConfirmAction, onCancelAction, onRefresh,
@@ -64,7 +65,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
         <div className="lm-mark"><MessageCircle aria-hidden="true" /></div>
         <div className="lm-title-group">
           <h1>LedgerMate AI</h1>
-          <p><span className={`lm-status-dot ${online ? "is-online" : ""}`} />{checking ? "Connecting" : online ? "AI available" : "AI unavailable"}</p>
+          <p><span className={`lm-status-dot ${online ? "is-online" : ""}`} />{providerDisabledReason ? "AI not connected" : checking ? "Connecting" : online ? "AI available" : "AI unavailable"}</p>
         </div>
         
       </div>
@@ -138,7 +139,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
     </div>
 
     {error && <div className="lm-error" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError(null)}><X aria-hidden="true" /></button></div>}
-    {!online && !checking && <div className="lm-offline-banner"><span>The AI service is unavailable. You can still read chat history; reconnect or retry.</span><button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true" /> Retry</button></div>}
+    {!online && !checking && <div className="lm-offline-banner"><span>{providerDisabledReason || "The AI service is unavailable. You can still read chat history; reconnect or retry."}</span>{!providerDisabledReason && <button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true" /> Retry</button>}</div>}
 
     <form className="lm-composer-wrap" onSubmit={(event) => onSend(event)}>
       {sending && <p role="status" className="lm-request-status">Preparing response… {canStop && <button type="button" onClick={onStop}>Stop response</button>}</p>}
@@ -146,7 +147,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
       <div className="lm-composer">
         <textarea ref={textareaRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
-        }} placeholder="Ask about your finances…" rows={1} maxLength={12000} disabled={sending || syncStatus === "loading" || Boolean(pendingAction)} aria-label="Message LedgerMate AI" />
+        }} placeholder="Ask about your finances…" rows={1} maxLength={12000} disabled={Boolean(providerDisabledReason) || sending || syncStatus === "loading" || Boolean(pendingAction)} aria-label="Message LedgerMate AI" />
         <button className="lm-send-button" type="submit" aria-label="Send message" disabled={!input.trim() || !online || checking || sending || syncStatus === "loading" || Boolean(pendingAction)}>{sending ? <LoaderCircle className="lm-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}</button>
       </div>
       <div className="lm-composer-hint"><span>Enter to send <kbd>↵</kbd><span className="lm-hint-divider">·</span>Shift + Enter for a new line</span><span>AI can make mistakes. Verify important records.</span></div>

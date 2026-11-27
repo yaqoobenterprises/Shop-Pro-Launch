@@ -27,6 +27,6 @@ export const LedgerMateView: React.FC = () => {
   }
 
   return <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-    <AiAccountantPanel key={`${organization.id}:${user?.id || "demo"}`} summary={emptySummary()} userId={user?.id || ""} organizationId={organization.id} isCloudAccount={isCloudAccount && !isDemoMode} currency={region.currency} canPrepareActions={isFeatureEnabled("reviewedLedgerActions") && isCloudAccount && !isDemoMode && region.currency === "PKR" && hasPermission(user?.role, "VOID_EXPENSE")} />
+    <AiAccountantPanel key={`${organization.id}:${user?.id || "demo"}`} summary={emptySummary()} userId={user?.id || ""} organizationId={organization.id} isCloudAccount={isCloudAccount && !isDemoMode} currency={region.currency} providerDisabledReason={isDemoMode ? "Cloud AI is not used in the sample-data demo." : !isCloudAccount ? "Sign in to a cloud shop to use LedgerMate." : undefined} canPrepareActions={isFeatureEnabled("reviewedLedgerActions") && isCloudAccount && !isDemoMode && region.currency === "PKR" && hasPermission(user?.role, "VOID_EXPENSE")} />
   </div>;
 };
