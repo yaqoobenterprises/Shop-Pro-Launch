@@ -12,3 +12,8 @@ Obtain owner confirmation of the intended staging organization/project and any q
 
 ## Release status
 NO-GO: hosted staging, actual Groq provider, manual accessibility, PWA lifecycle, final performance and remaining product gaps are open. Do not merge or apply production migrations. Current development work remains draft PR #108.
+
+## Follow-up checkpoint
+- [CI 45974395257](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45974395257) at 76b5030 passed 432 tests / 67 files, both type checks, lint, size gates, audit and build. [Browser audit 45974236596](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45974236596) passed both themes at eight widths.
+- Integration 45974236617 passed all nine real database/Auth/MFA scenarios. The additional signed-in browser scenario timed out at account posting history after successfully reaching signed-in Overview, comparison, exact amount filter and CSV. Fixture registration creates default empty accounts; the test previously assumed the automatically selected account had postings. Commit 2f3d370 explicitly selects the seeded Synthetic cash account and asserts posted movement rows/date. [Retest 45974766606](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45974766606) triggered; result must be checked, not assumed. Actual AI provider calls remain blocked in this test.
+- Read-only Vercel/Supabase recheck: production still at 499fc169, candidate 76b5030 READY, 2f3d370 building; no Supabase development branch. Hosted staging requires organization choice and cost approval (if applicable), separate provider credential, and isolated environment binding verification. No production migration or deployment performed.
