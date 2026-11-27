@@ -67,7 +67,7 @@ const I18nPreferenceSync: React.FC = () => {
 
 const MainShell: React.FC = () => {
   const { currentView } = useApp();
-  const { isDemoMode, exitDemoMode, organization, user } = useAuth();
+  const { isDemoMode, isCloudAccount, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const regionSettingsEnabled = isFeatureEnabled("regionSettings");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
@@ -118,7 +118,7 @@ const MainShell: React.FC = () => {
       case "ai":
         return <LedgerMateView />;
       case "dashboard":
-        return <LedgerDashboardView />;
+        return <LedgerDashboardView cloudOnly={isCloudAccount && !isDemoMode} />;
       case "sales":
         return <TransactionsExplorerView />;
       case "reports":
