@@ -998,6 +998,7 @@ export class LedgerService {
   }): Promise<{ account: LedgerAccount; isQueuedOffline: boolean }> {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to manage shop accounts.');
+    requirePermission(principal.organizationId, 'MANAGE_BUSINESS_CONFIG');
     if (!input.name.trim()) throw new Error('Enter an account name.');
     if (!Number.isSafeInteger(input.openingBalancePaisa) || input.openingBalancePaisa < 0) {
       throw new Error('Enter a valid opening balance.');
@@ -1047,6 +1048,7 @@ export class LedgerService {
   ): Promise<boolean> {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to manage shop accounts.');
+    requirePermission(principal.organizationId, 'MANAGE_BUSINESS_CONFIG');
     if (changes.name !== undefined && !changes.name.trim()) {
       throw new Error('Account name cannot be empty.');
     }
@@ -1091,6 +1093,7 @@ export class LedgerService {
   }): Promise<boolean> {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to transfer shop funds.');
+    requirePermission(principal.organizationId, 'ACCOUNT_TRANSFER');
     if (!input.fromAccountId || !input.toAccountId || input.fromAccountId === input.toAccountId) {
       throw new Error('Choose different source and destination accounts.');
     }
