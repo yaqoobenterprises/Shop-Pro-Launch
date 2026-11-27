@@ -73,11 +73,13 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
     onApply({ fromDate: start, toDate: end, type: typeFilter, categoryId: categoryFilter });
   };
 
+  const dirty = fromDate !== filters.fromDate || toDate !== filters.toDate || typeFilter !== filters.type || categoryFilter !== filters.categoryId;
   const applyFilters = () => {
     if (!fromDate || !toDate) {
       setFilterError("Please select both a start and end date.");
       return;
     }
+    if (toDate > today) { setFilterError("Choose a date on or before today."); return; }
     if (fromDate > toDate) {
       setFilterError("The start date must be on or before the end date.");
       return;
@@ -89,8 +91,8 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
   return (
     <section className="reports-modern__filters" aria-label="Report filters">
       <div className="reports-modern__filter-heading">
-        <div className="reports-modern__filter-title"><Filter size={17} aria-hidden="true" /><h2>Build your report</h2></div>
-        <span className="reports-modern__filter-note">Every chart and total uses the selected filters</span>
+        <div className="reports-modern__filter-title"><Filter size={17} aria-hidden="true" /><h2>Report filters</h2></div>
+        <span className="reports-modern__filter-note">Charts and exports use applied filters</span>
       </div>
       <div className="reports-modern__presets" role="group" aria-label="Quick date ranges">
         <button type="button" onClick={() => applyRange(dateDaysAgo(today, 6), today)}>Last 7 days</button>
@@ -145,6 +147,7 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
         </div>
       </div>
       {filterError && <p role="alert" className="reports-modern__error">{filterError}</p>}
+      {dirty && <p className="reports-source-note" role="status">Unapplied changes — report and export still use the range below.</p>}
       <div className="reports-modern__active-range">
         <CalendarDays size={15} aria-hidden="true" />
         <strong>{formatDisplayDate(filters.fromDate)} – {formatDisplayDate(filters.toDate)}</strong>
