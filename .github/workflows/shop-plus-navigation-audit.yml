@@ -7,6 +7,12 @@ on:
     paths:
       - .github/workflows/shop-plus-navigation-audit.yml
       - src/components/sales/TransactionsExplorerView.tsx
+      - src/components/accounts/**
+      - src/components/reports/**
+      - src/services/ledgerService.ts
+      - src/lib/premiumXlsx.ts
+      - src/lib/reportAccountBreakdown.ts
+      - src/App.tsx
   workflow_dispatch:
 
 permissions:
