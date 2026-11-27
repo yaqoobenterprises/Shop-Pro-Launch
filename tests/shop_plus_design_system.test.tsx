@@ -5,16 +5,15 @@ import { readFileSync } from "node:fs";
 import { AnimatedAmount } from "../src/components/common/AnimatedAmount";
 import { Modal } from "../src/components/common/Modal";
 import { Select } from "../src/components/common/Select";
-import { formatPaisa } from "../src/lib/money";
 
 describe("Shop Plus shared design-system contracts", () => {
   it("displays exact financial values without animation, including negative values", () => {
     const { rerender } = render(<AnimatedAmount amountPaisa={125050} />);
-    expect(screen.getByText(formatPaisa(125050))).toBeInTheDocument();
+    expect(screen.getByText("Rs 1,250.50")).toBeInTheDocument();
     rerender(<AnimatedAmount amountPaisa={-2600} />);
-    expect(screen.getByText(formatPaisa(-2600))).toBeInTheDocument();
+    expect(screen.getByText("Rs -26")).toBeInTheDocument();
     rerender(<AnimatedAmount amountPaisa={0} />);
-    expect(screen.getByText(formatPaisa(0))).toBeInTheDocument();
+    expect(screen.getByText("Rs 0")).toBeInTheDocument();
   });
 
   it("distinguishes unavailable and pending values from zero", () => {
