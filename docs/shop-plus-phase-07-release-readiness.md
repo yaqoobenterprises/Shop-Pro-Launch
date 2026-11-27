@@ -1,0 +1,54 @@
+# Shop Plus — Phase 07: release readiness and quality gates
+
+**Status: release blocked.** No production promotion, merge, database migration, live financial mutation, or backup restore performed.
+
+## Implemented corrections
+- LedgerMate New chat and History icon controls retain accessible names even when text is hidden on phones. History panel is positioned within the phone header, close restores focus, and incomplete assistant responses do not expose copy/regenerate controls. Conversation log named; readable status and practical touch targets. Existing reviewed-action workflow retained.
+- Exact record display uses explicit fractional minor-unit formatting, including negative sub-unit amounts and safe integer boundaries. Legacy rounded formatter contract remains available. Overview and Reports validate record values/aggregate magnitude before rendering; Overview account total uses exact integer aggregation and rejects unsafe values. The conservative report range guard rejects any unsafe total magnitude; narrowing the range is the recovery path. No stored amount or accounting classification changes. Other legacy UI call sites and Excel numerical precision beyond spreadsheet safe precision remain audit items.
+- Settings CSV export reuses existing shared CSV serializer, preserves numeric fields, neutralizes additional formula/control prefixes, and releases object URLs. JSON exports retain existing scope. New tests cover injection prefixes, exact formatting and invalid or overflowing report data.
+- Route error boundary retains navigation, prevents misleading zero-result presentation after rendering failure, and warns users to verify transaction status before resubmission. Workspace route and Settings/Overview state scoped to identity. A failed lazy module may still require an explicit reload; no automatic reload or financial mutation is triggered.
+- Two Phase 07 utility size violations were found after TypeScript/strict/lint passed; extracted monetary range validation and restored utility limits without changing the guardrails.
+
+## Evidence-based accessibility and performance QA
+- WCAG 2.2 (https://www.w3.org/TR/WCAG22/) and Playwright accessibility guidance (https://playwright.dev/docs/accessibility-testing): automate role/name, contrast, structural and target-size rules; manual keyboard, zoom, screen-reader and touch checks remain necessary. Expanded the existing isolated Chromium audit to run axe-core 4.10.3 at eight viewport widths across landing plus seven screens in each theme (128 intended scans). Fail on detected WCAG A/AA violations, record incomplete checks, screenshot and preserve selector evidence. No live API calls. Also assert History close focus restoration.
+- Google Web Vitals (https://web.dev/articles/vitals): field p75 LCP <=2.5s, INP <=200ms, CLS <=0.1. New comparative lab workflow builds original baseline and candidate on the same runner, compares three cold samples per build/profile (390px 4x CPU, 150ms network latency and 1.6Mbps download; 1440px unthrottled), captures LCP/CLS/FCP/resource size/long tasks/demo and route timing and max observed event duration. Event timing is **not** field INP; no field p75 claim. Bundle byte and gzip sizes recorded separately from transfer bytes. A small demo dataset cannot establish large-table or memory scalability.
+- Phase 06 build logs show entry JS 571.47 kB / gzip 161.56 kB versus baseline 565.74 / 159.27; entry CSS 214.18 / 36.68 versus 220.43 / 38.17; Supabase vendor 226.69 / 58.83 unchanged. Entry JS increased; no speedup is claimed solely from CSS reduction. Comparative lab results pending.
+- Phase 06 candidate f95f86b: 404 tests in 63 files passed (CI 45958538748), including local PGlite cashbook fixture, transfer legs, idempotency/lost reply, edit/void/restore, timezone and migration authorization tests. Phase 05 browser audit passed all widths/themes; Phase 06 mobile History failed, corrected in Phase 07. Current CI and final browser/lab evidence outstanding.
+
+## Production review (read-only 2026-11-27)
+- OWASP ASVS 5.0 (https://asvs.owasp.org/): authorization, session, input validation, sensitive data and output encoding require evidence beyond frontend guards. Supabase migration list still has six versions; authorization-hardening and multi-conversation migrations from SECURITY.md/ROLLOUT.md are still absent. Security advisor still flags four authenticated-callable privileged functions and leaked-password protection disabled. Do not treat advisor warnings as proof of exploitation; existing repository documents release-blocking tenant/draft risks. See private review and approved migration workflow; do not publish exploit details or customer data.
+- Read-only catalog checks: RLS enabled on all ten inspected financial/identity/chat tables. Posting and protection triggers on account_transfers, payment account opening/balance sync, and organization regional guard are present and enabled. This confirms trigger presence, not atomic concurrency behavior or effective cross-tenant policy correctness.
+- Vercel production READY at original main commit 499fc1695da4da2b3dfdfb7c59b90740c3090081. A prior feature-branch preview was READY at accf6c6d4b0af315481bac7ce5dbb6e1a1a480a0, not the current release candidate. No production changes. Preview status is not a test result.
+
+## Explicit release checklist
+1. Final commit: CI, both themes/widths, axe issues and incomplete manual checks; recheck screenshots and actual keyboard/touch/zoom/screen reader. Verify auth and error paths with test accounts.
+2. Comparative lab and real-user measurement; optimize confirmed bottlenecks, verify large transaction register and memory. Field INP/LCP/CLS remains unverified.
+3. Isolated Supabase staging: review exact pending migrations, test owner/manager/cashier/inactive/cross-shop scopes, transfer atomicity, draft idempotency, concurrent currency changes and authorization, and data preservation. No live migration before explicit owner approval and validated secure backup. Verify effective RLS, MFA and password protection.
+4. LedgerMate: approved test account and isolated provider configuration, verify AI answer accuracy and source traces, prompt-injection resistance, rate limits, privacy, and recovery of submitted actions across navigation/reload. Cloud chat sync migration must be tested separately.
+5. Remaining product scope: prior-period overview comparisons and recent records, advanced transaction sorting/amount filters and semantic tables, inactive-account history and full transfer register, report print and export precision, auth recovery/unauthorized screens, and all prior phase outstanding gates.
+6. Only after blockers are resolved: verify exact preview commit, approved deployment and rollback candidate, staging smoke results, then separately approve production release. Do not merge this draft solely because CI passes.
+
+## Comparative lab and first accessibility results (verified)
+
+[Comparative run 45959364625](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45959364625) succeeded: original 499fc169 vs candidate 8ba0f85, three cold samples per build/profile. Medians:
+
+| Metric | Original phone | Candidate phone | Original desktop | Candidate desktop |
+| --- | ---: | ---: | ---: | ---: |
+| Landing LCP ms | 2248 | 1916 | 240 | 100 |
+| Landing CLS | 0 | 0.0003057 | 0 | 0 |
+| Landing FCP ms | 1932 | 1916 | 100 | 100 |
+| Encoded resource bytes | 269115 | 317816 | 269115 | 317816 |
+| Long task total ms | 744 | 740 | 0 | 0 |
+| Demo readiness ms | 575 | 566 | 392 | 395 |
+| Transaction route ms | 515 | 551 | 849 | 400 |
+| Max observed event duration ms | 56 | 56 | 24 | 16 |
+
+All 12 samples completed without recorded browser errors. Candidate landing LCP improved under this test but encoded resource bytes increased by ~18.1% and phone transaction navigation by ~7%. Do not claim universal improvement or field INP; repeat on the final commit, compare real-user p75 and a representative large dataset.
+
+[First axe audit 45959322417](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45959322417) completed all 128 scans (64/theme), with interaction checks passing but WCAG automated gate failing. Findings: incorrect ARIA on readonly date-picker textbox (both themes), Overview label contrast (both), dark Transactions primary button contrast, scrollable Reports regions and chat log without keyboard focus, and dark LedgerMate sync contrast. Incomplete axe checks on 49 dark and 40 light scans require manual assessment. Repairs committed through 33e3f41: move popup state to calendar button, unique popup IDs, focus selected day and restore focus, clamp popover to viewport, improve measured contrast and keyboard focusable labelled scroll regions. [Corrected browser run 45959775486](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45959775486) pending at this writing.
+
+CI 45959370394 passed type checks and lint but failed two size limits. After extraction, CI 45959643212 passed those limits, type checks and lint before superseded by subsequent accessibility edits. Final full suite required; do not claim passed. Current code candidate 33e3f41 (plus documentation).
+
+## Phase 08 follow-up
+
+[Phase 07 corrected browser audit](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45959775486) passed all 128 automated scans with no reported violations. Manual review remains necessary (49 dark and 40 light scans had incomplete axe checks). The final Phase 07 CI failed one outdated rounded-currency expectation; the corrected checkpoint passed all 408 tests and build ([CI 45961074336](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45961074336)). See Phase 08 for later hardening evidence.

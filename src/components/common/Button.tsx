@@ -29,30 +29,30 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ref,
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer";
+      "inline-flex items-center justify-center font-semibold transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50 select-none cursor-pointer";
 
     const variants = {
       primary:
-        "bg-primary hover:bg-primary-hover text-on-primary border border-primary shadow-xs",
+        "bg-primary hover:bg-primary-hover text-on-primary border border-primary",
       indigo:
-        "bg-primary hover:bg-primary-hover text-on-primary border border-primary shadow-xs",
+        "bg-primary hover:bg-primary-hover text-on-primary border border-primary",
       secondary:
-        "bg-surface-bright hover:bg-surface-container-low text-on-surface border border-border-standard shadow-xs",
+        "bg-surface-bright hover:bg-surface-container-low text-on-surface border border-border-standard",
       outline:
         "bg-surface-bright border border-border-standard hover:bg-surface-container-low text-on-surface",
       ghost:
         "bg-transparent text-text-muted hover:text-on-surface hover:bg-surface-container-low",
       danger:
-        "bg-danger hover:bg-danger/90 text-on-error border border-danger shadow-xs",
-      teal: "bg-primary hover:bg-primary-hover text-on-primary border border-primary shadow-xs",
+        "bg-danger hover:bg-danger/90 text-on-error border border-danger",
+      teal: "bg-primary hover:bg-primary-hover text-on-primary border border-primary",
       emerald:
-        "bg-primary hover:bg-primary-hover text-on-primary border border-primary shadow-xs",
+        "bg-primary hover:bg-primary-hover text-on-primary border border-primary",
     };
 
     const sizes = {
-      sm: "min-h-10 px-3 text-xs gap-1.5 rounded-md",
-      md: "min-h-11 px-4 text-sm gap-2 rounded-lg",
-      lg: "min-h-12 px-6 text-base gap-2.5 rounded-xl font-semibold",
+      sm: "min-h-10 px-3 text-xs gap-1.5 rounded-[var(--radius-control-sm)]",
+      md: "min-h-11 px-4 text-sm gap-2 rounded-[var(--radius-control)]",
+      lg: "min-h-12 px-5 text-base gap-2.5 rounded-[var(--radius-control)]",
     };
 
     return (

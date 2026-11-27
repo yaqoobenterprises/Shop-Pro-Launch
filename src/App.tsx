@@ -1,12 +1,14 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppProvider, useApp } from "./context/AppContext";
+import { WorkspaceErrorBoundary } from "./components/common/WorkspaceErrorBoundary";
+import { hasPermission } from "./lib/permissions";
+import { emptyTransactionView } from "./lib/transactionViewState";
 import { I18nProvider, useI18n } from "./i18n";
 import { Sidebar } from "./components/layout/Sidebar";
 import { MobileNav } from "./components/layout/MobileNav";
 import { Header } from "./components/layout/Header";
 import { ToastContainer } from "./components/common/ToastContainer";
-import { CommandPalette } from "./components/layout/CommandPalette";
 import { ShortcutsHelpModal } from "./components/layout/ShortcutsHelpModal";
 import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
@@ -66,11 +68,13 @@ const I18nPreferenceSync: React.FC = () => {
 };
 
 const MainShell: React.FC = () => {
-  const { currentView } = useApp();
-  const { isDemoMode, exitDemoMode, organization, user } = useAuth();
+  const { currentView, setCurrentView, saveTransactionView } = useApp();
+  const { isDemoMode, isCloudAccount, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const regionSettingsEnabled = isFeatureEnabled("regionSettings");
   const [showRegionalSetup, setShowRegionalSetup] = React.useState(false);
+  const mainRef = React.useRef<HTMLElement>(null);
+  useEffect(() => { mainRef.current?.scrollTo?.({ top: 0 }); }, [currentView]);
 
   useEffect(() => {
     setShowRegionalSetup(Boolean(
@@ -116,15 +120,15 @@ const MainShell: React.FC = () => {
       case "ai":
         return <LedgerMateView />;
       case "dashboard":
-        return <LedgerDashboardView />;
+        return <LedgerDashboardView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} onExplore={(startDate,endDate)=>{saveTransactionView({...emptyTransactionView(),startDate,endDate,status:"active"});setCurrentView("sales");}} />;
       case "sales":
-        return <TransactionsExplorerView />;
+        return <TransactionsExplorerView key={`${organization.id}:${user?.id || "demo"}`} />;
       case "reports":
-        return <LedgerReportsView />;
+        return <LedgerReportsView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} />;
       case "accounts":
-        return <AccountsView />;
+        return <AccountsView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} demo={isDemoMode} canManage={isDemoMode || hasPermission(user?.role, "MANAGE_BUSINESS_CONFIG")} canTransfer={isDemoMode || hasPermission(user?.role, "ACCOUNT_TRANSFER")} onExplore={accountId => { saveTransactionView({ ...emptyTransactionView(), account: accountId }); setCurrentView("sales"); }} />;
       case "settings":
-        return <LedgerSettingsView />;
+        return <LedgerSettingsView key={`${organization.id}:${user?.id || "demo"}`} />;
       default:
         return <ChatView />;
     }
@@ -135,12 +139,13 @@ const MainShell: React.FC = () => {
       {isDemoMode && (
         <div
           role="status"
-          className="z-40 flex min-h-14 shrink-0 items-center justify-end border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
+          className="demo-workspace-banner z-30 flex min-h-10 shrink-0 items-center justify-between gap-2 border-b border-border-standard bg-surface-bright px-3 py-1 sm:px-5"
         >
+          <span className="min-w-0 text-xs text-text-muted">{t("app.sampleData")}</span>
           <button
             type="button"
             onClick={() => void exitDemoMode()}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-on-surface transition-colors hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             {t("app.exitDemo")}
           </button>
@@ -149,7 +154,7 @@ const MainShell: React.FC = () => {
       <div className="flex flex-1 min-h-0 w-full overflow-hidden">
         <a
           href="#main-content"
-          className="sr-only z-50 rounded-md bg-white px-4 py-2 text-sm font-semibold text-primary shadow-level-2 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          className="sr-only z-50 rounded-md bg-surface-bright px-4 py-2 text-sm font-semibold text-primary shadow-level-2 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
         >
           Skip to main content
         </a>
@@ -160,10 +165,12 @@ const MainShell: React.FC = () => {
         <div className="workspace flex flex-1 flex-col overflow-hidden min-w-0">
           <Header />
           <main
+            ref={mainRef}
             id="main-content"
             tabIndex={-1}
-            className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[calc(3.25rem+env(safe-area-inset-bottom))] md:pb-0"
+            className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0"
           >
+            <WorkspaceErrorBoundary key={`${organization.id}:${user?.id || "demo"}:${currentView}`} onOverview={() => setCurrentView("dashboard")}>
             <Suspense
               fallback={
                 <div role="status" className="flex min-h-32 items-center justify-center text-sm text-text-muted">
@@ -173,6 +180,7 @@ const MainShell: React.FC = () => {
             >
               {renderActiveView()}
             </Suspense>
+            </WorkspaceErrorBoundary>
           </main>
         </div>
 
@@ -181,7 +189,6 @@ const MainShell: React.FC = () => {
 
       {/* Global Modals & Overlays */}
       <QuickExpenseModal />
-      <CommandPalette />
       <ShortcutsHelpModal />
       <ToastContainer />
       <FirstRunRegionalModal

@@ -4,7 +4,8 @@ import App from './App.tsx';
 import './index.css';
 import './motion.css';
 import './typography.css';
-import { applyTheme, getSavedTheme } from './lib/theme';
+import './styles/borderlessWorkspace.css';
+import { initializeTheme } from './lib/theme';
 
 // Handle OAuth popup window callback: notify parent window and auto-close
 if (typeof window !== 'undefined' && window.opener && window.opener !== window) {
@@ -60,7 +61,7 @@ if (typeof window !== 'undefined' && window.opener && window.opener !== window) 
   }
 }
 
-applyTheme(getSavedTheme());
+initializeTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

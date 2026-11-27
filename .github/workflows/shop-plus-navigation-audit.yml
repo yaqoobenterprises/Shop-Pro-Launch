@@ -1,0 +1,355 @@
+name: Shop Plus financial workspace browser audit
+
+on:
+  push:
+    branches:
+      - feat/shop-plus-foundation-20261127
+    paths:
+      - .github/workflows/shop-plus-navigation-audit.yml
+      - src/components/sales/TransactionsExplorerView.tsx
+      - src/components/accounts/**
+      - src/components/reports/**
+      - src/services/ledgerService.ts
+      - src/lib/premiumXlsx.ts
+      - src/lib/reportAccountBreakdown.ts
+      - src/App.tsx
+      - src/components/chat/**
+      - src/components/settings/**
+      - src/components/auth/**
+      - src/services/ledgerMate*.ts
+      - src/services/useLedgerMateChatHistory.ts
+      - api/ai-chat.js
+      - src/lib/money.ts
+      - src/lib/reportAnalytics.ts
+      - src/regional/**
+      - src/components/common/**
+      - src/components/dashboard/**
+      - src/lib/transactionFilters.ts
+      - src/lib/overviewComparison.ts
+      - src/services/accountHistoryService.ts
+      - public/sw.js
+      - public/manifest.json
+      - src/components/layout/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: [light, dark]
+    env:
+      AUDIT_THEME: ${{ matrix.theme }}
+    steps:
+      - name: Check out candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install isolated browser tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/shop-plus-audit" --no-save playwright@1.56.1 axe-core@4.10.3
+          "$RUNNER_TEMP/shop-plus-audit/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Build and serve candidate
+        run: |
+          npm run build
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/shop-plus-preview.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/shop-plus-preview.log
+          exit 1
+      - name: Capture demo-only responsive navigation
+        run: |
+          mkdir -p browser-audit
+          node --input-type=commonjs <<'NODE'
+          const { chromium } = require(process.env.RUNNER_TEMP + '/shop-plus-audit/node_modules/playwright');
+          const fs = require('node:fs');
+          const widths = [320, 375, 390, 768, 1024, 1280, 1440, 1920];
+          const records = [];
+          const accessibility = [];
+          const interactions = [];
+          const financialChecks = [];
+          const reportingChecks = [];
+          const assistantSettingsChecks = [];
+          const theme = process.env.AUDIT_THEME;
+          async function capture(page, width, surface, errors) {
+            if (!(await page.evaluate(() => Boolean(window.axe)))) await page.addScriptTag({path: process.env.RUNNER_TEMP + "/shop-plus-audit/node_modules/axe-core/axe.min.js"});
+            const audit = await page.evaluate(async () => {
+              const result = await window.axe.run(document, {runOnly:{type:"tag",values:["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22aa"]}});
+              return {violations:result.violations.map(v=>({id:v.id,impact:v.impact,help:v.help,helpUrl:v.helpUrl,targets:v.nodes.map(n=>n.target).slice(0,20)})),incomplete:result.incomplete.map(v=>({id:v.id,count:v.nodes.length})),passes:result.passes.length};
+            });
+            accessibility.push({width,surface,...audit});
+            const metrics = await page.evaluate(() => ({
+              viewport: window.innerWidth,
+              documentWidth: document.documentElement.scrollWidth,
+              bodyWidth: document.body.scrollWidth,
+              mainWidth: document.querySelector('main')?.clientWidth ?? null,
+              mainScrollWidth: document.querySelector('main')?.scrollWidth ?? null
+            }));
+            const appearance = await page.evaluate(() => ({
+              theme: document.documentElement.dataset.theme,
+              canvas: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(),
+              accent: getComputedStyle(document.documentElement).getPropertyValue('--forest').trim()
+            }));
+            await page.screenshot({path: 'browser-audit/' + theme + '-' + width + '-' + surface + '.png', fullPage: true, animations: 'disabled'});
+            records.push({width, surface, ...metrics, ...appearance, pageErrors: [...errors]});
+          }
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            try {
+              for (const width of widths) {
+                const context = await browser.newContext({viewport:{width,height:900}, reducedMotion:'reduce', serviceWorkers:'block'});
+                // Prevent all external requests: only local application and isolated sample data.
+                await context.addInitScript(preference => localStorage.setItem('yaqoob-theme', preference), theme);
+                await context.route('**/*', route => {
+                  const url = new URL(route.request().url());
+                  return url.origin === 'http://127.0.0.1:4173' && !url.pathname.startsWith('/api/') ? route.continue() : route.abort();
+                });
+                const page = await context.newPage();
+                page.setDefaultTimeout(12000);
+                const errors = [];
+                page.on('pageerror', e => errors.push(e.message));
+                try {
+                  await page.goto('http://127.0.0.1:4173/',{waitUntil:'domcontentloaded'});
+                  const demo = page.getByRole('button',{name:'Explore demo',exact:true});
+                  await demo.waitFor({timeout:15000});
+                  await page.evaluate(() => document.fonts.ready);
+                  await capture(page,width,'landing',errors);
+                  await demo.click();
+                  await page.locator('#main-content').waitFor({timeout:15000});
+                  await page.getByRole('navigation',{name:'Main navigation'}).filter({visible:true}).first().waitFor();
+                  await page.getByText('Loading workspace...',{exact:true}).waitFor({state:'hidden',timeout:15000});
+                  await page.evaluate(() => document.fonts.ready);
+                  await capture(page,width,'overview',errors);
+                  const navigation = page.getByRole('navigation',{name:'Main navigation'}).filter({visible:true}).first();
+                  const chrome = width >= 768 ? page.locator('#app-sidebar') : navigation;
+                  for (const [label,surface,view] of [['Cashbook','cashbook','chat'],['Transactions','transactions','sales'],['Reports','reports','reports'],['LedgerMate AI','ai','ai'],['Accounts','accounts','accounts'],['Settings','settings','settings']]) {
+                    try {
+                      let target = chrome.getByRole('button',{name:label,exact:true}).filter({visible:true}).first();
+                      if (!(await target.isVisible())) {
+                        const more = navigation.getByRole('button',{name:'More navigation options'});
+                        if (await more.isVisible()) {
+                          await more.click();
+                          target = page.getByRole('dialog',{name:'More navigation'}).getByRole('button',{name:label,exact:true});
+                          await target.waitFor({timeout:10000});
+                        }
+                      }
+                      if (!(await target.isVisible())) {
+                        records.push({width,surface,skipped:'Navigation label not visible'});
+                        continue;
+                      }
+                      await target.click();
+                      await page.waitForURL('**/workspace/' + view, {timeout: 10000});
+                      await page.locator('#main-content').waitFor();
+                      await page.getByText('Loading workspace...',{exact:true}).waitFor({state:'hidden',timeout:15000});
+                      await page.evaluate(() => document.fonts.ready);
+                      await capture(page,width,surface,errors);
+                    } catch (e) { records.push({width,surface,error:String(e)}); }
+                  }
+                  try {
+                    const newEntry = (width >= 768 ? chrome : page.locator('header.app-header')).getByRole('button',{name:'New entry',exact:true});
+                    await newEntry.click();
+                    await page.waitForURL('**/workspace/chat');
+                    await page.locator('#ledger-entry').waitFor();
+                    await page.waitForFunction(() => document.activeElement?.id === 'ledger-entry', null, {timeout:10000});
+                    await page.goBack();
+                    await page.waitForURL('**/workspace/settings');
+                    await page.goForward();
+                    await page.waitForURL('**/workspace/chat');
+                    const search = page.getByRole('searchbox',{name:'Search workspace',exact:true});
+                    await search.waitFor();
+                    await page.keyboard.press('Control+k');
+                    await page.waitForFunction(() => document.activeElement?.id === 'workspace-search');
+                    await search.fill('transactions');
+                    if (await page.getByRole('dialog').count()) throw new Error('Search must remain inline');
+                    await search.press('Enter');
+                    await page.waitForURL('**/workspace/sales');
+                    await page.getByRole('heading',{name:'Transactions',exact:true}).waitFor();
+                    if (width >= 768) {
+                      const collapse = chrome.getByRole('button',{name:'Collapse sidebar',exact:true});
+                      if (!(await collapse.isVisible())) await chrome.getByRole('button',{name:'Expand sidebar',exact:true}).click();
+                      await collapse.click();
+                      await chrome.getByRole('button',{name:'Expand sidebar',exact:true}).waitFor();
+                      await chrome.getByRole('button',{name:'Overview',exact:true}).click();
+                      await page.waitForURL('**/workspace/dashboard');
+                    } else {
+                      await navigation.getByRole('button',{name:'More navigation options'}).click();
+                      await page.getByRole('dialog',{name:'More navigation'}).waitFor();
+                      await page.keyboard.press('Escape');
+                      await page.getByRole('dialog',{name:'More navigation'}).waitFor({state:'hidden'});
+                    }
+                    interactions.push({width,passed:true});
+                  } catch(e) { interactions.push({width,error:String(e)}); }
+                  let step = 'open transactions';
+                  try {
+                    const openTransactions = chrome.getByRole('button',{name:'Transactions',exact:true});
+                    await openTransactions.click();
+                    await page.waitForURL('**/workspace/sales');
+                    const filters = page.getByRole('region',{name:'Transaction filters'});
+                    await filters.waitFor();
+                    step = 'search matching demo descriptions';
+                    const search = filters.getByRole('searchbox',{name:'Search transactions'});
+                    await search.fill('sale');
+                    await filters.getByRole('button',{name:'Search',exact:true}).click();
+                    await page.locator('.shop-plus-transactions .table-row').first().waitFor();
+                    await page.waitForFunction(() => Array.from(document.querySelectorAll('.shop-plus-transactions .table-row')).every(row => row.getAttribute('aria-label')?.toLowerCase().includes('sale')) && document.querySelectorAll('.shop-plus-transactions .table-row').length > 0);
+                    step = 'restore filter after navigation';
+                    await chrome.getByRole('button',{name:'Overview',exact:true}).click();
+                    await page.waitForURL('**/workspace/dashboard');
+                    await openTransactions.click();
+                    await page.waitForURL('**/workspace/sales');
+                    await search.waitFor();
+                    if ((await search.inputValue()) !== 'sale') throw new Error('Search filter was not retained');
+                    step = 'reject reversed dates';
+                    await filters.getByLabel('From business date').fill('2026-11-27');
+                    await filters.getByLabel('To business date').fill('2026-11-26');
+                    await page.getByRole('alert').filter({hasText:'From date must be on or before To date.'}).waitFor();
+                    if (!(await page.getByRole('button',{name:'Export filtered CSV',exact:true}).isDisabled())) throw new Error('Export must be disabled for invalid range');
+                    await filters.getByRole('button',{name:'Reset',exact:true}).click();
+                    if ((await search.inputValue()) !== '') throw new Error('Reset did not clear search');
+                    step = 'reject reversed amount range';
+                    await filters.getByLabel('Minimum amount').fill('20');
+                    await filters.getByLabel('Maximum amount').fill('10');
+                    await page.getByRole('alert').filter({hasText:'Minimum amount must be on or below maximum amount.'}).waitFor();
+                    if (!(await page.getByRole('button',{name:'Export filtered CSV',exact:true}).isDisabled())) throw new Error('Export must be disabled for invalid amount bounds');
+                    await filters.getByRole('button',{name:'Reset',exact:true}).click();
+                    if ((await filters.getByLabel('Minimum amount').inputValue()) !== '') throw new Error('Reset did not clear amount bounds');
+                    step = 'review without posting';
+                    await (width >= 768 ? chrome : page.locator('header.app-header')).getByRole('button',{name:'New entry',exact:true}).click();
+                    await page.waitForURL('**/workspace/chat');
+                    const entry = page.locator('#ledger-entry');
+                    await entry.waitFor();
+                    await entry.fill('sale 500');
+                    await page.getByRole('button',{name:'Send entry',exact:true}).click();
+                    const review = page.getByRole('dialog',{name:/review|confirm|check|clarify/i}).first();
+                    await review.waitFor();
+                    await review.getByRole('button',{name:'Cancel',exact:true}).click();
+                    await review.waitFor({state:'hidden'});
+                    financialChecks.push({width,passed:true});
+                  } catch(e) { financialChecks.push({width,step,error:String(e)}); }
+                  let reportStep = 'account tools';
+                  try {
+                    const openAccounts = chrome.getByRole('button',{name:'Accounts',exact:true});
+                    await openAccounts.click();
+                    await page.waitForURL('**/workspace/accounts');
+                    const move = page.getByRole('button',{name:'Move money',exact:true});
+                    await move.waitFor();
+                    await page.waitForFunction(() => Array.from(document.querySelectorAll('button')).some(button => button.textContent?.trim() === 'Move money' && !button.disabled));
+                    await move.click();
+                    await page.getByRole('heading',{name:'Transfer funds',exact:true}).waitFor();
+                    await page.getByLabel('Amount',{exact:true}).fill('25.50');
+                    await move.click(); // never submit money movement during browser audit
+                    reportStep = 'account history';
+                    await page.getByRole('button',{name:/View transactions for/}).first().click();
+                    await page.waitForURL('**/workspace/sales');
+                    await page.getByRole('region',{name:'Transaction filters'}).waitFor();
+                    reportStep = 'report scope';
+                    if (width < 768) {
+                      await navigation.getByRole('button',{name:'More navigation options'}).click();
+                      await page.getByRole('dialog',{name:'More navigation'}).getByRole('button',{name:'Reports',exact:true}).click();
+                    } else await chrome.getByRole('button',{name:'Reports',exact:true}).click();
+                    await page.waitForURL('**/workspace/reports');
+                    await page.getByRole('heading',{name:'Reports',exact:true}).waitFor();
+                    await page.getByRole('button',{name:'Last 7 days',exact:true}).click();
+                    await page.getByRole('heading',{name:'Activity by account',exact:true}).waitFor();
+                    const chart = page.locator('.finance-trend').first();
+                    await chart.getByRole('button',{name:'Inspect chart values'}).focus();
+                    await page.keyboard.press('End');
+                    await chart.getByRole('button',{name:'Clear chart selection'}).waitFor();
+                    await page.keyboard.press('Escape');
+                    await page.getByText('Exact values',{exact:true}).click();
+                    await page.getByRole('table',{name:'Filtered period totals'}).waitFor();
+                    await page.getByRole('button',{name:'Export to Excel',exact:true}).waitFor();
+                    if (!(await page.getByRole('button',{name:'Export to Excel',exact:true}).isEnabled())) throw new Error('Report export not ready after loading');
+                    reportingChecks.push({width,passed:true});
+                  } catch(e) { reportingChecks.push({width,step:reportStep,error:String(e)}); }
+                  let settingsStep = 'read-only assistant';
+                  try {
+                    const openSecondary = async (label,view) => {
+                      if (width < 768) {
+                        await navigation.getByRole('button',{name:'More navigation options'}).click();
+                        await page.getByRole('dialog',{name:'More navigation'}).getByRole('button',{name:label,exact:true}).click();
+                      } else await chrome.getByRole('button',{name:label,exact:true}).click();
+                      await page.waitForURL('**/workspace/'+view);
+                    };
+                    await openSecondary('LedgerMate AI','ai');
+                    await page.getByRole('heading',{name:'LedgerMate AI',exact:true}).waitFor();
+                    await page.getByText('Read-only analysis',{exact:true}).waitFor();
+                    if (await page.getByRole('button',{name:'Enable reviewed ledger actions'}).count()) throw new Error('Demo must not enable ledger actions');
+                    await page.getByRole('button',{name:'History',exact:true}).click();
+                    const history=page.getByRole('region',{name:'Chat history'});
+                    await history.waitFor();
+                    await history.getByRole('button',{name:'Close history'}).click();
+                    await history.waitFor({state:'hidden'});
+                    await page.waitForFunction(()=>document.activeElement?.id==='lm-history-trigger');
+                    settingsStep='settings navigation';
+                    await openSecondary('Settings','settings');
+                    const settingsNav=page.getByRole('navigation',{name:'Settings sections'});
+                    await settingsNav.waitFor();
+                    await settingsNav.getByRole('button',{name:'Appearance',exact:true}).click();
+                    const appearance=page.locator('#settings-panel-appearance');
+                    await appearance.waitFor();
+                    const alternate=theme==='dark'?'Light':'Dark';
+                    await appearance.getByRole('button',{name:alternate,exact:true}).click();
+                    await page.waitForFunction(value=>document.documentElement.dataset.theme===value,alternate.toLowerCase());
+                    await appearance.getByRole('button',{name:theme==='dark'?'Dark':'Light',exact:true}).click();
+                    await page.waitForFunction(value=>document.documentElement.dataset.theme===value,theme);
+                    settingsStep='category and recovery guards';
+                    await settingsNav.getByRole('button',{name:'Categories',exact:true}).click();
+                    const category=page.locator('#settings-panel-categories');
+                    await category.waitFor();
+                    if (!(await category.getByRole('button',{name:'Add category'}).isDisabled())) throw new Error('Demo category mutation enabled');
+                    await settingsNav.locator('#settings-nav-data-tools').click();
+                    const data=page.locator('#settings-panel-data-tools');
+                    await data.waitFor();
+                    if (!(await data.getByRole('button',{name:'Restore device'}).isDisabled())) throw new Error('Demo recovery mutation enabled');
+                    await settingsNav.getByRole('button',{name:'Security',exact:true}).click();
+                    await page.locator('#settings-panel-security').waitFor();
+                    assistantSettingsChecks.push({width,passed:true});
+                  } catch(e) { assistantSettingsChecks.push({width,step:settingsStep,error:String(e)}); }
+                } catch (e) { records.push({width,error:String(e)}); }
+                finally { await context.close(); }
+              }
+            } finally {
+              await browser.close();
+              fs.writeFileSync('browser-audit/measurements.json',JSON.stringify(records,null,2));
+              fs.writeFileSync('browser-audit/accessibility.json',JSON.stringify(accessibility,null,2));
+              fs.writeFileSync('browser-audit/interactions.json',JSON.stringify(interactions,null,2));
+              fs.writeFileSync('browser-audit/financial-checks.json',JSON.stringify(financialChecks,null,2));
+              fs.writeFileSync('browser-audit/reporting-checks.json',JSON.stringify(reportingChecks,null,2));
+              fs.writeFileSync('browser-audit/assistant-settings-checks.json',JSON.stringify(assistantSettingsChecks,null,2));
+            }
+            console.log(JSON.stringify(records,null,2));
+            console.log('AXE SUMMARY '+JSON.stringify(accessibility.map(r=>({width:r.width,surface:r.surface,violations:r.violations.map(v=>({id:v.id,impact:v.impact,targets:v.targets.slice(0,2)})),incomplete:r.incomplete.length,passes:r.passes}))));
+            if (accessibility.length !== widths.length*8 || accessibility.some(r=>r.violations.length)) process.exitCode = 1;
+            console.log(JSON.stringify(interactions,null,2));
+            console.log(JSON.stringify(financialChecks,null,2));
+            console.log(JSON.stringify(reportingChecks,null,2));
+            console.log(JSON.stringify(assistantSettingsChecks,null,2));
+            if (assistantSettingsChecks.length !== widths.length || assistantSettingsChecks.some(r => !r.passed)) process.exitCode = 1;
+            if (reportingChecks.length !== widths.length || reportingChecks.some(r => !r.passed)) process.exitCode = 1;
+            if (financialChecks.length !== widths.length || financialChecks.some(r => !r.passed)) process.exitCode = 1;
+            if (interactions.length !== widths.length || interactions.some(r => !r.passed)) process.exitCode = 1;
+            if (records.some(r => r.error || r.skipped || r.pageErrors?.length || r.theme !== theme || r.canvas !== (theme === 'dark' ? '#151922' : '#f5f6f8') || r.documentWidth > r.viewport || (r.mainWidth !== null && r.mainScrollWidth > r.mainWidth))) process.exitCode = 1;
+          })().catch(error => { console.error(error); process.exitCode=1; });
+          NODE
+      - name: Upload screenshots and measurements
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shop-plus-financial-workspace-${{ matrix.theme }}
+          path: browser-audit/
+          if-no-files-found: warn
+          retention-days: 14

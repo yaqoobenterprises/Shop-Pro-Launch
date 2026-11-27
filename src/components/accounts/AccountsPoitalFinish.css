@@ -67,3 +67,23 @@ html .app-shell .accounts-page .accounts-tools--focused .account-tool-heading h2
   }
   html .app-shell .accounts-page .accounts-tools--focused { margin-top: 12px; }
 }
+
+/* Ledger Ink: operational account cards and focused money movement. */
+html .app-shell .accounts-page .account-scope-note,
+html .app-shell .accounts-page .accounts-page-heading p { color:var(--muted); font-size:.8rem; line-height:1.55; margin:4px 0 10px; }
+html .app-shell .accounts-page .accounts-quick-actions { gap:8px; margin-block:8px 12px; }
+html .app-shell .accounts-page .accounts-quick-actions button { box-shadow:none; border-radius:var(--radius-control); }
+html .app-shell .accounts-page .accounts-quick-actions button:first-child { background:var(--primary); border-color:var(--primary); color:var(--on-primary); }
+html .app-shell .accounts-page .accounts-quick-actions button:disabled { opacity:.5; cursor:not-allowed; }
+html .app-shell .accounts-page .account-card { background:var(--surface-card); border:1px solid var(--line); color:var(--ink); border-radius:var(--radius-card); box-shadow:none; min-height:0; padding:14px; }
+html .app-shell .accounts-page .account-card .metric-amount { color:var(--ink); overflow-wrap:anywhere; white-space:normal; font-size:clamp(20px,2.4vw,30px); }
+html .app-shell .accounts-page .account-kind { color:var(--muted); font-size:.75rem; }
+html .app-shell .accounts-page .account-actions button { min-width:44px; min-height:44px; }
+html .app-shell .accounts-page .account-history-link { min-height:44px; font-size:.8rem; color:var(--accent-ink); text-align:start; padding:5px 0; background:transparent; }
+html .app-shell .accounts-page .accounts-tools--focused { margin-block:8px 16px; }
+html .app-shell .accounts-page .accounts-tools--focused .account-tool-panel { border:1px solid var(--line); border-radius:var(--radius-card); box-shadow:none; }
+html .app-shell .accounts-page .account-tool-panel fieldset { min-width:0; border:0; padding:0; }
+html .app-shell .accounts-page .aq-accounts-insights__panel { min-height:0; border:1px solid var(--line); border-radius:var(--radius-card); box-shadow:none; }
+html .app-shell .accounts-page .aq-accounts-insights__track > div { background:var(--primary); }
+
+html .app-shell .accounts-page .account-card .metric-amount.account-negative { color:var(--danger); }

@@ -159,6 +159,7 @@ export const Select: React.FC<SelectProps> = ({
       openMenu();
     } else if (event.key === "Escape" && isOpen) {
       event.preventDefault();
+      event.stopPropagation();
       setIsOpen(false);
       triggerRef.current?.focus();
     }
@@ -167,6 +168,7 @@ export const Select: React.FC<SelectProps> = ({
   const handlePopupKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Escape") {
       event.preventDefault();
+      event.stopPropagation();
       setIsOpen(false);
       setQuery("");
       triggerRef.current?.focus();
@@ -219,6 +221,7 @@ export const Select: React.FC<SelectProps> = ({
       {isOpen && createPortal(
         <div
           ref={popupRef}
+          data-shop-plus-popover
           className="custom-select-popover fixed z-[120] overflow-hidden rounded-xl border border-border-standard bg-surface-bright text-on-surface shadow-level-3"
           style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }}
           onKeyDown={handlePopupKeyDown}
@@ -283,7 +286,7 @@ export const Select: React.FC<SelectProps> = ({
             })}
           </div>
         </div>,
-        document.body,
+        triggerRef.current?.closest("[data-shop-plus-dialog]") ?? document.body,
       )}
     </>
   );

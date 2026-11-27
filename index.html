@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AQVORA</title>
+    <title>Shop Plus</title>
     <meta
       name="description"
       content="A ledger workspace for recording shop income and expenses, tracking accounts, and reviewing daily business activity."
     />
-    <meta property="og:title" content="AQVORA" />
+    <meta property="og:title" content="Shop Plus" />
     <meta
       property="og:description"
       content="A ledger workspace for recording shop income and expenses, tracking accounts, and reviewing daily business activity."
@@ -16,24 +16,24 @@
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#176b54" />
+    <meta name="theme-color" content="#4655aa" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="AQVORA" />
-    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+    <meta name="apple-mobile-web-app-title" content="Shop Plus" />
+    <link rel="icon" type="image/svg+xml" href="/assets/shop-plus-mark.svg" />
     <link rel="apple-touch-icon" href="/assets/icon-192.png" />
     <style>
       html {
-        background-color: #f5f6f3;
+        background-color: #f5f6f8;
       }
       html.dark, html[data-theme="dark"] {
-        background-color: #0d1b17;
+        background-color: #151922;
       }
     </style>
     <script>
       try {
         const saved = localStorage.getItem("yaqoob-theme");
-        if (saved === "dark") {
+        if (saved === "dark" || (saved === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
           document.documentElement.classList.add("dark");
           document.documentElement.setAttribute("data-theme", "dark");
         } else {

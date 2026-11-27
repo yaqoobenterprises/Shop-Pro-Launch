@@ -1,0 +1,89 @@
+name: Shop Plus isolated Supabase integration
+on:
+  push:
+    branches:
+      - feat/shop-plus-foundation-20261127
+    paths:
+      - .github/workflows/shop-plus-integration.yml
+      - scripts/shop-plus-local-integration.mjs
+      - scripts/shop-plus-authenticated-browser.mjs
+      - src/components/**
+      - src/services/**
+      - src/App.tsx
+      - public/**
+      - supabase/migrations/**
+      - api/ai-chat.js
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: shop-plus-integration-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start disposable local Supabase stack
+        run: |
+          command -v psql || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+          mkdir -p "$RUNNER_TEMP/shop-plus-local"
+          cd "$RUNNER_TEMP/shop-plus-local"
+          "$GITHUB_WORKSPACE/node_modules/.bin/supabase" init
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, tomllib
+          path = Path("supabase/config.toml")
+          config = path.read_text()
+          section = r"(?m)^\[auth\.mfa\.totp\][ \t]*\n[^\[]*"
+          replacement = "[auth.mfa.totp]\nenroll_enabled = true\nverify_enabled = true\n\n"
+          if re.search(section, config):
+              config = re.sub(section, lambda _: replacement, config, count=1)
+          else:
+              config += "\n" + replacement
+          assert tomllib.loads(config)["auth"]["mfa"]["totp"] == {"enroll_enabled": True, "verify_enabled": True}
+          path.write_text(config)
+          PY
+          "$GITHUB_WORKSPACE/node_modules/.bin/supabase" start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,supavisor
+          "$GITHUB_WORKSPACE/node_modules/.bin/supabase" status -o env > "$RUNNER_TEMP/shop-plus-local.env"
+      - name: Install browser tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/shop-plus-integration-browser" --no-save playwright@1.56.1
+          "$RUNNER_TEMP/shop-plus-integration-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Build isolated browser candidate
+        run: |
+          set -a
+          source "$RUNNER_TEMP/shop-plus-local.env"
+          set +a
+          VITE_SUPABASE_URL=https://shop-plus-local.test VITE_SUPABASE_PUBLISHABLE_KEY="${PUBLISHABLE_KEY:-$ANON_KEY}" npm run build
+      - name: Auth, upgrade and concurrent financial integration
+        env:
+          SHOP_PLUS_LOCAL_TEST: "1"
+          SHOP_PLUS_BROWSER_TEST: "1"
+        run: |
+          set -a
+          source "$RUNNER_TEMP/shop-plus-local.env"
+          set +a
+          node scripts/shop-plus-local-integration.mjs
+      - name: Upload integration report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: isolated-integration-report
+          path: integration-evidence.json
+          if-no-files-found: warn
+      - name: Stop disposable stack
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/shop-plus-local/supabase/config.toml" ]; then
+            cd "$RUNNER_TEMP/shop-plus-local"
+            "$GITHUB_WORKSPACE/node_modules/.bin/supabase" stop --no-backup
+          fi

@@ -136,3 +136,40 @@ html.dark .app-shell .reports-modern__kpi:nth-child(4) { background: var(--surfa
 .app-shell .reports-modern__pager button:focus-visible {
   outline: 3px solid var(--chart-lavender); outline-offset: 2px;
 }
+
+/* Ledger Ink: dense neutral reports, honest scales and printable data. */
+html .app-shell .reports-modern { gap:12px; }
+html .app-shell .reports-modern__filters,
+html .app-shell .reports-modern__chart-panel,
+html .app-shell .reports-modern__table-panel { padding:clamp(12px,1.5vw,20px); border:1px solid var(--line); border-radius:var(--radius-card); box-shadow:none; }
+html .app-shell .reports-modern__kpi { min-height:100px; padding:14px; background:var(--surface-card); color:var(--ink); border:1px solid var(--line); border-radius:var(--radius-card); }
+html .app-shell .reports-modern__kpi:nth-child(1),
+html .app-shell .reports-modern__kpi:nth-child(4) { background:var(--surface-card); color:var(--ink); }
+html .app-shell .reports-modern__kpi--profit > strong { color:var(--green); }
+html .app-shell .reports-modern__kpi--profit.is-negative > strong { color:var(--danger); }
+html .app-shell .reports-modern__kpi > strong { font-size:clamp(18px,2.2vw,29px); overflow-wrap:anywhere; white-space:normal; font-variant-numeric:tabular-nums; }
+html .app-shell .reports-modern__export,
+html .app-shell .reports-modern__apply { background:var(--primary); color:var(--on-primary); border-radius:var(--radius-control); }
+html .app-shell .reports-modern__presets button { min-height:44px; border-radius:var(--radius-control); }
+html .app-shell .reports-modern__bar.is-income { background:var(--green); min-height:0; border-radius:2px 2px 0 0; }
+html .app-shell .reports-modern__bar.is-expense { background:var(--danger); min-height:0; border-radius:2px 2px 0 0; }
+html .app-shell .reports-modern__profit-chart { background:transparent; }
+html .app-shell .reports-modern__profit-chart svg { height:180px; width:100%; }
+html .app-shell .reports-modern__profit-point { stroke-width:.3; }
+html .app-shell .reports-modern__empty { min-height:0; padding:14px; }
+html .app-shell .reports-modern .reports-source-note { color:var(--muted); font-size:.78rem; margin:4px 0; line-height:1.5; }
+html .app-shell .reports-modern__table-scroll { overflow-x:auto; }
+html .app-shell .reports-modern__table-scroll table :is(th,td) { padding:9px 10px; }
+html .app-shell .reports-modern__table-scroll table td:last-child { text-align:end; font-variant-numeric:tabular-nums; }
+html .app-shell .reports-modern__type-badge { background:transparent; border:0; color:var(--ink-2); padding:0; }
+html .app-shell .reports-modern .report-trend-data { margin-top:12px; }
+html .app-shell .reports-modern .report-trend-data summary { padding:10px 0; cursor:pointer; font-size:.82rem; font-weight:600; color:var(--accent-ink); }
+@media print {
+  html,body,#root,.app-shell,.app-shell .workspace,.app-shell #main-content { height:auto !important; overflow:visible !important; background:white !important; color:black !important; }
+  .app-shell #app-sidebar,.app-shell header.app-header,.app-shell .mobile-bottom-nav,.app-shell .demo-workspace-banner,.reports-modern__export,.reports-modern__filter-grid,.reports-modern__presets,.reports-modern__pager { display:none !important; }
+  .app-shell .reports-modern__table-panel,.app-shell .reports-modern__chart-panel,.app-shell .reports-modern__kpi { break-inside:avoid; box-shadow:none !important; }
+  .app-shell .reports-modern__table-scroll { overflow:visible !important; }
+  .app-shell .reports-modern__table-scroll table { min-width:0 !important; width:100% !important; font-size:9pt; }
+}
+
+html .app-shell .reports-modern :is(.reports-modern__trend-scroll,.reports-modern__table-scroll):focus-visible { outline:2px solid var(--primary); outline-offset:2px; }

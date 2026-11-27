@@ -223,3 +223,40 @@
 .lm-composer:focus-within { border-color: var(--accent-line-2); box-shadow: 0 0 0 3px var(--focus-ring); }
 .lm-send-button, .lm-confirm-button { background: var(--forest); border-color: var(--forest); }
 .lm-send-button:hover, .lm-confirm-button:hover { background: var(--forest-hover); }
+
+/* Ledger Ink financial intelligence workspace */
+html .app-shell .ledgermate { --lm-border:var(--line); --lm-muted:var(--muted); --lm-ink:var(--ink); --lm-surface:var(--paper); --lm-bright:var(--surface-card); }
+html .app-shell .lm-header { min-height:60px; padding:10px clamp(12px,2vw,24px); background:var(--surface-card); backdrop-filter:none; }
+html .app-shell .lm-mark, html .app-shell .lm-empty-icon { background:var(--primary); color:var(--on-primary); border-radius:var(--radius-control); }
+html .app-shell .lm-action-button, html .app-shell .lm-icon-button { min-height:44px; border-radius:var(--radius-control); }
+html .app-shell .lm-access-note { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 12px; padding:6px clamp(12px,2vw,24px); font-size:.75rem; color:var(--muted); border-bottom:1px solid var(--line); }
+html .app-shell .lm-access-note button, html .app-shell .lm-request-status button, html .app-shell .lm-retry { min-height:40px; padding:6px 10px; color:var(--accent-ink); background:var(--surface-card); border:1px solid var(--line); border-radius:var(--radius-control); font-weight:600; }
+html .app-shell .lm-messages { overscroll-behavior:contain; }
+html .app-shell .lm-bubble { border-radius:var(--radius-card); overflow-wrap:anywhere; }
+html .app-shell .lm-bubble.user { background:var(--tint); color:var(--ink); border:1px solid var(--line); }
+html .app-shell .lm-bubble.assistant { background:transparent; color:var(--ink); }
+html .app-shell .lm-composer { border-radius:var(--radius-card); box-shadow:none; background:var(--surface-card); }
+html .app-shell .lm-send-button { background:var(--primary); color:var(--on-primary); border-radius:var(--radius-control); min-height:44px; min-width:44px; }
+html .app-shell .lm-request-status { display:flex; align-items:center; justify-content:space-between; gap:8px; font-size:.75rem; color:var(--muted); }
+html .app-shell .lm-empty-state p { font-size:.85rem; color:var(--muted); max-width:32rem; text-align:center; }
+html .app-shell .lm-suggestions button { min-height:48px; border-radius:var(--radius-control); box-shadow:none; }
+html .app-shell .lm-table-wrap { overflow-x:auto; }
+@media(max-width:767px){html .app-shell .lm-header{flex-wrap:wrap;gap:4px;}html .app-shell .lm-header-actions{gap:4px;}html .app-shell .lm-access-note{font-size:.7rem;}html .app-shell .lm-access-note button{min-height:44px;}html .app-shell .lm-composer-wrap{padding:8px;} }
+@media(prefers-reduced-motion:reduce){.ledgermate *, .ledgermate *::before,.ledgermate *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important;}}
+
+/* Do not hide the accessible privacy status or clip the phone history panel. */
+html .app-shell .lm-privacy-note { font-size:.72rem; color:var(--muted); }
+html .app-shell .lm-composer textarea::placeholder, html .app-shell .lm-composer-hint { color:var(--muted); }
+html .app-shell .lm-action-button:focus-visible, html .app-shell .lm-icon-button:focus-visible,
+html .app-shell .lm-message-tools button:focus-visible, html .app-shell .lm-history-item:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+@media(max-width:680px) {
+  html .app-shell .lm-header { position:relative; }
+  html .app-shell .lm-history-anchor { position:static; }
+  html .app-shell .lm-history-popover { left:12px; right:12px; top:calc(100% + 4px); width:auto; }
+  html .app-shell .lm-action-button,html .app-shell .lm-icon-button { min-width:44px; width:44px; }
+  html .app-shell .lm-conversation-meta { flex-wrap:wrap; gap:4px; padding-block:6px; }
+  html .app-shell .lm-composer textarea { font-size:16px; }
+}
+
+html .app-shell .lm-sync,html .app-shell .lm-sync.loading,html .app-shell .lm-sync.local,html .app-shell .lm-sync.error { background:var(--surface-card); color:var(--ink); border:1px solid var(--line); }
+html .app-shell .lm-messages:focus-visible { outline:2px solid var(--primary); outline-offset:-2px; }

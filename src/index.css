@@ -1,13 +1,14 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 @import "@fontsource/noto-naskh-arabic";
+@import "./styles/tokens.css";
 
 /* Make Tailwind dark: utilities follow the app's saved .dark class, not OS preference. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   --color-surface: var(--surface);
@@ -77,7 +78,7 @@
 
   body {
     font-family: var(--font-sans);
-    color-scheme: light;
+    color-scheme: inherit;
     background-color: var(--surface);
     color: var(--on-surface);
     letter-spacing: 0;
@@ -92,7 +93,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--focus-color);
     outline-offset: 2px;
   }
 
@@ -105,7 +106,7 @@
     outline: none !important;
     outline-offset: 0 !important;
     border-color: var(--forest) !important;
-    box-shadow: 0 0 0 3px var(--focus-ring) !important;
+    box-shadow: 0 0 0 2px var(--focus-color) !important;
   }
 
   button,
@@ -121,6 +122,11 @@
     font-feature-settings:
       "tnum" on,
       "zero" on;
+  }
+
+  input[aria-invalid="true"]:focus, textarea[aria-invalid="true"]:focus, select[aria-invalid="true"]:focus {
+    border-color: var(--danger) !important;
+    box-shadow: 0 0 0 2px var(--danger) !important;
   }
 
   /* Refined tabular numerals for financials */
@@ -139,136 +145,9 @@
 /* ==========================================================================
    DESIGN REFERENCE THEME TOKENS
    ========================================================================== */
-:root {
-  color-scheme: light;
 
-  /* Brand and content */
-  --ink: #172638;
-  --ink-2: #3b4e62;
-  --muted: #66788a;
-  --faint: #94a3b2;
-  --logo: #8394a4;
-  --forest: #14765e;
-  --forest-hover: #0f624d;
-  --green: #178567;
-  --accent-ink: #11624e;
 
-  /* Surfaces */
-  --mint: #e2f0ea;
-  --mint-2: #d7e9e1;
-  --tint: #edf4f1;
-  --tint-2: #e5efeb;
-  --good-bg: #e9f5ef;
-  --good-line: #cbe7d8;
-  --insight-bg: #eef5f1;
-  --insight-ring: rgba(20, 118, 94, 0.06);
-  --hero-glow: #eaf4ef;
-  --soft: #f5f7f8;
-  --paper: #f5f7f8;
-  --surface: #ffffff;
-  --surface-2: #f0f3f5;
-  --surface-card: #ffffff;
-  --input-bg: #fbfcfd;
 
-  /* Borders and chart colours */
-  --line: #e3e9ee;
-  --line-strong: #d8e1e8;
-  --accent-line: #a8cbbb;
-  --accent-line-2: #8fbaa8;
-  --orange: #9e5636;
-  --warn-bg: #fbf2e9;
-  --danger: #b44843;
-  --danger-bg: #fcedec;
-  --dot: #299c75;
-  --bar-muted: #cbd5de;
-  --track: #e8edf1;
-  --chart-line: #14765e;
-  --chart-stroke: #0f624d;
-  --report-tint-1: #eff7f2;
-  --report-tint-2: #fbf3ee;
-  --report-tint-3: #eef4f8;
-
-  /* Chrome, focus, and elevation */
-  --glass: rgba(255, 255, 255, 0.94);
-  --glass-soft: rgba(255, 255, 255, 0.72);
-  --header-bg: rgba(255, 255, 255, 0.9);
-  --dock-bg: rgba(245, 247, 248, 0.96);
-  --featured: #172638;
-  --focus-ring: rgba(20, 118, 94, 0.18);
-  --backdrop: rgba(13, 25, 37, 0.5);
-  --shadow: 0 20px 56px rgba(23, 38, 56, 0.12);
-  --shadow-sm: 0 1px 2px rgba(23, 38, 56, 0.04), 0 8px 24px rgba(23, 38, 56, 0.045);
-
-  /* Shared shape and icon tokens */
-  --radius-control-sm: 0.625rem;
-  --radius-control: 0.75rem;
-  --radius-card: 0.875rem;
-  --radius-panel: 1rem;
-  --radius-dialog: 1.25rem;
-  --icon-stroke: 1.85;
-}
-
-:root[data-theme="dark"],
-html.dark {
-  color-scheme: dark;
-
-  /* Brand and content */
-  --ink: #e7eef4;
-  --ink-2: #c4d0db;
-  --muted: #9aabba;
-  --faint: #748899;
-  --logo: #8da0b0;
-  --forest: #31a783;
-  --forest-hover: #46bc96;
-  --green: #57c89f;
-  --accent-ink: #91e0c3;
-
-  /* Surfaces */
-  --mint: #18392f;
-  --mint-2: #214739;
-  --tint: #1b342d;
-  --tint-2: #213d34;
-  --good-bg: rgba(49, 167, 131, 0.16);
-  --good-line: #2d5c4a;
-  --insight-bg: #172f2a;
-  --insight-ring: rgba(87, 200, 159, 0.08);
-  --hero-glow: #18342e;
-  --soft: #0d1722;
-  --paper: #0d1722;
-  --surface: #142231;
-  --surface-2: #1b2d3d;
-  --surface-card: #142231;
-  --input-bg: #101f2d;
-
-  /* Borders and chart colours */
-  --line: #2a3e50;
-  --line-strong: #354b5e;
-  --accent-line: #386b59;
-  --accent-line-2: #477e69;
-  --orange: #e6ab7d;
-  --warn-bg: rgba(230, 171, 125, 0.14);
-  --danger: #ef918a;
-  --danger-bg: rgba(239, 145, 138, 0.15);
-  --dot: #4bbd91;
-  --bar-muted: #536879;
-  --track: #293e4f;
-  --chart-line: #57c89f;
-  --chart-stroke: #3bb58d;
-  --report-tint-1: #18342b;
-  --report-tint-2: #3a2a26;
-  --report-tint-3: #1b2f3d;
-
-  /* Chrome, focus, and elevation */
-  --glass: rgba(20, 34, 49, 0.94);
-  --glass-soft: rgba(20, 34, 49, 0.74);
-  --header-bg: rgba(15, 26, 38, 0.9);
-  --dock-bg: rgba(13, 23, 34, 0.96);
-  --featured: #1d4539;
-  --focus-ring: rgba(87, 200, 159, 0.32);
-  --backdrop: rgba(0, 0, 0, 0.64);
-  --shadow: 0 20px 56px rgba(0, 0, 0, 0.36);
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(0, 0, 0, 0.14);
-}
 
 /* ==========================================================================
    GLOBAL RESET & BASE STYLING
@@ -307,7 +186,7 @@ button:focus-visible,
 textarea:focus-visible,
 select:focus-visible,
 input:focus-visible {
-  outline: 3px solid var(--focus-ring);
+  outline: 2px solid var(--focus-color);
   outline-offset: 2px;
 }
 
@@ -407,8 +286,8 @@ svg.lucide {
 
 .button-primary {
   background: var(--forest);
-  color: white;
-  box-shadow: 0 8px 18px rgba(15, 93, 75, 0.16);
+  color: var(--on-primary);
+  box-shadow: none;
 }
 
 .button-primary:hover {
@@ -1871,301 +1750,11 @@ html[lang="ur"] .font-sans {
   line-height: 1.9;
 }
 
-/* Reference-derived theme tokens. Keep these presentation-only: theme selection remains
-   controlled by src/lib/theme.ts and the existing "yaqoob-theme" preference. */
-:root {
-  color-scheme: light;
-  --ink: #14211d;
-  --ink-2: #43524c;
-  --muted: #697771;
-  --faint: #929e98;
-  --logo: #78847f;
-  --forest: #0f5d4b;
-  --forest-hover: #0b4d3e;
-  --green: #19745c;
-  --accent-ink: #0f5d4b;
-  --mint: #dcece5;
-  --mint-2: #d7e7e1;
-  --tint: #e7f0ec;
-  --tint-2: #e0eee8;
-  --good-bg: #e5f3ec;
-  --good-line: #c9e5d9;
-  --insight-bg: #eaf3ef;
-  --insight-ring: rgba(25, 116, 92, 0.05);
-  --hero-glow: #e6f2ed;
-  --soft: #f5f7f4;
-  --paper: #fbfcfa;
-  --surface-card: #ffffff;
-  --surface-2: #f1f4f2;
-  --input-bg: #fdfefd;
-  --line: #dfe5e1;
-  --line-strong: #d8e2dd;
-  --orange: #b86736;
-  --warn-bg: #f7eee8;
-  --danger: #c45d4b;
-  --danger-bg: #faece8;
-  --dot: #2a9d75;
-  --bar-muted: #c5cdc9;
-  --track: #e4e9e6;
-  --chart-line: #1d8066;
-  --chart-stroke: #18725b;
-  --report-tint-1: #f0f8f4;
-  --report-tint-2: #fbf4f0;
-  --report-tint-3: #eef5f7;
-  --glass: rgba(255, 255, 255, 0.94);
-  --glass-soft: rgba(255, 255, 255, 0.72);
-  --header-bg: rgba(255, 255, 255, 0.82);
-  --dock-bg: rgba(251, 252, 250, 0.94);
-  --featured: #153e35;
-  --focus-ring: rgba(25, 116, 92, 0.2);
-  --backdrop: rgba(16, 32, 27, 0.48);
-  --shadow: 0 24px 70px rgba(29, 57, 48, 0.13);
-  --shadow-sm: 0 15px 35px rgba(24, 49, 41, 0.14);
+/* Theme tokens now live in styles/tokens.css. */
 
-  /* Existing application tokens mapped to the reference palette. */
-  --surface: var(--soft);
-  --surface-dim: var(--surface-2);
-  --surface-bright: var(--surface-card);
-  --surface-container-lowest: var(--paper);
-  --surface-container-low: var(--surface-2);
-  --surface-container: var(--line-strong);
-  --surface-container-high: var(--line);
-  --surface-container-highest: var(--line-strong);
-  --surface-variant: var(--tint);
-  --on-surface: var(--ink);
-  --on-surface-variant: var(--ink-2);
-  --inverse-surface: var(--featured);
-  --inverse-on-surface: var(--mint);
-  --outline: var(--muted);
-  --outline-variant: var(--line-strong);
-  --surface-tint: var(--green);
-  --primary: var(--forest);
-  --on-primary: #ffffff;
-  --primary-container: var(--green);
-  --on-primary-container: var(--tint-2);
-  --inverse-primary: var(--mint-2);
-  --primary-hover: var(--forest-hover);
-  --secondary: var(--ink-2);
-  --on-secondary: #ffffff;
-  --secondary-container: var(--tint);
-  --on-secondary-container: var(--accent-ink);
-  --tertiary: var(--orange);
-  --on-tertiary: #ffffff;
-  --tertiary-container: var(--warn-bg);
-  --on-tertiary-container: var(--orange);
-  --error: var(--danger);
-  --on-error: #ffffff;
-  --error-container: var(--danger-bg);
-  --on-error-container: var(--danger);
-  --border-standard: var(--line);
-  --text-primary: var(--ink);
-  --text-muted: var(--muted);
-  --success: var(--green);
-  --success-bg: var(--good-bg);
-  --success-border: var(--good-line);
-  --warning: var(--orange);
-  --warning-bg: var(--warn-bg);
-  --warning-border: var(--line-strong);
-  --danger-border: var(--danger-bg);
-  --shadow-1: 0 1px 2px rgba(21, 43, 32, 0.04);
-  --shadow-2: 0 10px 28px -10px rgba(20, 42, 31, 0.13), 0 2px 6px -2px rgba(20, 42, 31, 0.05);
-  --shadow-3: 0 22px 52px -14px rgba(20, 42, 31, 0.17);
 
-  /* Tailwind v4 utility aliases stay synchronized with the current theme class. */
-  --color-surface: var(--surface);
-  --color-surface-dim: var(--surface-dim);
-  --color-surface-bright: var(--surface-bright);
-  --color-surface-container-lowest: var(--surface-container-lowest);
-  --color-surface-container-low: var(--surface-container-low);
-  --color-surface-container: var(--surface-container);
-  --color-surface-container-high: var(--surface-container-high);
-  --color-surface-container-highest: var(--surface-container-highest);
-  --color-surface-variant: var(--surface-variant);
-  --color-on-surface: var(--on-surface);
-  --color-on-surface-variant: var(--on-surface-variant);
-  --color-inverse-surface: var(--inverse-surface);
-  --color-inverse-on-surface: var(--inverse-on-surface);
-  --color-outline: var(--outline);
-  --color-outline-variant: var(--outline-variant);
-  --color-surface-tint: var(--surface-tint);
-  --color-primary: var(--primary);
-  --color-on-primary: var(--on-primary);
-  --color-primary-container: var(--primary-container);
-  --color-on-primary-container: var(--on-primary-container);
-  --color-inverse-primary: var(--inverse-primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-secondary: var(--secondary);
-  --color-on-secondary: var(--on-secondary);
-  --color-secondary-container: var(--secondary-container);
-  --color-on-secondary-container: var(--on-secondary-container);
-  --color-tertiary: var(--tertiary);
-  --color-on-tertiary: var(--on-tertiary);
-  --color-tertiary-container: var(--tertiary-container);
-  --color-on-tertiary-container: var(--on-tertiary-container);
-  --color-error: var(--error);
-  --color-on-error: var(--on-error);
-  --color-error-container: var(--error-container);
-  --color-on-error-container: var(--on-error-container);
-  --color-border-standard: var(--border-standard);
-  --color-text-primary: var(--text-primary);
-  --color-text-muted: var(--text-muted);
-  --color-success: var(--success);
-  --color-success-bg: var(--success-bg);
-  --color-success-border: var(--success-border);
-  --color-warning: var(--warning);
-  --color-warning-bg: var(--warning-bg);
-  --color-warning-border: var(--warning-border);
-  --color-danger: var(--danger);
-  --color-danger-bg: var(--danger-bg);
-  --color-danger-border: var(--danger-border);
-}
 
-/* The existing .dark class is the only dark-mode switch. No ThemeContext,
-   data-theme attribute, or second preference key is introduced. */
-.dark {
-  color-scheme: dark;
-  --ink: #e6eeea;
-  --ink-2: #b7c7c0;
-  --muted: #9aaea6;
-  --faint: #7f948b;
-  --logo: #8aa097;
-  --forest: #15755f;
-  --forest-hover: #1a8a71;
-  --green: #3fb68f;
-  --accent-ink: #8bd8bf;
-  --mint: #1b3a31;
-  --mint-2: #25473c;
-  --tint: #1a3a31;
-  --tint-2: #1d4036;
-  --good-bg: rgba(63, 182, 143, 0.15);
-  --good-line: #2a5a4a;
-  --insight-bg: #143329;
-  --insight-ring: rgba(63, 182, 143, 0.08);
-  --hero-glow: #12332b;
-  --soft: #0a1612;
-  --paper: #0d1b17;
-  --surface-card: #132620;
-  --surface-2: #1a2f27;
-  --input-bg: #0f201b;
-  --line: #243b33;
-  --line-strong: #2b453b;
-  --orange: #e0a070;
-  --warn-bg: rgba(224, 160, 112, 0.15);
-  --danger: #ee8b7b;
-  --danger-bg: rgba(238, 139, 123, 0.15);
-  --dot: #3fbf93;
-  --bar-muted: #4b665c;
-  --track: #26403a;
-  --chart-line: #3fb68f;
-  --chart-stroke: #4cc9a0;
-  --report-tint-1: #153229;
-  --report-tint-2: #2a2924;
-  --report-tint-3: #152f36;
-  --glass: rgba(19, 38, 32, 0.92);
-  --glass-soft: rgba(19, 38, 32, 0.72);
-  --header-bg: rgba(13, 27, 23, 0.82);
-  --dock-bg: rgba(13, 27, 23, 0.94);
-  --featured: #174a3e;
-  --focus-ring: rgba(63, 182, 143, 0.35);
-  --backdrop: rgba(0, 0, 0, 0.62);
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
-  --shadow-sm: 0 15px 35px rgba(0, 0, 0, 0.4);
 
-  --surface: var(--soft);
-  --surface-dim: var(--surface-2);
-  --surface-bright: var(--surface-card);
-  --surface-container-lowest: var(--paper);
-  --surface-container-low: var(--surface-2);
-  --surface-container: var(--line-strong);
-  --surface-container-high: var(--line);
-  --surface-container-highest: var(--line-strong);
-  --surface-variant: var(--tint);
-  --on-surface: var(--ink);
-  --on-surface-variant: var(--ink-2);
-  --inverse-surface: var(--featured);
-  --inverse-on-surface: var(--mint);
-  --outline: var(--muted);
-  --outline-variant: var(--line-strong);
-  --surface-tint: var(--green);
-  --primary: var(--forest);
-  --on-primary: #ffffff;
-  --primary-container: var(--green);
-  --on-primary-container: var(--tint-2);
-  --inverse-primary: var(--mint-2);
-  --primary-hover: var(--forest-hover);
-  --secondary: var(--ink-2);
-  --on-secondary: #ffffff;
-  --secondary-container: var(--tint);
-  --on-secondary-container: var(--accent-ink);
-  --tertiary: var(--orange);
-  --on-tertiary: #ffffff;
-  --tertiary-container: var(--warn-bg);
-  --on-tertiary-container: var(--orange);
-  --error: var(--danger);
-  --on-error: #ffffff;
-  --error-container: var(--danger-bg);
-  --on-error-container: var(--danger);
-  --border-standard: var(--line);
-  --text-primary: var(--ink);
-  --text-muted: var(--muted);
-  --success: var(--green);
-  --success-bg: var(--good-bg);
-  --success-border: var(--good-line);
-  --warning: var(--orange);
-  --warning-bg: var(--warn-bg);
-  --warning-border: var(--line-strong);
-  --danger-border: var(--danger-bg);
-  --shadow-1: 0 1px 3px rgba(0, 0, 0, 0.18);
-  --shadow-2: 0 10px 28px -10px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.22);
-  --shadow-3: 0 22px 52px -14px rgba(0, 0, 0, 0.5);
-
-  --color-surface: var(--surface);
-  --color-surface-dim: var(--surface-dim);
-  --color-surface-bright: var(--surface-bright);
-  --color-surface-container-lowest: var(--surface-container-lowest);
-  --color-surface-container-low: var(--surface-container-low);
-  --color-surface-container: var(--surface-container);
-  --color-surface-container-high: var(--surface-container-high);
-  --color-surface-container-highest: var(--surface-container-highest);
-  --color-surface-variant: var(--surface-variant);
-  --color-on-surface: var(--on-surface);
-  --color-on-surface-variant: var(--on-surface-variant);
-  --color-inverse-surface: var(--inverse-surface);
-  --color-inverse-on-surface: var(--inverse-on-surface);
-  --color-outline: var(--outline);
-  --color-outline-variant: var(--outline-variant);
-  --color-surface-tint: var(--surface-tint);
-  --color-primary: var(--primary);
-  --color-on-primary: var(--on-primary);
-  --color-primary-container: var(--primary-container);
-  --color-on-primary-container: var(--on-primary-container);
-  --color-inverse-primary: var(--inverse-primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-secondary: var(--secondary);
-  --color-on-secondary: var(--on-secondary);
-  --color-secondary-container: var(--secondary-container);
-  --color-on-secondary-container: var(--on-secondary-container);
-  --color-tertiary: var(--tertiary);
-  --color-on-tertiary: var(--on-tertiary);
-  --color-tertiary-container: var(--tertiary-container);
-  --color-on-tertiary-container: var(--on-tertiary-container);
-  --color-error: var(--error);
-  --color-on-error: var(--on-error);
-  --color-error-container: var(--error-container);
-  --color-on-error-container: var(--on-error-container);
-  --color-border-standard: var(--border-standard);
-  --color-text-primary: var(--text-primary);
-  --color-text-muted: var(--text-muted);
-  --color-success: var(--success);
-  --color-success-bg: var(--success-bg);
-  --color-success-border: var(--success-border);
-  --color-warning: var(--warning);
-  --color-warning-bg: var(--warning-bg);
-  --color-warning-border: var(--warning-border);
-  --color-danger: var(--danger);
-  --color-danger-bg: var(--danger-bg);
-  --color-danger-border: var(--danger-border);
-}
 
 /* Overview page — adapted to the reference layout without changing dashboard behavior. */
 .workspace-page {

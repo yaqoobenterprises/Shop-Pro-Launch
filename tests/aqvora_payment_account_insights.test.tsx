@@ -20,8 +20,8 @@ describe("AQVORA actual payment account balance distribution", () => {
     expect(screen.getByRole("heading", { name: "Balance distribution" })).toBeTruthy();
     const list = screen.getByRole("list", { name: "Positive balance allocation" });
     expect(list.querySelectorAll("li")).toHaveLength(2);
-    expect(screen.getByText("Rs 137,005")).toBeTruthy();
-    expect(screen.getByText("92.5%")).toBeTruthy();
+    expect(screen.getAllByText("Rs 137,005").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("92.5%").length).toBeGreaterThan(0);
     expect(screen.getByText(/not reconciled bank statements/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Refresh payment-account balances" }));
     expect(refresh).toHaveBeenCalledOnce();

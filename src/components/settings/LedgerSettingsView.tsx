@@ -6,10 +6,11 @@ import {
   SupabaseSessionRequiredError,
 } from "../../lib/supabase";
 import { Category } from "../../types/ledger";
+import { exportToCSV } from "../../lib/utils";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { getSecurityPrincipal } from "../../lib/security";
-import { isPermissionOrAuthError } from "../../services/ledgerService";
-import { canRestoreDatabase } from "../../lib/permissions";
+import { ledgerService, isPermissionOrAuthError } from "../../services/ledgerService";
+import { canRestoreDatabase, canManageBusinessConfig, canViewReports } from "../../lib/permissions";
 import {
   enqueueOfflineTransaction,
   getOfflineQueue,
@@ -28,6 +29,7 @@ import {
   Layers,
   Sun,
   Moon,
+  Monitor,
   Download,
   Upload,
   Plus,
@@ -44,7 +46,8 @@ import {
 import { PaperRegisterImportModal } from "./PaperRegisterImportModal";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import { applyTheme } from "../../lib/theme";
+import { setThemePreference, type ThemePreference } from "../../lib/theme";
+import { useThemePreference } from "../../lib/useThemePreference";
 import { DEMO_ORGANIZATION_ID } from "../../services/demoModeService";
 import { SEED_CATEGORIES } from "../../parser/matcher";
 import { RegionSettingsSection } from "./RegionSettingsSection";
@@ -52,6 +55,7 @@ import { UserPreferencesSection } from "./UserPreferencesSection";
 import { ProfileSettingsSection } from "./ProfileSettingsSection";
 import { SecuritySettingsSection } from "./SecuritySettingsSection";
 import { useI18n } from "../../i18n";
+import "./SettingsWorkspace.css";
 import { isFeatureEnabled } from "../../config/features";
 
 async function requireSettingsCloudSession(userId: string): Promise<void> {
@@ -71,14 +75,18 @@ export const LedgerSettingsView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [categoriesLoadError, setCategoriesLoadError] = useState(false);
   const [categoriesLoadMessage, setCategoriesLoadMessage] = useState("");
+  const canManage = canManageBusinessConfig(user?.role);
+  const canExport = canViewReports(user?.role) && !isDemo;
+  const categoryLock = useRef(false);
+  const [categoryBusy, setCategoryBusy] = useState(false);
+  const dataLock = useRef(false);
+  const [exportBusy, setExportBusy] = useState(false);
   const [categoriesReadOnly, setCategoriesReadOnly] = useState(false);
   const [showPaperImport, setShowPaperImport] = useState(false);
   const [isExportingLocalData, setIsExportingLocalData] = useState(false);
   const [isRestoringLocalData, setIsRestoringLocalData] = useState(false);
   const localRecoveryInputRef = useRef<HTMLInputElement>(null);
-  const [appearance, setAppearance] = useState<"light" | "dark">(
-    document.documentElement.classList.contains("dark") ? "dark" : "light",
-  );
+  const appearance = useThemePreference();
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryKind, setNewCategoryKind] =
@@ -196,7 +204,7 @@ export const LedgerSettingsView: React.FC = () => {
   }, []);
 
   const handleSaveCategory = async (id: string) => {
-    if (categoriesReadOnly) return;
+    if (categoriesReadOnly || !canManage || categoryLock.current || isLoading) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo settings are read-only");
       return;
@@ -210,15 +218,16 @@ export const LedgerSettingsView: React.FC = () => {
         showToast("error", "Check category details", "Enter a category name.");
         return;
       }
+      categoryLock.current = true; setCategoryBusy(true);
       await requireSettingsCloudSession(principal.id);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("categories")
         .update({
           name: editName.trim(),
         })
         .eq("id", id)
-        .eq("organization_id", principal.organizationId);
-      if (error) throw error;
+        .eq("organization_id", principal.organizationId).select("id").maybeSingle();
+      if (error || !data) throw error || new Error("Category update was not verified.");
 
       setEditingCatId(null);
       await loadData();
@@ -226,12 +235,12 @@ export const LedgerSettingsView: React.FC = () => {
     } catch (err) {
       console.error("Error updating category:", err);
       showToast("error", "Category not updated", "Check the name and try again.");
-    }
+    } finally { categoryLock.current = false; setCategoryBusy(false); }
   };
 
   const handleAddCategory = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (categoriesReadOnly) return;
+    if (categoriesReadOnly || !canManage || categoryLock.current || isLoading) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo settings are read-only");
       return;
@@ -245,8 +254,9 @@ export const LedgerSettingsView: React.FC = () => {
 
     const supabase = getSupabaseClient();
     try {
+      categoryLock.current = true; setCategoryBusy(true);
       await requireSettingsCloudSession(principal.id);
-      const { error } = await supabase.from("categories").insert({
+      const { data, error } = await supabase.from("categories").insert({
         id: crypto.randomUUID(),
         organization_id: principal.organizationId,
         name,
@@ -254,8 +264,8 @@ export const LedgerSettingsView: React.FC = () => {
         is_default: false,
         is_active: true,
         display_order: categories.length + 1,
-      });
-      if (error) throw error;
+      }).select("id").maybeSingle();
+      if (error || !data) throw error || new Error("Category creation was not verified.");
       setNewCategoryName("");
       setIsAddingCategory(false);
       await loadData();
@@ -263,69 +273,28 @@ export const LedgerSettingsView: React.FC = () => {
     } catch (err) {
       console.error("Error adding category:", err);
       showToast("error", "Category not added", "A category with this name may already exist.");
-    }
+    } finally { categoryLock.current = false; setCategoryBusy(false); }
   };
 
   const handleRemoveCategory = async (category: Category) => {
-    if (categoriesReadOnly) return;
-    if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
-      showToast("info", "Demo settings are read-only");
-      return;
-    }
-    if (
-      !window.confirm(
-        `Remove “${category.name}”? Categories with ledger history will be archived to preserve reports.`,
-      )
-    ) {
-      return;
-    }
-    const supabase = getSupabaseClient();
+    if (categoriesReadOnly || !canManage || categoryLock.current || isLoading || isDemo) return;
+    if (!window.confirm(`Archive “${category.name}”? Existing transactions keep their category; it will no longer be offered for new entries.`)) return;
     const principal = getSecurityPrincipal();
     if (!principal) return;
-
+    categoryLock.current = true; setCategoryBusy(true);
     try {
       await requireSettingsCloudSession(principal.id);
-      const [transactions, drafts] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", principal.organizationId)
-          .eq("category_id", category.id),
-        supabase
-          .from("transaction_drafts")
-          .select("id", { count: "exact", head: true })
-          .eq("organization_id", principal.organizationId)
-          .eq("category_id", category.id),
-      ]);
-      if (transactions.error) throw transactions.error;
-      if (drafts.error) throw drafts.error;
-      const hasHistory = (transactions.count || 0) + (drafts.count || 0) > 0;
-
-      if (hasHistory) {
-        const { error } = await supabase
-          .from("categories")
-          .update({ is_active: false })
-          .eq("id", category.id)
-          .eq("organization_id", principal.organizationId);
-        if (error) throw error;
-        showToast("success", "Category archived", "Its existing transactions and reports are unchanged.");
-      } else {
-        const { error } = await supabase
-          .from("categories")
-          .delete()
-          .eq("id", category.id)
-          .eq("organization_id", principal.organizationId);
-        if (error) throw error;
-        showToast("success", "Category removed");
-      }
+      const {data,error} = await getSupabaseClient().from("categories").update({is_active:false})
+        .eq("id",category.id).eq("organization_id",principal.organizationId).select("id").maybeSingle();
+      if (error || !data) throw error || new Error("Archive was not verified.");
       await loadData();
-    } catch (err) {
-      console.error("Error removing category:", err);
-      showToast("error", "Category not removed", "It may still be used by a saved entry.");
-    }
+      showToast("success","Category archived","Existing records retain their category.");
+    } catch { showToast("error","Category not archived","Reconnect and retry."); }
+    finally { categoryLock.current = false; setCategoryBusy(false); }
   };
 
   const handleRestoreCategory = async (category: Category) => {
+    if (categoriesReadOnly || !canManage || categoryLock.current || isLoading) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo settings are read-only");
       return;
@@ -335,64 +304,40 @@ export const LedgerSettingsView: React.FC = () => {
     if (!principal) return;
 
     try {
+      categoryLock.current = true; setCategoryBusy(true);
       await requireSettingsCloudSession(principal.id);
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("categories")
         .update({ is_active: true })
         .eq("id", category.id)
-        .eq("organization_id", principal.organizationId);
-      if (error) throw error;
+        .eq("organization_id", principal.organizationId).select("id").maybeSingle();
+      if (error || !data) throw error || new Error("Category restoration was not verified.");
       await loadData();
       showToast("success", "Category restored");
     } catch (err) {
       console.error("Error restoring category:", err);
       showToast("error", "Category not restored", "Please try again.");
-    }
+    } finally { categoryLock.current = false; setCategoryBusy(false); }
   };
 
-  const handleToggleAppearance = (theme: "light" | "dark") => {
-    applyTheme(theme);
-    setAppearance(theme);
-    try {
-      localStorage.setItem("yaqoob-theme", theme);
-    } catch (err) {
-      console.error("Could not save appearance preference:", err);
-      showToast(
-        "warning",
-        "Theme changed for this session",
-        "Browser storage is unavailable, so this choice may not survive a reload.",
-      );
+  const handleToggleAppearance = (theme: ThemePreference) => {
+    if (!setThemePreference(theme)) {
+      showToast("warning", "Theme changed for this session", "Browser storage is unavailable, so this choice may not survive a reload.");
     }
   };
 
   const exportEverything = async (format: "csv" | "json") => {
+    if (!canExport || dataLock.current) return;
     if (getSecurityPrincipal()?.organizationId === DEMO_ORGANIZATION_ID) {
       showToast("info", "Demo exports are unavailable");
       return;
     }
-    const supabase = getSupabaseClient();
+    dataLock.current = true; setExportBusy(true);
     try {
       const principal = getSecurityPrincipal();
       if (!principal) throw new Error("Sign in to this shop before exporting transactions.");
       await requireSettingsCloudSession(principal.id);
-      let { data: txs, error } = await supabase
-        .from("transactions")
-        .select("*, categories(name)")
-        .eq("organization_id", principal.organizationId)
-        .order("device_entry_time", { ascending: true });
-      if (error) {
-        const retry = await supabase
-          .from("transactions")
-          .select("*")
-          .eq("organization_id", principal.organizationId)
-          .order("device_entry_time", { ascending: true });
-        if (!retry.error) {
-          txs = retry.data;
-          error = null;
-        }
-      }
-      if (error) throw error;
-
+      const txs = await ledgerService.getAllFilteredTransactions({status:"all"},{requireCloudSource:true});
       const dateStr = getKarachiBusinessDate();
 
       if (format === "json") {
@@ -403,11 +348,12 @@ export const LedgerSettingsView: React.FC = () => {
         link.href = url;
         link.setAttribute(
           "download",
-          `yaqoob_ledger_full_dump_${dateStr}.json`,
+          `shop_plus_cloud_transactions_${dateStr}.json`,
         );
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
       } else {
         const headers = [
           "ID",
@@ -422,33 +368,20 @@ export const LedgerSettingsView: React.FC = () => {
           "Created By Name",
         ];
 
-        const rows = (txs || []).map((t: any) => [
+        const rows = txs.map(t => [
           t.id,
           t.business_date,
           t.device_entry_time,
           t.type,
-          t.categories?.name || "",
+          t.category_name || "",
           t.amount_paisa,
-          `"${(t.raw_text || "").replace(/"/g, '""')}"`,
+          t.raw_text || "",
           t.status,
-          `"${(t.void_reason || "").replace(/"/g, '""')}"`,
-          `"${(t.created_by_name || "").replace(/"/g, '""')}"`,
+          t.void_reason || "",
+          t.created_by_name || "",
         ]);
 
-        const csvContent = [
-          headers.join(","),
-          ...rows.map((r: any) => r.join(",")),
-        ].join("\n");
-        const blob = new Blob([csvContent], {
-          type: "text/csv;charset=utf-8;",
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `yaqoob_ledger_full_dump_${dateStr}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        exportToCSV("shop_plus_cloud_transactions", headers, rows, dateStr);
       }
     } catch (err) {
       console.error("Error exporting everything:", err);
@@ -457,16 +390,18 @@ export const LedgerSettingsView: React.FC = () => {
         "Transaction export failed",
         err instanceof Error ? err.message : "Please try again.",
       );
-    }
+    } finally { dataLock.current = false; setExportBusy(false); }
   };
 
   const exportLocalRecoveryBundle = async () => {
+    if (isDemo || !canRestoreDatabase(user?.role) || dataLock.current) return;
     const principal = getSecurityPrincipal();
     if (!principal) {
       showToast("error", "Local backup unavailable", "Sign in to this shop before exporting device data.");
       return;
     }
 
+    dataLock.current = true;
     setIsExportingLocalData(true);
     try {
       const [queue, drafts] = await Promise.all([
@@ -499,7 +434,7 @@ export const LedgerSettingsView: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `shop_pro_local_recovery_${getKarachiBusinessDate()}.json`;
+      link.download = `shop_plus_local_recovery_${getKarachiBusinessDate()}.json`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -517,7 +452,7 @@ export const LedgerSettingsView: React.FC = () => {
         err instanceof Error ? err.message : "Please try again.",
       );
     } finally {
-      setIsExportingLocalData(false);
+      dataLock.current = false; setIsExportingLocalData(false);
     }
   };
 
@@ -526,7 +461,8 @@ export const LedgerSettingsView: React.FC = () => {
   ) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!file || isDemo || !canRestoreDatabase(user?.role) || dataLock.current) return;
+    if (file.size > 50 * 1024 * 1024) { showToast("error","Recovery file too large","Use a recovery file under 50 MB."); return; }
 
     const principal = getSecurityPrincipal();
     if (!principal) {
@@ -541,7 +477,7 @@ export const LedgerSettingsView: React.FC = () => {
       return;
     }
 
-    setIsRestoringLocalData(true);
+    dataLock.current = true; setIsRestoringLocalData(true);
     try {
       const bundle = JSON.parse(await file.text());
       const restored = await restoreLocalRecoveryBundle(
@@ -586,12 +522,12 @@ export const LedgerSettingsView: React.FC = () => {
         error instanceof Error ? error.message : "Please try again.",
       );
     } finally {
-      setIsRestoringLocalData(false);
+      dataLock.current = false; setIsRestoringLocalData(false);
     }
   };
 
   return (
-    <div className="workspace-page page-content settings-page flex-1 overflow-y-auto space-y-5 max-w-5xl mx-auto w-full">
+    <div className="workspace-page page-content settings-page flex-1 space-y-5 max-w-5xl mx-auto w-full">
       {/* Header */}
       <div className="workspace-header page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="settings-page-heading">
@@ -659,13 +595,13 @@ export const LedgerSettingsView: React.FC = () => {
           <div className="settings-icon"><Sun className="h-4 w-4" /></div>
           <div>
             <h2 className="text-sm font-semibold text-on-surface">{t("settings.appearance")}</h2>
-            <p className="mt-0.5 text-xs text-text-muted">{t("settings.chooseTheme")}</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:max-w-lg">
           {([
             ["light", "Light", Sun],
             ["dark", "Dark", Moon],
+            ["system", "System", Monitor],
           ] as const).map(([theme, label, Icon]) => (
             <button
               key={theme}
@@ -695,14 +631,14 @@ export const LedgerSettingsView: React.FC = () => {
             <div>
               <h2 className="text-sm font-semibold text-on-surface">{t("settings.categories")}</h2>
               <p className="mt-0.5 text-xs text-text-muted">
-                {isDemo ? "Demo categories are read-only." : "Manage income and expense categories."}
+                {isDemo ? "Demo categories are read-only." : "Archive categories without deleting their history. Renaming a category changes its displayed label in reports."}
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setIsAddingCategory((open) => !open)}
-            disabled={isDemo || categoriesReadOnly}
+            disabled={isDemo || !canManage || categoriesReadOnly || categoryBusy || isLoading}
             className="inline-flex min-h-9 self-start items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hover sm:self-auto"
           >
             <Plus className="h-3.5 w-3.5" /> Add category
@@ -802,7 +738,7 @@ export const LedgerSettingsView: React.FC = () => {
                     <>
                       <button
                         onClick={() => handleSaveCategory(cat.id)}
-                        disabled={isDemo || categoriesReadOnly}
+                        disabled={isDemo || !canManage || categoriesReadOnly || categoryBusy || isLoading}
                         className="flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-semibold text-white hover:bg-primary-hover"
                         title="Save"
                       >
@@ -822,7 +758,7 @@ export const LedgerSettingsView: React.FC = () => {
                           setEditingCatId(cat.id);
                           setEditName(cat.name);
                         }}
-                        disabled={isDemo || categoriesReadOnly}
+                        disabled={isDemo || !canManage || categoriesReadOnly || categoryBusy || isLoading}
                         className="flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-2.5 text-xs font-semibold text-secondary hover:bg-surface-container-low"
                         title="Edit name"
                       >
@@ -831,15 +767,15 @@ export const LedgerSettingsView: React.FC = () => {
                       {cat.is_active ?
                         <button
                           onClick={() => handleRemoveCategory(cat)}
-                          disabled={isDemo || categoriesReadOnly}
+                          disabled={isDemo || !canManage || categoriesReadOnly || categoryBusy || isLoading}
                           className="flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border px-2.5 text-xs font-semibold text-danger transition-colors hover:bg-danger-bg"
-                          title="Remove category"
+                          title="Archive category"
                         >
                           <Trash2 className="h-3.5 w-3.5" /> Remove
                         </button>
                       : <button
                           onClick={() => handleRestoreCategory(cat)}
-                          disabled={isDemo || categoriesReadOnly}
+                          disabled={isDemo || !canManage || categoriesReadOnly || categoryBusy || isLoading}
                           className="flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-2.5 text-xs font-semibold text-secondary hover:bg-surface-container-low"
                         >
                           Restore
@@ -865,7 +801,6 @@ export const LedgerSettingsView: React.FC = () => {
             <div className="settings-icon"><Download className="h-4 w-4" /></div>
             <div>
               <h2 className="text-sm font-semibold text-on-surface">{t("settings.dataTools")}</h2>
-              <p className="mt-0.5 text-xs text-text-muted">{t("settings.dataToolsDescription")}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -880,7 +815,7 @@ export const LedgerSettingsView: React.FC = () => {
             <button
               type="button"
               onClick={exportLocalRecoveryBundle}
-              disabled={isExportingLocalData}
+              disabled={isDemo || !canRestoreDatabase(user?.role) || isExportingLocalData || isRestoringLocalData || exportBusy}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-container-low disabled:cursor-wait disabled:opacity-60"
             >
               <Download className="h-3.5 w-3.5" /> {isExportingLocalData ? "Preparing…" : "Device recovery"}
@@ -888,20 +823,22 @@ export const LedgerSettingsView: React.FC = () => {
             <button
               type="button"
               onClick={() => localRecoveryInputRef.current?.click()}
-              disabled={isRestoringLocalData}
+              disabled={isDemo || !canRestoreDatabase(user?.role) || isRestoringLocalData || isExportingLocalData || exportBusy}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-container-low disabled:cursor-wait disabled:opacity-60"
             >
               <Upload className="h-3.5 w-3.5" /> {isRestoringLocalData ? "Restoring…" : "Restore device"}
             </button>
             <button
               type="button"
-              onClick={() => setShowPaperImport(true)}
+              disabled={isDemo || !canManage}
+               onClick={() => setShowPaperImport(true)}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-container-low"
             >
               <Upload className="h-3.5 w-3.5" /> Import register
             </button>
             <button
               type="button"
+              disabled={!canExport || exportBusy || isExportingLocalData || isRestoringLocalData}
               onClick={() => exportEverything("csv")}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border-standard px-3 text-xs font-semibold text-secondary hover:bg-surface-container-low"
             >
@@ -909,6 +846,7 @@ export const LedgerSettingsView: React.FC = () => {
             </button>
             <button
               type="button"
+              disabled={!canExport || exportBusy || isExportingLocalData || isRestoringLocalData}
               onClick={() => exportEverything("json")}
               className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary-hover"
             >

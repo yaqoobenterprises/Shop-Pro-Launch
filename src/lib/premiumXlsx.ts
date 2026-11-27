@@ -78,7 +78,9 @@ const concatenate = (parts: Uint8Array[]): Uint8Array => {
   return output;
 };
 
-export const buildPremiumXlsx = (sheets: WorkbookSheet[]): Uint8Array => {
+export const buildPremiumXlsx = (sheets: WorkbookSheet[], currency = "PKR"): Uint8Array => {
+  if (!/^[A-Z]{3}$/.test(currency)) throw new Error("Invalid report currency.");
+  const currencyPrefix = currency === "PKR" ? "Rs" : currency;
   if (sheets.length === 0) throw new Error("Add at least one worksheet to export.");
   const used = new Set<string>();
   const cleanSheets = sheets.map((sheet) => {
@@ -131,22 +133,22 @@ export const buildPremiumXlsx = (sheets: WorkbookSheet[]): Uint8Array => {
       name: "xl/_rels/workbook.xml.rels",
       content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${workbookRels}</Relationships>`,
     },
-    { name: "xl/styles.xml", content: stylesXml },
+    { name: "xl/styles.xml", content: stylesXml.replaceAll("&quot;Rs &quot;", `&quot;${currencyPrefix} &quot;`) },
     {
       name: "docProps/core.xml",
-      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(cleanSheets[0].title)}</dc:title><dc:creator>Shop Pro</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`,
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xml(cleanSheets[0].title)}</dc:title><dc:creator>Shop Plus</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`,
     },
     {
       name: "docProps/app.xml",
-      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Shop Pro Reports</Application><TitlesOfParts><vt:vector size="${cleanSheets.length}" baseType="lpstr">${cleanSheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join("")}</vt:vector></TitlesOfParts></Properties>`,
+      content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Shop Plus Reports</Application><TitlesOfParts><vt:vector size="${cleanSheets.length}" baseType="lpstr">${cleanSheets.map((sheet) => `<vt:lpstr>${xml(sheet.name)}</vt:lpstr>`).join("")}</vt:vector></TitlesOfParts></Properties>`,
     },
     ...sheetFiles,
   ];
   return zipStore(files);
 };
 
-export const downloadPremiumXlsx = (sheets: WorkbookSheet[], fileName: string): void => {
-  const bytes = buildPremiumXlsx(sheets);
+export const downloadPremiumXlsx = (sheets: WorkbookSheet[], fileName: string, currency = "PKR"): void => {
+  const bytes = buildPremiumXlsx(sheets, currency);
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]+/g, "_").replace(/\.xlsx?$/i, "");
   const outputBuffer = new ArrayBuffer(bytes.byteLength);
   new Uint8Array(outputBuffer).set(bytes);
@@ -156,7 +158,7 @@ export const downloadPremiumXlsx = (sheets: WorkbookSheet[], fileName: string): 
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `${safeName || "shop-pro-report"}.xlsx`;
+  anchor.download = `${safeName || "shop-plus-report"}.xlsx`;
   anchor.style.display = "none";
   document.body.appendChild(anchor);
   anchor.click();

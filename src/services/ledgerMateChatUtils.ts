@@ -7,6 +7,7 @@ export const LOCAL_THREADS_LIMIT = 30;
 export interface ChatMessage extends LedgerMateAiMessage {
   id?: string;
   createdAt: string;
+  transient?: boolean;
 }
 
 export interface LocalThread extends AiAccountantConversation {
@@ -28,7 +29,7 @@ export function readMessages(key: string): ChatMessage[] {
     return value.filter((item): item is ChatMessage =>
       typeof item === "object" && item !== null &&
       ((item as ChatMessage).role === "user" || (item as ChatMessage).role === "assistant") &&
-      typeof (item as ChatMessage).content === "string",
+      typeof (item as ChatMessage).content === "string" && !(item as ChatMessage).transient,
     ).slice(-CHAT_HISTORY_LIMIT).map((item) => ({ ...item, createdAt: item.createdAt || now() }));
   } catch {
     return [];

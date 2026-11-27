@@ -46,15 +46,19 @@ export function formatMoney(minor: number, options?: FormatMoneyOptions): string
   );
   const showFraction = options?.showFractional ?? options?.showPaisaIfFraction ?? false;
   const major = minor / 100;
+  const exactMajor = BigInt(minor) / 100n;
+  const remainder = String(BigInt(Math.abs(minor)) % 100n).padStart(2, "0");
+  const signedMajor = minor < 0 && exactMajor === 0n ? -0 : exactMajor;
+  const exactFormat = (formatter: Intl.NumberFormat) => formatter.formatToParts(signedMajor).map(part => part.type === "fraction" ? remainder : part.value).join("");
   const isFractional = minor % 100 !== 0;
 
   if (currencyCode === 'PKR') {
     if (isFractional && showFraction) {
-      const formatted = new Intl.NumberFormat(locale, {
+      const formatted = exactFormat(new Intl.NumberFormat(locale, {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
         numberingSystem: 'latn',
-      }).format(major);
+      }));
       return `Rs ${formatted}`;
     }
     const rounded = Math.round(major);
@@ -66,13 +70,13 @@ export function formatMoney(minor: number, options?: FormatMoneyOptions): string
   }
 
   const fractionDigits = (isFractional || showFraction) ? 2 : 0;
-  const formatted = new Intl.NumberFormat(locale, {
+  const formatted = exactFormat(new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currencyCode,
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
     numberingSystem: 'latn',
-  }).format(major);
+  }));
 
   return formatted.replace(BIDI_REGEX, '').replace(/\u00A0/g, ' ').trim();
 }

@@ -1,0 +1,19 @@
+# Shop Plus — Phase 03: application shell and navigation
+
+## Decisions
+- Desktop: preserve user's existing sidebar width/collapse storage keys; new default 224 px; separate task groups (Workspace and Insights), single prominent New entry action, no duplicate sidebar profile or lock button. Account menu is the sole lock/profile/sign-out surface. Tablet 768–1023 px defaults to 64 px rail with a session-only expansion that never overwrites desktop settings. Phone <768 px uses four destinations (Overview, Cashbook, Transactions, Accounts) and More for Reports, AI, Settings, plus a header new-entry action.
+- Header: show business context rather than repeating page H1; retain active page name for assistive technology. Network connectivity is explicitly not a ledger-sync guarantee. No server-confirmed sync UI introduced because flushOfflineQueue may return zero errors when no cloud session exists. Demo banner identifies sample data and device-only changes.
+- Navigation: retain the seven AppView identifiers and expose /workspace/<view> paths using the existing Vercel SPA rewrite. On clean root/workspace URLs push browser history only for an actual view change; on popstate restore the view without writing a new history entry. Protect query/hash auth callbacks and arbitrary paths; allow the skip-link anchor. URL contains no personal or financial data. WorkspaceGate still controls identity, recovery, MFA, lock and demo access. The underlying view remounts on navigation; filter/scroll persistence belongs to transaction explorer work, not this shell.
+- Search: command palette uses existing accessible shared modal with initial focus, keyboard arrows and Enter; text explicitly limits scope to screens/actions. Transaction records remain searched in Transactions, no new backend search claims. New entry routes to Cashbook and increments existing focus request, even on repeated action on same page. Existing quick expense and keyboard help preserved. Global shortcuts are active only with visible workspace and no modal.
+- Use Transactions as the English display label while preserving internal sales identifier and all data APIs. Existing Urdu label remains unchanged; localization feature flag remains disabled.
+- Use one shared workspace scroll container; reset main scroll on screen change, reserve phone dock safe area. No new dependencies, SQL, auth, data, ledger, or synchronization mutation behavior.
+
+## Verification
+- Previous candidate: 379/379 tests and both browser themes passed (see Phase 02 record).
+- Added `tests/workspace_navigation.test.tsx` for route round trips, callback URL protection, state restoration and repeated entry focus requests.
+- Added isolated `.github/workflows/shop-plus-navigation-audit.yml` for both themes at eight widths, screenshot geometry and browser URL/Back/Forward, new-entry focus, keyboard search and collapse/More behavior. External requests blocked and only sample data used.
+- Current Phase 03 checks are pending. Manual keyboard/assistive technology, live authentication, tablet hardware, browser zoom, production hosting verification and full transaction filter/scroll preservation remain release gates. Do not merge until current CI and browser audit have been reviewed.
+
+## Phase 03 verification follow-up
+
+[CI run 45955473710](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45955473710) passed all checks with 383 tests across 62 files. [Navigation audit 45955433142](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45955433142) passed desktop and tablet interactions in both themes but failed at 320, 375 and 390 px: a nested fixed-position More dialog was outside the viewport. Phase 04 moved that dialog to a body portal and updated the test's role-scoped locator. The corrected behavior is pending browser verification. Do not mark the original run as passing.

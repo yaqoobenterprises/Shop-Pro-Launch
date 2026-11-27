@@ -6,10 +6,13 @@ import {
   Check,
   LayoutDashboard,
   Moon,
+  Monitor,
   ShieldCheck,
   Sun,
 } from "lucide-react";
-import { getSavedTheme, applyTheme, type ThemePreference } from "../../lib/theme";
+import { nextThemePreference, setThemePreference } from "../../lib/theme";
+import { useThemePreference } from "../../lib/useThemePreference";
+import { APP_NAME } from "../../config/app";
 import { useI18n } from "../../i18n";
 import { LandingPreview } from "./LandingPreview";
 import "./LandingPremium.css";
@@ -45,14 +48,12 @@ const STEPS = [
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo }) => {
   const { t } = useI18n();
-  const [theme, setTheme] = useState<ThemePreference>(() => getSavedTheme());
+  const theme = useThemePreference();
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
 
   const toggleTheme = () => {
-    const next: ThemePreference = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    applyTheme(next);
+    setThemePreference(nextThemePreference(theme));
   };
 
   const openDemo = async () => {
@@ -74,9 +75,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
 
       <header className="aq-landing__header">
         <div className="aq-landing__nav aq-landing__container">
-          <a href="#top" className="aq-landing__brand" aria-label="AQVORA home">
-            <img className="aq-landing__brandmark" src="/assets/aqvora-symbol.svg" alt="" aria-hidden="true" />
-            <span>AQVORA</span>
+          <a href="#top" className="aq-landing__brand" aria-label={`${APP_NAME} home`}>
+            <img className="aq-landing__brandmark" src="/assets/shop-plus-mark.svg" alt="" aria-hidden="true" />
+            <span>{APP_NAME}</span>
           </a>
 
           <nav className="aq-landing__navlinks" aria-label="Page navigation">
@@ -90,9 +91,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
               className="aq-landing__theme"
               onClick={toggleTheme}
               aria-label={t("landing.switchTheme")}
-              title={t("landing.switchTheme")}
+              title={`${t("landing.switchTheme")} (${theme})`}
             >
-              {theme === "dark" ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+              {theme === "dark" ? <Sun size={18} aria-hidden="true" />  : theme === "system" ? <Monitor size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
             </button>
             <button type="button" className="aq-landing__signin" onClick={() => onOpenAuth("signIn")}>
               {t("landing.signIn")}
@@ -186,7 +187,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
 
       <footer className="aq-landing__footer">
         <div className="aq-landing__container aq-landing__footer-inner">
-          <span>© {new Date().getFullYear()} AQVORA · Private product preview</span>
+          <span>© {new Date().getFullYear()} Shop Plus · Private product preview</span>
           <button type="button" onClick={() => onOpenAuth("signIn")}>Sign in</button>
         </div>
       </footer>

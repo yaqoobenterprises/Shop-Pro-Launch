@@ -62,6 +62,8 @@ export const MonthPicker: React.FC<MonthPickerProps> = ({ value, onChange, ariaL
     };
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
         setIsOpen(false);
         triggerRef.current?.focus();
       }
@@ -121,6 +123,7 @@ export const MonthPicker: React.FC<MonthPickerProps> = ({ value, onChange, ariaL
       {isOpen && createPortal(
         <div
           ref={popoverRef}
+          data-shop-plus-popover
           role="dialog"
           aria-label={ariaLabel}
           className="date-picker-popover fixed z-[90] w-[280px] rounded-xl border border-border-standard bg-surface-bright p-3 text-on-surface shadow-level-3"
@@ -168,7 +171,7 @@ export const MonthPicker: React.FC<MonthPickerProps> = ({ value, onChange, ariaL
             </button>
           </div>
         </div>,
-        document.body,
+        triggerRef.current?.closest("[data-shop-plus-dialog]") ?? document.body,
       )}
     </>
   );

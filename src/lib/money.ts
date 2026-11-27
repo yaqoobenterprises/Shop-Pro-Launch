@@ -28,6 +28,11 @@ export function formatPaisa(paisa: number, options?: { showPaisaIfFraction?: boo
   return formatMoney(paisa, { showFractional: options?.showPaisaIfFraction });
 }
 
+/** Financial records display every stored minor unit; keep the legacy rounded formatter API intact. */
+export function formatRecordedPaisa(paisa: number): string {
+  return Number.isSafeInteger(paisa) ? formatMoney(paisa, { showFractional: paisa % 100 !== 0 }) : "Unavailable";
+}
+
 /** Parse an amount string from user input or parser (e.g. "300", "2000", "12.50", "200,000") into integer paisa */
 export function parseInputToPaisa(input: string): { paisa: number; isValid: boolean; error?: string } {
   if (!input || typeof input !== 'string') {

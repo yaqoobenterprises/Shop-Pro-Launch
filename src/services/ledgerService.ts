@@ -72,12 +72,18 @@ export interface CreateTransactionPayload {
 
 export type CreateTransactionDraftPayload = Omit<CreateTransactionPayload, 'accountId' | 'device'>;
 
+import { transactionOrder, type TransactionSort } from "../lib/transactionFilters";
+
 export interface TransactionFilter {
   startDate?: string;
   endDate?: string;
   type?: string;
   categoryId?: string;
+  accountId?: string;
   searchQuery?: string;
+  minAmountPaisa?: number;
+  maxAmountPaisa?: number;
+  sort?: TransactionSort;
   status?: 'active' | 'voided' | 'all';
   limit?: number;
   offset?: number;
@@ -901,7 +907,7 @@ export class LedgerService {
 
     if (isDemoOrganization(principal.organizationId) || !(await hasConfiguredCloudSession(principal.id))) {
       if (options.requireCloudSource) {
-        throw new Error('Shop Pro could not verify payment account balances from the cloud. No cached balance was used.');
+        throw new Error('Shop Plus could not verify payment account balances from the cloud. No cached balance was used.');
       }
       return this.getLocalPaymentAccounts(principal.organizationId);
     }
@@ -929,7 +935,7 @@ export class LedgerService {
       return this.mergeWithOfflineAccountOperations(principal.organizationId, serverAccounts);
     } catch (err) {
       if (options.requireCloudSource) {
-        throw new Error('Shop Pro could not verify payment account balances from the cloud. No cached balance was used.', { cause: err });
+        throw new Error('Shop Plus could not verify payment account balances from the cloud. No cached balance was used.', { cause: err });
       }
       if (!isUnavailableOrUnauthorized(err)) {
         console.warn('Could not fetch cloud payment accounts, falling back to local accounts:', err);
@@ -997,6 +1003,7 @@ export class LedgerService {
   }): Promise<{ account: LedgerAccount; isQueuedOffline: boolean }> {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to manage shop accounts.');
+    requirePermission(principal.organizationId, 'MANAGE_BUSINESS_CONFIG');
     if (!input.name.trim()) throw new Error('Enter an account name.');
     if (!Number.isSafeInteger(input.openingBalancePaisa) || input.openingBalancePaisa < 0) {
       throw new Error('Enter a valid opening balance.');
@@ -1046,6 +1053,7 @@ export class LedgerService {
   ): Promise<boolean> {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to manage shop accounts.');
+    requirePermission(principal.organizationId, 'MANAGE_BUSINESS_CONFIG');
     if (changes.name !== undefined && !changes.name.trim()) {
       throw new Error('Account name cannot be empty.');
     }
@@ -1090,6 +1098,7 @@ export class LedgerService {
   }): Promise<boolean> {
     const principal = getSecurityPrincipal();
     if (!principal) throw new Error('Sign in to transfer shop funds.');
+    requirePermission(principal.organizationId, 'ACCOUNT_TRANSFER');
     if (!input.fromAccountId || !input.toAccountId || input.fromAccountId === input.toAccountId) {
       throw new Error('Choose different source and destination accounts.');
     }
@@ -1302,7 +1311,8 @@ export class LedgerService {
       console.warn('Could not load account names for filtered transactions:', err);
     }
 
-    if (options.requireCloudSource) await requireAuthoritativeCloudRead(principal, 'Shop Pro transactions');
+    if (options.requireCloudSource) await requireAuthoritativeCloudRead(principal, 'Shop Plus transactions');
+    const order = transactionOrder(filter.sort);
 
     if (!isDemo && isOnline() && isSupabaseConfigured()) {
       if (!(await hasConfiguredCloudSession(principal?.id))) throw new SupabaseSessionRequiredError();
@@ -1311,6 +1321,7 @@ export class LedgerService {
         let query = supabase
           .from('transactions')
           .select('*, categories(name)', { count: 'exact' });
+        if (principal) query = query.eq('organization_id', principal.organizationId);
 
         if (filter.startDate) {
           query = query.gte('business_date', filter.startDate);
@@ -1324,9 +1335,12 @@ export class LedgerService {
         if (filter.categoryId && filter.categoryId !== 'all') {
           query = query.eq('category_id', filter.categoryId);
         }
+        if (filter.accountId && filter.accountId !== 'all') query = query.eq('account_id', filter.accountId);
         if (filter.status && filter.status !== 'all') {
           query = query.eq('status', filter.status);
         }
+        if (filter.minAmountPaisa !== undefined) query = query.gte('amount_paisa', filter.minAmountPaisa);
+        if (filter.maxAmountPaisa !== undefined) query = query.lte('amount_paisa', filter.maxAmountPaisa);
         if (filter.searchQuery) {
           query = query.ilike('raw_text', `%${filter.searchQuery}%`);
         }
@@ -1335,7 +1349,8 @@ export class LedgerService {
         const offset = filter.offset || 0;
 
         query = query
-          .order('device_entry_time', { ascending: false })
+          .order(order.column, { ascending: order.ascending })
+          .order('id', { ascending: true })
           .range(offset, offset + limit - 1);
 
         let { data, error, count } = await query;
@@ -1343,16 +1358,21 @@ export class LedgerService {
           let retryQuery = supabase
             .from('transactions')
             .select('*', { count: 'exact' });
+          if (principal) retryQuery = retryQuery.eq('organization_id', principal.organizationId);
 
           if (filter.startDate) retryQuery = retryQuery.gte('business_date', filter.startDate);
           if (filter.endDate) retryQuery = retryQuery.lte('business_date', filter.endDate);
           if (filter.type && filter.type !== 'all') retryQuery = retryQuery.eq('type', filter.type);
           if (filter.categoryId && filter.categoryId !== 'all') retryQuery = retryQuery.eq('category_id', filter.categoryId);
+          if (filter.accountId && filter.accountId !== 'all') retryQuery = retryQuery.eq('account_id', filter.accountId);
           if (filter.status && filter.status !== 'all') retryQuery = retryQuery.eq('status', filter.status);
+          if (filter.minAmountPaisa !== undefined) retryQuery = retryQuery.gte('amount_paisa', filter.minAmountPaisa);
+          if (filter.maxAmountPaisa !== undefined) retryQuery = retryQuery.lte('amount_paisa', filter.maxAmountPaisa);
           if (filter.searchQuery) retryQuery = retryQuery.ilike('raw_text', `%${filter.searchQuery}%`);
 
           const retryResult = await retryQuery
-            .order('device_entry_time', { ascending: false })
+            .order(order.column, { ascending: order.ascending })
+            .order('id', { ascending: true })
             .range(offset, offset + limit - 1);
           if (!retryResult.error && retryResult.data) {
             data = retryResult.data;
@@ -1374,11 +1394,12 @@ export class LedgerService {
             account_name: accounts.find((account) => account.id === row.account_id)?.name,
           }));
 
+          if (options.requireCloudSource && count === null) throw new Error('Transaction count could not be verified.');
           return { transactions, count: count || 0 };
         }
       } catch (err) {
         if (options.requireCloudSource) {
-          throw new Error('Shop Pro could not retrieve complete transaction history from the cloud. No cached totals were used.', { cause: err });
+          throw new Error('Shop Plus could not retrieve complete transaction history from the cloud. No cached totals were used.', { cause: err });
         }
         if (!isUnavailableOrUnauthorized(err)) {
           console.error('Error fetching filtered transactions:', err);
@@ -1388,7 +1409,7 @@ export class LedgerService {
     }
 
     if (options.requireCloudSource) {
-      throw new Error('Shop Pro could not retrieve complete transaction history from the cloud. No cached totals were used.');
+      throw new Error('Shop Plus could not retrieve complete transaction history from the cloud. No cached totals were used.');
     }
 
     const queue = await getOfflineQueue();
@@ -1403,6 +1424,7 @@ export class LedgerService {
     if (filter.endDate) localItems = localItems.filter((tx) => tx.business_date <= filter.endDate!);
     if (filter.type && filter.type !== 'all') localItems = localItems.filter((tx) => tx.type === filter.type);
     if (filter.categoryId && filter.categoryId !== 'all') localItems = localItems.filter((tx) => tx.category_id === filter.categoryId);
+    if (filter.accountId && filter.accountId !== 'all') localItems = localItems.filter((tx) => tx.account_id === filter.accountId);
     if (filter.status && filter.status !== 'all') localItems = localItems.filter((tx) => tx.status === filter.status);
     if (filter.searchQuery) {
       const q = filter.searchQuery.toLowerCase();
@@ -1411,6 +1433,12 @@ export class LedgerService {
 
     const limit = filter.limit || 50;
     const offset = filter.offset || 0;
+    if (filter.minAmountPaisa !== undefined) localItems = localItems.filter(tx => tx.amount_paisa >= filter.minAmountPaisa!);
+    if (filter.maxAmountPaisa !== undefined) localItems = localItems.filter(tx => tx.amount_paisa <= filter.maxAmountPaisa!);
+    localItems.sort((a,b) => {
+      const primary = order.column === 'amount_paisa' ? a.amount_paisa - b.amount_paisa : a.device_entry_time.localeCompare(b.device_entry_time);
+      return (order.ascending ? primary : -primary) || a.id.localeCompare(b.id);
+    });
     const paged = localItems.slice(offset, offset + limit);
     return { transactions: paged, count: localItems.length };
   }

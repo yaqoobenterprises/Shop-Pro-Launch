@@ -63,7 +63,7 @@ describe('real-data dashboard charts', () => {
     render(<LedgerDashboardView />);
 
     const expenses = await screen.findByRole('list', {
-      name: 'Expense totals by category',
+      name: 'Expense totals by category values',
     });
     expect(expenses.textContent).toContain('Store Supplies');
     expect(expenses.textContent).not.toContain('Service Income');
@@ -92,7 +92,7 @@ describe('real-data dashboard charts', () => {
     await waitFor(() => expect(
       screen.getByText(/No expenses for this period/),
     ).toBeTruthy());
-    expect(screen.queryByRole('list', { name: 'Expense totals by category' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Expense totals by category values' })).toBeNull();
     expect(screen.getByText(/No active accounts/)).toBeTruthy();
   });
 
@@ -116,5 +116,47 @@ describe('real-data dashboard charts', () => {
       endDate: today,
       status: 'active',
     });
+  });
+  it('uses only posted records for cloud overview and never substitutes queued summaries', async () => {
+    const today = getKarachiBusinessDate();
+    const accounts = vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
+    const daily = vi.spyOn(ledgerService, 'getDailySummary');
+    const history = vi.spyOn(ledgerService, 'getAllFilteredTransactions').mockResolvedValue([
+      makeTransaction('posted-income', 'income', 30000, today),
+      makeTransaction('posted-expense', 'expense', 10000, today),
+    ]);
+    render(<LedgerDashboardView cloudOnly />);
+    const income = await screen.findByRole('list', { name: 'Income totals by category' });
+    expect(income.textContent).toContain('Printing');
+    expect(accounts).toHaveBeenCalledWith({ requireCloudSource: true });
+    expect(history).toHaveBeenCalledWith({ startDate: today, endDate: today, status: 'active' }, { requireCloudSource: true });
+    expect(daily).not.toHaveBeenCalled();
+    expect(screen.getByText("Posted only")).toHaveAttribute("title",expect.stringContaining("Posted cloud records only"));
+  });
+
+  it('shows unavailable state rather than a local zero if cloud balances cannot be read', async () => {
+    vi.spyOn(ledgerService, 'getPaymentAccounts').mockRejectedValue(new Error('Reconnect to load balances'));
+    const daily = vi.spyOn(ledgerService, 'getDailySummary');
+    render(<LedgerDashboardView cloudOnly />);
+    expect(await screen.findByRole('alert')).toHaveTextContent('Reconnect to load balances');
+    expect(screen.queryByText(/No active accounts/)).toBeNull();
+    expect(daily).not.toHaveBeenCalled();
+  });
+
+  it("loads the immediately preceding posted period only on request",async()=>{
+    const today=getKarachiBusinessDate();
+    const previous=new Date(Date.parse(today+"T00:00:00Z")-86400000).toISOString().slice(0,10);
+    vi.spyOn(ledgerService,"getPaymentAccounts").mockResolvedValue([]);
+    const fetch=vi.spyOn(ledgerService,"getAllFilteredTransactions").mockResolvedValueOnce([makeTransaction("current","income",125050,today)]).mockResolvedValueOnce([makeTransaction("previous","income",10000,previous)]);
+    const recent=vi.spyOn(ledgerService,"getFilteredTransactions").mockResolvedValue({transactions:[makeTransaction("latest","income",125050,today)],count:1});
+    render(<LedgerDashboardView cloudOnly/>);
+    const load=await screen.findByRole("button",{name:"Load comparison & activity"});
+    expect(fetch).toHaveBeenCalledTimes(1);
+    fireEvent.click(load);
+    const values=await screen.findByRole("region",{name:"Period comparison values"});
+    expect(values.textContent).toContain("Rs 1,250.50");
+    expect(values.textContent).toContain("Rs 100");
+    expect(fetch).toHaveBeenCalledWith({startDate:previous,endDate:previous,status:"active"},{requireCloudSource:true});
+    expect(recent).toHaveBeenCalledWith({startDate:today,endDate:today,status:"active",sort:"newest",limit:5,offset:0},{requireCloudSource:true});
   });
 });

@@ -1,7 +1,8 @@
-/* The collapsed desktop rail keeps only the Shop Pro mark. */
+/* Collapsed navigation retains named, keyboard-accessible icon controls. */
 .app-shell #app-sidebar.is-collapsed {
   gap: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0.5rem;
 }
 
@@ -25,13 +26,30 @@
 .app-shell #app-sidebar.is-collapsed .brand-mark {
   width: 2rem;
   height: 2rem;
+  visibility: hidden;
   transition: opacity 100ms ease;
 }
 
 .app-shell #app-sidebar.is-collapsed nav,
 .app-shell #app-sidebar.is-collapsed .sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+html .app-shell #app-sidebar.is-collapsed [data-sidebar-label] {
   display: none;
 }
+
+html .app-shell #app-sidebar.is-collapsed nav button,
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom > button {
+  width: 100%;
+  min-height: 40px;
+  justify-content: center;
+  padding-inline: 0;
+  gap: 0;
+}
+
 
 .app-shell #app-sidebar.is-collapsed .sidebar-toggle {
   position: absolute;
@@ -41,8 +59,8 @@
   height: 2.25rem;
   border-color: transparent;
   background: transparent;
-  opacity: 0;
-  pointer-events: none;
+  opacity: 1;
+  pointer-events: auto;
   box-shadow: none;
   transition: opacity 120ms ease, color 150ms ease;
 }
@@ -65,20 +83,4 @@
   .app-shell #app-sidebar.is-collapsed .sidebar-toggle {
     transition: none;
   }
-}
-.app-shell #app-sidebar nav button.nav-item-ledgermate:not(.active) {
-  border: 1px solid color-mix(in srgb, #368879 22%, transparent);
-  background: linear-gradient(120deg, color-mix(in srgb, #348a78 8%, transparent), color-mix(in srgb, #2e6883 5%, transparent));
-  color: #286e63;
-}
-
-.app-shell #app-sidebar nav button.nav-item-ledgermate.active {
-  border: 1px solid color-mix(in srgb, #5fb9a0 35%, transparent);
-  background: linear-gradient(120deg, #287c6f, #245f6f);
-  color: #fff;
-  box-shadow: 0 4px 12px #256c6325, inset 0 1px #ffffff26;
-}
-
-.app-shell #app-sidebar nav button.nav-item-ledgermate svg {
-  color: inherit;
 }

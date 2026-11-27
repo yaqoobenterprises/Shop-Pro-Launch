@@ -4,19 +4,16 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { useAuth } from "./AuthContext";
 import { EntryMode, getUserPreferences } from "../services/userPreferencesService";
 import { isFeatureEnabled } from "../config/features";
+import { canNavigateWorkspace, readWorkspaceView, workspacePath, type WorkspaceView } from "../lib/workspaceNavigation";
 
-export type AppView =
-  | "chat"
-  | "ai"
-  | "dashboard"
-  | "sales"
-  | "accounts"
-  | "reports"
-  | "settings";
+import { emptyTransactionView, type TransactionViewState } from "../lib/transactionViewState";
+
+export type AppView = WorkspaceView;
 
 export interface ToastMessage {
   id: string;
@@ -46,6 +43,9 @@ interface AppContextType {
   isShortcutsHelpOpen: boolean;
   setIsShortcutsHelpOpen: (open: boolean) => void;
   newEntryRequestId: number;
+  startNewEntry: () => void;
+  readTransactionView: () => TransactionViewState;
+  saveTransactionView: (state: TransactionViewState) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -53,9 +53,42 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { user } = useAuth();
+  const { user, organization } = useAuth();
+  const scope = user?.id ? `${organization?.id ?? ""}:${user.id}` : "";
+  const transactionView = useRef<{ scope: string; state: TransactionViewState }>({ scope, state: emptyTransactionView() });
+  useEffect(() => {
+    if (transactionView.current.scope !== scope) transactionView.current = { scope, state: emptyTransactionView() };
+  }, [scope]);
+  const readTransactionView = useCallback(() => transactionView.current.scope === scope && scope ? transactionView.current.state : emptyTransactionView(), [scope]);
+  const saveTransactionView = useCallback((state: TransactionViewState) => {
+    if (scope) transactionView.current = { scope, state };
+  }, [scope]);
   const entryModesEnabled = isFeatureEnabled("entryModes");
-  const [currentView, setCurrentView] = useState<AppView>("dashboard"); // Default to Modern Shop Ledger Chat
+  const [currentView, setView] = useState<AppView>(() => readWorkspaceView(window.location.pathname) ?? "dashboard");
+  const setCurrentView = useCallback((view: AppView) => {
+    setView(view);
+    // Never overwrite OAuth callbacks, recovery tokens or unrelated routes.
+    const { pathname } = window.location;
+    if (canNavigateWorkspace(window.location)) {
+      const target = workspacePath(view);
+      if (pathname !== target) {
+        try { window.history.pushState(null, "", target); } catch { /* Navigation still works in restricted browser contexts. */ }
+      }
+    }
+  }, []);
+  useEffect(() => {
+    const restoreView = () => {
+      const view = readWorkspaceView(window.location.pathname);
+      if (view || window.location.pathname === "/") {
+        setView(view ?? "dashboard");
+        setIsCommandPaletteOpen(false);
+        setIsShortcutsHelpOpen(false);
+        // Keep any open financial form intact; history changes only the underlying view.
+      }
+    };
+    window.addEventListener("popstate", restoreView);
+    return () => window.removeEventListener("popstate", restoreView);
+  }, []);
   const [entryMode, setEntryMode] = useState<EntryMode>("chat");
   const [dataVersion, setDataVersion] = useState<number>(1);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -106,7 +139,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const startNewEntry = useCallback(() => {
     setCurrentView("chat");
     setNewEntryRequestId((requestId) => requestId + 1);
-  }, []);
+  }, [setCurrentView]);
 
   useEffect(() => {
     if (currentView !== "chat") setNewEntryRequestId(0);
@@ -115,10 +148,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Global Keyboard Shortcuts (Ctrl+K, Ctrl+N, Ctrl+Shift+E, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+K -> Command Palette
+      if (e.defaultPrevented || e.isComposing || !document.querySelector(".app-shell")) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+      // Ctrl+K -> persistent inline search
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
+        document.getElementById("workspace-search")?.focus();
         return;
       }
 
@@ -180,6 +215,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         isShortcutsHelpOpen,
         setIsShortcutsHelpOpen,
         newEntryRequestId,
+        startNewEntry,
+        readTransactionView,
+        saveTransactionView,
       }}
     >
       {children}

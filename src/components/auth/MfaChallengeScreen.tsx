@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { LockKeyhole, ShieldCheck } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { AuthFrame } from "./AuthFrame";
@@ -6,18 +6,20 @@ import { AuthFrame } from "./AuthFrame";
 /** Presentational challenge only. Factor selection, membership and session assurance remain server-owned. */
 export const MfaChallengeScreen: React.FC = () => {
   const { verifyMfaChallenge, cancelMfaChallenge } = useAuth();
+  const verificationLock = useRef(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (isVerifying) return;
+    if (verificationLock.current) return;
     if (!/^\d{6}$/.test(code)) {
       setError("Enter the 6-digit code from your authenticator app.");
       return;
     }
     setError(null);
+    verificationLock.current = true;
     setIsVerifying(true);
     try {
       const result = await verifyMfaChallenge(code);
@@ -27,7 +29,7 @@ export const MfaChallengeScreen: React.FC = () => {
     } catch {
       setError("Verification could not be completed. Try again.");
     } finally {
-      setIsVerifying(false);
+      verificationLock.current = false; setIsVerifying(false);
     }
   };
 
@@ -49,7 +51,7 @@ export const MfaChallengeScreen: React.FC = () => {
               type="text"
               maxLength={6}
               pattern="[0-9]{6}"
-              autoFocus
+              disabled={isVerifying}
               required
               value={code}
               aria-invalid={Boolean(error)}

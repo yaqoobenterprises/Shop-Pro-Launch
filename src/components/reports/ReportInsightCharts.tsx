@@ -1,5 +1,7 @@
 import React, { useMemo } from "react";
-import { formatPaisa } from "../../lib/money";
+import { FinancialTrend } from "../common/FinancialTrend";
+import { FinancialDonut } from "../common/FinancialDonut";
+import { useRegion } from "../../regional/region";
 import type { ReportCategoryBucket, ReportTrendBucket } from "../../lib/reportAnalytics";
 
 interface ReportInsightChartsProps {
@@ -7,12 +9,13 @@ interface ReportInsightChartsProps {
   expenseCategories: ReportCategoryBucket[];
 }
 
-const EXPENSE_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
+
 
 export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
   trend,
   expenseCategories,
 }) => {
+  const { region } = useRegion();
   const expenseCategoryTotal = expenseCategories.reduce(
     (sum, item) => sum + item.total_paisa,
     0,
@@ -29,109 +32,31 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
       : top;
   }, [expenseCategories, expenseCategoryTotal]);
 
-  const expenseDonutBackground = useMemo(() => {
-    if (expenseCategoryTotal <= 0) return "conic-gradient(var(--line) 0deg 360deg)";
-    let cumulative = 0;
-    const stops = visibleExpenseCategories.map((item, index) => {
-      const start = cumulative;
-      cumulative += (item.total_paisa / expenseCategoryTotal) * 100;
-      return `${EXPENSE_PALETTE[index % EXPENSE_PALETTE.length]} ${start}% ${cumulative}%`;
-    });
-    return `conic-gradient(${stops.join(", ")})`;
-  }, [visibleExpenseCategories, expenseCategoryTotal]);
 
-  const profitChart = useMemo(() => {
-    if (trend.length === 0) return null;
-    const values = trend.map((bucket) => bucket.net_profit_paisa);
-    const min = Math.min(0, ...values);
-    const max = Math.max(0, ...values);
-    const span = Math.max(1, max - min);
-    const points = values.map((value, index) => {
-      const x = trend.length === 1 ? 50 : 4 + (index / (trend.length - 1)) * 92;
-      const y = 84 - ((value - min) / span) * 68;
-      return { x, y, value, label: trend[index].label, title: trend[index].title };
-    });
-    return {
-      points,
-      pointString: points.map((point) => `${point.x},${point.y}`).join(" "),
-      zeroY: 84 - ((0 - min) / span) * 68,
-      labelIndices: [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])],
-    };
-  }, [trend]);
+
 
   return (
     <div className="reports-modern__insight-grid">
       <section className="reports-modern__table-panel reports-modern__profit-panel">
         <div className="reports-modern__section-heading">
           <div>
-            <span className="reports-modern__section-kicker">PROFITABILITY</span>
-            <h2>Net profit trend</h2>
-            <p>Income minus operating expenses, grouped by the selected date range</p>
+            <h2>Operating result</h2>
           </div>
-          <span className="reports-modern__chart-unit">PKR</span>
+          <span className="reports-modern__chart-unit">{region.currency}</span>
         </div>
-        {!profitChart ? (
-          <div className="reports-modern__empty">No profit data for this reporting range.</div>
-        ) : (
-          <>
-            <div className="reports-modern__profit-chart" role="img" aria-label="Net profit trend chart">
-              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                <line x1="3" y1="16" x2="97" y2="16" className="reports-modern__profit-gridline" />
-                <line x1="3" y1="50" x2="97" y2="50" className="reports-modern__profit-gridline" />
-                <line x1="3" y1={profitChart.zeroY} x2="97" y2={profitChart.zeroY} className="reports-modern__profit-zero" />
-                <line x1="3" y1="84" x2="97" y2="84" className="reports-modern__profit-gridline" />
-                <polyline points={profitChart.pointString} className="reports-modern__profit-line" />
-                {profitChart.points.map((point) => (
-                  <circle key={point.title} cx={point.x} cy={point.y} r="1.35" className="reports-modern__profit-point">
-                    <title>{point.title}: {formatPaisa(point.value)}</title>
-                  </circle>
-                ))}
-              </svg>
-            </div>
-            <div className="reports-modern__profit-axis">
-              {profitChart.labelIndices.map((index) => (
-                <span key={profitChart.points[index].title}>{profitChart.points[index].label}</span>
-              ))}
-            </div>
-          </>
-        )}
+        {trend.length ? <FinancialTrend rows={trend} mode="result" label="Operating result trend chart"/> : <div className="reports-modern__empty">No activity</div>}
       </section>
 
       <section className="reports-modern__table-panel reports-modern__expense-panel">
         <div className="reports-modern__section-heading">
           <div>
-            <span className="reports-modern__section-kicker">SPENDING MIX</span>
-            <h2>Expenses by category</h2>
-            <p>Where operating spend is going</p>
+            <h2>Expense mix</h2>
           </div>
         </div>
         {visibleExpenseCategories.length === 0 ? (
           <div className="reports-modern__empty">No expense categories in this reporting range.</div>
         ) : (
-          <div className="reports-modern__expense-layout">
-            <div
-              className="reports-modern__expense-donut"
-              role="img"
-              aria-label={`Expense distribution, total ${formatPaisa(expenseCategoryTotal)}`}
-              style={{ background: expenseDonutBackground }}
-            >
-              <div>
-                <strong>{formatPaisa(expenseCategoryTotal)}</strong>
-                <span>Total spend</span>
-              </div>
-            </div>
-            <ul className="reports-modern__expense-legend" aria-label="Expense amounts by category">
-              {visibleExpenseCategories.map((item, index) => (
-                <li key={item.key}>
-                  <span>
-                    <i style={{ background: EXPENSE_PALETTE[index % EXPENSE_PALETTE.length] }} />
-                    {item.category_name}
-                  </span>
-                  <strong>{formatPaisa(item.total_paisa)}</strong>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FinancialDonut label="Expense distribution" centerLabel="Expenses" items={visibleExpenseCategories.map(item=>({key:item.key,label:item.category_name,amount:item.total_paisa}))}/>
         )}
       </section>
     </div>

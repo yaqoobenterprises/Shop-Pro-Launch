@@ -1,0 +1,219 @@
+/* Ledger Ink: shared canvas, surface separation instead of decorative strokes.
+   Keep a visible keyboard-only focus indicator and semantic status colors. */
+html .app-shell { --radius-card: 18px; --radius-panel: 20px; --radius-control: 10px; background:var(--paper); }
+html .app-shell #app-sidebar, html .app-shell .app-header.workspace-header, html .app-shell .mobile-bottom-nav {
+  background:var(--paper)!important; border-color:transparent!important; box-shadow:none!important; backdrop-filter:none;
+}
+html .app-shell #app-sidebar .sidebar-bottom, html .app-shell #app-sidebar .side-brand { border-color:transparent!important; }
+html .app-shell #app-sidebar nav button.active,html .app-shell #app-sidebar .sidebar-bottom>button.active {background:var(--tint)!important;color:var(--ink)!important;}
+html .app-shell #app-sidebar nav button.active::before,html .app-shell #app-sidebar .sidebar-bottom>button.active::before {display:none;}
+html .app-shell :where(.panel,.metric,.account-card,.reports-modern__kpi,.reports-modern__chart-panel,.reports-modern__table-panel,.aq-accounts-insights__panel,.settings-section,.ledger-page,.lm-messages,.lm-composer,.lm-history,.cashbook-composer__heading,.workspace-control,.header-icon-button,.connection-pill,.profile-trigger,.button,.custom-select-popover,.header-profile-menu) {border-color:transparent!important;box-shadow:none!important;}
+html .app-shell :where(.panel,.metric,.account-card,.reports-modern__kpi,.reports-modern__chart-panel,.reports-modern__table-panel,.aq-accounts-insights__panel) {background:var(--surface-card)!important;border-radius:18px!important;}
+html .app-shell :where(input,textarea,select,.workspace-control,.search-field,.button-secondary,.header-icon-button) {border-color:transparent!important;box-shadow:none!important;}
+html .app-shell :where(input:not([type=checkbox]):not([type=radio]),textarea,select,.workspace-control,.search-field,.button-secondary,.header-icon-button) {background:var(--surface-2);}
+html .app-shell :where(.table-row,.table-head,.table-footer,thead,tbody,tr,th,td,.panel-heading,.sidebar-section-label,.header-profile-menu__identity,.header-profile-menu__footer,.lm-header,.lm-thread,.lm-message,.lm-input-area,.settings-nav-label) {border-color:transparent!important;box-shadow:none!important;}
+html .app-shell :where(button,input,textarea,select,[tabindex],a):focus-visible {outline:2px solid var(--focus-color)!important;outline-offset:3px!important;}
+html .app-shell :where(.page-title,.reports-modern__hero) {padding-block-end:12px!important;margin-block-end:8px!important;}
+html .app-shell :where(.page-title h1,.reports-modern__hero h1,.lm-header h1) {font-size:clamp(1.45rem,2.2vw,2rem);letter-spacing:-.055em;line-height:1.15;}
+html .app-shell :where(.panel-heading h2,.reports-modern__section-heading h2,.aq-accounts-insights__heading h2) {font-size:1.05rem;font-weight:700;letter-spacing:-.025em;}
+html .app-shell .workspace-inline-search {display:flex;align-items:center;gap:9px;min-height:44px;min-width:0;width:clamp(140px,22vw,330px);padding:0 11px;border:0;border-radius:12px;background:var(--surface-2);color:var(--muted);}
+html .app-shell .workspace-inline-search>input {min-width:0;width:100%;flex:1;padding:8px 0;color:var(--ink);background:transparent!important;border:0!important;font-size:.85rem;}
+html .app-shell .workspace-inline-search>button {display:grid;place-items:center;min-width:32px;height:36px;color:var(--ink);border:0;background:transparent;border-radius:8px;}
+html .app-shell .workspace-inline-search>button:disabled {opacity:.45;}
+html .app-shell .workspace-inline-search:focus-within {background:var(--surface-card);}
+html .app-shell .workspace-inline-search>svg {flex:none;}
+html .app-shell .aq-metric,html .app-shell .reports-modern__kpi {min-height:124px;padding:18px!important;display:flex;flex-direction:column;justify-content:space-between;gap:12px;}
+html .app-shell .aq-metric .metric-top {display:flex;align-items:center;justify-content:space-between;gap:8px;}
+html .app-shell .aq-metric .metric-top svg {width:38px;height:38px;padding:10px;border-radius:13px;background:var(--tint);color:var(--primary);}
+html .app-shell .aq-metric .metric-amount,html .app-shell .reports-modern__kpi strong {font-size:clamp(1.25rem,2.1vw,2rem);letter-spacing:-.045em;overflow-wrap:anywhere;}
+html .app-shell .aq-metric--positive .metric-top svg {background:var(--good-bg);color:var(--green);}
+html .app-shell .aq-metric--negative .metric-top svg {background:var(--danger-bg);color:var(--danger);}
+html .app-shell .expense-stack {width:100%!important;max-width:none!important;height:auto!important;aspect-ratio:auto!important;border-radius:0!important;background:transparent!important;display:flex!important;flex-direction:column-reverse!important;align-items:stretch!important;gap:18px!important;padding:0!important;}
+html .app-shell .expense-stack::before,html .app-shell .expense-stack::after {display:none!important;}
+html .app-shell .expense-stack__bar {display:flex!important;width:100%!important;height:24px!important;min-height:24px!important;overflow:hidden!important;gap:3px!important;background:transparent!important;border-radius:7px!important;}
+html .app-shell .expense-stack__bar>span {flex-basis:0;min-width:0;display:block;border-radius:5px;}
+html .app-shell .expense-stack .expense-donut__center,html .app-shell .expense-stack>div:not(.expense-stack__bar) {position:static!important;inset:auto!important;width:auto!important;height:auto!important;aspect-ratio:auto!important;background:transparent!important;border:0!important;border-radius:0!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:3px!important;text-align:start!important;}
+html .app-shell .expense-stack .expense-donut__center strong,html .app-shell .expense-stack>div:not(.expense-stack__bar) strong {font-size:1.65rem!important;line-height:1.15;}
+html .app-shell .reports-modern__expense-layout {display:flex!important;flex-direction:column!important;align-items:stretch!important;}
+html .app-shell .aq-chart__key--expense {background:var(--chart-pink)!important;}
+html .app-shell .reports-modern__bar {border-radius:7px 7px 2px 2px!important;}
+html .app-shell .reports-modern__bar.is-income {background:var(--chart-lavender)!important;}
+html .app-shell .reports-modern__bar.is-expense {background:var(--chart-pink)!important;}
+html .app-shell .reports-modern__legend .is-income {background:var(--chart-lavender)!important;}
+html .app-shell .reports-modern__legend .is-expense {background:var(--chart-pink)!important;}
+html .app-shell .transaction-visual-name {display:flex;align-items:center;gap:9px;min-width:0;}
+html .app-shell .transaction-visual-name>span:last-child {min-width:0;overflow-wrap:anywhere;}
+html .app-shell .transaction-direction {display:grid;place-items:center;flex:none;width:34px;height:34px;border-radius:11px;background:var(--warn-bg);color:var(--orange);}
+html .app-shell .transaction-direction.is-in {background:var(--good-bg);color:var(--green);}
+html .app-shell .transaction-table .table-row:nth-of-type(even) {background:var(--surface-2);}
+html .app-shell .aq-accounts-insights__track {height:9px!important;border-radius:6px!important;background:var(--track)!important;}
+html .app-shell .aq-accounts-insights__track>div {background:var(--primary)!important;border-radius:6px!important;}
+html .app-shell .settings-nav-label {font-size:.78rem!important;}
+@media(max-width:767px){
+ html .app-shell .app-header.workspace-header {height:auto!important;min-height:0!important;flex:0 0 auto!important;flex-wrap:wrap;gap:7px;padding:8px 12px 10px!important;}
+ html .app-shell .workspace-context {flex:1;min-width:0;}
+ html .app-shell .workspace-header__actions {display:contents!important;}
+ html .app-shell .workspace-inline-search {order:20;width:100%;flex:1 0 100%;}
+ html .app-shell .connection-pill {padding-inline:7px;min-height:34px;}
+ html .app-shell .aq-metric,html .app-shell .reports-modern__kpi {min-height:108px;padding:13px!important;}
+}
+@media print {html .app-shell :where(.panel,.reports-modern__table-panel) {background:white!important;}}
+
+/* Remove remaining utility-class hairlines without removing interactive focus. */
+html body .app-shell :where(div,section,article,header,footer,nav,aside,button,textarea,input:not([type=checkbox]):not([type=radio]),select,fieldset,table,thead,tbody,tr,th,td,hr) {border-color:transparent!important;}
+html body .app-shell :where(div,section,article,button,input,textarea,select):not(:focus-visible) {outline:0!important;}
+html body .app-shell :where(.workspace-panel,.settings-section,.cashbook-summary,.summary-metric,.ledger-composer,.lm-message,.lm-composer,.account-tool-panel,.reports-modern__filters) {border-radius:16px!important;box-shadow:none!important;}
+html body .app-shell .cashbook-summary {background:var(--paper)!important;}
+html body .app-shell .summary-metric {background:var(--surface-card)!important;padding:12px!important;min-height:84px;}
+html body .app-shell .summary-metric__label svg {background:var(--tint);color:var(--primary);padding:5px;width:25px;height:25px;border-radius:8px;}
+html body .app-shell .cashbook-flow {display:flex;gap:3px;margin-top:10px;height:9px;border-radius:8px;overflow:hidden;}
+html body .app-shell .cashbook-flow span {flex-basis:0;min-width:0;background:var(--chart-lavender);}
+html body .app-shell .cashbook-flow span+span {background:var(--chart-pink);}
+html body .app-shell .visual-scope-row {display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;}
+html body .app-shell .visual-scope {display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:4px 9px;border-radius:7px;background:var(--surface-2);color:var(--ink-2);font-size:.72rem;font-weight:600;line-height:1.4;}
+html body .app-shell .visual-scope.is-warning {background:var(--warn-bg);color:var(--orange);}
+html body .app-shell .account-card .account-brand {border-radius:14px!important;box-shadow:none!important;}
+html body .app-shell .settings-category-list>div:nth-child(even) {background:var(--surface-2);}
+html body .app-shell .settings-icon {background:var(--tint)!important;color:var(--primary)!important;border-radius:12px!important;}
+html body .app-shell .lm-messages {background:var(--paper)!important;}
+html body .app-shell .lm-composer {background:var(--surface-card)!important;}
+html body .app-shell .header-profile-menu,html body .custom-select-popover,html body [data-shop-plus-dialog] {border-color:transparent!important;}
+html body .app-shell :where(button,input,textarea,select,a,[tabindex]):focus-visible {outline:2px solid var(--focus-color)!important;outline-offset:3px!important;}
+
+/* Compact visual revision: actual charts, content-driven height and one canvas. */
+html body .app-shell {--radius-card:14px;--radius-panel:14px;}
+html body .app-shell .demo-workspace-banner {min-height:30px!important;padding-block:0!important;background:var(--paper)!important;font-size:11px;}
+html body .app-shell .demo-workspace-banner button {min-height:32px!important;}
+html body .app-shell .app-header.workspace-header {height:56px;min-height:56px;flex-basis:56px;}
+html body .app-shell #app-sidebar nav {gap:3px;}
+html body .app-shell #app-sidebar nav button,html body .app-shell #app-sidebar .sidebar-bottom>button {min-height:42px;font-size:.85rem;}
+html body .app-shell #app-sidebar .sidebar-new-entry {min-height:42px!important;margin-bottom:10px;}
+html body .app-shell .workspace-inline-search {height:40px;min-height:40px;}
+html body .app-shell .connection-pill--online {min-height:32px;padding:0 10px;}
+html body .app-shell .page-content {padding:clamp(12px,1.7vw,24px)!important;max-width:1600px;margin-inline:auto;width:100%;min-width:0;}
+html body .app-shell .page-title,html body .app-shell .reports-modern__hero {min-height:0!important;padding:0!important;margin:0 0 16px!important;gap:12px;}
+html body .app-shell .overview-page .overview-filter-controls {display:flex;flex-direction:row;align-items:center;flex-wrap:wrap;justify-content:flex-end;width:auto;gap:8px;}
+html body .app-shell .overview-page .overview-period-picker {width:auto;min-width:145px;max-width:100%;}
+html body .app-shell .overview-page .overview-period-toggle {width:auto;min-width:0;}
+html body .app-shell .overview-page .metrics {grid-template-columns:minmax(0,1.35fr) repeat(3,minmax(0,1fr));gap:10px;margin-bottom:10px;}
+html body .app-shell .overview-page .aq-metric {min-height:106px!important;padding:14px!important;border-radius:14px!important;}
+html body .app-shell .overview-page .aq-metric:first-child {background:var(--featured)!important;color:#fff!important;}
+html body .app-shell .overview-page .aq-metric:first-child .metric-top span,html body .app-shell .overview-page .aq-metric:first-child .metric-amount {color:#fff!important;}
+html body .app-shell .overview-page .aq-metric:first-child .metric-top svg {color:#fff!important;background:#ffffff20!important;}
+html body .app-shell .overview-page .panel {min-height:0!important;height:auto!important;padding:16px!important;border-radius:14px!important;}
+html body .app-shell .overview-page .panel-heading {min-height:0!important;padding:0!important;margin:0 0 12px!important;}
+html body .app-shell .overview-page .aq-overview__visuals {gap:12px;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start;}
+html body .app-shell .overview-page .aq-overview__details {gap:12px;align-items:start;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);}
+html body .app-shell .overview-page .cash-panel--day:not(.cash-panel--empty) .aq-overview__day {flex:0;gap:8px;}
+html body .app-shell .overview-page .cash-panel--day .aq-day-compare {padding:4px 0;gap:15px;}
+html body .app-shell .overview-page .aq-day-compare__track {height:16px!important;border-radius:6px!important;}
+html body .app-shell .overview-page .aq-day-compare__track i {background:var(--chart-teal)!important;border-radius:6px!important;transition:width .3s ease;}
+html body .app-shell .overview-page .aq-day-compare__row--expense .aq-day-compare__track i {background:var(--danger)!important;}
+html body .app-shell .overview-page .aq-day-insights {margin-top:0;}
+html body .app-shell .overview-page .aq-day-insights__metric {padding:10px!important;min-height:0;}
+html body .app-shell .overview-page .aq-overview__accounts {padding:0!important;margin:0!important;list-style:none;}
+html body .app-shell .overview-page .aq-overview__accounts li.transaction {display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:10px!important;padding:8px 0!important;min-height:0!important;}
+html body .app-shell .overview-page .aq-overview__accounts li.transaction>div {min-width:0!important;width:auto!important;max-width:none!important;}
+html body .app-shell .overview-page .aq-overview__accounts li.transaction strong,html body .app-shell .overview-page .aq-overview__accounts li.transaction small {white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:anywhere!important;}
+html body .app-shell .overview-page .aq-overview__details .health-items>span {min-height:38px!important;padding:7px 0!important;border:0!important;}
+html body .app-shell .overview-page .overview-revenue {margin-block:12px;}
+html body .app-shell .overview-revenue-list li {border:0!important;gap:12px;}
+html body .app-shell .income-mix-track {height:8px;background:var(--track);border-radius:4px;flex:1;min-width:32px;overflow:hidden;}
+html body .app-shell .income-mix-track i {display:block;height:100%;background:var(--chart-teal);border-radius:4px;}
+.finance-donut {display:grid;grid-template-columns:minmax(120px,170px) minmax(0,1fr);align-items:center;gap:16px;min-width:0;}
+.finance-donut__graphic {position:relative;aspect-ratio:1;width:100%;max-width:190px;margin-inline:auto;}
+.finance-donut__graphic svg {display:block;width:100%;height:100%;overflow:visible;}
+.finance-donut__segment {transition:stroke-width .18s ease,opacity .18s ease;}
+.finance-donut__center {position:absolute;inset:22%;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;gap:3px;pointer-events:none;min-width:0;}
+.finance-donut__center span,.finance-donut__center small {font-size:10px;color:var(--muted);overflow-wrap:anywhere;}
+.finance-donut__center strong {font-size:clamp(11px,1.1vw,15px);letter-spacing:-.04em;line-height:1.2;overflow-wrap:anywhere;}
+.finance-donut__legend {padding:0!important;margin:0!important;list-style:none;display:grid;gap:3px;min-width:0;}
+.finance-donut__legend li {min-width:0;border:0!important;}
+.finance-donut__legend button {display:grid;grid-template-columns:8px minmax(0,1fr) auto;gap:7px;align-items:center;text-align:start;min-height:38px;padding:5px 6px;border:0!important;border-radius:8px;width:100%;font-size:12px;color:var(--ink);background:transparent;}
+.finance-donut__legend button:hover,.finance-donut__legend button:focus-visible {background:var(--surface-2);}
+.finance-donut__legend i {width:8px;height:8px;border-radius:3px;}
+.finance-donut__legend span,.finance-donut__legend strong {overflow-wrap:anywhere;}
+.finance-donut__legend small {grid-column:2/-1;color:var(--muted);font-size:10px;}
+html body .app-shell .aq-overview__accounts+.finance-donut {margin-top:12px;}
+html body .app-shell .reports-modern__profit-chart {height:180px!important;min-height:0!important;width:100%!important;}
+html body .app-shell .reports-modern__profit-chart svg {width:100%!important;height:100%!important;}
+html body .app-shell .reports-modern__profit-line {vector-effect:non-scaling-stroke;stroke-width:2.5px!important;}
+html body .app-shell .reports-modern__profit-point {vector-effect:non-scaling-stroke;}
+html body .app-shell .reports-modern__table-panel,html body .app-shell .reports-modern__chart-panel {padding:16px!important;min-height:0!important;height:auto!important;}
+html body .app-shell .reports-modern__insight-grid,html body .app-shell .reports-modern__analysis-grid {align-items:start;gap:12px;}
+html body .app-shell .reports-modern__section-heading {padding:0!important;margin-bottom:12px!important;min-height:0!important;}
+html body .app-shell .reports-modern__movement-list>div {padding:8px 0!important;min-height:0!important;}
+html body .app-shell .shop-plus-transactions .filter-panel {grid-template-columns:repeat(5,minmax(0,1fr));align-items:end;gap:8px;padding:12px!important;}
+html body .app-shell .shop-plus-transactions .search-field {grid-column:1/-1;min-height:44px;background:var(--surface-2)!important;border-radius:10px;padding:4px 8px!important;}
+html body .app-shell .shop-plus-transactions .search-field input {min-height:36px!important;padding:7px 5px!important;background:transparent!important;}
+html body .app-shell .shop-plus-transactions .search-field button {min-height:36px!important;background:var(--surface-card)!important;}
+html body .app-shell .shop-plus-transactions .transaction-date-filter input,html body .app-shell .shop-plus-transactions .filter-panel [role=combobox] {background:var(--surface-2)!important;min-height:42px!important;border-radius:8px!important;}
+html body .app-shell .shop-plus-transactions .table-row {min-height:60px;padding:8px 12px!important;}
+html body .app-shell .shop-plus-transactions .table-row:nth-of-type(even) {background:transparent;}
+html body .app-shell .shop-plus-transactions .table-row:hover {background:var(--surface-2)!important;}
+html body .app-shell .shop-plus-transactions .table-row .status-badge {border:0!important;background:transparent!important;}
+html body .app-shell .shop-plus-transactions .table-row .transaction-visual-name {margin-bottom:2px;}
+html body .app-shell .shop-plus-transactions .table-row .transaction-direction {width:30px;height:30px;}
+html body .app-shell .account-card {padding:14px!important;min-height:0!important;height:auto!important;gap:6px;}
+html body .app-shell .account-card .account-brand {width:44px!important;height:44px!important;}
+html body .app-shell .account-card .account-brand img {max-width:90%!important;max-height:90%!important;}
+html body .app-shell .aq-accounts-insights__panel {padding:16px!important;min-height:0!important;}
+html body .app-shell .aq-accounts-insights__heading {padding:0!important;margin-bottom:12px!important;}
+html body .app-shell .aq-accounts-insights__status dl>div {padding:8px 0!important;min-height:0!important;}
+html body .app-shell .aq-accounts-insights__scope {display:none;}
+html body .app-shell .cashbook-summary__header {margin-bottom:10px!important;}
+html body .app-shell .summary-metric {min-height:76px;padding:10px!important;}
+html body .app-shell .cashbook-feed__heading {padding-block:10px!important;}
+html body .app-shell .settings-section input:not([type=checkbox]):not([type=radio]):not([type=file]) {background:var(--surface-2)!important;min-height:42px;border-radius:9px;}
+html body .app-shell .settings-section {padding:18px!important;}
+html body .app-shell .settings-page-heading {margin-bottom:12px!important;}
+html body .app-shell :where(button,a,[role=combobox]) {transition:background-color .16s ease,color .16s ease,opacity .16s ease,transform .16s ease;}
+html body .app-shell button:not(:disabled):active {transform:scale(.98);}
+html body .app-shell :where(.aq-metric,.account-card,.reports-modern__kpi) {transition:transform .18s ease,box-shadow .18s ease;}
+@media(hover:hover){html body .app-shell :where(.aq-metric,.account-card,.reports-modern__kpi):hover {transform:translateY(-2px);box-shadow:var(--shadow-sm)!important;}}
+.finance-skeleton {display:block;background:var(--surface-2);border-radius:8px;animation:finance-pulse 1.1s ease-in-out infinite alternate;}
+.finance-skeleton--amount {height:1.35em;width:72%;min-width:45px;}
+.finance-skeleton--row {height:44px;width:100%;margin-block:6px;}
+@keyframes finance-pulse {from{opacity:.55}to{opacity:1}}
+@media(max-width:1100px){html body .app-shell .overview-page .metrics {grid-template-columns:repeat(2,minmax(0,1fr));}html body .app-shell .overview-page .aq-overview__visuals,html body .app-shell .overview-page .aq-overview__details {grid-template-columns:minmax(0,1fr);}html body .app-shell .shop-plus-transactions .filter-panel {grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:767px){html body .app-shell .app-header.workspace-header {height:auto;min-height:0;flex-basis:auto;}html body .app-shell .overview-page .overview-filter-controls {justify-content:flex-start;width:100%;}html body .app-shell .shop-plus-transactions .filter-panel {grid-template-columns:repeat(2,minmax(0,1fr));}html body .app-shell .overview-page .aq-metric {padding:11px!important;min-height:92px!important;}html body .app-shell .finance-donut {grid-template-columns:minmax(110px,145px) minmax(0,1fr);gap:9px;}}
+@media(max-width:390px){html body .app-shell .finance-donut {grid-template-columns:minmax(0,1fr);}html body .app-shell .finance-donut__graphic {max-width:155px;}}
+@media(prefers-reduced-motion:reduce){html body .app-shell *,html body .app-shell *::before,html body .app-shell *::after {animation:none!important;transition:none!important;scroll-behavior:auto!important;}html body .app-shell :where(.aq-metric,.account-card,.reports-modern__kpi):hover,html body .app-shell button:active {transform:none!important;}}
+
+html body .app-shell .settings-layout {grid-template-columns:minmax(0,1fr)!important;gap:10px;}
+html body .app-shell .settings-nav {display:flex!important;flex-wrap:wrap;gap:5px;padding:5px!important;background:transparent!important;}
+html body .app-shell .settings-nav-group {display:contents!important;}
+html body .app-shell .settings-nav-label {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+html body .app-shell .settings-nav-item {width:auto!important;min-height:42px;flex:0 1 auto;padding:9px 12px;}
+html body .app-shell .settings-content {max-width:900px;width:100%;}
+html body .app-shell .ledger-composer__chip {min-height:36px!important;padding-inline:10px!important;}
+html body .app-shell .ledger-composer__hint:not(:focus-within) {margin-block:0!important;}
+html body .app-shell .account-actions {flex-wrap:wrap;}
+html body .app-shell .overview-page .aq-overview__accounts+.finance-donut .finance-donut__legend {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);}
+html body .app-shell .overview-page .aq-overview__accounts+.finance-donut .finance-donut__legend:focus-within {position:static;width:auto;height:auto;overflow:visible;clip:auto;}
+html body .app-shell .overview-page .aq-overview__accounts+.finance-donut {grid-template-columns:minmax(0,1fr);}
+
+/* Financial chart interaction system. Motion reveals shape, never changes stored numbers. */
+.finance-trend {min-width:0;width:100%;color:var(--ink);}
+.finance-trend__summary {display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px;min-height:50px;padding:8px 10px;margin-bottom:6px;background:var(--surface-2);border-radius:10px;font-size:11px;}
+.finance-trend__period {font-weight:650;flex:1 1 100%;color:var(--muted);}
+.finance-trend__metric {display:flex;align-items:center;gap:5px;flex-wrap:wrap;color:var(--muted);}
+.finance-trend__metric strong {color:var(--ink);font-size:13px;font-variant-numeric:tabular-nums;}
+.finance-trend__metric i {display:inline-block;width:8px;height:8px;border-radius:3px;}
+.finance-trend__svg {display:block;width:100%;height:auto;min-width:0;overflow:hidden;cursor:crosshair;touch-action:pan-y;}
+.finance-trend__series {animation:chart-reveal .35s ease-out;}
+.finance-trend__series rect,.finance-trend__series circle {transition:opacity .16s ease,r .16s ease;}
+.finance-trend__navigation {display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:3px;}
+.finance-trend__navigation button {min-width:36px;min-height:36px;border:0!important;background:var(--surface-2);color:var(--ink);padding:5px 10px;border-radius:8px;font-size:12px;}
+.finance-trend__navigation button:disabled {opacity:.45;}
+.finance-trend__navigation button:hover:not(:disabled) {background:var(--tint);}
+.finance-donut__segment {cursor:pointer;transition:stroke-width .18s ease,opacity .18s ease;animation:chart-reveal .35s ease-out;}
+.finance-donut__legend button[aria-pressed=true] {background:var(--tint);}
+.finance-donut__legend button:hover {transform:translateX(2px);}
+.finance-chart-empty {padding:16px;color:var(--muted);font-size:12px;}
+@keyframes chart-reveal {from{opacity:.25}to{opacity:1}}
+@media(prefers-reduced-motion:reduce){.finance-trend__series,.finance-donut__segment {animation:none!important;transition:none!important;}.finance-donut__legend button:hover {transform:none!important;}}
+
+html body .app-shell .overview-page .cash-panel--day .finance-trend__summary {background:transparent;padding:0;}
+html body .app-shell .overview-page .cash-panel--day .finance-trend__navigation {margin-top:0;}
+html body .app-shell .overview-page .cash-panel--day .finance-trend__svg {max-height:210px;}

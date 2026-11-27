@@ -36,6 +36,8 @@ async function prepareAvatar(file: File): Promise<string> {
 
 export const ProfileSettingsSection: React.FC = () => {
   const { user, updateProfile } = useAuth();
+  const saveLock = useRef(false);
+  const photoLock = useRef(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [fullName, setFullName] = useState(user?.full_name || "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar_url || null);
@@ -52,7 +54,8 @@ export const ProfileSettingsSection: React.FC = () => {
   const handlePhoto = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!file || photoLock.current || saveLock.current) return;
+    photoLock.current = true;
     setError(null);
     setSaved(false);
     setIsPreparingPhoto(true);
@@ -61,12 +64,15 @@ export const ProfileSettingsSection: React.FC = () => {
     } catch (photoError) {
       setError(photoError instanceof Error ? photoError.message : "Could not prepare this image.");
     } finally {
-      setIsPreparingPhoto(false);
+      photoLock.current = false; setIsPreparingPhoto(false);
     }
   };
 
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!user || saveLock.current || photoLock.current) return;
+    if (!fullName.trim()) { setError("Enter your full name."); return; }
+    saveLock.current = true;
     setError(null);
     setSaved(false);
     setIsSaving(true);
@@ -77,7 +83,7 @@ export const ProfileSettingsSection: React.FC = () => {
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save your profile.");
     } finally {
-      setIsSaving(false);
+      saveLock.current = false; setIsSaving(false);
     }
   };
 
@@ -97,20 +103,20 @@ export const ProfileSettingsSection: React.FC = () => {
         <div className="flex items-center gap-3 sm:block">
           <UserAvatar src={avatarUrl || undefined} name={fullName || "Shop Owner"} size="2xl" />
           <div className="flex flex-wrap gap-2 sm:mt-3">
-            <button type="button" onClick={() => inputRef.current?.click()} disabled={isPreparingPhoto} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-on-surface hover:bg-surface-container-low disabled:opacity-60">
+            <button type="button" onClick={() => inputRef.current?.click()} disabled={isPreparingPhoto || isSaving} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-on-surface hover:bg-surface-container-low disabled:opacity-60">
               <Camera className="h-3.5 w-3.5" />{isPreparingPhoto ? "Preparing…" : "Change photo"}
             </button>
-            {avatarUrl && <button type="button" onClick={() => setAvatarUrl(null)} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-secondary hover:bg-surface-container-low"><X className="h-3.5 w-3.5" />Remove</button>}
+            {avatarUrl && <button type="button" disabled={isSaving || isPreparingPhoto} onClick={() => { setAvatarUrl(null); setSaved(false); }} className="inline-flex min-h-9 items-center gap-1 rounded-lg px-2 text-xs font-semibold text-secondary hover:bg-surface-container-low"><X className="h-3.5 w-3.5" />Remove</button>}
           </div>
-          <input ref={inputRef} type="file" accept="image/*" className="sr-only" onChange={(event) => void handlePhoto(event)} />
+          <input ref={inputRef} type="file" accept="image/*" disabled={isSaving || isPreparingPhoto} className="sr-only" tabIndex={-1} aria-label="Upload profile photo" onChange={(event) => void handlePhoto(event)} />
         </div>
 
         <div className="space-y-4">
           <label className="settings-field block">
             <span>Full name</span>
-            <input required maxLength={80} autoComplete="name" value={fullName} onChange={(event) => { setFullName(event.target.value); setSaved(false); }} placeholder="Your name" />
+            <input required disabled={isSaving} maxLength={80} autoComplete="name" value={fullName} onChange={(event) => { setFullName(event.target.value); setSaved(false); }} placeholder="Your name" />
           </label>
-          <button type="submit" disabled={isSaving || isPreparingPhoto || !user} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-primary-hover disabled:opacity-60">
+          <button type="submit" disabled={isSaving || isPreparingPhoto || !user} className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-4 text-xs font-semibold text-on-primary shadow-xs transition-colors hover:bg-primary-hover disabled:opacity-60">
             {isSaving ? "Saving…" : "Save profile"}
           </button>
         </div>

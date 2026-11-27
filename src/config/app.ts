@@ -1,1 +1,1 @@
-export const APP_NAME = "Shop Pro";
+export const APP_NAME = "Shop Plus";

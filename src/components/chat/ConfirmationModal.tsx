@@ -77,7 +77,6 @@ function makeEntryDraft(
       }
     }
   }
-
   return {
     entry,
     type: entry.type,
@@ -119,7 +118,6 @@ function toParseResult(
     return null;
   }
   if (draft.businessDate > getKarachiBusinessDate()) return null;
-
   const category = categories.find((item) => item.id === draft.categoryId);
   if (
     (draft.type === "income" || draft.type === "expense") &&
@@ -170,26 +168,26 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const [validationError, setValidationError] = useState<string | null>(null);
   const cancelRef = useRef(onCancel);
   const savingRef = useRef(false);
+  const submitLock = useRef(false);
+  const reviewOptions = useRef({ accounts, categories });
+  reviewOptions.current = { accounts, categories };
   cancelRef.current = onCancel;
   savingRef.current = isSavingSingle || isSavingBatch;
-
   useEffect(() => {
-    setSingle(result ? makeEntryDraft(result, accounts, categories) : null);
+    setSingle(result ? makeEntryDraft(result, reviewOptions.current.accounts, reviewOptions.current.categories) : null);
     setValidationError(null);
-  }, [result, accounts, categories]);
-
+  }, [result]);
   useEffect(() => {
-    setRows(batchEntries?.map((entry) => makeEntryDraft(entry, accounts, categories)) || []);
+    setRows(batchEntries?.map((entry) => makeEntryDraft(entry, reviewOptions.current.accounts, reviewOptions.current.categories)) || []);
     setValidationError(null);
-  }, [batchEntries, accounts, categories]);
-
+  }, [batchEntries]);
   useEffect(() => {
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
     dialog
       ?.querySelector<HTMLElement>('input:not([disabled]), select:not([disabled]), button:not([disabled])')
       ?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !savingRef.current) {
+      if (event.key === "Escape" && !event.defaultPrevented && !savingRef.current && !submitLock.current) {
         cancelRef.current();
       }
       if (event.key === "Tab" && dialog) {
@@ -210,9 +208,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [result, batchEntries]);
-
   if (!result && !isBatch) return null;
-
   const renderEditor = (
     draft: EntryDraft,
     onChange: (next: EntryDraft) => void,
@@ -422,7 +418,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     );
   };
-
   if (!isBatch && result && single) {
     const hasOptions = Boolean(result.options?.length);
     const resolved = toParseResult(single, categories);
@@ -449,7 +444,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       (!single.entry.reason || single.selectedOption || !hasOptions);
 
     const submitSingle = async () => {
-      if (!resolved || !canSubmit || isSavingSingle) return;
+      if (!resolved || !canSubmit || isSavingSingle || submitLock.current) return;
+      submitLock.current = true;
       setIsSavingSingle(true);
       setValidationError(null);
       try {
@@ -459,6 +455,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           error instanceof Error ? error.message : "Entry could not be posted.",
         );
       } finally {
+        submitLock.current = false;
         setIsSavingSingle(false);
       }
     };
@@ -552,7 +549,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     );
   }
-
   if (isBatch && batchEntries) {
     const hasInvalidRows = rows.length !== batchEntries.length || rows.some((row) => {
       const parsed = toParseResult(row, categories);
@@ -567,12 +563,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     });
 
     const submitBatch = async () => {
-      if (hasInvalidRows || isSavingBatch) return;
+      if (hasInvalidRows || isSavingBatch || submitLock.current) return;
       const entries = rows.map((row) => toParseResult(row, categories));
       const validEntries = entries.filter(
         (entry): entry is ParseResult => entry !== null,
       );
       if (validEntries.length !== entries.length) return;
+      submitLock.current = true;
       setValidationError(null);
       try {
         await onConfirmBatch(
@@ -583,6 +580,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         setValidationError(
           error instanceof Error ? error.message : "Some entries could not be posted.",
         );
+      } finally {
+        submitLock.current = false;
       }
     };
 
@@ -678,6 +677,5 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       </div>
     );
   }
-
   return null;
 };

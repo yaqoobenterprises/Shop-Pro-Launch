@@ -1,17 +1,23 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { Select } from "../common/Select";
 import { ledgerService } from "../../services/ledgerService";
 import { SupabaseSessionRequiredError } from "../../lib/supabase";
-import { Transaction, Category } from "../../types/ledger";
-import { formatPaisa } from "../../lib/money";
+import { useAuth } from "../../context/AuthContext";
+import { useApp } from "../../context/AppContext";
+import { hasPermission } from "../../lib/permissions";
+import "./TransactionsWorkspace.css";
+import { Transaction, Category, LedgerAccount } from "../../types/ledger";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
+import { WORKSPACE_TRANSACTION_SEARCH } from "../../lib/workspaceSearch";
+import { readAmountBounds, exactMajorUnits, type TransactionSort } from "../../lib/transactionFilters";
 import { useRegion } from "../../regional/region";
 import { useI18n } from "../../i18n";
 import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
 import { exportToCSV as downloadCSV } from "../../lib/utils";
 import {
   Download,
-  RefreshCw,
   Eye,
+  ArrowUpRight, ArrowDownLeft,
   Ban,
   Search,
 } from "lucide-react";
@@ -39,6 +45,12 @@ const getTransactionDisplayDetails = (transaction: Transaction) => {
 
 export const TransactionsExplorerView: React.FC = () => {
   const { region } = useRegion();
+  const { user, isDemoMode, isCloudAccount } = useAuth();
+  const { readTransactionView, saveTransactionView } = useApp();
+  const [initial] = useState(readTransactionView);
+  const canManage = !isDemoMode && hasPermission(user?.role, "VOID_EXPENSE");
+  const requestId = useRef(0);
+  const exportLock = useRef(false);
   const { t } = useI18n();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -46,15 +58,32 @@ export const TransactionsExplorerView: React.FC = () => {
   const [loadError, setLoadError] = useState("");
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedType, setSelectedType] = useState("all");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState<"active" | "voided" | "all">("all");
+  const [searchQuery, setSearchQuery] = useState(initial.searchQuery);
+  const [appliedSearch, setAppliedSearch] = useState(initial.appliedSearch);
+  const [selectedAccount, setSelectedAccount] = useState(initial.account);
+  const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
+  const [startDate, setStartDate] = useState(initial.startDate);
+  const [endDate, setEndDate] = useState(initial.endDate);
+  const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
+  const [minimum, setMinimum] = useState(initial.minimum ?? "");
+  const [maximum, setMaximum] = useState(initial.maximum ?? "");
+  const [sort, setSort] = useState<TransactionSort>(initial.sort ?? "newest");
+  const {minAmountPaisa, maxAmountPaisa, error: amountError} = readAmountBounds(minimum,maximum);
+  const invalidFilters = invalidDateRange || Boolean(amountError);
+  const [selectedType, setSelectedType] = useState(initial.type);
+  const [selectedCategory, setSelectedCategory] = useState(initial.category);
+  const [selectedStatus, setSelectedStatus] = useState<"active" | "voided" | "all">(initial.status);
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(initial.page);
+  useEffect(() => {
+    saveTransactionView({ searchQuery, appliedSearch, account: selectedAccount, startDate, endDate, type: selectedType, category: selectedCategory, status: selectedStatus, page, minimum, maximum, sort });
+  }, [saveTransactionView, searchQuery, appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus, page, minimum, maximum, sort]);
+  useEffect(()=>{
+    const search=(event:Event)=>{const query=(event as CustomEvent<string>).detail;if(typeof query!=="string")return;setSearchQuery(query);setAppliedSearch(query);setSelectedAccount("all");setStartDate("");setEndDate("");setSelectedType("all");setSelectedCategory("all");setSelectedStatus("all");setMinimum("");setMaximum("");setSort("newest");setPage(0);};
+    window.addEventListener(WORKSPACE_TRANSACTION_SEARCH,search);
+    return()=>window.removeEventListener(WORKSPACE_TRANSACTION_SEARCH,search);
+  },[]);
   const pageSize = 25;
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -63,30 +92,40 @@ export const TransactionsExplorerView: React.FC = () => {
   const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
 
   const getCurrentFilter = useCallback(() => ({
-    searchQuery: searchQuery.trim() || undefined,
+    searchQuery: appliedSearch.trim() || undefined,
+    accountId: selectedAccount,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     type: selectedType,
     categoryId: selectedCategory,
-    status: selectedStatus,
-  }), [searchQuery, startDate, endDate, selectedType, selectedCategory, selectedStatus]);
+    status: selectedStatus, minAmountPaisa, maxAmountPaisa, sort,
+  }), [appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus, minAmountPaisa, maxAmountPaisa, sort]);
 
   const loadData = useCallback(async (requestedPage = page) => {
+    const id = ++requestId.current;
     setIsLoading(true);
     setLoadError("");
+    setTransactions([]);
+    setTotalCount(0);
+    if (invalidFilters) { setIsLoading(false); return; }
     try {
-      const cats = await ledgerService.getCategories();
+      const [cats, paymentAccounts] = await Promise.all([ledgerService.getCategories(), ledgerService.getPaymentAccounts()]);
+      if (id !== requestId.current) return;
       setCategories(cats);
+      setAccounts(paymentAccounts);
 
       const res = await ledgerService.getFilteredTransactions({
         ...getCurrentFilter(),
         limit: pageSize,
         offset: requestedPage * pageSize,
-      });
+      }, { requireCloudSource: isCloudAccount && !isDemoMode });
+      if (id !== requestId.current) return;
 
+      if (requestedPage > 0 && requestedPage * pageSize >= res.count) { setPage(Math.max(0, Math.ceil(res.count / pageSize) - 1)); return; }
       setTransactions(res.transactions);
       setTotalCount(res.count);
     } catch (err) {
+      if (id !== requestId.current) return;
       console.error("Error fetching transactions:", err);
       setTransactions([]);
       setTotalCount(0);
@@ -96,21 +135,25 @@ export const TransactionsExplorerView: React.FC = () => {
           : "Transactions could not be loaded. Please refresh and try again.",
       );
     } finally {
-      setIsLoading(false);
+      if (id === requestId.current) setIsLoading(false);
     }
-  }, [page, getCurrentFilter]);
+  }, [page, getCurrentFilter, invalidFilters, isCloudAccount, isDemoMode]);
 
   useEffect(() => {
     void loadData();
+    return () => { requestId.current += 1; };
   }, [loadData]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(0);
-    void loadData(0);
+    if (appliedSearch === searchQuery.trim() && page === 0) void loadData(0);
+    else setAppliedSearch(searchQuery.trim());
   };
 
   const handleExportCSV = async () => {
+    if (exportLock.current || invalidFilters || isLoading || loadError || searchQuery.trim() !== appliedSearch) return;
+    exportLock.current = true;
     setIsExporting(true);
     setExportError("");
     const headers = [
@@ -119,6 +162,7 @@ export const TransactionsExplorerView: React.FC = () => {
       "Device Time",
       "Type",
       "Category",
+      "Account",
       t("currency.amountLabel", { currency: region.currency }),
       "Raw Text",
       "Status",
@@ -128,22 +172,24 @@ export const TransactionsExplorerView: React.FC = () => {
     try {
       const exportedTransactions = await ledgerService.getAllFilteredTransactions(
         getCurrentFilter(),
+        { requireCloudSource: isCloudAccount && !isDemoMode },
       );
-      if (exportedTransactions.length === 0) return;
+      if (exportedTransactions.length === 0) { setExportError("No matching transactions to export."); return; }
       const rows = exportedTransactions.map((tx) => [
         tx.id,
         tx.business_date,
         tx.device_entry_time,
         tx.type,
         tx.category_name || "",
-        (tx.amount_paisa / 100).toFixed(2),
+        tx.account_name || "",
+        exactMajorUnits(tx.amount_paisa),
         tx.raw_text,
         tx.status,
         tx.void_reason || "",
         tx.created_by_name || "",
       ]);
       downloadCSV(
-        "shop_pro_ledger_export",
+        "shop_plus_transactions",
         headers,
         rows,
         getKarachiBusinessDate(),
@@ -152,6 +198,7 @@ export const TransactionsExplorerView: React.FC = () => {
       console.error("Error exporting transactions:", err);
       setExportError("The CSV export could not be completed. Please retry.");
     } finally {
+      exportLock.current = false;
       setIsExporting(false);
     }
   };
@@ -159,11 +206,11 @@ export const TransactionsExplorerView: React.FC = () => {
   const totalPages = Math.ceil(totalCount / pageSize);
 
   return (
-    <main className="page-content entries-page">
+    <div className="page-content entries-page shop-plus-transactions">
       {/* Page Title */}
       <div className="page-title">
         <div className="entries-page-heading">
-          <h1>Entries</h1>
+          <h1>Transactions</h1>
         </div>
 
         <div className="title-actions">
@@ -171,10 +218,10 @@ export const TransactionsExplorerView: React.FC = () => {
             type="button"
             className="button button-secondary"
             onClick={handleExportCSV}
-            disabled={isExporting || totalCount === 0}
+            disabled={isExporting || isLoading || Boolean(loadError) || invalidFilters || totalCount === 0 || searchQuery.trim() !== appliedSearch}
           >
             <Download className="h-4 w-4" />
-            {isExporting ? "Exporting..." : "Export CSV"}
+            {isExporting ? "Exporting..." : "Export filtered CSV"}
           </button>
         </div>
       </div>
@@ -187,21 +234,29 @@ export const TransactionsExplorerView: React.FC = () => {
 
       {loadError && (
         <div role="alert" className="toast-note" style={{ background: "var(--danger-bg)", borderColor: "var(--danger)", color: "var(--danger)" }}>
-          {loadError}
+          {loadError} <button type="button" onClick={() => void loadData()}>Retry</button>
         </div>
       )}
 
       {/* Filter Panel */}
-      <section className="panel filter-panel">
-        <form onSubmit={handleSearchSubmit} className="search-field">
+      <section className="panel filter-panel" aria-label="Transaction filters">
+        <form onSubmit={handleSearchSubmit} className="search-field" role="search">
           <Search className="h-4 w-4" aria-hidden="true" />
           <input
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search description, payee, or note..."
-            aria-label="Search entries"
+            placeholder="Search transactions"
+            aria-label="Search transactions"
           />
+          <button type="submit" className="button button-secondary">Search</button>
         </form>
+        <label className="transaction-date-filter">From<input type="date" aria-label="From business date" value={startDate} onChange={e => { setStartDate(e.target.value); setPage(0); }} /></label>
+        <label className="transaction-date-filter">To<input type="date" aria-label="To business date" value={endDate} onChange={e => { setEndDate(e.target.value); setPage(0); }} /></label>
+        <Select value={selectedAccount} onChange={e => { setSelectedAccount(e.target.value); setPage(0); }} aria-label="Filter by account">
+          <option value="all">All accounts</option>
+          {accounts.map(account => <option key={account.id} value={account.id}>{account.name}</option>)}
+        </Select>
 
         <Select
           value={selectedType}
@@ -248,10 +303,18 @@ export const TransactionsExplorerView: React.FC = () => {
           <option value="voided">Voided Only</option>
         </Select>
 
+        <label className="transaction-date-filter">Min amount<input aria-label="Minimum amount" inputMode="decimal" value={minimum} onChange={e => {setMinimum(e.target.value); setPage(0);}} placeholder="0.00" /></label>
+        <label className="transaction-date-filter">Max amount<input aria-label="Maximum amount" inputMode="decimal" value={maximum} onChange={e => {setMaximum(e.target.value); setPage(0);}} placeholder="No limit" /></label>
+        <Select value={sort} aria-label="Sort transactions" onChange={e => {setSort(e.target.value as TransactionSort);setPage(0);}}>
+          <option value="newest">Newest</option><option value="oldest">Oldest</option><option value="amount-high">Highest</option><option value="amount-low">Lowest</option>
+        </Select>
         <button
           type="button"
           onClick={() => {
+            setMinimum(""); setMaximum(""); setSort("newest");
             setSearchQuery("");
+            setAppliedSearch("");
+            setSelectedAccount("all");
             setSelectedType("all");
             setSelectedCategory("all");
             setSelectedStatus("all");
@@ -266,14 +329,18 @@ export const TransactionsExplorerView: React.FC = () => {
         </button>
       </section>
 
+      {amountError && <p role="alert" className="text-sm text-danger">{amountError}</p>}
+      {invalidDateRange && <p role="alert" className="text-sm text-danger">From date must be on or before To date.</p>}
+      {(!isCloudAccount || isDemoMode) && <p className="text-xs text-text-muted">{isDemoMode ? "Demo records only." : "Local records may be incomplete; cloud history is not verified."}</p>}
+      {searchQuery.trim() !== appliedSearch && <p className="text-xs text-text-muted">Press Search to apply the typed description.</p>}
       {/* Transactions Table */}
-      <section className="panel transaction-table">
-        <div className="table-head">
-          <span>Transaction / Description</span>
+      <section className="panel transaction-table" aria-label="Transaction results">
+        <div className="table-head" aria-hidden="true">
+          <span>Transaction</span>
           <span>{t("transactions.account")}</span>
-          <span>Date & Time</span>
+          <span>Date</span>
           <span style={{ textAlign: "right" }}>Amount</span>
-          <span>Status & Action</span>
+          <span>Status</span>
         </div>
 
         {transactions.map((tx) => {
@@ -283,16 +350,13 @@ export const TransactionsExplorerView: React.FC = () => {
             (tx.type === "adjustment" && tx.adjustment_dir === "in");
           const isVoid = tx.status === "voided";
           const details = getTransactionDisplayDetails(tx);
-          const initials = (tx.category_name || tx.type || "TX")
-            .slice(0, 2)
-            .toUpperCase();
+
 
           return (
-            <div className="table-row" key={tx.id}>
+            <article className="table-row" key={tx.id} aria-label={`Transaction ${details.rawText}`}>
               <div>
-                <span className="transaction-icon">{initials}</span>
                 <div>
-                  <strong>{details.rawText}</strong>
+                  <strong className="transaction-visual-name"><span className={`transaction-direction ${isIncome?"is-in":"is-out"}`} aria-hidden="true">{isIncome?<ArrowDownLeft size={17}/>:<ArrowUpRight size={17}/>}</span><span>{details.rawText}</span></strong>
                   <small>
                     {tx.category_name || "Uncategorized"} {details.note ? ` · ${details.note}` : ""}
                   </small>
@@ -300,14 +364,14 @@ export const TransactionsExplorerView: React.FC = () => {
                 </div>
               </div>
 
-              <span>{tx.account_name || "Cash"}</span>
+              <span className="transaction-account"><span className="sr-only">Account: </span>{tx.account_name || "Account unavailable"}</span>
 
               <span>
-                {tx.business_date} · <small>{formatKarachiTime(tx.created_at)}</small>
+                <span className="sr-only">Business date: </span>{tx.business_date}{formatKarachiTime(tx.created_at)!=="-" && formatKarachiTime(tx.created_at)!=="—" && <small> · {formatKarachiTime(tx.created_at)}</small>}
               </span>
 
-              <strong className={isIncome && !isVoid ? "positive" : ""}>
-                {isIncome ? "+" : "−"}
+              <strong className={`transaction-amount num ${isIncome && !isVoid ? "positive" : ""}`}>
+                <span className="sr-only">Amount: </span>{isIncome ? "+" : "−"}
                 {formatPaisa(tx.amount_paisa)}
               </strong>
 
@@ -320,52 +384,52 @@ export const TransactionsExplorerView: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedDetailTx(tx)}
                   className="icon-button"
-                  style={{ width: 28, height: 28 }}
+                  style={{ width: 44, height: 44 }}
                   title="View details"
-                  aria-label="View transaction details"
+                  aria-label={`View transaction details: ${details.rawText}`}
                 >
                   <Eye className="h-3.5 w-3.5" />
                 </button>
 
-                {!isVoid && (
+                {!isVoid && canManage && (
                   <button
                     type="button"
                     onClick={() => setVoidingTx(tx)}
                     className="icon-button"
-                    style={{ width: 28, height: 28, color: "var(--danger)" }}
+                    style={{ width: 44, height: 44, color: "var(--danger)" }}
                     title="Void transaction"
-                    aria-label="Void transaction"
+                    aria-label={`Void transaction: ${details.rawText}`}
                   >
                     <Ban className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
-            </div>
+            </article>
           );
         })}
 
-        {transactions.length === 0 && !isLoading && (
+        {transactions.length === 0 && !isLoading && !loadError && !invalidFilters && (
           <div className="empty-state">
             <strong>No transactions found</strong>
-            <p>Try adjusting your search criteria or filters.</p>
+
           </div>
         )}
 
         {isLoading && (
-          <div className="empty-state">
-            <RefreshCw className="h-6 w-6 animate-spin" />
-            <p>Loading transactions...</p>
+          <div className="empty-state" role="status">
+            <span className="finance-skeleton finance-skeleton--row"/><span className="finance-skeleton finance-skeleton--row"/><span className="finance-skeleton finance-skeleton--row"/><span className="sr-only">Loading transactions...</span>
           </div>
         )}
 
         <div className="table-footer">
-          <span>
-            Showing {transactions.length} of {totalCount} transactions
+          <span role="status">
+            {isLoading ? "Loading…" : loadError || invalidFilters ? "Results unavailable" : `${totalCount === 0 ? 0 : page * pageSize + 1}–${page * pageSize + transactions.length} of ${totalCount} transactions`}
           </span>
           <div>
             <button
               type="button"
-              disabled={page === 0}
+              aria-label="Previous page"
+              disabled={isLoading || page === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
             >
               ←
@@ -375,7 +439,8 @@ export const TransactionsExplorerView: React.FC = () => {
             </strong>
             <button
               type="button"
-              disabled={page + 1 >= totalPages}
+              aria-label="Next page"
+              disabled={isLoading || page + 1 >= totalPages}
               onClick={() => setPage((p) => p + 1)}
             >
               →
@@ -401,12 +466,12 @@ export const TransactionsExplorerView: React.FC = () => {
         transaction={selectedDetailTx}
         isOpen={Boolean(selectedDetailTx)}
         onClose={() => setSelectedDetailTx(null)}
-        canManage={true}
+        canManage={canManage}
         onVoid={(tx) => {
           setSelectedDetailTx(null);
           setVoidingTx(tx);
         }}
       />
-    </main>
+    </div>
   );
 };

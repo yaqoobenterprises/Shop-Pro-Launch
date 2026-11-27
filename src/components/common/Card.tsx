@@ -14,8 +14,8 @@ export const Card: React.FC<CardProps> = ({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border-standard bg-surface-bright p-5 text-on-surface shadow-level-1 transition-all duration-150 sm:p-6",
-        hoverable && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-level-2",
+        "rounded-[var(--radius-card)] border border-border-standard bg-surface-bright p-4 text-on-surface transition-colors duration-150 sm:p-5",
+        hoverable && "cursor-pointer hover:border-primary/40",
         className,
       )}
       {...props}

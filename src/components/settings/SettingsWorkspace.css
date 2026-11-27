@@ -1,0 +1,23 @@
+/* Ledger Ink settings: one scrolling workspace, compact accessible section navigation. */
+html .app-shell .settings-page { max-width:1100px; padding-block:14px 24px; }
+html .app-shell .settings-intro { margin-top:4px; font-size:.8rem; color:var(--muted); line-height:1.5; }
+html .app-shell .settings-layout { display:grid; grid-template-columns: minmax(160px,210px) minmax(0,1fr); align-items:start; gap:16px; }
+html .app-shell .settings-nav { background:var(--surface-card); border:1px solid var(--line); border-radius:var(--radius-card); padding:8px; box-shadow:none; min-width:0; }
+html .app-shell .settings-nav-group { padding:5px 0; }
+html .app-shell .settings-nav-label { color:var(--muted); text-transform:none; letter-spacing:0; font-size:.72rem; font-weight:650; padding:6px 8px; }
+html .app-shell .settings-nav-item { width:100%; min-height:44px; padding:8px; display:flex; align-items:center; gap:8px; border-radius:var(--radius-control); color:var(--ink-2); text-align:start; font-size:.82rem; }
+html .app-shell .settings-nav-item.is-active { color:var(--accent-ink); background:var(--tint); font-weight:650; }
+html .app-shell .settings-content { min-width:0; }
+html .app-shell .settings-content [hidden] { display:none!important; }
+html .app-shell .settings-content .settings-section { background:var(--surface-card); border:1px solid var(--line); border-radius:var(--radius-card); box-shadow:none; padding:clamp(12px,2vw,22px); min-width:0; }
+html .app-shell .settings-content .settings-icon { color:var(--accent-ink); background:var(--tint); border-radius:var(--radius-control); }
+html .app-shell .settings-content input,html .app-shell .settings-content select { min-width:0; max-width:100%; }
+html .app-shell .settings-content button:disabled { cursor:not-allowed; opacity:.6; }
+html .app-shell .settings-content button:focus-visible,html .app-shell .settings-nav-item:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+@media(max-width:767px){
+html .app-shell .settings-layout { grid-template-columns:minmax(0,1fr);gap:10px; }
+html .app-shell .settings-nav { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px; }
+html .app-shell .settings-nav-group { min-width:0; }
+html .app-shell .settings-nav-item { white-space:normal; overflow-wrap:anywhere; }
+html .app-shell .settings-content .settings-section { padding:12px; }
+}

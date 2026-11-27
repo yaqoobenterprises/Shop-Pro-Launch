@@ -1,7 +1,7 @@
 export const english = {
   "nav.ledger": "Cashbook",
   "nav.overview": "Overview",
-  "nav.entries": "Entries",
+  "nav.entries": "Transactions",
   "nav.reports": "Reports",
   "nav.accounts": "Accounts",
   "nav.settings": "Settings",
@@ -67,7 +67,7 @@ export const english = {
   "region.saved": "Regional settings updated successfully.",
   "region.save": "Save Regional Settings",
   "region.offlineCurrencyLocked": "Currency cannot be changed while offline.",
-  "region.setupWelcome": "Welcome to Shop Pro",
+  "region.setupWelcome": "Welcome to Shop Plus",
   "region.setupDescription": "Confirm your shop region, currency, and local timezone.",
   "region.preferredLanguage": "Preferred Language",
   "region.confirmSetup": "Confirm Regional Setup",

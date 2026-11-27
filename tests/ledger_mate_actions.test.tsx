@@ -25,7 +25,7 @@ vi.mock("../src/services/ledgerMateAiService", () => ({
 import { AiAccountantPanel } from "../src/components/chat/AiAccountantPanel";
 import { prepareLedgerMateAction } from "../src/services/ledgerMateActionService";
 import { ledgerService } from "../src/services/ledgerService";
-import { sendLedgerMateMessage } from "../src/services/ledgerMateAiService";
+import { checkLedgerMateHealth, sendLedgerMateMessage } from "../src/services/ledgerMateAiService";
 
 const mockLedger = vi.mocked(ledgerService);
 const mockSend = vi.mocked(sendLedgerMateMessage);
@@ -64,12 +64,14 @@ function mountPanel() {
     userId="current-user"
     organizationId="current-org"
     isCloudAccount={false}
+    canPrepareActions
   />);
 }
 
 async function openCreatePreview() {
   const input = await screen.findByRole("textbox", { name: "Message LedgerMate AI" });
   await waitFor(() => expect(input).not.toBeDisabled());
+  fireEvent.click(screen.getByRole("button", { name: "Enable reviewed ledger actions" }));
   fireEvent.change(input, { target: { value: "add sale Rs 1,250.00 stamp paper cash today" } });
   fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
   await screen.findByText("Review ledger action");
@@ -78,6 +80,7 @@ async function openCreatePreview() {
 describe("LedgerMate transaction confirmation gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { value: vi.fn(), configurable: true });
     mockLedger.getCategories.mockResolvedValue([
       { id: "stamp", name: "Stamp Paper", kind: "income", unusual_amount_limit_paisa: 5000000, is_default: false, is_active: true, display_order: 1, created_at: "2026-01-01" },
@@ -87,6 +90,17 @@ describe("LedgerMate transaction confirmation gate", () => {
     ]);
     mockLedger.createTransactionDraft.mockResolvedValue({ id: "draft-1" } as Awaited<ReturnType<typeof ledgerService.createTransactionDraft>>);
     mockLedger.postTransactionDraft.mockResolvedValue({ transaction: { id: "transaction-1" } as never, isQueuedOffline: false });
+  });
+
+  it("starts in read-only mode and refuses a write request without explicit opt-in", async () => {
+    mountPanel();
+    const input=await screen.findByRole("textbox",{name:"Message LedgerMate AI"});
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"add sale Rs 1,250.00 stamp paper cash today"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText(/LedgerMate is in read-only mode/)).toBeTruthy();
+    expect(mockLedger.createTransactionDraft).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it("does not write any ledger record when the user cancels a preview", async () => {
@@ -176,5 +190,45 @@ describe("LedgerMate transaction confirmation gate", () => {
 
     expect(result).toEqual({ clarification: expect.stringContaining("multiple transactions") });
     expect(mockLedger.voidTransaction).not.toHaveBeenCalled();
+  });
+  it("asks the question again without overwriting the original answer or triggering a write",async()=>{
+    mockSend.mockResolvedValueOnce({reply:"First answer",model:"test"}).mockResolvedValueOnce({reply:"Second answer",model:"test"});
+    mountPanel();
+    const input=await screen.findByRole("textbox",{name:"Message LedgerMate AI"});
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"Hello"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText("First answer")).toBeTruthy();
+    await waitFor(()=>expect(screen.getByRole("button",{name:"Ask question again"})).not.toBeDisabled());
+    fireEvent.click(screen.getByRole("button",{name:"Ask question again"}));
+    expect(await screen.findByText("Second answer")).toBeTruthy();
+    expect(screen.getByText("First answer")).toBeTruthy();
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    expect(mockLedger.createTransactionDraft).not.toHaveBeenCalled();
+  });
+  it("does not connect a sample-data demo to the cloud AI provider",async()=>{
+    render(<AiAccountantPanel summary={testSummary} userId="demo" organizationId="demo" isCloudAccount={false} providerDisabledReason="Cloud AI is not used in the sample-data demo."/>);
+    expect(await screen.findByText("Cloud AI is not used in the sample-data demo.")).toBeTruthy();
+    expect(screen.getByRole("textbox",{name:"Message LedgerMate AI"})).toBeDisabled();
+    expect(checkLedgerMateHealth).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+  it("does not resend earlier financial chat history when asking an unrelated question",async()=>{
+    mockSend.mockResolvedValueOnce({reply:"Recorded income 123.45",model:"test"}).mockResolvedValueOnce({reply:"Hello there",model:"test"});
+    mockLedger.getAllFilteredTransactions.mockResolvedValue([]);
+    mountPanel();
+    const input=await screen.findByRole("textbox",{name:"Message LedgerMate AI"});
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"today income"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText("Recorded income 123.45")).toBeTruthy();
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"Hello"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText("Hello there")).toBeTruthy();
+    const last=mockSend.mock.calls.at(-1)!;
+    expect(last[0]).toHaveLength(1);
+    expect(last[0][0]).toMatchObject({role:"user",content:"Hello"});
+    expect(last[1]).toContain("No financial data requested.");
   });
 });

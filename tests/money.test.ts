@@ -3,6 +3,7 @@ import {
   rupeesToPaisa,
   paisaToRupees,
   formatPaisa,
+  formatRecordedPaisa,
   parseInputToPaisa,
   calculateNetProfitPaisa,
 } from '../src/lib/money';
@@ -48,5 +49,13 @@ describe('Integer Paisa Money Engine', () => {
 
     // Profit is calculated from income and expenses only.
     expect(calculateNetProfitPaisa(income, expense)).toBe(350000);
+  });
+  it('displays fractional minor units without changing legacy rounded formatting', () => {
+    expect(formatRecordedPaisa(1)).toBe('Rs 0.01');
+    expect(formatRecordedPaisa(-1)).toBe('Rs -0.01');
+    expect(formatRecordedPaisa(1250)).toBe('Rs 12.50');
+    expect(formatRecordedPaisa(Number.MAX_SAFE_INTEGER)).toBe('Rs 90,071,992,547,409.91');
+    expect(formatRecordedPaisa(NaN)).toBe('Unavailable');
+    expect(formatPaisa(1250)).toBe('Rs 13');
   });
 });

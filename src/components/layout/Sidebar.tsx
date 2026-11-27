@@ -1,18 +1,15 @@
 import React from "react";
 import { useApp, AppView } from "../../context/AppContext";
-import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { APP_NAME } from "../../config/app";
-import { getProfileDisplayName } from "../../lib/profileDisplay";
-import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
 import {
   BarChart3,
   LayoutDashboard,
-  Lock,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   Receipt,
   Settings,
   MessageCircle,
@@ -23,8 +20,8 @@ const SIDEBAR_WIDTH_KEY = "shop-pro.sidebar-width";
 const SIDEBAR_COLLAPSED_KEY = "shop-pro.sidebar-collapsed";
 const MIN_SIDEBAR_WIDTH = 208;
 const MAX_SIDEBAR_WIDTH = 360;
-const DEFAULT_SIDEBAR_WIDTH = 244;
-const COLLAPSED_SIDEBAR_WIDTH = 56;
+const DEFAULT_SIDEBAR_WIDTH = 224;
+const COLLAPSED_SIDEBAR_WIDTH = 64;
 const COLLAPSE_SIDEBAR_AT = 176;
 const EXPAND_SIDEBAR_AT = 220;
 
@@ -53,11 +50,19 @@ const readSidebarCollapsed = () => {
 };
 
 export const Sidebar: React.FC = () => {
-  const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup, isDemoMode, organization, user } = useAuth();
+  const { currentView, setCurrentView, startNewEntry } = useApp();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
-  const [isCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
+  const [desktopCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
+  const [isTablet, setIsTablet] = React.useState(() => window.matchMedia?.('(min-width: 768px) and (max-width: 1023px)').matches ?? false);
+  const [tabletExpanded, setTabletExpanded] = React.useState(false);
+  const isCollapsed = isTablet ? !tabletExpanded : desktopCollapsed;
+  React.useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 768px) and (max-width: 1023px)');
+    const update = () => { setIsTablet(Boolean(media?.matches)); setTabletExpanded(false); };
+    media?.addEventListener?.('change', update);
+    return () => media?.removeEventListener?.('change', update);
+  }, []);
   const [isResizing, setIsResizing] = React.useState(false);
   const sidebarWidthRef = React.useRef(sidebarWidth);
   const resizeStart = React.useRef<{
@@ -69,14 +74,13 @@ export const Sidebar: React.FC = () => {
 
   const navItems: { id: AppView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "dashboard", label: t("nav.overview"), icon: LayoutDashboard },
-    { id: "sales", label: t("nav.entries"), icon: Receipt },
-    { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
     { id: "chat", label: t("nav.ledger"), icon: MessageSquare },
-    { id: "reports", label: t("nav.reports"), icon: BarChart3 },
+    { id: "sales", label: t("nav.entries"), icon: Receipt },
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
+    { id: "reports", label: t("nav.reports"), icon: BarChart3 },
+    { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
   ];
 
-  const displayName = getProfileDisplayName(user, organization.owner_name);
   const toggleLabel = isCollapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar");
 
   const saveSidebarWidth = (width: number) => {
@@ -103,7 +107,7 @@ export const Sidebar: React.FC = () => {
     }
   };
 
-  const toggleCollapsed = () => persistCollapsedState(!isCollapsed);
+  const toggleCollapsed = () => isTablet ? setTabletExpanded(value => !value) : persistCollapsedState(!isCollapsed);
 
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || isCollapsed) return;
@@ -167,14 +171,12 @@ export const Sidebar: React.FC = () => {
       id="app-sidebar"
       className={`sidebar hidden md:flex${isCollapsed ? " is-collapsed" : ""}${isResizing ? " is-resizing" : ""}`}
       data-collapsed={isCollapsed}
-      style={{ "--sidebar-width": `${isCollapsed ? COLLAPSED_SIDEBAR_WIDTH : sidebarWidth}px` } as React.CSSProperties}
+      style={{ "--sidebar-width": `${isCollapsed ? COLLAPSED_SIDEBAR_WIDTH : isTablet ? MIN_SIDEBAR_WIDTH : sidebarWidth}px` } as React.CSSProperties}
     >
       <div className="side-brand">
         <div className="brand">
           <div className="brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
+            <img src="/assets/shop-plus-mark.svg" alt="" />
           </div>
           <div className="brand-copy min-w-0" data-sidebar-label>
             <strong className="truncate">{APP_NAME}</strong>
@@ -186,6 +188,7 @@ export const Sidebar: React.FC = () => {
           onClick={toggleCollapsed}
           aria-label={toggleLabel}
           aria-expanded={!isCollapsed}
+          aria-controls="primary-navigation"
           title={toggleLabel}
         >
           {isCollapsed
@@ -195,12 +198,16 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav id="primary-navigation" aria-label="Main navigation">
+        <button type="button" aria-label="New entry" title="New entry" onClick={startNewEntry} className="sidebar-new-entry">
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          <span data-sidebar-label>New entry</span>
+        </button>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           return (
+            <React.Fragment key={item.id}>
             <button
-              key={item.id}
               type="button"
               className={isActive ? "active" : ""}
               aria-current={isActive ? "page" : undefined}
@@ -211,6 +218,7 @@ export const Sidebar: React.FC = () => {
               <Icon className="h-4 w-4" aria-hidden="true" />
               <span data-sidebar-label>{item.label}</span>
             </button>
+            </React.Fragment>
           );
         })}
       </nav>
@@ -219,6 +227,7 @@ export const Sidebar: React.FC = () => {
         <button
           type="button"
           className={currentView === "settings" ? "active" : ""}
+          aria-current={currentView === "settings" ? "page" : undefined}
           aria-label={t("nav.settings")}
           title={isCollapsed ? t("nav.settings") : undefined}
           onClick={() => setCurrentView("settings")}
@@ -227,39 +236,9 @@ export const Sidebar: React.FC = () => {
           <span data-sidebar-label>{t("nav.settings")}</span>
         </button>
 
-        {hasPinSetup && !isDemoMode && (
-          <button
-            type="button"
-            onClick={lock}
-            aria-label={t("nav.lockRegister")}
-            title={isCollapsed ? t("nav.lockRegister") : undefined}
-          >
-            <Lock className="h-4 w-4" aria-hidden="true" />
-            <span data-sidebar-label>{t("nav.lockRegister")}</span>
-          </button>
-        )}
-
-        <button
-          type="button"
-          className={`user-card${isDemoMode ? " user-card--demo" : ""}`}
-          onClick={() => setCurrentView("settings")}
-          aria-label={`${t("nav.profileSettings")}: ${displayName}`}
-          title={isCollapsed ? t("nav.profileSettings") : undefined}
-        >
-          <UserAvatar
-            src={user?.avatar_url}
-            name={displayName}
-            size="md"
-            showBorder
-          />
-          <span className="user-card-copy" data-sidebar-label>
-            <strong>{displayName}</strong>
-            <span>{isDemoMode ? "DEMO WORKSPACE" : user?.email || "SHOP ACCOUNT"}</span>
-          </span>
-        </button>
       </div>
 
-      {(!isCollapsed || isResizing) && (
+      {!isTablet && (!isCollapsed || isResizing) && (
         <div
           className="sidebar-resize-handle"
           role={isCollapsed ? "presentation" : "separator"}

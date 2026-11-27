@@ -59,4 +59,12 @@ describe('shop-specific chat composer', () => {
     await waitFor(() => expect(input.value).toBe('Device Repairs 500'));
     expect(screen.getByRole('alert').textContent).toContain('Network unavailable');
   });
+  it('only focuses the composer when explicitly requested', () => {
+    const {rerender}=render(<ChatComposer onSend={vi.fn()} categories={[]} />);
+    const input=screen.getByRole('textbox',{name:'Ledger entry'});
+    expect(input).not.toHaveFocus();
+    rerender(<ChatComposer onSend={vi.fn()} categories={[]} focusRequestId={1}/>);
+    expect(input).toHaveFocus();
+  });
+
 });

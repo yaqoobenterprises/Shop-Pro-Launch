@@ -2,6 +2,8 @@ import type { Category, Transaction } from "../../types/ledger";
 import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
 import type { ReportTrendBucket, TrendGrouping } from "../../lib/reportAnalytics";
 import { calculateReportTotals, buildReportCategoryBreakdown } from "../../lib/reportAnalytics";
+import { assertReportAmounts } from "../../lib/reportAmountValidation";
+import { buildReportAccountBreakdown } from "../../lib/reportAccountBreakdown";
 import type { WorkbookSheet } from "../../lib/premiumXlsx";
 
 export interface ReportsWorkbookInput {
@@ -13,9 +15,15 @@ export interface ReportsWorkbookInput {
   categoryId: string;
   trend: ReportTrendBucket[];
   grouping: TrendGrouping;
+  sourceScope?: string;
+  currency?: string;
 }
 
-const rupees = (paisa: number) => paisa / 100;
+/** Excel numeric cells retain at most 15 significant decimal digits. Reject unsafe exports rather than rounding. */
+export const workbookMoney = (paisa: number): number => {
+  if (!Number.isSafeInteger(paisa) || Math.abs(paisa) > 999_999_999_999_999) throw new Error("This amount exceeds safe Excel monetary precision. Narrow the report range or use an exact transaction CSV.");
+  return paisa / 100;
+};
 
 const typeLabel = (type: string): string => ({
   all: "All transaction types",
@@ -28,6 +36,8 @@ const typeLabel = (type: string): string => ({
 
 export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: WorkbookSheet[]; fileName: string } => {
   const { transactions, categories, fromDate, toDate, type, categoryId, trend, grouping } = input;
+  const currency = input.currency || "PKR";
+  assertReportAmounts(transactions);
   const totals = calculateReportTotals(transactions);
   const categoryBreakdown = buildReportCategoryBreakdown(transactions);
   const rangeLabel = `${fromDate} – ${toDate}`;
@@ -37,7 +47,8 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
   const metadata = [
     `Type: ${typeLabel(type)}`,
     `Category: ${categoryLabel}`,
-    "Active transactions only",
+    "Active transactions only; internal transfers excluded",
+    input.sourceScope || "Available records; completeness not verified",
   ].join(" · ");
   const transactionRows = [...transactions]
     .sort((left, right) => right.business_date.localeCompare(left.business_date) || right.device_entry_time.localeCompare(left.device_entry_time))
@@ -47,30 +58,30 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
         formatKarachiTime(transaction.device_entry_time),
         transaction.type.replace("_", " "),
         transaction.category_name || "Uncategorised",
-        transaction.account_name || "Cash In Hand",
-        rupees(transaction.amount_paisa),
+        transaction.account_name || "Account unavailable",
+        workbookMoney(transaction.amount_paisa),
         transaction.raw_text || "",
         transaction.note || "",
         transaction.id,
       ],
     }));
   const summaryRows = [
-    { values: ["Income", rupees(totals.income_paisa), null, "Matched active entries"], kind: "data" as const },
-    { values: ["Expenses", rupees(totals.expense_paisa), null, "Matched active entries"], kind: "data" as const },
-    { values: ["Net profit", rupees(totals.net_profit_paisa), null, "Income less operating expenses"], kind: "total" as const },
-    { values: ["Capital introduced", rupees(totals.capital_in_paisa), null, "Non-operating inflow"], kind: "data" as const },
-    { values: ["Owner drawings", rupees(totals.withdrawal_paisa), null, "Non-operating outflow"], kind: "data" as const },
-    { values: ["Cash adjustments in", rupees(totals.adjustment_in_paisa), null, "Separate from operating profit"], kind: "data" as const },
-    { values: ["Cash adjustments out", rupees(totals.adjustment_out_paisa), null, "Separate from operating profit"], kind: "data" as const },
+    { values: ["Income", workbookMoney(totals.income_paisa), null, "Matched active entries"], kind: "data" as const },
+    { values: ["Expenses", workbookMoney(totals.expense_paisa), null, "Matched active entries"], kind: "data" as const },
+    { values: ["Operating result", workbookMoney(totals.net_profit_paisa), null, "Income less recorded expenses (cashbook basis)"], kind: "total" as const },
+    { values: ["Capital introduced", workbookMoney(totals.capital_in_paisa), null, "Non-operating inflow"], kind: "data" as const },
+    { values: ["Owner drawings", workbookMoney(totals.withdrawal_paisa), null, "Non-operating outflow"], kind: "data" as const },
+    { values: ["Cash adjustments in", workbookMoney(totals.adjustment_in_paisa), null, "Separate from operating result"], kind: "data" as const },
+    { values: ["Cash adjustments out", workbookMoney(totals.adjustment_out_paisa), null, "Separate from operating result"], kind: "data" as const },
     { values: ["Active transactions", null, totals.transaction_count, "Count of filtered active entries"], kind: "total" as const },
   ];
   const sheets: WorkbookSheet[] = [
     {
       name: "Executive Summary",
-      title: "SHOP PRO | FINANCIAL REPORT",
+      title: "SHOP PLUS | FINANCIAL REPORT",
       subtitle: `Reporting period: ${rangeLabel}`,
       metadata: `${metadata} · Generated ${getKarachiBusinessDate()}`,
-      columns: [{ header: "Metric", width: 29 }, { header: "Amount (Rs)", width: 20, kind: "money" }, { header: "Entries", width: 13, kind: "number" }, { header: "Context", width: 42 }],
+      columns: [{ header: "Metric", width: 29 }, { header: `Amount (${currency})`, width: 20, kind: "money" }, { header: "Entries", width: 13, kind: "number" }, { header: "Context", width: 42 }],
       rows: summaryRows,
       freezeRows: 5,
     },
@@ -78,14 +89,14 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       name: "Transactions",
       title: "TRANSACTION REGISTER",
       subtitle: `Full filtered register · ${rangeLabel}`,
-      metadata: `${metadata} · ${transactions.length} records · Amounts in Pakistani Rupees`,
+      metadata: `${metadata} · ${transactions.length} records · Amounts in ${currency}`,
       columns: [
         { header: "Business date", width: 16, kind: "date" },
         { header: "Time", width: 13 },
         { header: "Type", width: 17 },
         { header: "Category", width: 23 },
         { header: "Account", width: 22 },
-        { header: "Amount (Rs)", width: 18, kind: "money" },
+        { header: `Amount (${currency})`, width: 18, kind: "money" },
         { header: "Description", width: 42 },
         { header: "Notes", width: 30 },
         { header: "Transaction ID", width: 38 },
@@ -103,32 +114,41 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
         { header: "Category", width: 28 },
         { header: "Transaction type", width: 20 },
         { header: "Entries", width: 13, kind: "number" },
-        { header: "Total (Rs)", width: 18, kind: "money" },
+        { header: `Total (${currency})`, width: 18, kind: "money" },
       ],
       rows: categoryBreakdown.map((item) => ({
-        values: [item.category_name, item.type.replace("_", " "), item.entry_count, rupees(item.total_paisa)],
+        values: [item.category_name, item.type.replace("_", " "), item.entry_count, workbookMoney(item.total_paisa)],
       })),
       autoFilter: true,
       freezeRows: 5,
     },
     {
+      name: "Account activity",
+      title: "FILTERED ACCOUNT ACTIVITY",
+      subtitle: `Recorded income and expenses · ${rangeLabel}`,
+      metadata: `${metadata} · Not an account balance or transfer register`,
+      columns: [{header:"Account",width:28},{header:"Account ID",width:38},{header:`Income (${currency})`,width:20,kind:"money"},{header:`Expenses (${currency})`,width:20,kind:"money"},{header:`Operating result (${currency})`,width:24,kind:"money"},{header:"Entries",width:12,kind:"number"}],
+      rows: buildReportAccountBreakdown(transactions).map(row => ({values:[row.name,row.accountId,workbookMoney(row.income_paisa),workbookMoney(row.expense_paisa),workbookMoney(row.net_profit_paisa),row.transaction_count]})),
+      autoFilter:true, freezeRows:5,
+    },
+    {
       name: "Trend",
       title: "CASH FLOW TREND",
       subtitle: `${grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} totals · ${rangeLabel}`,
-      metadata: "Net profit is income minus operating expenses; capital and drawings are shown separately.",
+      metadata: `${metadata} · Operating result is cashbook income less recorded expenses; not accrual profit.`,
       columns: [
         { header: "Period", width: 22 },
-        { header: "Income (Rs)", width: 18, kind: "money" },
-        { header: "Expenses (Rs)", width: 18, kind: "money" },
-        { header: "Net profit (Rs)", width: 18, kind: "money" },
+        { header: `Income (${currency})`, width: 18, kind: "money" },
+        { header: `Expenses (${currency})`, width: 18, kind: "money" },
+        { header: `Operating result (${currency})`, width: 18, kind: "money" },
         { header: "Transactions", width: 16, kind: "number" },
       ],
       rows: trend.map((bucket) => ({
-        values: [bucket.title, rupees(bucket.income_paisa), rupees(bucket.expense_paisa), rupees(bucket.net_profit_paisa), bucket.transaction_count],
+        values: [bucket.title, workbookMoney(bucket.income_paisa), workbookMoney(bucket.expense_paisa), workbookMoney(bucket.net_profit_paisa), bucket.transaction_count],
       })),
       autoFilter: true,
       freezeRows: 5,
     },
   ];
-  return { sheets, fileName: `Shop-Pro-Report-${fromDate}-to-${toDate}` };
+  return { sheets, fileName: `Shop-Plus-Report-${fromDate}-to-${toDate}` };
 };
