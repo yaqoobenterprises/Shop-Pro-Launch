@@ -67,8 +67,12 @@ export async function sendLedgerMateMessage(
   messages: LedgerMateAiMessage[],
   context: string,
   onDelta: (delta: string) => void,
+  signal?: AbortSignal,
 ): Promise<{ reply: string; model: string }> {
+  signal?.throwIfAborted();
   const token = await getAccessToken();
+  signal?.throwIfAborted();
+  const timeout = AbortSignal.timeout(95000);
   const response = await fetch("/api/ai-chat", {
     method: "POST",
     headers: {
@@ -77,7 +81,7 @@ export async function sendLedgerMateMessage(
       Accept: "text/event-stream, application/json",
     },
     body: JSON.stringify({ messages: messages.slice(-30), context }),
-    signal: AbortSignal.timeout(95000),
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
   });
 
   if (!response.ok) {
@@ -104,7 +108,7 @@ export async function sendLedgerMateMessage(
     while (!complete) {
       const { value, done } = await reader.read();
       if (done) break;
-      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+      buffer = (buffer + decoder.decode(value, { stream: true })).replace(/\r\n/g, "\n");
       let boundary = buffer.indexOf("\n\n");
       while (boundary !== -1) {
         const block = buffer.slice(0, boundary);
