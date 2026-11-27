@@ -22,7 +22,7 @@ export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editi
               ? "Cash account"
               : acc.type === "BANK"
                 ? "Bank account"
-                : "Digital wallet account";
+                : acc.type === "DIGITAL_WALLET" ? "Digital wallet account" : "Other account";
           const accountMarkClass = brand
             ? brand.logo
               ? `account-brand--${brand.key}`
