@@ -387,7 +387,7 @@ export const TransactionsExplorerView: React.FC = () => {
               </div>
             </article>
           );
-        })
+        })}
 
         {transactions.length === 0 && !isLoading && !loadError && !invalidDateRange && (
           <div className="empty-state">
