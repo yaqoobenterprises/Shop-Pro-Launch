@@ -21,11 +21,15 @@ const isRunningAsInstalledApp = () => {
 
 interface TodayStripProps {
   summary: DailySummary;
+  loading?: boolean;
+  unavailable?: boolean;
   onOpenInstallHelp: () => void;
 }
 
 export const TodayStrip: React.FC<TodayStripProps> = ({
   summary,
+  loading = false,
+  unavailable = false,
   onOpenInstallHelp,
 }) => {
   const { t } = useI18n();
@@ -59,6 +63,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
         <div className="min-w-0">
           <h1 className="m-0 text-lg font-bold tracking-tight text-on-surface sm:text-xl">{t("nav.ledger")}</h1>
           <p className="cashbook-summary__date mt-1 text-xs font-medium text-text-muted">Today · {displayDate}</p>
+          <p className="mt-1 text-xs text-text-muted">Recorded activity, including locally queued entries. Not a verified account balance.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -85,7 +90,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
             <ArrowDownLeft className="w-3.5 h-3.5" />
           </div>
           <div className="summary-metric__value cashbook-summary__amount font-mono tabular-nums">
-            <AnimatedAmount amountPaisa={summary.income_paisa} />
+            <AnimatedAmount amountPaisa={summary.income_paisa} loading={loading} error={unavailable} />
           </div>
         </div>
 
@@ -96,14 +101,14 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
             <ArrowUpRight className="w-3.5 h-3.5" />
           </div>
           <div className="summary-metric__value cashbook-summary__amount font-mono tabular-nums">
-            <AnimatedAmount amountPaisa={summary.expense_paisa} />
+            <AnimatedAmount amountPaisa={summary.expense_paisa} loading={loading} error={unavailable} />
           </div>
         </div>
 
         {/* Net Profit Card */}
         <div className={`summary-metric ${summary.net_profit_paisa < 0 ? "summary-metric--negative" : "summary-metric--profit"} flex min-w-0 flex-col justify-between`}>
           <div className="summary-metric__label flex items-center justify-between">
-            <span>{t("dashboard.netProfit")}</span>
+            <span>Operating result</span>
             <TrendingUp className="w-3.5 h-3.5" />
           </div>
           <div
@@ -111,13 +116,13 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
               summary.net_profit_paisa < 0 ? "text-danger" : ""
             }`}
           >
-            <AnimatedAmount amountPaisa={summary.net_profit_paisa} />
+            <AnimatedAmount amountPaisa={summary.net_profit_paisa} loading={loading} error={unavailable} />
           </div>
         </div>
       </div>
 
       {/* Capital / Withdrawal Strip (if any exists today) */}
-      {(summary.capital_in_paisa > 0 || summary.withdrawal_paisa > 0) && (
+      {!loading && !unavailable && (summary.capital_in_paisa > 0 || summary.withdrawal_paisa > 0) && (
         <div className="mt-2 pt-2 border-t border-border-standard flex items-center justify-between text-[11px] text-text-muted">
           <div>
             Capital In:{" "}
