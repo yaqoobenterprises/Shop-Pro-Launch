@@ -52,10 +52,19 @@ const readSidebarCollapsed = () => {
 
 export const Sidebar: React.FC = () => {
   const { currentView, setCurrentView, startNewEntry } = useApp();
-  const { organization, isDemoMode } = useAuth();
+  const { isDemoMode } = useAuth();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
-  const [isCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
+  const [desktopCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
+  const [isTablet, setIsTablet] = React.useState(() => window.matchMedia?.('(min-width: 768px) and (max-width: 1023px)').matches ?? false);
+  const [tabletExpanded, setTabletExpanded] = React.useState(false);
+  const isCollapsed = isTablet ? !tabletExpanded : desktopCollapsed;
+  React.useEffect(() => {
+    const media = window.matchMedia?.('(min-width: 768px) and (max-width: 1023px)');
+    const update = () => { setIsTablet(Boolean(media?.matches)); setTabletExpanded(false); };
+    media?.addEventListener?.('change', update);
+    return () => media?.removeEventListener?.('change', update);
+  }, []);
   const [isResizing, setIsResizing] = React.useState(false);
   const sidebarWidthRef = React.useRef(sidebarWidth);
   const resizeStart = React.useRef<{
@@ -100,7 +109,7 @@ export const Sidebar: React.FC = () => {
     }
   };
 
-  const toggleCollapsed = () => persistCollapsedState(!isCollapsed);
+  const toggleCollapsed = () => isTablet ? setTabletExpanded(value => !value) : persistCollapsedState(!isCollapsed);
 
   const startResize = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0 || isCollapsed) return;
@@ -164,7 +173,7 @@ export const Sidebar: React.FC = () => {
       id="app-sidebar"
       className={`sidebar hidden md:flex${isCollapsed ? " is-collapsed" : ""}${isResizing ? " is-resizing" : ""}`}
       data-collapsed={isCollapsed}
-      style={{ "--sidebar-width": `${isCollapsed ? COLLAPSED_SIDEBAR_WIDTH : sidebarWidth}px` } as React.CSSProperties}
+      style={{ "--sidebar-width": `${isCollapsed ? COLLAPSED_SIDEBAR_WIDTH : isTablet ? MIN_SIDEBAR_WIDTH : sidebarWidth}px` } as React.CSSProperties}
     >
       <div className="side-brand">
         <div className="brand">
@@ -173,7 +182,7 @@ export const Sidebar: React.FC = () => {
           </div>
           <div className="brand-copy min-w-0" data-sidebar-label>
             <strong className="truncate">{APP_NAME}</strong>
-            <span className="truncate">{isDemoMode ? "Demo workspace" : organization.name || "Workspace"}</span>
+            <span className="truncate">{isDemoMode ? "Demo workspace" : "Business workspace"}</span>
           </div>
         </div>
         <button
@@ -182,6 +191,7 @@ export const Sidebar: React.FC = () => {
           onClick={toggleCollapsed}
           aria-label={toggleLabel}
           aria-expanded={!isCollapsed}
+          aria-controls="primary-navigation"
           title={toggleLabel}
         >
           {isCollapsed
@@ -232,7 +242,7 @@ export const Sidebar: React.FC = () => {
 
       </div>
 
-      {(!isCollapsed || isResizing) && (
+      {!isTablet && (!isCollapsed || isResizing) && (
         <div
           className="sidebar-resize-handle"
           role={isCollapsed ? "presentation" : "separator"}
