@@ -29,7 +29,7 @@ export const CommandPalette: React.FC = () => {
 
   return (
     <Modal isOpen={isCommandPaletteOpen} onClose={close} title="Find screens and actions" maxWidth="lg"
-      description="Search workspace navigation and shortcuts. Transaction records are searched in Transactions.">
+      description="Search workspace navigation and shortcuts. Use Transactions to search financial records.">
       <div className="grid gap-3">
         <label className="flex min-h-12 items-center gap-2 rounded-md border border-border-standard px-3">
           <Search className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
