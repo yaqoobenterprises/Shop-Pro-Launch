@@ -14,8 +14,8 @@ The approved system is integrated into the existing React application. Canonical
 
 ## Browser review
 
-Reviewed the deployed desktop demo: Overview, bar/line modes and date selection, Accounts, dark-mode Reports, Settings and Appearance, Cashbook and its transaction review, Entries, and LedgerMate's offline state. The review transaction was cancelled; no financial entry was posted.
+Reviewed the deployed desktop demo: Overview, bar/line modes and date selection, Accounts, dark-mode Reports, Settings and Appearance, Cashbook and its transaction review, Entries, LedgerMate's offline state, the public landing page and the sign-in form. The review transaction was cancelled; no financial entry was posted.
 
-The production review identified a Tailwind `table-row` collision that stacked Entries content, a dark-mode report-button contrast defect, native report-select spacing, and remaining theme/brand inconsistencies. The follow-up changes correct these in the shared presentation layer and synchronize the browser/PWA identity with Shop Pro.
+The production review identified a Tailwind `table-row` collision that stacked Entries content, a dark-mode report-button contrast defect, native report-select spacing, and remaining sign-in action/theme/brand inconsistencies. The follow-up changes correct these in the shared presentation layer and synchronize the browser/PWA identity with Shop Pro.
 
 Rendered mobile/tablet widths, real cloud sign-in and MFA, live financial posting, native export downloads and online AI responses were not rerun during this desktop review. Existing automated authorization, ledger, offline and export checks passed. This is not a claim of full browser or accessibility conformance.

@@ -5,7 +5,6 @@ import {
   KeyRound,
   LockKeyhole,
   Mail,
-  ArrowRight,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
@@ -397,7 +396,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                 </>
               : <>
                   <span>{t("auth.savePasswordOpenShop")}</span>
-                  <ArrowRight className="h-4 w-4" />
                 </>
               }
             </button>
@@ -459,7 +457,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             className="mb-2.5 flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-primary bg-primary text-sm font-semibold text-white shadow-xs transition hover:bg-primary-hover cursor-pointer"
           >
             <span>{t("auth.openLocalShop")}</span>
-            <ArrowRight className="h-4 w-4" />
           </button>
           <button
             type="button"
@@ -580,7 +577,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
           <button type="submit" className="aq-auth__submit" disabled={isSubmitting || isGoogleLoading} aria-busy={isSubmitting}>
             {isSubmitting ? <Loader2 size={17} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />
-              : <ArrowRight size={17} aria-hidden="true" />}
+              : null}
             {isSubmitting ? (mode === "signIn" ? "Signing in…" : mode === "signUp" ? "Creating account…" : "Sending link…")
               : (mode === "signIn" ? "Sign in" : mode === "signUp" ? "Create account" : "Send reset link")}
           </button>

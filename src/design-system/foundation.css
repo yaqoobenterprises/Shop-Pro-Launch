@@ -236,3 +236,12 @@ html[lang=ur] :is(body,.app-shell,.aq-landing,.aq-auth){font-family:"Noto Naskh 
 .app-shell .lm-send-button{background:var(--sp-primary);color:var(--sp-on-primary);border-radius:var(--sp-radius-control);box-shadow:none}
 .app-shell .lm-send-button:disabled{background:var(--sp-disabled-bg);color:var(--sp-disabled-text)}
 html[dir=rtl] .app-shell select.workspace-control{padding-inline:12px 36px;background-position:left 13px center,left 18px center}
+
+/* Account access uses the same action hierarchy as the signed-in workspace. */
+.aq-auth :is(.aq-auth__submit,.aq-auth__pin-panel form>button[type=submit]){background:var(--sp-primary);border-color:var(--sp-primary);color:var(--sp-on-primary);border-radius:var(--sp-radius-control);box-shadow:none}
+.aq-auth :is(.aq-auth__submit,.aq-auth__pin-panel form>button[type=submit]):hover:not(:disabled){background:var(--sp-primary-hover);border-color:var(--sp-primary-hover)}
+.aq-auth .aq-auth__submit:disabled{background:var(--sp-disabled-bg);border-color:var(--sp-border);color:var(--sp-disabled-text);opacity:1}
+.aq-auth :is(.aq-auth__inline,.aq-auth__eyebrow,.aq-auth__story-points svg,.aq-auth__security-icon){color:var(--sp-primary)}
+.aq-auth .auth-card.aq-auth__card{border-radius:var(--sp-radius-panel);border-color:var(--sp-border);box-shadow:none}
+.aq-auth :is(.aq-auth__google,.aq-auth__switch){border-radius:var(--sp-radius-control)}
+.aq-auth .aq-auth__story-points>span{min-height:40px;padding:10px 12px;font-size:.875rem}
