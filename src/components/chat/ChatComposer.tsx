@@ -17,7 +17,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   categories,
   disabled = false,
   placeholder,
-  autoFocus = true,
+  autoFocus = false,
   focusRequestId = 0,
 }) => {
   const { t } = useI18n();
@@ -59,7 +59,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) {
       e.preventDefault();
       void handleSubmit();
     }
@@ -84,13 +84,14 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
   return (
     <div className="ledger-composer cashbook-composer border-t border-border-standard px-3 py-3 sm:px-5 sm:py-4">
       <div className="cashbook-composer__heading">
-        <div><h2>Record a transaction</h2></div>
+        <div><h2>Record a transaction</h2><p>Enter an amount and description. Review the parsed entry before posting.</p></div>
       </div>
       <div className="ledger-composer__quick-actions mx-auto mb-2.5 flex w-full max-w-4xl items-center gap-2 overflow-x-auto pb-1.5 text-xs">
         {categories.length > 0 ? categories.map((category) => (
           <button
             key={category.id}
             type="button"
+            disabled={disabled || isSubmitting}
             onClick={() =>
               insertChip(
                 `${category.name}${category.kind === "expense" ? " - " : " "}`,
@@ -108,6 +109,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
         )) : null}
         <button
           type="button"
+          disabled={disabled || isSubmitting}
           onClick={() => insertChip("yesterday")}
           className="ledger-composer__chip inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border-standard bg-surface-bright px-3.5 text-secondary transition-colors hover:bg-surface-container-low"
         >
@@ -149,7 +151,7 @@ export const ChatComposer: React.FC<ChatComposerProps> = ({
           title={t("chat.sendHotkey")}
           aria-label={t("chat.sendEntry")}
         >
-          <Send className="h-5 w-5" aria-hidden="true" />
+          {isSubmitting ? <span className="text-xs">…</span> : <Send className="h-5 w-5" aria-hidden="true" />}
         </button>
       </form>
       {submitError && (
