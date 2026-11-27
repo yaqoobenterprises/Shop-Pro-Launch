@@ -77,6 +77,7 @@ export interface TransactionFilter {
   endDate?: string;
   type?: string;
   categoryId?: string;
+  accountId?: string;
   searchQuery?: string;
   status?: 'active' | 'voided' | 'all';
   limit?: number;
@@ -1324,6 +1325,7 @@ export class LedgerService {
         if (filter.categoryId && filter.categoryId !== 'all') {
           query = query.eq('category_id', filter.categoryId);
         }
+        if (filter.accountId && filter.accountId !== 'all') query = query.eq('account_id', filter.accountId);
         if (filter.status && filter.status !== 'all') {
           query = query.eq('status', filter.status);
         }
@@ -1348,6 +1350,7 @@ export class LedgerService {
           if (filter.endDate) retryQuery = retryQuery.lte('business_date', filter.endDate);
           if (filter.type && filter.type !== 'all') retryQuery = retryQuery.eq('type', filter.type);
           if (filter.categoryId && filter.categoryId !== 'all') retryQuery = retryQuery.eq('category_id', filter.categoryId);
+          if (filter.accountId && filter.accountId !== 'all') retryQuery = retryQuery.eq('account_id', filter.accountId);
           if (filter.status && filter.status !== 'all') retryQuery = retryQuery.eq('status', filter.status);
           if (filter.searchQuery) retryQuery = retryQuery.ilike('raw_text', `%${filter.searchQuery}%`);
 
@@ -1403,6 +1406,7 @@ export class LedgerService {
     if (filter.endDate) localItems = localItems.filter((tx) => tx.business_date <= filter.endDate!);
     if (filter.type && filter.type !== 'all') localItems = localItems.filter((tx) => tx.type === filter.type);
     if (filter.categoryId && filter.categoryId !== 'all') localItems = localItems.filter((tx) => tx.category_id === filter.categoryId);
+    if (filter.accountId && filter.accountId !== 'all') localItems = localItems.filter((tx) => tx.account_id === filter.accountId);
     if (filter.status && filter.status !== 'all') localItems = localItems.filter((tx) => tx.status === filter.status);
     if (filter.searchQuery) {
       const q = filter.searchQuery.toLowerCase();
