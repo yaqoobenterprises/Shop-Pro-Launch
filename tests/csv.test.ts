@@ -17,4 +17,11 @@ describe('CSV serialization', () => {
   it('leaves numeric values numeric', () => {
     expect(serializeCSV(['Amount'], [[-1250]])).toBe('"Amount"\r\n"-1250"');
   });
+  it('neutralizes fullwidth formula markers and control-character prefixes', () => {
+    const csv = serializeCSV(['Description'], [['＝1+1'], ['\ttext'], ['\ntext'], ['\uFEFF@cmd']]);
+    expect(csv).toContain("'＝1+1");
+    expect(csv).toContain("'\ttext");
+    expect(csv).toContain("'\ntext");
+    expect(csv).toContain("'\uFEFF@cmd");
+  });
 });
