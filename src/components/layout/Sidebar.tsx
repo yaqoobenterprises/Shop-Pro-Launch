@@ -13,6 +13,7 @@ import {
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
   Receipt,
   Settings,
   MessageCircle,
@@ -24,7 +25,7 @@ const SIDEBAR_COLLAPSED_KEY = "shop-pro.sidebar-collapsed";
 const MIN_SIDEBAR_WIDTH = 208;
 const MAX_SIDEBAR_WIDTH = 360;
 const DEFAULT_SIDEBAR_WIDTH = 244;
-const COLLAPSED_SIDEBAR_WIDTH = 56;
+const COLLAPSED_SIDEBAR_WIDTH = 64;
 const COLLAPSE_SIDEBAR_AT = 176;
 const EXPAND_SIDEBAR_AT = 220;
 
@@ -195,6 +196,10 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav id="primary-navigation" aria-label="Main navigation">
+        <button type="button" aria-label="New entry" title="New entry" onClick={() => setCurrentView("chat")} className="sidebar-new-entry">
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          <span data-sidebar-label>New entry</span>
+        </button>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
@@ -219,6 +224,7 @@ export const Sidebar: React.FC = () => {
         <button
           type="button"
           className={currentView === "settings" ? "active" : ""}
+          aria-current={currentView === "settings" ? "page" : undefined}
           aria-label={t("nav.settings")}
           title={isCollapsed ? t("nav.settings") : undefined}
           onClick={() => setCurrentView("settings")}
