@@ -132,7 +132,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   // Global Keyboard Shortcuts (Ctrl+K, Ctrl+N, Ctrl+Shift+E, Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.defaultPrevented || e.isComposing || !user) return;
+      if (e.defaultPrevented || e.isComposing || !document.querySelector(".app-shell")) return;
       if (e.key !== "Escape" && document.querySelector('[role="dialog"][aria-modal="true"]')) return;
       // Ctrl+K -> Command Palette
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -178,7 +178,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
     isQuickExpenseOpen,
     isShortcutsHelpOpen,
     startNewEntry,
-    user,
   ]);
 
   return (
