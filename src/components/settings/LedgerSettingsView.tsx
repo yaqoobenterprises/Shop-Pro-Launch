@@ -28,6 +28,7 @@ import {
   Layers,
   Sun,
   Moon,
+  Monitor,
   Download,
   Upload,
   Plus,
@@ -44,7 +45,8 @@ import {
 import { PaperRegisterImportModal } from "./PaperRegisterImportModal";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import { applyTheme } from "../../lib/theme";
+import { setThemePreference, type ThemePreference } from "../../lib/theme";
+import { useThemePreference } from "../../lib/useThemePreference";
 import { DEMO_ORGANIZATION_ID } from "../../services/demoModeService";
 import { SEED_CATEGORIES } from "../../parser/matcher";
 import { RegionSettingsSection } from "./RegionSettingsSection";
@@ -76,9 +78,7 @@ export const LedgerSettingsView: React.FC = () => {
   const [isExportingLocalData, setIsExportingLocalData] = useState(false);
   const [isRestoringLocalData, setIsRestoringLocalData] = useState(false);
   const localRecoveryInputRef = useRef<HTMLInputElement>(null);
-  const [appearance, setAppearance] = useState<"light" | "dark">(
-    document.documentElement.classList.contains("dark") ? "dark" : "light",
-  );
+  const appearance = useThemePreference();
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryKind, setNewCategoryKind] =
@@ -350,18 +350,9 @@ export const LedgerSettingsView: React.FC = () => {
     }
   };
 
-  const handleToggleAppearance = (theme: "light" | "dark") => {
-    applyTheme(theme);
-    setAppearance(theme);
-    try {
-      localStorage.setItem("yaqoob-theme", theme);
-    } catch (err) {
-      console.error("Could not save appearance preference:", err);
-      showToast(
-        "warning",
-        "Theme changed for this session",
-        "Browser storage is unavailable, so this choice may not survive a reload.",
-      );
+  const handleToggleAppearance = (theme: ThemePreference) => {
+    if (!setThemePreference(theme)) {
+      showToast("warning", "Theme changed for this session", "Browser storage is unavailable, so this choice may not survive a reload.");
     }
   };
 
@@ -662,10 +653,11 @@ export const LedgerSettingsView: React.FC = () => {
             <p className="mt-0.5 text-xs text-text-muted">{t("settings.chooseTheme")}</p>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:max-w-md">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:max-w-lg">
           {([
             ["light", "Light", Sun],
             ["dark", "Dark", Moon],
+            ["system", "System", Monitor],
           ] as const).map(([theme, label, Icon]) => (
             <button
               key={theme}
