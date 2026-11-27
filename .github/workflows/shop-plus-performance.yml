@@ -1,0 +1,164 @@
+name: Shop Plus comparative lab performance
+
+on:
+  push:
+    branches:
+      - feat/shop-plus-foundation-20261127
+    paths:
+      - .github/workflows/shop-plus-performance.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out original baseline
+        uses: actions/checkout@v4
+        with:
+          ref: 499fc1695da4da2b3dfdfb7c59b90740c3090081
+          path: original
+          persist-credentials: false
+      - name: Check out candidate
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            original/package-lock.json
+            candidate/package-lock.json
+      - name: Build both versions
+        run: |
+          (cd original && npm ci && npm run build)
+          (cd candidate && npm ci && npm run build)
+      - name: Install isolated Chromium
+        run: |
+          npm install --prefix "$RUNNER_TEMP/shop-plus-perf" --no-save playwright@1.56.1
+          "$RUNNER_TEMP/shop-plus-perf/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Serve built applications
+        run: |
+          (cd original && npm run preview -- --host 127.0.0.1 --port 4173) > /tmp/original.log 2>&1 &
+          (cd candidate && npm run preview -- --host 127.0.0.1 --port 4174) > /tmp/candidate.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fs http://127.0.0.1:4173/ >/dev/null && curl -fs http://127.0.0.1:4174/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/original.log /tmp/candidate.log
+          exit 1
+      - name: Compare controlled lab samples
+        run: |
+          mkdir -p performance-audit
+          node --input-type=commonjs <<'NODE'
+          const { chromium } = require(process.env.RUNNER_TEMP + '/shop-plus-perf/node_modules/playwright');
+          const fs = require('node:fs'), path = require('node:path'), zlib = require('node:zlib');
+          const profiles = [
+            {name:'phone-throttled',width:390,height:844,cpu:4,latency:150,download:200000,upload:93750},
+            {name:'desktop-unthrottled',width:1440,height:900,cpu:1,latency:0,download:-1,upload:-1}
+          ];
+          const builds = [{name:'original',port:4173},{name:'candidate',port:4174}];
+          const measurements = [], bundles = {};
+          for (const build of builds) {
+            const files = fs.readdirSync(build.name+'/dist/assets').filter(name => /\.(js|css|woff2?)$/.test(name)).map(name => {
+              const data=fs.readFileSync(path.join(build.name,'dist/assets',name));
+              return {name,bytes:data.length,gzipBytes:zlib.gzipSync(data).length};
+            });
+            bundles[build.name]=files;
+          }
+          async function measure(browser, build, profile, sample) {
+            const origin='http://127.0.0.1:'+build.port;
+            const context=await browser.newContext({viewport:{width:profile.width,height:profile.height},serviceWorkers:'block',reducedMotion:'reduce'});
+            await context.route('**/*',route=>{
+              const url=new URL(route.request().url());
+              return url.origin===origin && !url.pathname.startsWith('/api/') ? route.continue() : route.abort();
+            });
+            await context.addInitScript(()=>{
+              localStorage.setItem('yaqoob-theme','light');
+              window.__lab={lcp:null,shifts:[],longTasks:[],events:[]};
+              const observe=(type,callback,extra={})=>{
+                try { new PerformanceObserver(list=>list.getEntries().forEach(callback)).observe({type,buffered:true,...extra}); } catch {}
+              };
+              observe('largest-contentful-paint',e=>window.__lab.lcp=e.startTime);
+              observe('layout-shift',e=>{if(!e.hadRecentInput)window.__lab.shifts.push({time:e.startTime,value:e.value});});
+              observe('longtask',e=>window.__lab.longTasks.push(e.duration));
+              observe('event',e=>{if(e.interactionId)window.__lab.events.push(e.duration);},{durationThreshold:16});
+            });
+            const page=await context.newPage();
+            page.setDefaultTimeout(30000);
+            const cdp=await context.newCDPSession(page);
+            await cdp.send('Network.enable');
+            await cdp.send('Network.setCacheDisabled',{cacheDisabled:true});
+            await cdp.send('Emulation.setCPUThrottlingRate',{rate:profile.cpu});
+            await cdp.send('Network.emulateNetworkConditions',{offline:false,latency:profile.latency,downloadThroughput:profile.download,uploadThroughput:profile.upload});
+            const errors=[];page.on('pageerror',error=>errors.push(error.message));
+            try {
+              await page.goto(origin+'/',{waitUntil:'networkidle',timeout:60000});
+              await page.getByRole('button',{name:'Explore demo',exact:true}).waitFor();
+              await page.evaluate(()=>document.fonts.ready);
+              await page.waitForTimeout(1000);
+              const landing=await page.evaluate(()=>{
+                const nav=performance.getEntriesByType('navigation')[0];
+                const paints=performance.getEntriesByType('paint');
+                const shifts=window.__lab.shifts;let best=0,total=0,start=0,last=0;
+                for(const shift of shifts){
+                  if(!total || shift.time-last>1000 || shift.time-start>5000){total=0;start=shift.time;}
+                  total+=shift.value;last=shift.time;best=Math.max(best,total);
+                }
+                const resources=performance.getEntriesByType('resource');
+                return {lcpMs:window.__lab.lcp,cls:best,fcpMs:paints.find(p=>p.name==='first-contentful-paint')?.startTime??null,domContentLoadedMs:nav.domContentLoadedEventEnd,
+                  localRequests:resources.length,encodedResourceBytes:resources.reduce((n,r)=>n+r.encodedBodySize,0),longTaskMs:window.__lab.longTasks.reduce((a,b)=>a+b,0)};
+              });
+              const started=Date.now();
+              await page.getByRole('button',{name:'Explore demo',exact:true}).click();
+              await page.locator('#main-content').waitFor();
+              await page.getByText('Loading workspace...',{exact:true}).waitFor({state:'hidden'});
+              await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+              const demoReadyMs=Date.now()-started;
+              const target=page.getByRole('button',{name:build.name==='original'?'Entries':'Transactions',exact:true}).filter({visible:true}).first();
+              const routeStart=Date.now();
+              await target.click();
+              await page.getByRole('heading',{name:build.name==='original'?/Entries|Transactions/: 'Transactions'}).first().waitFor();
+              await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+              const transactionRouteMs=Date.now()-routeStart;
+              const maxObservedEventMs=await page.evaluate(()=>window.__lab.events.length?Math.max(...window.__lab.events):null);
+              return {build:build.name,profile:profile.name,sample,...landing,demoReadyMs,transactionRouteMs,maxObservedEventMs,errors};
+            } finally {await context.close();}
+          }
+          (async()=>{
+            const browser=await chromium.launch();
+            try {
+              for(const profile of profiles) for(let sample=1;sample<=3;sample++) for(const build of builds){
+                try { measurements.push(await measure(browser,build,profile,sample)); }
+                catch(error){measurements.push({build:build.name,profile:profile.name,sample,error:String(error)});}
+              }
+            } finally {await browser.close();}
+            const median=values=>{const sorted=values.filter(v=>typeof v==='number').sort((a,b)=>a-b);return sorted.length?sorted[Math.floor(sorted.length/2)]:null;};
+            const summary=builds.flatMap(build=>profiles.map(profile=>{
+              const rows=measurements.filter(row=>row.build===build.name&&row.profile===profile.name&&!row.error&&!row.errors?.length);
+              const result={build:build.name,profile:profile.name,samples:rows.length};
+              for(const key of ['lcpMs','cls','fcpMs','encodedResourceBytes','longTaskMs','demoReadyMs','transactionRouteMs','maxObservedEventMs']) result[key]=median(rows.map(row=>row[key]));
+              return result;
+            }));
+            fs.writeFileSync('performance-audit/bundles.json',JSON.stringify(bundles,null,2));
+            fs.writeFileSync('performance-audit/lab.json',JSON.stringify({profiles,measurements,summary},null,2));
+            console.log('LAB SUMMARY '+JSON.stringify(summary));
+            console.log('LAB ERRORS '+JSON.stringify(measurements.filter(row=>row.error||row.errors?.length)));
+            for(const [name,files] of Object.entries(bundles))console.log('BUNDLE '+name+' '+JSON.stringify(files.filter(f=>f.name.endsWith('.js')||f.name.endsWith('.css'))));
+            if(measurements.length!==12||measurements.some(row=>row.error||row.errors?.length||row.lcpMs===null)) process.exitCode=1;
+          })().catch(error=>{console.error(error);process.exitCode=1;});
+          NODE
+      - name: Upload lab evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shop-plus-comparative-lab
+          path: performance-audit/
+          if-no-files-found: warn
+          retention-days: 14
