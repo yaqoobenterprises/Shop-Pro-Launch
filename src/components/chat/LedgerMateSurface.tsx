@@ -73,18 +73,18 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
           <MessageSquarePlus aria-hidden="true" /><span>New chat</span>
         </button>
         <div className="lm-history-anchor">
-          <button type="button" className={`lm-action-button ${historyOpen ? "is-selected" : ""}`} disabled={sending || actionBusy || Boolean(pendingAction?.submitted)} onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen}>
+          <button type="button" id="lm-history-trigger" className={`lm-action-button ${historyOpen ? "is-selected" : ""}`} disabled={sending || actionBusy || Boolean(pendingAction?.submitted)} onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen}>
             <History aria-hidden="true" /><span>History</span><ChevronDown className="lm-chevron" aria-hidden="true" />
           </button>
           {historyOpen && <>
             <button type="button" className="lm-popover-scrim" aria-label="Close chat history" onClick={() => setHistoryOpen(false)} />
-            <div className="lm-history-popover" role="dialog" aria-label="Chat history">
+            <div className="lm-history-popover" role="region" aria-label="Chat history" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); setHistoryOpen(false); document.getElementById("lm-history-trigger")?.focus(); } }}>
               <div className="lm-popover-heading"><span>Recent conversations</span><button type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X aria-hidden="true" /></button></div>
               <div className="lm-history-list">
                 {threads.length === 0 && <p className="lm-history-empty">No conversations</p>}
-                {threads.map((thread) => <button key={thread.id} type="button" className={`lm-history-item ${thread.id === activeThread?.id ? "is-active" : ""}`} onClick={() => onChooseThread(thread)}>
+                {threads.map((thread) => <button key={thread.id} type="button" aria-current={thread.id === activeThread?.id ? "true" : undefined} className={`lm-history-item ${thread.id === activeThread?.id ? "is-active" : ""}`} onClick={() => onChooseThread(thread)}>
                   <span className="lm-history-icon"><Bot aria-hidden="true" /></span>
-                  <span className="lm-history-copy"><strong>{thread.title}</strong><small>{thread.localOnly ? "Saved on this device" : new Intl.DateTimeFormat("en-PK", { dateStyle: "medium" }).format(new Date(thread.updated_at))}</small></span>
+                  <span className="lm-history-copy"><strong>{thread.title}</strong><small>{thread.localOnly ? "Saved on this device" : Number.isNaN(Date.parse(thread.updated_at)) ? "Date unavailable" : new Intl.DateTimeFormat("en-PK", { dateStyle: "medium" }).format(new Date(thread.updated_at))}</small></span>
                 </button>)}
               </div>
             </div>
@@ -138,11 +138,11 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
     </div>
 
     {error && <div className="lm-error" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError(null)}><X aria-hidden="true" /></button></div>}
-    {!online && !checking && <div className="lm-offline-banner"><span>LedgerMate is offline. Your chat remains saved; reconnect to send a question.</span><button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true" /> Retry</button></div>}
+    {!online && !checking && <div className="lm-offline-banner"><span>The AI service is unavailable. You can still read chat history; reconnect or retry.</span><button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true" /> Retry</button></div>}
 
     <form className="lm-composer-wrap" onSubmit={(event) => onSend(event)}>
       {sending && <p role="status" className="lm-request-status">Preparing response… {canStop && <button type="button" onClick={onStop}>Stop response</button>}</p>}
-      {!sending && canRetry && <button type="button" className="lm-retry" onClick={onRetry}>Retry last question</button>}
+      {!sending && canRetry && <button type="button" className="lm-retry" disabled={!online || Boolean(pendingAction)} onClick={onRetry}>Retry last question</button>}
       <div className="lm-composer">
         <textarea ref={textareaRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
