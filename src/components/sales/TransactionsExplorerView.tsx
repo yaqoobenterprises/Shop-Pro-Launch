@@ -1,43 +1,27 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo, useRef } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { hasPermission } from "../../lib/permissions";
 import { Select } from "../common/Select";
 import { ledgerService } from "../../services/ledgerService";
 import { SupabaseSessionRequiredError } from "../../lib/supabase";
 import { Transaction, Category } from "../../types/ledger";
-import { formatPaisa } from "../../lib/money";
+import { DataTable } from "../tables/DataTable";
+import { transactionColumns } from "../tables/transactionColumns";
+import { DatePicker } from "../common/DatePicker";
 import { useRegion } from "../../regional/region";
 import { useI18n } from "../../i18n";
-import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
+import { getKarachiBusinessDate } from "../../lib/dates";
 import { exportToCSV as downloadCSV } from "../../lib/utils";
 import {
   Download,
-  RefreshCw,
-  Eye,
-  Ban,
   Search,
 } from "lucide-react";
 import { VoidModal } from "../chat/VoidModal";
 import { TransactionDetailModal } from "../common/TransactionDetailModal";
 
-const getTransactionDisplayDetails = (transaction: Transaction) => {
-  const testDataMatch = transaction.raw_text.match(
-    /^SHOP_PRO_PAGINATION_TEST \| (income|expense) \| (\d{4})$/,
-  );
-  if (!testDataMatch) {
-    return {
-      isTestData: false,
-      rawText: transaction.raw_text,
-      note: transaction.note,
-    };
-  }
-
-  return {
-    isTestData: true,
-    rawText: `Pagination test entry #${testDataMatch[2]}`,
-    note: "Generated test data",
-  };
-};
-
 export const TransactionsExplorerView: React.FC = () => {
+  const { user } = useAuth();
+  const canManage = hasPermission(user?.role, "VOID_EXPENSE");
   const { region } = useRegion();
   const { t } = useI18n();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -56,6 +40,7 @@ export const TransactionsExplorerView: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [page, setPage] = useState(0);
   const pageSize = 25;
+  const requestId = useRef(0);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
 
@@ -72,6 +57,7 @@ export const TransactionsExplorerView: React.FC = () => {
   }), [searchQuery, startDate, endDate, selectedType, selectedCategory, selectedStatus]);
 
   const loadData = useCallback(async (requestedPage = page) => {
+    const request = ++requestId.current;
     setIsLoading(true);
     setLoadError("");
     try {
@@ -84,9 +70,11 @@ export const TransactionsExplorerView: React.FC = () => {
         offset: requestedPage * pageSize,
       });
 
+      if (request !== requestId.current) return;
       setTransactions(res.transactions);
       setTotalCount(res.count);
     } catch (err) {
+      if (request !== requestId.current) return;
       console.error("Error fetching transactions:", err);
       setTransactions([]);
       setTotalCount(0);
@@ -96,7 +84,7 @@ export const TransactionsExplorerView: React.FC = () => {
           : "Transactions could not be loaded. Please refresh and try again.",
       );
     } finally {
-      setIsLoading(false);
+      if (request === requestId.current) setIsLoading(false);
     }
   }, [page, getCurrentFilter]);
 
@@ -156,14 +144,14 @@ export const TransactionsExplorerView: React.FC = () => {
     }
   };
 
-  const totalPages = Math.ceil(totalCount / pageSize);
+  const columns = useMemo(() => transactionColumns(setSelectedDetailTx, canManage ? setVoidingTx : undefined, t("transactions.account")), [t, canManage]);
 
   return (
     <main className="page-content entries-page">
       {/* Page Title */}
       <div className="page-title">
         <div className="entries-page-heading">
-          <h1>Entries</h1>
+          <h1>Entries</h1><p className="sp-page-subtitle">Find and manage your recorded activity.</p>
         </div>
 
         <div className="title-actions">
@@ -203,6 +191,8 @@ export const TransactionsExplorerView: React.FC = () => {
           />
         </form>
 
+        <DatePicker value={startDate} onChange={v => { setStartDate(v); setPage(0); }} ariaLabel="Entries start date" max={endDate || undefined} />
+        <DatePicker value={endDate} onChange={v => { setEndDate(v); setPage(0); }} ariaLabel="Entries end date" min={startDate || undefined} />
         <Select
           value={selectedType}
           onChange={(e) => {
@@ -266,123 +256,8 @@ export const TransactionsExplorerView: React.FC = () => {
         </button>
       </section>
 
-      {/* Transactions Table */}
-      <section className="panel transaction-table">
-        <div className="table-head">
-          <span>Transaction / Description</span>
-          <span>{t("transactions.account")}</span>
-          <span>Date & Time</span>
-          <span style={{ textAlign: "right" }}>Amount</span>
-          <span>Status & Action</span>
-        </div>
-
-        {transactions.map((tx) => {
-          const isIncome =
-            tx.type === "income" ||
-            tx.type === "capital_in" ||
-            (tx.type === "adjustment" && tx.adjustment_dir === "in");
-          const isVoid = tx.status === "voided";
-          const details = getTransactionDisplayDetails(tx);
-          const initials = (tx.category_name || tx.type || "TX")
-            .slice(0, 2)
-            .toUpperCase();
-
-          return (
-            <div className="table-row" key={tx.id}>
-              <div>
-                <span className="transaction-icon">{initials}</span>
-                <div>
-                  <strong>{details.rawText}</strong>
-                  <small>
-                    {tx.category_name || "Uncategorized"} {details.note ? ` · ${details.note}` : ""}
-                  </small>
-                  {details.isTestData && <small className="status-badge">Test data</small>}
-                </div>
-              </div>
-
-              <span>{tx.account_name || "Cash"}</span>
-
-              <span>
-                {tx.business_date} · <small>{formatKarachiTime(tx.created_at)}</small>
-              </span>
-
-              <strong className={isIncome && !isVoid ? "positive" : ""}>
-                {isIncome ? "+" : "−"}
-                {formatPaisa(tx.amount_paisa)}
-              </strong>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span className={`status-badge ${isVoid ? "voided" : ""}`}>
-                  {isVoid ? "Voided" : "Active"}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedDetailTx(tx)}
-                  className="icon-button"
-                  style={{ width: 28, height: 28 }}
-                  title="View details"
-                  aria-label="View transaction details"
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </button>
-
-                {!isVoid && (
-                  <button
-                    type="button"
-                    onClick={() => setVoidingTx(tx)}
-                    className="icon-button"
-                    style={{ width: 28, height: 28, color: "var(--danger)" }}
-                    title="Void transaction"
-                    aria-label="Void transaction"
-                  >
-                    <Ban className="h-3.5 w-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-
-        {transactions.length === 0 && !isLoading && (
-          <div className="empty-state">
-            <strong>No transactions found</strong>
-            <p>Try adjusting your search criteria or filters.</p>
-          </div>
-        )}
-
-        {isLoading && (
-          <div className="empty-state">
-            <RefreshCw className="h-6 w-6 animate-spin" />
-            <p>Loading transactions...</p>
-          </div>
-        )}
-
-        <div className="table-footer">
-          <span>
-            Showing {transactions.length} of {totalCount} transactions
-          </span>
-          <div>
-            <button
-              type="button"
-              disabled={page === 0}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-            >
-              ←
-            </button>
-            <strong>
-              {page + 1} / {Math.max(1, totalPages)}
-            </strong>
-            <button
-              type="button"
-              disabled={page + 1 >= totalPages}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              →
-            </button>
-          </div>
-        </div>
-      </section>
+      <section className="panel"><DataTable data={transactions} columns={columns} label="Entries" loading={isLoading} error={loadError} onRetry={() => void loadData()} getRowId={tx => tx.id}
+        server={{ total: totalCount, pagination: { pageIndex: page, pageSize }, onChange: updater => setPage(current => (typeof updater === "function" ? updater({ pageIndex: current, pageSize }) : updater).pageIndex) }} /></section>
 
       {/* Real modals preserved */}
       {voidingTx && (
@@ -401,7 +276,7 @@ export const TransactionsExplorerView: React.FC = () => {
         transaction={selectedDetailTx}
         isOpen={Boolean(selectedDetailTx)}
         onClose={() => setSelectedDetailTx(null)}
-        canManage={true}
+        canManage={canManage}
         onVoid={(tx) => {
           setSelectedDetailTx(null);
           setVoidingTx(tx);

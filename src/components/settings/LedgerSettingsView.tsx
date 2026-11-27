@@ -1,3 +1,4 @@
+import { useConfirmation } from "../common/useConfirmation";
 import React, { useState, useEffect, useRef } from "react";
 import { Select } from "../common/Select";
 import {
@@ -61,6 +62,7 @@ async function requireSettingsCloudSession(userId: string): Promise<void> {
 }
 
 export const LedgerSettingsView: React.FC = () => {
+  const { confirm, confirmationDialog } = useConfirmation();
   const { t } = useI18n();
   const { user } = useAuth();
   const { showToast } = useApp();
@@ -270,11 +272,7 @@ export const LedgerSettingsView: React.FC = () => {
       showToast("info", "Demo settings are read-only");
       return;
     }
-    if (
-      !window.confirm(
-        `Remove “${category.name}”? Categories with ledger history will be archived to preserve reports.`,
-      )
-    ) {
+    if (!await confirm({ title: `Remove ${category.name}?`, description: "Categories with ledger history will be archived to preserve reports.", action: "Remove category" })) {
       return;
     }
     const supabase = getSupabaseClient();
@@ -530,11 +528,7 @@ export const LedgerSettingsView: React.FC = () => {
       showToast("error", "Local recovery unavailable", "Sign in to this shop before restoring device data.");
       return;
     }
-    if (
-      !window.confirm(
-        "Restore this verified device recovery file? Pending work will be added without replacing existing entries. If it contains a SQLite snapshot, the current shop's local SQLite data will be replaced transactionally.",
-      )
-    ) {
+    if (!await confirm({ title: "Restore device recovery?", description: "Pending work will be added without replacing existing entries. If this file contains a SQLite snapshot, the current shop's local SQLite data will be replaced transactionally.", action: "Restore device" })) {
       return;
     }
 
@@ -589,7 +583,7 @@ export const LedgerSettingsView: React.FC = () => {
 
   return (
     <div className="workspace-page page-content settings-page flex-1 overflow-y-auto space-y-5 max-w-5xl mx-auto w-full">
-      {/* Header */}
+      {confirmationDialog}
       <div className="workspace-header page-title flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="settings-page-heading">
           <h1 className="text-xl font-bold tracking-tight text-on-surface">

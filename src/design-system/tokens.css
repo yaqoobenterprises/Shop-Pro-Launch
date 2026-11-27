@@ -1,4 +1,4 @@
-/* Generated from tokens.json. */
+/* Generated from tokens.json by npm run tokens:generate. */
 :root {
  --sp-font:"SP Manrope","Segoe UI",Arial,sans-serif;
  --sp-type-caption:0.75rem;
@@ -7,8 +7,8 @@
  --sp-type-body:1rem;
  --sp-type-section:1.125rem;
  --sp-type-title:1.5rem;
- --sp-type-page:2rem;
- --sp-type-money:2.5rem;
+ --sp-type-page:1.75rem;
+ --sp-type-money:2rem;
  --sp-type-display:3rem;
  --sp-space-0:0rem;
  --sp-space-4:0.25rem;
@@ -28,9 +28,14 @@
  --sp-control-small:36px;
  --sp-control-default:44px;
  --sp-control-large:48px;
- --sp-motion-fast:120ms; --sp-motion-normal:180ms; --sp-ease:cubic-bezier(.2,.8,.2,1);
- --sp-leading-body:1.55; --sp-leading-heading:1.2; --sp-leading-label:1.4; --sp-leading-money:1.15;
- --sp-chart-line-width:2.75;
+ --sp-motion-fast:120ms;
+ --sp-motion-normal:180ms;
+ --sp-ease:cubic-bezier(.2,.8,.2,1);
+ --sp-leading-body:1.55;
+ --sp-leading-label:1.4;
+ --sp-leading-heading:1.2;
+ --sp-leading-money:1.15;
+ --sp-chart-line-width:2.5;
 }
 :root {
  --sp-brand-50:#eaf0ff;
@@ -59,7 +64,7 @@
  --sp-neutral-950:#111820;
 }
 :root, [data-theme=light] {
- --sp-canvas:#f5f6f8;
+ --sp-canvas:#f7f8fa;
  --sp-surface:#ffffff;
  --sp-surface-raised:#ffffff;
  --sp-surface-subtle:#eff2f6;
@@ -67,8 +72,8 @@
  --sp-text:#17232f;
  --sp-text-secondary:#566171;
  --sp-text-inverse:#ffffff;
- --sp-border:#dfe5ed;
- --sp-border-strong:#8190a4;
+ --sp-border:#e3e7ee;
+ --sp-border-strong:#a2adbc;
  --sp-primary:#315ac8;
  --sp-primary-hover:#274aa8;
  --sp-primary-pressed:#1d3c8e;
@@ -97,15 +102,15 @@
  color-scheme:light;
 }
 [data-theme=dark] {
- --sp-canvas:#11161e;
- --sp-surface:#1a232e;
- --sp-surface-raised:#222e3d;
+ --sp-canvas:#11151c;
+ --sp-surface:#181e28;
+ --sp-surface-raised:#202836;
  --sp-surface-subtle:#222f3f;
  --sp-surface-selected:#243c68;
  --sp-text:#edf2f8;
  --sp-text-secondary:#aebacc;
  --sp-text-inverse:#162130;
- --sp-border:#344457;
+ --sp-border:#303a49;
  --sp-border-strong:#8294ab;
  --sp-primary:#a5bfff;
  --sp-primary-hover:#c0d1ff;

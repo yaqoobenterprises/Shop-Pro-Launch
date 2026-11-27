@@ -1,4 +1,5 @@
 import React from "react";
+import { Card as BaseCard } from "../ui/card";
 import { cn } from "../../lib/utils";
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -12,17 +13,17 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   return (
-    <div
+    <BaseCard
       data-hoverable={hoverable || undefined}
       className={cn(
-        "clarity-card rounded-xl border border-border-standard bg-surface-bright p-5 text-on-surface shadow-level-1 transition-all duration-150 sm:p-6",
-        hoverable && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-level-2",
+        "clarity-card rounded-xl border border-border-standard bg-surface-bright p-5 text-on-surface shadow-none transition-colors duration-150 sm:p-6",
+        hoverable && "cursor-pointer hover:border-primary/40",
         className,
       )}
       {...props}
     >
       {children}
-    </div>
+    </BaseCard>
   );
 };
 

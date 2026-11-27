@@ -44,6 +44,9 @@ jobs:
       - name: Check strict TypeScript
         run: npm run check:strict
 
+      - name: Check generated design tokens
+        run: npm run check:tokens
+
       - name: Check file size limits
         run: npm run check:size
 

@@ -23,9 +23,11 @@ import {
   WalletCards,
 } from "lucide-react";
 
+import { overviewRange, useOverviewComparison } from "./useOverviewComparison";
 import { CategoryDonut } from "../charts/CategoryDonut";
 
 export const LedgerDashboardView: React.FC = () => {
+  const [compare, setCompare] = useState(false);
   const [period, setPeriod] = useState<OverviewPeriod>("day");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
@@ -125,6 +127,8 @@ export const LedgerDashboardView: React.FC = () => {
     void loadData();
   }, [loadData]);
 
+  const [fromDate, toDate] = overviewRange(period, currentDate, rangeStart, rangeEnd);
+  const comparison = useOverviewComparison(compare, fromDate, toDate);
   const activeSummary = period === "day" ? dailyData : rangeSummary;
   const activeIncome = activeSummary?.income_paisa || 0;
   const activeExpense = activeSummary?.expense_paisa || 0;
@@ -145,7 +149,7 @@ export const LedgerDashboardView: React.FC = () => {
     [breakdowns],
   );
   const expenseBreakdownTotal = expenseBreakdowns.reduce((sum, item) => sum + item.total_paisa, 0);
-  const trendRows: ReportTrendBucket[] = rangeTrend;
+  const trendRows: ReportTrendBucket[] = period === "day" && dailyData ? [{ key: currentDate, label: formatDisplayDate(currentDate), title: formatDisplayDate(currentDate), income_paisa: activeIncome, expense_paisa: activeExpense, net_profit_paisa: activeProfit, transaction_count: dailyData.transaction_count }] : rangeTrend;
   const selectedRangeLabel = period === "day"
     ? formatDisplayDate(currentDate)
     : period === "week"
@@ -158,6 +162,7 @@ export const LedgerDashboardView: React.FC = () => {
       <div className="page-title">
         <div className="overview-page-heading">
           <h1>Overview</h1>
+          <p className="sp-page-subtitle">Your business, at a glance.</p>
         </div>
         <OverviewPeriodControls
           period={period}
@@ -172,6 +177,8 @@ export const LedgerDashboardView: React.FC = () => {
         />
       </div>
 
+      <div className="sp-overview-toolbar"><span>{selectedRangeLabel}</span><button type="button" aria-pressed={compare} onClick={() => setCompare(!compare)}><span className="sp-toggle-dot" />Compare previous period</button></div>
+      {compare && <p className="sp-comparison-note" role="status">{comparison.error || (comparison.totals ? "Compared with the previous period of the same length" : "Loading comparison…")}</p>}
       {loadError && (
         <div role="alert" className="aq-overview__error">
           <strong>Overview unavailable</strong>
@@ -185,13 +192,13 @@ export const LedgerDashboardView: React.FC = () => {
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp} tone="positive"
-          amountPaisa={activeIncome}
+          previous={comparison.totals?.income_paisa} trend={trendRows.map(r => r.income_paisa)} amountPaisa={activeIncome}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Expenses" scope={selectedRangeLabel} icon={ArrowDownLeft} tone="negative"
-          amountPaisa={activeExpense}
+          previous={comparison.totals?.expense_paisa} trend={trendRows.map(r => r.expense_paisa)} amountPaisa={activeExpense}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Net result" scope="Income − expenses" icon={ArrowUpRight}
-          amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "default"}
+          previous={comparison.totals?.net_profit_paisa} trend={trendRows.map(r => r.net_profit_paisa)} amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "default"}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
 
@@ -203,54 +210,11 @@ export const LedgerDashboardView: React.FC = () => {
               <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
           </div>
-          {period !== "day" ? (
-            isLoading ? <p className="aq-overview__empty" role="status">Loading chart…</p>
-              : loadError ? <p className="aq-overview__empty">Chart unavailable.</p>
-                : <OverviewAreaChart rows={trendRows} range={selectedRangeLabel} />
-          ) : (
-            <div className="aq-overview__day">
-              {isLoading ? <p role="status">Loading activity…</p>
-                : !activeSummary || loadError ? <p>Activity unavailable.</p>
-                  : (
-                    activeIncome === 0 && activeExpense === 0 ? (
-                      <div className="aq-day-no-activity" role="status">
-                        <div className="aq-day-no-activity__symbol">
-                          <TrendingUp size={21} strokeWidth={1.7} aria-hidden="true" />
-                        </div>
-                        <div>
-                          <h3>No income or expenses recorded for this date.</h3>
-                          {Boolean(dailyData?.transaction_count) && <p>{dailyData?.transaction_count} other entries</p>}
-                        </div>
-                        <button type="button" onClick={() => setPeriod("week")}>
-                          View week
-                        </button>
-                      </div>
-                    ) : (
-                    <div className="aq-day-compare" role="group" aria-label="Income and expenses for selected date">
-                      <div className="aq-day-compare__row">
-                        <div><span>Income</span><strong>{formatPaisa(activeIncome)}</strong></div>
-                        <div className="aq-day-compare__track"><i style={{ width: `${activeIncome > 0 ? 100 * activeIncome / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
-                      </div>
-                      <div className="aq-day-compare__row aq-day-compare__row--expense">
-                        <div><span>Expenses</span><strong>{formatPaisa(activeExpense)}</strong></div>
-                        <div className="aq-day-compare__track"><i style={{ width: `${activeExpense > 0 ? 100 * activeExpense / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
-                      </div>
-                      <div className="aq-day-insights" aria-label="Selected day summary">
-                        <div className="aq-day-insights__metric">
-                          <span>Day operating result</span>
-                          <strong>{formatPaisa(activeProfit)}</strong>
-                          <small>Income less expenses</small>
-                        </div>
-                        <div className="aq-day-insights__metric">
-                          <span>Recorded entries</span>
-                          <strong>{dailyData?.transaction_count ?? 0}</strong>
-                        </div>
-                      </div>
-                    </div>
-                    )
-                  )}
-            </div>
-          )}
+          {isLoading ? <div className="clarity-chart-empty" role="status">Loading cash flow…</div>
+            : loadError ? <div className="clarity-chart-empty">Chart unavailable.</div>
+            : <OverviewAreaChart rows={trendRows} range={selectedRangeLabel} />}
+          {period === "day" && <button className="sp-chart-link" type="button" onClick={() => setPeriod("week")}>Explore weekly trend</button>}
+
         </section>
 
         <section className={`panel aq-overview__distribution ${!isLoading && !loadError && expenseBreakdowns.length === 0 ? "aq-overview__distribution--empty" : ""}`}>

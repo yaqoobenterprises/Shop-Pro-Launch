@@ -13,6 +13,9 @@ import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
 import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
 import { CashFlowChart } from "../charts/CashFlowChart";
+import { DataTable } from "../tables/DataTable";
+import { transactionColumns } from "../tables/transactionColumns";
+import { exportToCSV } from "../../lib/utils";
 import { ReportInsightCharts } from "./ReportInsightCharts";
 
 export const LedgerReportsView: React.FC = () => {
@@ -29,8 +32,7 @@ export const LedgerReportsView: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [transactionPage, setTransactionPage] = useState(0);
-  const rowsPerPage = 15;
+  const columns = useMemo(() => transactionColumns(), []);
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export const LedgerReportsView: React.FC = () => {
       });
       if (id !== requestId.current) return;
       setTransactions(rows);
-      setTransactionPage(0);
+
     } catch (error) {
       if (id !== requestId.current) return;
       setTransactions([]);
@@ -105,14 +107,11 @@ export const LedgerReportsView: React.FC = () => {
     }
   };
 
-  const pageCount = Math.max(1, Math.ceil(transactions.length / rowsPerPage));
-  const safePage = Math.min(transactionPage, pageCount - 1);
-  const visibleTransactions = transactions.slice(safePage * rowsPerPage, (safePage + 1) * rowsPerPage);
   return (
     <main className="page-content reports-page reports-modern">
       <header className="reports-modern__hero">
         <div>
-          <h1>Reports</h1>
+          <h1>Reports</h1><p className="sp-page-subtitle">Understand cash flow and category performance.</p>
         </div>
         <button type="button" className="reports-modern__export" onClick={handleExport} disabled={isExporting || isLoading}>
           <FileSpreadsheet size={17} aria-hidden="true" />
@@ -187,19 +186,9 @@ export const LedgerReportsView: React.FC = () => {
 
       <section className="reports-modern__table-panel reports-modern__transactions">
         <div className="reports-modern__section-heading"><div><h2>Transaction register</h2></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
-        {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
-          {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Cash In Hand"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
-        </tbody></table></div>}
-        {transactions.length > rowsPerPage && <nav className="reports-modern__pager" aria-label="Transaction register pagination">
-          <span>Showing {safePage * rowsPerPage + 1}–{Math.min((safePage + 1) * rowsPerPage, transactions.length)} of {transactions.length.toLocaleString()} records · All are included in export</span>
-          <div>
-            <button type="button" disabled={safePage === 0}
-              aria-label="Previous transaction page" onClick={() => setTransactionPage((p) => Math.max(0, p - 1))}>Previous</button>
-            <span aria-live="polite">Page {safePage + 1} of {pageCount}</span>
-            <button type="button" disabled={safePage === pageCount - 1}
-              aria-label="Next transaction page" onClick={() => setTransactionPage((p) => Math.min(pageCount - 1, p + 1))}>Next</button>
-          </div>
-        </nav>}
+        <DataTable data={transactions} columns={columns} label="Transaction register" loading={isLoading} error={loadError || undefined} onRetry={() => void loadReport()} searchable getRowId={tx => tx.id}
+          onExportSelected={rows => exportToCSV("shop_pro_selected_entries", ["Date", "Type", "Category", "Description", "Account", "Amount"], rows.map(tx => [tx.business_date, tx.type, tx.category_name || "", tx.raw_text, tx.account_name || "", (tx.amount_paisa / 100).toFixed(2)]), today)} />
+        <p className="reports-modern__footnote">The workbook includes every entry matching the report filters.</p>
       </section>
       <p className="reports-modern__footer-note">Active entries · Shop business dates</p>
     </main>

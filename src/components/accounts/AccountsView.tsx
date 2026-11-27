@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useConfirmation } from "../common/useConfirmation";
+import { useSubmissionGuard } from "../../hooks/useSubmissionGuard";
 import { Select } from "../common/Select";
 import {
   ArrowLeftRight,
@@ -27,6 +29,8 @@ import {
 type AccountKind = LedgerAccount["type"];
 
 export const AccountsView: React.FC = () => {
+  const { confirm, confirmationDialog } = useConfirmation();
+  const { busy, run } = useSubmissionGuard();
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingAccountId, setEditingAccountId] = useState("");
@@ -111,6 +115,7 @@ export const AccountsView: React.FC = () => {
       setError("Enter a valid opening balance.");
       return;
     }
+    await run(async () => {
     try {
       await ledgerService.createPaymentAccount({
         name: accountName.trim(),
@@ -124,6 +129,7 @@ export const AccountsView: React.FC = () => {
     } catch (createErr) {
       setError(createErr instanceof Error ? createErr.message : "Could not create account.");
     }
+    });
   };
 
   const handleTransfer = async (e: React.FormEvent) => {
@@ -144,6 +150,7 @@ export const AccountsView: React.FC = () => {
       return;
     }
 
+    await run(async () => {
     try {
       await ledgerService.transferBetweenAccounts({
         fromAccountId: sourceAccountId,
@@ -157,10 +164,12 @@ export const AccountsView: React.FC = () => {
     } catch (transferErr) {
       setError(transferErr instanceof Error ? transferErr.message : "Transfer failed.");
     }
+    });
   };
 
   const handleSaveName = async (accountId: string) => {
     if (!editingName.trim()) return;
+    await run(async () => {
     try {
       const isQueuedOffline = await ledgerService.updatePaymentAccount(accountId, {
         name: editingName.trim(),
@@ -173,6 +182,7 @@ export const AccountsView: React.FC = () => {
       console.error("Could not update account name:", updateError);
       setError("Could not update account name.");
     }
+    });
   };
 
   const activeAccounts = accounts.filter((account) => account.is_active);
@@ -181,8 +191,10 @@ export const AccountsView: React.FC = () => {
 
   const handleDeactivate = async (account: LedgerAccount) => {
     if (account.is_active && !canDeactivate(account)) return setError("Move the balance and keep at least one active account.");
+    if (account.is_active && !await confirm({ title: `Deactivate ${account.name}?`, description: "This account will no longer be available for new entries. Its existing transactions are kept.", action: "Deactivate account" })) return;
     setError("");
     setMessage("");
+    await run(async () => {
     try {
       const isQueuedOffline = await ledgerService.updatePaymentAccount(account.id, {
         is_active: !account.is_active,
@@ -193,16 +205,17 @@ export const AccountsView: React.FC = () => {
       console.error("Could not change account status:", updateError);
       setError("Account status could not be changed. Please try again.");
     }
+    });
   };
 
   const totalBalancePaisa = accounts.reduce((sum, account) => sum + (account.is_active ? Number(account.balance_paisa) || 0 : 0), 0);
 
   return (
     <main className="page-content accounts-page">
-      {/* Page Title */}
+      {confirmationDialog}
       <div className="page-title">
         <div className="accounts-page-heading">
-          <h1>Accounts</h1>
+          <h1>Accounts</h1><p className="sp-page-subtitle">Cash, bank and wallets. All in view.</p>
         </div>
 
         <div className="title-actions">
@@ -217,14 +230,14 @@ export const AccountsView: React.FC = () => {
       </div>
 
       {message && (
-        <div className="toast-note">
+        <div className="toast-note" role="status">
           <Check className="h-4 w-4" />
           <span>{message}</span>
         </div>
       )}
 
       {error && (
-        <div className="toast-note" style={{ background: "var(--danger-bg)", borderColor: "var(--danger)", color: "var(--danger)" }}>
+        <div className="toast-note" role="alert" style={{ background: "var(--danger-bg)", borderColor: "var(--danger)", color: "var(--danger)" }}>
           <span>{error}</span>
         </div>
       )}
@@ -304,6 +317,7 @@ export const AccountsView: React.FC = () => {
                       setEditingAccountId(acc.id);
                       setEditingName(acc.name);
                     }}
+                    disabled={busy}
                     className="account-action-button account-edit-button"
                     aria-label={isEditing ? `Save ${acc.name}` : `Edit ${acc.name}`}
                     title={isEditing ? "Save account name" : "Edit account name"}
@@ -314,7 +328,7 @@ export const AccountsView: React.FC = () => {
                     type="button"
                     className={`account-action-button account-status-button${acc.is_active ? " is-deactivate" : " is-reactivate"}`}
                     onClick={() => void handleDeactivate(acc)}
-                    disabled={deactivateBlocked}
+                    disabled={deactivateBlocked || busy}
                     aria-label={`${acc.is_active ? "Deactivate" : "Reactivate"} ${acc.name}`}
                     title={
                       deactivateBlocked
@@ -409,7 +423,7 @@ export const AccountsView: React.FC = () => {
             </div>
 
             <div className="modal-actions">
-              <button type="submit" className="button button-primary account-tool-submit" disabled={isLoading}>
+              <button type="submit" className="button button-primary account-tool-submit" disabled={isLoading || busy}>
                 Add account
               </button>
             </div>
@@ -484,7 +498,7 @@ export const AccountsView: React.FC = () => {
               <button
                 type="submit"
                 className="button button-primary account-tool-submit"
-                disabled={isLoading || activeAccounts.length < 2}
+                disabled={isLoading || busy || activeAccounts.length < 2}
               >
                 <ArrowLeftRight className="h-4 w-4" />
                 Transfer funds

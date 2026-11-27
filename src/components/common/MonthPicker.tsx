@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { Popover, PopoverAnchor, PopoverContent } from "../ui/popover";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -95,8 +95,8 @@ export const MonthPicker: React.FC<MonthPickerProps> = ({ value, onChange, ariaL
   };
 
   return (
-    <>
-      <button
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverAnchor asChild><button
         ref={triggerRef}
         id={id}
         type="button"
@@ -117,14 +117,13 @@ export const MonthPicker: React.FC<MonthPickerProps> = ({ value, onChange, ariaL
       >
         <span>{displayValue}</span>
         <CalendarDays className="h-4 w-4 shrink-0 text-text-muted" aria-hidden="true" />
-      </button>
-      {isOpen && createPortal(
-        <div
+      </button></PopoverAnchor>
+      <PopoverContent align="start" sideOffset={6}
           ref={popoverRef}
           role="dialog"
           aria-label={ariaLabel}
-          className="date-picker-popover fixed z-[90] w-[280px] rounded-xl border border-border-standard bg-surface-bright p-3 text-on-surface shadow-level-3"
-          style={{ top: position.top, left: position.left, width: position.width }}
+          className="date-picker-popover z-[120] w-[280px] rounded-xl border border-border-standard bg-surface-bright p-3 text-on-surface shadow-level-3"
+          style={{ width: position.width }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <button type="button" onClick={() => setYear((current) => current - 1)} className="date-picker-nav" aria-label={isUrdu ? "پچھلا سال" : "Previous year"}>
@@ -167,9 +166,7 @@ export const MonthPicker: React.FC<MonthPickerProps> = ({ value, onChange, ariaL
               {isUrdu ? "اس مہینے" : "This month"}
             </button>
           </div>
-        </div>,
-        document.body,
-      )}
-    </>
+        </PopoverContent>
+    </Popover>
   );
 };
