@@ -109,7 +109,23 @@ async function verifyUser(req) {
     return null;
   }
   if (response.status === 401 || response.status === 403) return false;
-  return response.ok ? true : null;
+  if (!response.ok) return null;
+  try {
+    const user = await response.json();
+    if (typeof user.id !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(user.id)) return false;
+    // Use the caller’s token and RLS, not a service-role key. Check membership independently of mutable profile metadata.
+    const url = new URL(`${supabaseUrl}/rest/v1/organization_members`);
+    url.searchParams.set("select","user_id,is_active");
+    url.searchParams.set("user_id",`eq.${user.id}`);
+    url.searchParams.set("is_active","eq.true");
+    url.searchParams.set("limit","1");
+    const membership = await fetch(url.toString(), { headers: { apikey:supabaseKey, Authorization:authorization }, signal:AbortSignal.timeout(8000) });
+    if (membership.status === 401 || membership.status === 403) return "inactive";
+    if (!membership.ok) return null;
+    const rows = await membership.json();
+    if (!Array.isArray(rows)) return null;
+    return rows.some(row=>row.user_id===user.id && row.is_active===true) ? true : "inactive";
+  } catch { return null; }
 }
 
 async function streamGroqReply(res, response, model) {
@@ -124,10 +140,12 @@ async function streamGroqReply(res, response, model) {
   const decoder = new TextDecoder();
   let buffer = "";
   let receivedContent = false;
+  let outputChars = 0;
   try {
     while (true) {
       const { value, done } = await reader.read();
       buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+      if (buffer.length > 256000) throw new HttpError(502, "AI response exceeded its streaming limit.");
       const lines = buffer.split(/\r?\n/);
       buffer = lines.pop() || "";
       for (const line of lines) {
@@ -147,6 +165,8 @@ async function streamGroqReply(res, response, model) {
         if (chunk.error) throw new HttpError(502, "Groq interrupted the response. Please try again.");
         const delta = chunk.choices?.[0]?.delta?.content;
         if (typeof delta === "string" && delta) {
+          outputChars += delta.length;
+          if (outputChars > MAX_MESSAGE_CHARS) throw new HttpError(502,"AI response is too long to save safely. Ask a shorter question.");
           receivedContent = true;
           sendEvent(res, "delta", { delta });
         }
@@ -163,6 +183,7 @@ async function streamGroqReply(res, response, model) {
     }
     throw error;
   } finally {
+    await reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
 }
@@ -178,6 +199,7 @@ export default async function handler(req, res) {
     if (authenticated === null) {
       return sendJson(res, 503, { error: "AI service is temporarily unavailable. Check the Supabase server configuration and connection." });
     }
+    if (authenticated === "inactive") return sendJson(res, 403, { error: "An active shop membership is required to use LedgerMate." });
     if (!authenticated) return sendJson(res, 401, { error: "Your session is invalid or expired. Please sign in again." });
 
     const apiKey = process.env.GROQ_API_KEY;

@@ -7,6 +7,7 @@ describe('Feature Flags Configuration', () => {
     'languageUr',
     'entryModes',
     'chatQueries',
+    'reviewedLedgerActions',
   ];
 
   const expectedState: Record<keyof FeatureFlags, boolean> = {
@@ -14,6 +15,7 @@ describe('Feature Flags Configuration', () => {
     languageUr: false,
     entryModes: false,
     chatQueries: true,
+    reviewedLedgerActions: false,
   };
 
   it('declares all expected feature flags with the intended release state', () => {
@@ -29,7 +31,7 @@ describe('Feature Flags Configuration', () => {
     }
   });
 
-  it('contains exactly the 4 required feature flags and no unauthorized extra flags', () => {
+  it('contains exactly the 5 reviewed feature flags and no unauthorized extra flags', () => {
     const keys = Object.keys(FEATURES) as (keyof FeatureFlags)[];
     expect(keys.sort()).toEqual(expectedFlags.slice().sort());
   });

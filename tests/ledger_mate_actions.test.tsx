@@ -80,6 +80,7 @@ async function openCreatePreview() {
 describe("LedgerMate transaction confirmation gate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { value: vi.fn(), configurable: true });
     mockLedger.getCategories.mockResolvedValue([
       { id: "stamp", name: "Stamp Paper", kind: "income", unusual_amount_limit_paisa: 5000000, is_default: false, is_active: true, display_order: 1, created_at: "2026-01-01" },
@@ -189,5 +190,20 @@ describe("LedgerMate transaction confirmation gate", () => {
 
     expect(result).toEqual({ clarification: expect.stringContaining("multiple transactions") });
     expect(mockLedger.voidTransaction).not.toHaveBeenCalled();
+  });
+  it("asks the question again without overwriting the original answer or triggering a write",async()=>{
+    mockSend.mockResolvedValueOnce({reply:"First answer",model:"test"}).mockResolvedValueOnce({reply:"Second answer",model:"test"});
+    mountPanel();
+    const input=await screen.findByRole("textbox",{name:"Message LedgerMate AI"});
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"Hello"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText("First answer")).toBeTruthy();
+    await waitFor(()=>expect(screen.getByRole("button",{name:"Ask question again"})).not.toBeDisabled());
+    fireEvent.click(screen.getByRole("button",{name:"Ask question again"}));
+    expect(await screen.findByText("Second answer")).toBeTruthy();
+    expect(screen.getByText("First answer")).toBeTruthy();
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    expect(mockLedger.createTransactionDraft).not.toHaveBeenCalled();
   });
 });
