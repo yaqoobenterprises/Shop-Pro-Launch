@@ -256,3 +256,17 @@ html.dark .app-shell .ledger-page .summary-metric--negative { background: var(--
   .app-shell .ledger-page .ledger-composer__chip,
   .app-shell .ledger-page .summary-metric { transition: none; }
 }
+/* Ledger Ink cashbook: entry first, compact summaries and real activity. */
+html .app-shell .ledger-page.ledger-page--workspace { --cash-radius: var(--radius-card); gap: 12px; padding-block: 14px 20px; }
+html .app-shell .ledger-page .summary-metric { min-height: 88px; padding: 12px; background: var(--surface-card); color: var(--ink); }
+html .app-shell .ledger-page .summary-metric--income .summary-metric__value { color: var(--green); }
+html .app-shell .ledger-page .summary-metric--negative .summary-metric__value { color: var(--danger); }
+html .app-shell .ledger-page .cashbook-summary__amount { font-size: clamp(16px, 2.2vw, 26px); margin-top: 6px; }
+html .app-shell .ledger-page .animated-amount-value { overflow-wrap: anywhere; white-space: normal; }
+html .app-shell .ledger-page .cashbook-composer { padding: 14px; border-radius: var(--radius-card); background: var(--surface-card); border: 1px solid var(--line); box-shadow: none; }
+html .app-shell .ledger-page .cashbook-composer__heading { margin-bottom: 10px; }
+html .app-shell .ledger-page .ledger-composer__chip { min-height: 44px; border-radius: var(--radius-control); }
+html .app-shell .ledger-page .ledger-composer__send { border-radius: var(--radius-control); background: var(--primary); color: var(--on-primary); }
+html .app-shell .ledger-page .cashbook-feed__surface { border-radius: var(--radius-card); box-shadow: none; }
+html .app-shell .ledger-page .cashbook-feed__heading { padding-block: 12px; }
+@media (max-width: 480px) { html .app-shell .ledger-page .cashbook-summary__metrics { gap: 5px; } html .app-shell .ledger-page .summary-metric { padding: 8px; min-height: 80px; } html .app-shell .ledger-page .summary-metric__label > svg { display: none; } }
