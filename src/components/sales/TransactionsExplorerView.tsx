@@ -163,7 +163,7 @@ export const TransactionsExplorerView: React.FC = () => {
       {/* Page Title */}
       <div className="page-title">
         <div className="entries-page-heading">
-          <h1>Entries</h1>
+          <h1>Transactions</h1>
         </div>
 
         <div className="title-actions">
@@ -199,7 +199,7 @@ export const TransactionsExplorerView: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search description, payee, or note..."
-            aria-label="Search entries"
+            aria-label="Search transactions"
           />
         </form>
 
