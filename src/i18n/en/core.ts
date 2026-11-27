@@ -1,7 +1,7 @@
 export const english = {
   "nav.ledger": "Cashbook",
   "nav.overview": "Overview",
-  "nav.entries": "Entries",
+  "nav.entries": "Transactions",
   "nav.reports": "Reports",
   "nav.accounts": "Accounts",
   "nav.settings": "Settings",
