@@ -190,3 +190,18 @@ html .app-shell .reports-modern__table-panel {
   border-color: var(--line);
   border-radius: .78rem;
 }
+
+html .app-shell #app-sidebar nav button.sidebar-new-entry {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+  margin-block-end: .5rem;
+}
+html .app-shell #app-sidebar nav button.sidebar-new-entry svg { color: inherit; }
+html .app-shell #app-sidebar nav button.sidebar-new-entry:hover { background: var(--primary-hover); }
+html .app-shell #app-sidebar.is-collapsed .side-brand { min-height: 5rem; height: auto; gap: .35rem; }
+html .app-shell #app-sidebar.is-collapsed .brand-mark { visibility: visible; opacity: 1; }
+html .app-shell #app-sidebar.is-collapsed .sidebar-toggle { position: static; opacity: 1; pointer-events: auto; }
+html .app-shell #app-sidebar.is-collapsed .side-brand:hover .brand-mark,
+html .app-shell #app-sidebar.is-collapsed .side-brand:focus-within .brand-mark { visibility: visible; opacity: 1; }
+html .app-shell #app-sidebar.is-collapsed .sidebar-bottom > button { border: 0; }
