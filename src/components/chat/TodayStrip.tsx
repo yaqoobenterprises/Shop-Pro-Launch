@@ -63,7 +63,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
         <div className="min-w-0">
           <h1 className="m-0 text-lg font-bold tracking-tight text-on-surface sm:text-xl">{t("nav.ledger")}</h1>
           <p className="cashbook-summary__date mt-1 text-xs font-medium text-text-muted">Today · {displayDate}</p>
-          <p className="mt-1 text-xs text-text-muted">Recorded activity, including locally queued entries. Not a verified account balance.</p>
+          <span className="visual-scope" title="Recorded activity includes queued entries; not a verified account balance.">Includes queued</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -121,6 +121,7 @@ export const TodayStrip: React.FC<TodayStripProps> = ({
         </div>
       </div>
 
+      {!loading && !unavailable && [summary.income_paisa,summary.expense_paisa].every(value=>Number.isSafeInteger(value)&&value>=0) && (summary.income_paisa>0 || summary.expense_paisa>0) && <div className="cashbook-flow" role="img" aria-label="Income and expense ratio"><span style={{flexGrow:summary.income_paisa}}/><span style={{flexGrow:summary.expense_paisa}}/></div>}
       {/* Capital / Withdrawal Strip (if any exists today) */}
       {!loading && !unavailable && (summary.capital_in_paisa > 0 || summary.withdrawal_paisa > 0) && (
         <div className="mt-2 pt-2 border-t border-border-standard flex items-center justify-between text-[11px] text-text-muted">

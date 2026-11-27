@@ -151,7 +151,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
         onApply={setFilters}
       />
 
-      <p className="reports-source-note">{cloudOnly ? "Posted cloud records only; queued entries excluded." : "Available local or demo records only; completeness not verified."} Internal transfers are excluded from this transaction report.</p>
+      <div className="visual-scope-row"><span className="visual-scope" title={cloudOnly?"Posted cloud records only; queued entries excluded.":"Local or demo records; completeness not verified."}>{cloudOnly?"Posted only":"Local records"}</span><span className="visual-scope" title="Cashbook analysis; internal transfers excluded.">Cash basis</span>{!cloudOnly&&<span className="visual-scope is-warning">Unverified</span>}</div>
       {exportError && <div role="alert" className="reports-modern__error">{exportError}</div>}
       {loadError && <div role="alert" className="reports-modern__error reports-modern__load-error">{loadError} <button type="button" className="button button-secondary" onClick={() => void loadReport()}>Retry</button></div>}
 

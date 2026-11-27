@@ -207,7 +207,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
 
-      <p className="overview-source-note">{cloudOnly ? "Posted cloud records only. Pending entries are excluded. Operating result is on a cashbook basis, not accrual profit." : "Available local or demo records may include queued entries or incomplete data; these are not verified cloud balances or accrual profit."}</p>
+      <div className="visual-scope-row"><span className="visual-scope" title={cloudOnly?"Posted cloud records only; pending excluded.":"Local or demo records may include queued entries or incomplete data."}>{cloudOnly?"Posted only":"Local records"}</span><span className="visual-scope" title="Operating result is cashbook income less expenses, not accrual profit.">Cash basis</span>{!cloudOnly&&<span className="visual-scope is-warning">Unverified</span>}</div>
       <div className="aq-overview__visuals">
         <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""} ${period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense ? "cash-panel--empty" : ""}`}>
           <div className="panel-heading">

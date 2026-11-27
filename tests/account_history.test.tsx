@@ -22,6 +22,6 @@ describe("posted account history",()=>{
     render(<AccountHistory/>);
     fireEvent.click(screen.getByRole("button",{name:"Show history"}));
     await waitFor(()=>expect(screen.getByRole("alert")).toHaveTextContent("Posted account history is unavailable"));
-    expect(screen.queryByText("No posted movements found for this account.")).toBeNull();
+    expect(screen.queryByText("No posted movements")).toBeNull();
   });
 });

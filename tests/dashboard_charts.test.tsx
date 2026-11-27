@@ -131,7 +131,7 @@ describe('real-data dashboard charts', () => {
     expect(accounts).toHaveBeenCalledWith({ requireCloudSource: true });
     expect(history).toHaveBeenCalledWith({ startDate: today, endDate: today, status: 'active' }, { requireCloudSource: true });
     expect(daily).not.toHaveBeenCalled();
-    expect(screen.getByText(/Posted cloud records only/)).toBeTruthy();
+    expect(screen.getByText("Posted only")).toHaveAttribute("title",expect.stringContaining("Posted cloud records only"));
   });
 
   it('shows unavailable state rather than a local zero if cloud balances cannot be read', async () => {

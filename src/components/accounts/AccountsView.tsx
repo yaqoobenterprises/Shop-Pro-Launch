@@ -241,7 +241,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
         </div>
       )}
 
-      <p className="account-scope-note">Available recorded balances may include local account changes; these are not verified bank statements. Transfers are internal movements, not income or expenses.</p>
+      <div className="visual-scope-row"><span className="visual-scope" title="Available balances may include local changes; not reconciled bank statements.">Recorded balances</span><span className="visual-scope" title="Transfers are internal movements, not income or expenses.">Internal transfers</span></div>
       <div className="accounts-quick-actions" role="group" aria-label="Account management">
         <button type="button" disabled={!canManage || busy} aria-expanded={activeTool === "add"} aria-controls={activeTool === "add" ? "aq-account-create" : undefined}
           onClick={() => setActiveTool((current) => current === "add" ? null : "add")}>
@@ -321,7 +321,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
             <h2>Transfer funds</h2>
           </div>
 
-          <p className="account-scope-note">Move recorded money between accounts. This does not initiate a bank payment.</p>
+          <span className="visual-scope" title="This records an internal movement, not a bank payment.">Ledger only</span>
           <form onSubmit={handleTransfer}>
             <fieldset disabled={busy} className="form-grid">
               <label>

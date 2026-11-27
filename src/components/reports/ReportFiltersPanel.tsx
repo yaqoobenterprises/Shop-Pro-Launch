@@ -92,7 +92,6 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
     <section className="reports-modern__filters" aria-label="Report filters">
       <div className="reports-modern__filter-heading">
         <div className="reports-modern__filter-title"><Filter size={17} aria-hidden="true" /><h2>Report filters</h2></div>
-        <span className="reports-modern__filter-note">Charts and exports use applied filters</span>
       </div>
       <div className="reports-modern__presets" role="group" aria-label="Quick date ranges">
         <button type="button" onClick={() => applyRange(dateDaysAgo(today, 6), today)}>Last 7 days</button>
@@ -102,15 +101,15 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
       </div>
       <div className="reports-modern__filter-grid">
         <label className="reports-modern__field">
-          <span>From date</span>
+          <span>From</span>
           <DatePicker value={fromDate} onChange={setFromDate} ariaLabel="Report start date" max={toDate || today} className="w-full" />
         </label>
         <label className="reports-modern__field">
-          <span>To date</span>
+          <span>To</span>
           <DatePicker value={toDate} onChange={setToDate} ariaLabel="Report end date" min={fromDate} max={today} className="w-full" />
         </label>
         <label className="reports-modern__field">
-          <span>Transaction type</span>
+          <span>Type</span>
           <select value={typeFilter} onChange={(event) => {
             setTypeFilter(event.target.value as ReportTypeFilter);
             setCategoryFilter("all");

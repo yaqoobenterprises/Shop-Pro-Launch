@@ -58,3 +58,24 @@ html .app-shell .settings-nav-label {font-size:.78rem!important;}
  html .app-shell .aq-metric,html .app-shell .reports-modern__kpi {min-height:108px;padding:13px!important;}
 }
 @media print {html .app-shell :where(.panel,.reports-modern__table-panel) {background:white!important;}}
+
+/* Remove remaining utility-class hairlines without removing interactive focus. */
+html body .app-shell :where(div,section,article,header,footer,nav,aside,button,textarea,input:not([type=checkbox]):not([type=radio]),select,fieldset,table,thead,tbody,tr,th,td,hr) {border-color:transparent!important;}
+html body .app-shell :where(div,section,article,button,input,textarea,select):not(:focus-visible) {outline:0!important;}
+html body .app-shell :where(.workspace-panel,.settings-section,.cashbook-summary,.summary-metric,.ledger-composer,.lm-message,.lm-composer,.account-tool-panel,.reports-modern__filters) {border-radius:16px!important;box-shadow:none!important;}
+html body .app-shell .cashbook-summary {background:var(--paper)!important;}
+html body .app-shell .summary-metric {background:var(--surface-card)!important;padding:12px!important;min-height:84px;}
+html body .app-shell .summary-metric__label svg {background:var(--tint);color:var(--primary);padding:5px;width:25px;height:25px;border-radius:8px;}
+html body .app-shell .cashbook-flow {display:flex;gap:3px;margin-top:10px;height:9px;border-radius:8px;overflow:hidden;}
+html body .app-shell .cashbook-flow span {flex-basis:0;min-width:0;background:var(--chart-lavender);}
+html body .app-shell .cashbook-flow span+span {background:var(--chart-pink);}
+html body .app-shell .visual-scope-row {display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;}
+html body .app-shell .visual-scope {display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:4px 9px;border-radius:7px;background:var(--surface-2);color:var(--ink-2);font-size:.72rem;font-weight:600;line-height:1.4;}
+html body .app-shell .visual-scope.is-warning {background:var(--warn-bg);color:var(--orange);}
+html body .app-shell .account-card .account-brand {border-radius:14px!important;box-shadow:none!important;}
+html body .app-shell .settings-category-list>div:nth-child(even) {background:var(--surface-2);}
+html body .app-shell .settings-icon {background:var(--tint)!important;color:var(--primary)!important;border-radius:12px!important;}
+html body .app-shell .lm-messages {background:var(--paper)!important;}
+html body .app-shell .lm-composer {background:var(--surface-card)!important;}
+html body .app-shell .header-profile-menu,html body .custom-select-popover,html body [data-shop-plus-dialog] {border-color:transparent!important;}
+html body .app-shell :where(button,input,textarea,select,a,[tabindex]):focus-visible {outline:2px solid var(--focus-color)!important;outline-offset:3px!important;}
