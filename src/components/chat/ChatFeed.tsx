@@ -119,7 +119,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                           <p className="mt-1 text-xs text-text-muted">{draft.note}</p>
                         )}
                       </div>
-                      <p className={`shrink-0 font-mono text-sm font-bold tabular-nums ${isExpense ? "text-danger" : "text-primary"}`}>
+                      <p className={`shrink-0 font-sans text-sm font-bold tabular-nums ${isExpense ? "text-danger" : "text-primary"}`}>
                         {isExpense ? "−" : "+"}{formatPaisa(draft.amount_paisa)}
                       </p>
                     </div>
@@ -215,7 +215,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                 </span>
 
                 <span
-                  className={`shrink-0 font-mono text-sm font-semibold tabular-nums sm:text-base ${
+                  className={`shrink-0 font-sans text-sm font-semibold tabular-nums sm:text-base ${
                     isVoided ? "line-through text-text-muted"
                     : isIncome ? "text-primary"
                     : isExpense ? "text-danger"

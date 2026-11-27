@@ -221,3 +221,18 @@ html[lang=ur] :is(body,.app-shell,.aq-landing,.aq-auth){font-family:"Noto Naskh 
 .aq-landing__platform,.aq-landing__steps{padding-block:56px}.aq-landing__section-head{margin-bottom:24px}.aq-landing__features{gap:16px}.aq-landing__feature{padding:24px}.aq-landing__feature h3{margin:16px 0 8px}.aq-landing__upcoming{margin-top:16px}.aq-landing__last{padding-block:32px}.aq-landing__footer{padding-block:16px}
 @media(max-width:830px){.aq-landing__hero-grid{grid-template-columns:minmax(0,1fr);max-width:680px;padding-block:40px;gap:32px}.aq-landing__hero h1{font-size:clamp(2.25rem,7vw,3.5rem)}}
 @media(max-width:600px){.aq-landing__container{width:calc(100% - 32px)}.aq-landing__nav{gap:8px;min-height:64px}.aq-landing__hero-grid{padding-block:32px;gap:24px}.aq-preview__top,.aq-preview__body{padding:12px}.aq-preview__metrics{gap:8px}.aq-preview__metric{padding:10px}.aq-preview__chart-panel{padding:12px}.aq-landing__platform,.aq-landing__steps{padding-block:32px}.aq-landing__features{gap:12px}.aq-landing__feature{padding:16px}.aq-landing__section-head{margin-bottom:16px}}
+
+/* Production review: keep ledger rows above Tailwind's table-row display utility. */
+.app-shell .transaction-table .table-row{display:grid}
+.app-shell .transaction-table .table-row>strong,.app-shell .cashbook-feed .font-sans{font-family:var(--sp-font);font-variant-numeric:tabular-nums}
+.app-shell .reports-modern__apply{background:var(--sp-primary);border-color:var(--sp-primary);color:var(--sp-on-primary);border-radius:var(--sp-radius-control)}
+.app-shell .reports-modern__apply:hover:not(:disabled){background:var(--sp-primary-hover);border-color:var(--sp-primary-hover)}
+.app-shell .reports-modern__apply:disabled{background:var(--sp-disabled-bg);border-color:var(--sp-border);color:var(--sp-disabled-text);opacity:1}
+.app-shell select.workspace-control{appearance:none;padding:10px 36px 10px 12px;background-image:linear-gradient(45deg,transparent 50%,var(--sp-text-secondary) 50%),linear-gradient(135deg,var(--sp-text-secondary) 50%,transparent 50%);background-size:5px 5px,5px 5px;background-position:right 18px center,right 13px center;background-repeat:no-repeat}
+.app-shell button.workspace-control[role=combobox],.custom-select-popover{border-radius:var(--sp-radius-control)}
+.app-shell :is(.cashbook-feed__surface,.ledger-page .cashbook-composer){border-radius:var(--sp-radius-panel)}
+.app-shell .lm-offline-banner{background:var(--sp-warning-subtle);color:var(--sp-warning);border-color:var(--sp-border);font-size:.8125rem}
+.app-shell .lm-error{background:var(--sp-expense-subtle);color:var(--sp-expense);border-color:var(--sp-border);font-size:.8125rem}
+.app-shell .lm-send-button{background:var(--sp-primary);color:var(--sp-on-primary);border-radius:var(--sp-radius-control);box-shadow:none}
+.app-shell .lm-send-button:disabled{background:var(--sp-disabled-bg);color:var(--sp-disabled-text)}
+html[dir=rtl] .app-shell select.workspace-control{padding-inline:12px 36px;background-position:left 13px center,left 18px center}

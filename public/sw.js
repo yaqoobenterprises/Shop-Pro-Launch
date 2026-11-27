@@ -1,6 +1,6 @@
-// AQVORA public app shell ONLY. Never persist customer data or API responses.
+// Shop Pro public app shell ONLY. Never persist customer data or API responses.
 // Keep workers waiting until existing tabs close to avoid interrupting offline work.
-const CACHE_NAME = 'aqvora-shell-v2';
+const CACHE_NAME = 'shop-pro-shell-v1';
 const OLD_AQVORA_PREFIXES = ['shop-pro-', 'aqvora-pwa-', 'aqvora-shell-'];
 const SHELL_ASSETS = [
   '/index.html',
