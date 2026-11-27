@@ -27,3 +27,24 @@
 4. LedgerMate: approved test account and isolated provider configuration, verify AI answer accuracy and source traces, prompt-injection resistance, rate limits, privacy, and recovery of submitted actions across navigation/reload. Cloud chat sync migration must be tested separately.
 5. Remaining product scope: prior-period overview comparisons and recent records, advanced transaction sorting/amount filters and semantic tables, inactive-account history and full transfer register, report print and export precision, auth recovery/unauthorized screens, and all prior phase outstanding gates.
 6. Only after blockers are resolved: verify exact preview commit, approved deployment and rollback candidate, staging smoke results, then separately approve production release. Do not merge this draft solely because CI passes.
+
+## Comparative lab and first accessibility results (verified)
+
+[Comparative run 45959364625](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45959364625) succeeded: original 499fc169 vs candidate 8ba0f85, three cold samples per build/profile. Medians:
+
+| Metric | Original phone | Candidate phone | Original desktop | Candidate desktop |
+| --- | ---: | ---: | ---: | ---: |
+| Landing LCP ms | 2248 | 1916 | 240 | 100 |
+| Landing CLS | 0 | 0.0003057 | 0 | 0 |
+| Landing FCP ms | 1932 | 1916 | 100 | 100 |
+| Encoded resource bytes | 269115 | 317816 | 269115 | 317816 |
+| Long task total ms | 744 | 740 | 0 | 0 |
+| Demo readiness ms | 575 | 566 | 392 | 395 |
+| Transaction route ms | 515 | 551 | 849 | 400 |
+| Max observed event duration ms | 56 | 56 | 24 | 16 |
+
+All 12 samples completed without recorded browser errors. Candidate landing LCP improved under this test but encoded resource bytes increased by ~18.1% and phone transaction navigation by ~7%. Do not claim universal improvement or field INP; repeat on the final commit, compare real-user p75 and a representative large dataset.
+
+[First axe audit 45959322417](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45959322417) completed all 128 scans (64/theme), with interaction checks passing but WCAG automated gate failing. Findings: incorrect ARIA on readonly date-picker textbox (both themes), Overview label contrast (both), dark Transactions primary button contrast, scrollable Reports regions and chat log without keyboard focus, and dark LedgerMate sync contrast. Incomplete axe checks on 49 dark and 40 light scans require manual assessment. Repairs committed through 33e3f41: move popup state to calendar button, unique popup IDs, focus selected day and restore focus, clamp popover to viewport, improve measured contrast and keyboard focusable labelled scroll regions. [Corrected browser run 45959775486](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45959775486) pending at this writing.
+
+CI 45959370394 passed type checks and lint but failed two size limits. After extraction, CI 45959643212 passed those limits, type checks and lint before superseded by subsequent accessibility edits. Final full suite required; do not claim passed. Current code candidate 33e3f41 (plus documentation).
