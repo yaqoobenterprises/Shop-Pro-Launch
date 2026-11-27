@@ -243,3 +243,17 @@ html .app-shell .lm-suggestions button { min-height:48px; border-radius:var(--ra
 html .app-shell .lm-table-wrap { overflow-x:auto; }
 @media(max-width:767px){html .app-shell .lm-header{flex-wrap:wrap;gap:4px;}html .app-shell .lm-header-actions{gap:4px;}html .app-shell .lm-access-note{font-size:.7rem;}html .app-shell .lm-access-note button{min-height:44px;}html .app-shell .lm-composer-wrap{padding:8px;} }
 @media(prefers-reduced-motion:reduce){.ledgermate *, .ledgermate *::before,.ledgermate *::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important;}}
+
+/* Do not hide the accessible privacy status or clip the phone history panel. */
+html .app-shell .lm-privacy-note { font-size:.72rem; color:var(--muted); }
+html .app-shell .lm-composer textarea::placeholder, html .app-shell .lm-composer-hint { color:var(--muted); }
+html .app-shell .lm-action-button:focus-visible, html .app-shell .lm-icon-button:focus-visible,
+html .app-shell .lm-message-tools button:focus-visible, html .app-shell .lm-history-item:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+@media(max-width:680px) {
+  html .app-shell .lm-header { position:relative; }
+  html .app-shell .lm-history-anchor { position:static; }
+  html .app-shell .lm-history-popover { left:12px; right:12px; top:calc(100% + 4px); width:auto; }
+  html .app-shell .lm-action-button,html .app-shell .lm-icon-button { min-width:44px; width:44px; }
+  html .app-shell .lm-conversation-meta { flex-wrap:wrap; gap:4px; padding-block:6px; }
+  html .app-shell .lm-composer textarea { font-size:16px; }
+}
