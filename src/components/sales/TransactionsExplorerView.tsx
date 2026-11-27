@@ -44,7 +44,8 @@ const getTransactionDisplayDetails = (transaction: Transaction) => {
 export const TransactionsExplorerView: React.FC = () => {
   const { region } = useRegion();
   const { user, isDemoMode, isCloudAccount } = useAuth();
-  const { startNewEntry } = useApp();
+  const { startNewEntry, readTransactionView, saveTransactionView } = useApp();
+  const [initial] = useState(readTransactionView);
   const canManage = !isDemoMode && hasPermission(user?.role, "VOID_EXPENSE");
   const requestId = useRef(0);
   const exportLock = useRef(false);
@@ -55,19 +56,22 @@ export const TransactionsExplorerView: React.FC = () => {
   const [loadError, setLoadError] = useState("");
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [appliedSearch, setAppliedSearch] = useState("");
-  const [selectedAccount, setSelectedAccount] = useState("all");
+  const [searchQuery, setSearchQuery] = useState(initial.searchQuery);
+  const [appliedSearch, setAppliedSearch] = useState(initial.appliedSearch);
+  const [selectedAccount, setSelectedAccount] = useState(initial.account);
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(initial.startDate);
+  const [endDate, setEndDate] = useState(initial.endDate);
   const invalidDateRange = Boolean(startDate && endDate && startDate > endDate);
-  const [selectedType, setSelectedType] = useState("all");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedStatus, setSelectedStatus] = useState<"active" | "voided" | "all">("all");
+  const [selectedType, setSelectedType] = useState(initial.type);
+  const [selectedCategory, setSelectedCategory] = useState(initial.category);
+  const [selectedStatus, setSelectedStatus] = useState<"active" | "voided" | "all">(initial.status);
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(initial.page);
+  useEffect(() => {
+    saveTransactionView({ searchQuery, appliedSearch, account: selectedAccount, startDate, endDate, type: selectedType, category: selectedCategory, status: selectedStatus, page });
+  }, [saveTransactionView, searchQuery, appliedSearch, selectedAccount, startDate, endDate, selectedType, selectedCategory, selectedStatus, page]);
   const pageSize = 25;
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState("");
@@ -105,6 +109,7 @@ export const TransactionsExplorerView: React.FC = () => {
       }, { requireCloudSource: isCloudAccount && !isDemoMode });
       if (id !== requestId.current) return;
 
+      if (requestedPage > 0 && requestedPage * pageSize >= res.count) { setPage(Math.max(0, Math.ceil(res.count / pageSize) - 1)); return; }
       setTransactions(res.transactions);
       setTotalCount(res.count);
     } catch (err) {
@@ -135,7 +140,7 @@ export const TransactionsExplorerView: React.FC = () => {
   };
 
   const handleExportCSV = async () => {
-    if (exportLock.current || invalidDateRange || isLoading || loadError) return;
+    if (exportLock.current || invalidDateRange || isLoading || loadError || searchQuery.trim() !== appliedSearch) return;
     exportLock.current = true;
     setIsExporting(true);
     setExportError("");
@@ -328,7 +333,7 @@ export const TransactionsExplorerView: React.FC = () => {
 
 
           return (
-            <div className="table-row" key={tx.id}>
+            <article className="table-row" key={tx.id} aria-label={`Transaction ${details.rawText}`}>
               <div>
                 <div>
                   <strong>{details.rawText}</strong>
@@ -339,14 +344,14 @@ export const TransactionsExplorerView: React.FC = () => {
                 </div>
               </div>
 
-              <span className="transaction-account">{tx.account_name || "Account unavailable"}</span>
+              <span className="transaction-account"><span className="sr-only">Account: </span>{tx.account_name || "Account unavailable"}</span>
 
               <span>
-                {tx.business_date} · <small>{formatKarachiTime(tx.created_at)}</small>
+                <span className="sr-only">Business date: </span>{tx.business_date} · <small>{formatKarachiTime(tx.created_at)}</small>
               </span>
 
               <strong className={`transaction-amount num ${isIncome && !isVoid ? "positive" : ""}`}>
-                {isIncome ? "+" : "−"}
+                <span className="sr-only">Amount: </span>{isIncome ? "+" : "−"}
                 {formatPaisa(tx.amount_paisa)}
               </strong>
 
@@ -361,7 +366,7 @@ export const TransactionsExplorerView: React.FC = () => {
                   className="icon-button"
                   style={{ width: 44, height: 44 }}
                   title="View details"
-                  aria-label="View transaction details"
+                  aria-label={`View transaction details: ${details.rawText}`}
                 >
                   <Eye className="h-3.5 w-3.5" />
                 </button>
@@ -373,15 +378,15 @@ export const TransactionsExplorerView: React.FC = () => {
                     className="icon-button"
                     style={{ width: 44, height: 44, color: "var(--danger)" }}
                     title="Void transaction"
-                    aria-label="Void transaction"
+                    aria-label={`Void transaction: ${details.rawText}`}
                   >
                     <Ban className="h-3.5 w-3.5" />
                   </button>
                 )}
               </div>
-            </div>
+            </article>
           );
-        })}
+        })
 
         {transactions.length === 0 && !isLoading && !loadError && !invalidDateRange && (
           <div className="empty-state">
