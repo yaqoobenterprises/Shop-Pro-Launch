@@ -197,7 +197,7 @@ export const TransactionsExplorerView: React.FC = () => {
       <div className="page-title">
         <div className="entries-page-heading">
           <h1>Transactions</h1>
-          <p>Review recorded activity and export the complete filtered result.</p>
+          <p>Review recorded activity and export the matching records.</p>
         </div>
 
         <div className="title-actions">
@@ -227,10 +227,11 @@ export const TransactionsExplorerView: React.FC = () => {
       )}
 
       {/* Filter Panel */}
-      <section className="panel filter-panel">
-        <form onSubmit={handleSearchSubmit} className="search-field">
+      <section className="panel filter-panel" aria-label="Transaction filters">
+        <form onSubmit={handleSearchSubmit} className="search-field" role="search">
           <Search className="h-4 w-4" aria-hidden="true" />
           <input
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search recorded description..."
@@ -403,7 +404,7 @@ export const TransactionsExplorerView: React.FC = () => {
         )}
 
         <div className="table-footer">
-          <span>
+          <span role="status">
             {isLoading ? "Loading…" : loadError || invalidDateRange ? "Results unavailable" : `${totalCount === 0 ? 0 : page * pageSize + 1}–${page * pageSize + transactions.length} of ${totalCount} transactions`}
           </span>
           <div>
