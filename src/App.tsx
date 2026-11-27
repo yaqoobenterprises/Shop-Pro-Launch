@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppProvider, useApp } from "./context/AppContext";
 import { I18nProvider, useI18n } from "./i18n";
-import { Sidebar } from "./components/layout/Sidebar";
+import { WorkspaceNav } from "./components/layout/WorkspaceNav";
 import { MobileNav } from "./components/layout/MobileNav";
 import { Header } from "./components/layout/Header";
 import { ToastContainer } from "./components/common/ToastContainer";
@@ -131,12 +131,13 @@ const MainShell: React.FC = () => {
   };
 
   return (
-    <div className="app-shell flex h-dvh w-full min-w-0 flex-col overflow-hidden font-sans text-on-surface">
+    <div className="app-shell clarity-app flex h-dvh w-full min-w-0 flex-col overflow-hidden font-sans text-on-surface">
       {isDemoMode && (
         <div
           role="status"
-          className="z-40 flex min-h-14 shrink-0 items-center justify-end border-b border-border-standard bg-surface-bright px-4 py-2 sm:px-6"
+          className="clarity-demo-bar"
         >
+          <span>Demo workspace <span className="clarity-demo-scope">· Sample data</span></span>
           <button
             type="button"
             onClick={() => void exitDemoMode()}
@@ -154,11 +155,12 @@ const MainShell: React.FC = () => {
           Skip to main content
         </a>
         {/* Sidebar Navigation */}
-        <Sidebar />
+
 
         {/* Main Content Area */}
         <div className="workspace flex flex-1 flex-col overflow-hidden min-w-0">
           <Header />
+          <WorkspaceNav />
           <main
             id="main-content"
             tabIndex={-1}

@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  Download,
   FileSpreadsheet,
   TrendingDown,
   TrendingUp,
@@ -13,8 +12,7 @@ import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, 
 import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
 import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
-import "./ReportsAnalytics.css";
-import "./ReportsRealFinish.css";
+import { CashFlowChart } from "../charts/CashFlowChart";
 import { ReportInsightCharts } from "./ReportInsightCharts";
 
 export const LedgerReportsView: React.FC = () => {
@@ -80,7 +78,6 @@ export const LedgerReportsView: React.FC = () => {
     () => buildReportCategoryBreakdown(transactions),
     [transactions],
   );
-  const chartMax = Math.max(1, ...trend.map((bucket) => Math.max(bucket.income_paisa, bucket.expense_paisa)));
   const grouping = getTrendGrouping(filters.fromDate, filters.toDate);
 
   const expenseCategories = useMemo(
@@ -120,7 +117,7 @@ export const LedgerReportsView: React.FC = () => {
         <button type="button" className="reports-modern__export" onClick={handleExport} disabled={isExporting || isLoading}>
           <FileSpreadsheet size={17} aria-hidden="true" />
           {isExporting ? "Preparing Excel…" : "Export to Excel"}
-          <Download size={15} aria-hidden="true" />
+
         </button>
       </header>
 
@@ -138,47 +135,35 @@ export const LedgerReportsView: React.FC = () => {
         <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
           <span>Operating result</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.net_profit_paisa)}</strong>
-          <small>Cashbook basis · not accrual P&L</small>
+          <small>Cashbook basis</small>
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--income">
           <span>Income</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.income_paisa)}</strong>
-          
+
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--expense">
           <span>Expenses</span><TrendingDown size={18} aria-hidden="true" />
           <strong>{isLoading ? "Loading…" : formatPaisa(totals.expense_paisa)}</strong>
-          
+
         </article>
         <article className="reports-modern__kpi reports-modern__kpi--count">
           <span>Transactions</span><FileSpreadsheet size={18} aria-hidden="true" />
           <strong>{isLoading ? "—" : totals.transaction_count.toLocaleString()}</strong>
-          
+
         </article>
       </section>
 
       <section className="reports-modern__chart-panel">
         <div className="reports-modern__section-heading">
-          <div><h2>Cash flow over time</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
+          <div><h2>Cash flow</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
           <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
-        {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
-          <div className="reports-modern__trend-scroll">
-            <div className="reports-modern__trend" style={{ gridTemplateColumns: `repeat(${trend.length}, minmax(36px, 1fr))` }}>
-              {trend.map((bucket) => {
-                const incomeHeight = bucket.income_paisa > 0 ? Math.max(3, (bucket.income_paisa / chartMax) * 100) : 0;
-                const expenseHeight = bucket.expense_paisa > 0 ? Math.max(3, (bucket.expense_paisa / chartMax) * 100) : 0;
-                return <div className="reports-modern__trend-item" key={bucket.key} title={`${bucket.title}\nIncome: ${formatPaisa(bucket.income_paisa)}\nExpenses: ${formatPaisa(bucket.expense_paisa)}`}>
-                  <div className="reports-modern__bar-area"><span className="reports-modern__bar is-income" style={{ height: `${incomeHeight}%` }} /><span className="reports-modern__bar is-expense" style={{ height: `${expenseHeight}%` }} /></div>
-                  <span className="reports-modern__trend-label">{bucket.label}</span>
-                </div>;
-              })}
-            </div>
-          </div>
-        )}
+        {isLoading ? <p role="status">Loading chart…</p> : loadError ? <p>Chart unavailable.</p> : <CashFlowChart rows={trend} range={`${formatDisplayDate(filters.fromDate)} – ${formatDisplayDate(filters.toDate)}`} />}
+
       </section>
 
-      <ReportInsightCharts trend={trend} expenseCategories={expenseCategories} />
+      {!isLoading && !loadError && <ReportInsightCharts trend={trend} expenseCategories={expenseCategories} />}
 
       <div className="reports-modern__analysis-grid">
         <section className="reports-modern__table-panel">

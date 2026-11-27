@@ -13,8 +13,9 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
+      data-hoverable={hoverable || undefined}
       className={cn(
-        "rounded-xl border border-border-standard bg-surface-bright p-5 text-on-surface shadow-level-1 transition-all duration-150 sm:p-6",
+        "clarity-card rounded-xl border border-border-standard bg-surface-bright p-5 text-on-surface shadow-level-1 transition-all duration-150 sm:p-6",
         hoverable && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/20 hover:shadow-level-2",
         className,
       )}

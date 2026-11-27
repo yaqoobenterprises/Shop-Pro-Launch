@@ -4,11 +4,6 @@ import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
 import { formatPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
-import "./OverviewAnalytics.css";
-import "./OverviewPremium.css";
-import "./OverviewReference.css";
-import "./OverviewFinish.css";
-import "./OverviewRealFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
 import { OverviewAreaChart } from "./OverviewAreaChart";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
@@ -23,9 +18,12 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownLeft,
+  Landmark,
+  Banknote,
+  WalletCards,
 } from "lucide-react";
 
-const EXPENSE_CHART_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
+import { CategoryDonut } from "../charts/CategoryDonut";
 
 export const LedgerDashboardView: React.FC = () => {
   const [period, setPeriod] = useState<OverviewPeriod>("day");
@@ -147,17 +145,6 @@ export const LedgerDashboardView: React.FC = () => {
     [breakdowns],
   );
   const expenseBreakdownTotal = expenseBreakdowns.reduce((sum, item) => sum + item.total_paisa, 0);
-  const expenseDonutBackground = useMemo(() => {
-    if (expenseBreakdownTotal <= 0) return "conic-gradient(var(--line) 0deg 360deg)";
-    let cumulative = 0;
-    const stops = expenseBreakdowns.map((item, index) => {
-      const start = cumulative;
-      cumulative += (item.total_paisa / expenseBreakdownTotal) * 100;
-      return `${EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length]} ${start}% ${cumulative}%`;
-    });
-    return `conic-gradient(${stops.join(", ")})`;
-  }, [expenseBreakdowns, expenseBreakdownTotal]);
-
   const trendRows: ReportTrendBucket[] = rangeTrend;
   const selectedRangeLabel = period === "day"
     ? formatDisplayDate(currentDate)
@@ -170,7 +157,7 @@ export const LedgerDashboardView: React.FC = () => {
     <div className="page-content overview-page aq-overview">
       <div className="page-title">
         <div className="overview-page-heading">
-          <h1>Business overview</h1>
+          <h1>Overview</h1>
         </div>
         <OverviewPeriodControls
           period={period}
@@ -194,17 +181,17 @@ export const LedgerDashboardView: React.FC = () => {
       )}
 
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Cash & bank" scope="Current balance" icon={Wallet}
+        <OverviewMetricCard label="Total balance" scope="Active accounts" icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp}
+        <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp} tone="positive"
           amountPaisa={activeIncome}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Expenses" scope={selectedRangeLabel} icon={ArrowDownLeft}
+        <OverviewMetricCard label="Expenses" scope={selectedRangeLabel} icon={ArrowDownLeft} tone="negative"
           amountPaisa={activeExpense}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Operating result" scope="Cashbook basis" icon={ArrowUpRight}
-          amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "positive"}
+        <OverviewMetricCard label="Net result" scope="Income − expenses" icon={ArrowUpRight}
+          amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "default"}
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
 
@@ -212,7 +199,7 @@ export const LedgerDashboardView: React.FC = () => {
         <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""} ${period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense ? "cash-panel--empty" : ""}`}>
           <div className="panel-heading">
             <div>
-              <h2>Income & expenses</h2>
+              <h2>Cash flow</h2>
               <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
           </div>
@@ -235,7 +222,7 @@ export const LedgerDashboardView: React.FC = () => {
                           {Boolean(dailyData?.transaction_count) && <p>{dailyData?.transaction_count} other entries</p>}
                         </div>
                         <button type="button" onClick={() => setPeriod("week")}>
-                          View weekly trends <ArrowUpRight size={16} aria-hidden="true" />
+                          View week
                         </button>
                       </div>
                     ) : (
@@ -279,30 +266,7 @@ export const LedgerDashboardView: React.FC = () => {
                 <p className="aq-overview__empty">No expenses for this period.</p>
               ) : (
                 <>
-                  <div className="aq-overview__donut-wrap">
-                    <div className="expense-donut" role="img"
-                      aria-label={`Expense category distribution. Total ${formatPaisa(expenseBreakdownTotal)}`}
-                      style={{ background: expenseDonutBackground }}>
-                      <div className="expense-donut__center">
-                        <strong>{formatPaisa(expenseBreakdownTotal)}</strong>
-                        <span>Total recorded</span>
-                      </div>
-                    </div>
-                  </div>
-                  <ul className="expense-category-list" aria-label="Expense totals by category">
-                    {expenseBreakdowns.map((b, index) => (
-                      <li key={b.category_id || b.category_name}>
-                        <span className="expense-category-label">
-                          <i style={{ background: EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length] }} aria-hidden="true" />
-                          <span>{b.category_name}</span>
-                        </span>
-                        <span className="expense-category-amount">
-                          <small>{Math.round((b.total_paisa / expenseBreakdownTotal) * 100)}%</small>
-                          <strong>{formatPaisa(b.total_paisa)}</strong>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <CategoryDonut items={expenseBreakdowns.map(b => ({ key: b.category_id || b.category_name, label: b.category_name, amountPaisa: b.total_paisa }))} />
                   {activeSummary && activeExpense !== expenseBreakdownTotal && (
                     <p className="aq-overview__coverage">Category totals do not match the period expense total. Review the source entries.</p>
                   )}
@@ -320,8 +284,8 @@ export const LedgerDashboardView: React.FC = () => {
                 : <ul aria-label="Current balances by account" className="aq-overview__accounts">
                     {activeAccounts.map((acc) => (
                       <li className="transaction" key={acc.id}>
-                        <span className="transaction-icon">{acc.type === "CASH" ? "CA" : acc.type === "BANK" ? "BA" : "WL"}</span>
-                        <div><strong>{acc.name}</strong><small>{acc.type}{acc.is_default ? " · Primary" : ""}</small></div>
+                        <span className="transaction-icon">{acc.type === "CASH" ? <Banknote size={18} aria-hidden="true" /> : acc.type === "BANK" ? <Landmark size={18} aria-hidden="true" /> : <WalletCards size={18} aria-hidden="true" />}</span>
+                        <div><strong>{acc.name}</strong><small>{acc.type === "CASH" ? "Cash" : acc.type === "BANK" ? "Bank" : "Wallet"}{acc.is_default ? " · Primary" : ""}</small></div>
                         <strong className="num">{formatPaisa(acc.balance_paisa)}</strong>
                       </li>
                     ))}

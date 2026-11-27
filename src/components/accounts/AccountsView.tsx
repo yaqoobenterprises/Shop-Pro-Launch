@@ -17,8 +17,6 @@ import {
 } from "../../services/ledgerService";
 import { formatPaisa, parseInputToPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
-import "./AccountsPoitalFinish.css";
-import "./AccountInsights.css";
 import { PaymentAccountInsights } from "./PaymentAccountInsights";
 import { LedgerAccount } from "../../types/ledger";
 import {

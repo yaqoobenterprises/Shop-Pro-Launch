@@ -9,7 +9,6 @@ import { useLedgerMateChatHistory } from "../../services/useLedgerMateChatHistor
 import { makeLocalId, now, type ChatMessage, type LocalThread } from "../../services/ledgerMateChatUtils";
 import { checkLedgerMateHealth, sendLedgerMateMessage, type LedgerMateAiHealth } from "../../services/ledgerMateAiService";
 import { LedgerMateSurface } from "./LedgerMateSurface";
-import "./LedgerMate.css";
 
 export const AiAccountantPanel: React.FC<{
   summary: DailySummary;

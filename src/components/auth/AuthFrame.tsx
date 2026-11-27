@@ -1,6 +1,5 @@
 import React from "react";
 import { ArrowLeft, BookOpenText, ShieldCheck } from "lucide-react";
-import "./AuthPremium.css";
 
 interface AuthFrameProps {
   children: React.ReactNode;
@@ -18,7 +17,7 @@ export const AuthFrame: React.FC<AuthFrameProps> = ({ children, onBack }) => (
         <div className="aq-auth__story-copy">
           <span className="aq-auth__eyebrow">YOUR BUSINESS WORKSPACE</span>
           <h2>Clarity for every business day.</h2>
-          <p>Keep your activity organized. Find what matters. Make every decision with a clearer picture.</p>
+          <p>Your cashbook, accounts and reports. Together.</p>
           <div className="aq-auth__story-points">
             <span><BookOpenText size={18} aria-hidden="true" /> Organized transactions</span>
             <span><ShieldCheck size={18} aria-hidden="true" /> Account-level access controls</span>

@@ -9,20 +9,20 @@ import {
   Sun,
   Moon,
   Search,
+  PanelsTopLeft,
 } from "lucide-react";
-import { getSavedTheme, applyTheme, ThemePreference } from "../../lib/theme";
+import { useTheme } from "../../design-system/useTheme";
+import type { ThemePreference } from "../../lib/theme";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
 import { APP_NAME } from "../../config/app";
-import "./WorkspaceChrome.css";
-import "./WorkspacePastel.css";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();
-  const { currentView, setCurrentView, setIsCommandPaletteOpen } = useApp();
+  const { setCurrentView, setIsCommandPaletteOpen } = useApp();
   const { t, dir } = useI18n();
 
-  const [theme, setTheme] = useState<ThemePreference>(() => getSavedTheme());
+  const [theme, setTheme] = useTheme();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(() =>
     typeof navigator === "undefined" ? true : navigator.onLine,
@@ -31,18 +31,9 @@ export const Header: React.FC = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
-  const pageTitle = currentView === "dashboard" ? t("nav.overview")
-    : currentView === "sales" ? t("nav.entries")
-    : currentView === "chat" ? t("nav.ledger")
-    : currentView === "ai" ? "LedgerMate AI"
-    : currentView === "reports" ? t("nav.reports")
-    : currentView === "accounts" ? t("nav.accounts")
-    : t("nav.settings");
-
   const toggleTheme = () => {
     const nextTheme: ThemePreference = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
-    applyTheme(nextTheme);
   };
 
   useEffect(() => {
@@ -79,7 +70,8 @@ export const Header: React.FC = () => {
     <header className="app-header workspace-header" dir={dir}>
       <div className="workspace-context">
         <div className="workspace-context__copy">
-          <span className="workspace-context__title">{pageTitle}</span>
+          <button type="button" className="clarity-brand" onClick={() => setCurrentView("dashboard")} aria-label={`${APP_NAME} overview`}><PanelsTopLeft size={26} aria-hidden="true" /><strong>{APP_NAME}<span>.</span></strong></button>
+          <span className="clarity-business">{organization.name}</span>
         </div>
       </div>
 
@@ -110,7 +102,7 @@ export const Header: React.FC = () => {
           type="button"
           className="header-icon-button"
           onClick={toggleTheme}
-          aria-label={t("landing.switchTheme")}
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           title={t("landing.switchTheme")}
         >
           {theme === "dark"

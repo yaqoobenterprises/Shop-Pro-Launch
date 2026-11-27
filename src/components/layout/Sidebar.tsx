@@ -5,7 +5,6 @@ import { useI18n } from "../../i18n";
 import { APP_NAME } from "../../config/app";
 import { getProfileDisplayName } from "../../lib/profileDisplay";
 import { UserAvatar } from "../common/UserAvatar";
-import "./Sidebar.css";
 import {
   BarChart3,
   LayoutDashboard,

@@ -4,6 +4,10 @@ import App from './App.tsx';
 import './index.css';
 import './motion.css';
 import './typography.css';
+import './design-system/tokens.css';
+import './design-system/foundation.css';
+import './design-system/workspace.css';
+import './design-system/charts.css';
 import { applyTheme, getSavedTheme } from './lib/theme';
 
 // Handle OAuth popup window callback: notify parent window and auto-close

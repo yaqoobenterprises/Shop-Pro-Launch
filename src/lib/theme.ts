@@ -12,4 +12,6 @@ export function getSavedTheme(): AppTheme {
 export function applyTheme(theme: AppTheme): void {
   document.documentElement.classList.toggle("dark", theme === "dark");
   document.documentElement.setAttribute("data-theme", theme);
+  try { localStorage.setItem("yaqoob-theme", theme); } catch { /* Session appearance still works. */ }
+  window.dispatchEvent(new CustomEvent("shop-pro:theme-change", { detail: theme }));
 }

@@ -44,7 +44,7 @@ import {
 import { PaperRegisterImportModal } from "./PaperRegisterImportModal";
 import { useAuth } from "../../context/AuthContext";
 import { useApp } from "../../context/AppContext";
-import { applyTheme } from "../../lib/theme";
+import { useTheme } from "../../design-system/useTheme";
 import { DEMO_ORGANIZATION_ID } from "../../services/demoModeService";
 import { SEED_CATEGORIES } from "../../parser/matcher";
 import { RegionSettingsSection } from "./RegionSettingsSection";
@@ -76,9 +76,7 @@ export const LedgerSettingsView: React.FC = () => {
   const [isExportingLocalData, setIsExportingLocalData] = useState(false);
   const [isRestoringLocalData, setIsRestoringLocalData] = useState(false);
   const localRecoveryInputRef = useRef<HTMLInputElement>(null);
-  const [appearance, setAppearance] = useState<"light" | "dark">(
-    document.documentElement.classList.contains("dark") ? "dark" : "light",
-  );
+  const [appearance, setAppearance] = useTheme();
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryKind, setNewCategoryKind] =
@@ -351,7 +349,6 @@ export const LedgerSettingsView: React.FC = () => {
   };
 
   const handleToggleAppearance = (theme: "light" | "dark") => {
-    applyTheme(theme);
     setAppearance(theme);
     try {
       localStorage.setItem("yaqoob-theme", theme);

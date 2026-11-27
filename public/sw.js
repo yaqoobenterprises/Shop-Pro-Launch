@@ -6,6 +6,9 @@ const SHELL_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/assets/logo.svg',
+  '/fonts/manrope-400.woff',
+  '/fonts/manrope-600.woff',
+  '/fonts/manrope-700.woff',
   '/assets/icon-192.png',
   '/assets/icon-512.png'
 ];

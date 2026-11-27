@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  ArrowRight,
   BarChart3,
   BookOpenText,
   Check,
@@ -9,10 +8,10 @@ import {
   ShieldCheck,
   Sun,
 } from "lucide-react";
-import { getSavedTheme, applyTheme, type ThemePreference } from "../../lib/theme";
+import { useTheme } from "../../design-system/useTheme";
+import type { ThemePreference } from "../../lib/theme";
 import { useI18n } from "../../i18n";
 import { LandingPreview } from "./LandingPreview";
-import "./LandingPremium.css";
 
 export interface LandingPageProps {
   onOpenAuth: (initialMode?: "signIn" | "signUp") => void;
@@ -45,14 +44,13 @@ const STEPS = [
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo }) => {
   const { t } = useI18n();
-  const [theme, setTheme] = useState<ThemePreference>(() => getSavedTheme());
+  const [theme, setTheme] = useTheme();
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
 
   const toggleTheme = () => {
     const next: ThemePreference = theme === "dark" ? "light" : "dark";
     setTheme(next);
-    applyTheme(next);
   };
 
   const openDemo = async () => {
@@ -98,7 +96,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
               {t("landing.signIn")}
             </button>
             <button type="button" className="aq-landing__button aq-landing__button--primary aq-landing__nav-cta" onClick={() => onOpenAuth("signUp")}>
-              Get started <ArrowRight size={16} aria-hidden="true" />
+              Get started
             </button>
           </div>
         </div>
@@ -111,11 +109,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
               <p className="aq-landing__eyebrow"><span aria-hidden="true" /> THE BUSINESS WORKSPACE</p>
               <h1 id="landing-title">Your business.<span>In clear view.</span></h1>
               <p className="aq-landing__intro">
-                Record activity, understand balances and stay in control — in one focused workspace.
+                Your cashbook, accounts and reports. One clear view.
               </p>
               <div className="aq-landing__hero-actions">
                 <button type="button" className="aq-landing__button aq-landing__button--primary" onClick={() => onOpenAuth("signUp")}>
-                  Create your account <ArrowRight size={18} aria-hidden="true" />
+                  Create your account
                 </button>
                 <button type="button" className="aq-landing__button aq-landing__button--secondary" onClick={() => void openDemo()} disabled={isDemoLoading}>
                   {isDemoLoading ? "Opening demo…" : "Explore demo"}
@@ -135,7 +133,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
             <div className="aq-landing__section-head">
               <div>
                 <p className="aq-landing__overline">A BETTER DAILY ROUTINE</p>
-                <h2 id="platform-title">The essentials, beautifully organized.</h2>
+                <h2 id="platform-title">Everything for your working day.</h2>
               </div>
               <p>Built to stay simple as your business grows.</p>
             </div>
@@ -157,7 +155,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
             <div className="aq-landing__section-head">
               <div>
                 <p className="aq-landing__overline">GETTING STARTED</p>
-                <h2 id="steps-title">Three steps. One clear view.</h2>
+                <h2 id="steps-title">Start with a clear view.</h2>
               </div>
             </div>
             <div className="aq-landing__steps-grid">
@@ -178,7 +176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
               <p>Bring your business activity into one place.</p>
             </div>
             <button type="button" className="aq-landing__button aq-landing__button--primary" onClick={() => onOpenAuth("signUp")}>
-              Get started <ArrowRight size={17} aria-hidden="true" />
+              Get started
             </button>
           </div>
         </section>
