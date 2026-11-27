@@ -8,7 +8,7 @@ import React, {
 import { useAuth } from "./AuthContext";
 import { EntryMode, getUserPreferences } from "../services/userPreferencesService";
 import { isFeatureEnabled } from "../config/features";
-import { readWorkspaceView, workspacePath, type WorkspaceView } from "../lib/workspaceNavigation";
+import { canNavigateWorkspace, readWorkspaceView, workspacePath, type WorkspaceView } from "../lib/workspaceNavigation";
 
 export type AppView = WorkspaceView;
 
@@ -54,8 +54,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   const setCurrentView = useCallback((view: AppView) => {
     setView(view);
     // Never overwrite OAuth callbacks, recovery tokens or unrelated routes.
-    const { pathname, search, hash } = window.location;
-    if (!search && !hash && (pathname === "/" || readWorkspaceView(pathname))) {
+    const { pathname } = window.location;
+    if (canNavigateWorkspace(window.location)) {
       const target = workspacePath(view);
       if (pathname !== target) {
         try { window.history.pushState(null, "", target); } catch { /* Navigation still works in restricted browser contexts. */ }
