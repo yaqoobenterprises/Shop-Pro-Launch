@@ -94,6 +94,7 @@ export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editi
                   type="text"
                   aria-label={`Account name for ${acc.name}`}
                   disabled={busy}
+                  onKeyDown={e => { if (e.key === "Escape") setEditingAccountId(""); if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); void handleSaveName(acc.id); } }}
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   style={{
@@ -111,10 +112,10 @@ export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editi
               )}
 
               <span className="account-kind">{acc.type === "CASH" ? "Cash" : acc.type === "BANK" ? "Bank" : acc.type === "DIGITAL_WALLET" ? "Digital wallet" : "Other"}{acc.is_default ? " · Primary" : ""}{!acc.is_active ? " · Inactive" : ""}</span>
-              <strong className="metric-amount">
+              <strong className={`metric-amount${acc.balance_paisa < 0 ? " account-negative" : ""}`}>
                 <AnimatedAmount amountPaisa={acc.balance_paisa} loading={isLoading} error={loadFailed} />
               </strong>
-              {onExplore && <button type="button" className="account-history-link" onClick={() => onExplore(acc.id)}>View transactions</button>}
+              {onExplore && <button type="button" className="account-history-link" onClick={() => onExplore(acc.id)} aria-label={`View transactions for ${acc.name}`}>View transactions</button>}
             </div>
           );
         })}
