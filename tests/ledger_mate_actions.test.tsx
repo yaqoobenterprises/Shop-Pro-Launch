@@ -91,6 +91,17 @@ describe("LedgerMate transaction confirmation gate", () => {
     mockLedger.postTransactionDraft.mockResolvedValue({ transaction: { id: "transaction-1" } as never, isQueuedOffline: false });
   });
 
+  it("starts in read-only mode and refuses a write request without explicit opt-in", async () => {
+    mountPanel();
+    const input=await screen.findByRole("textbox",{name:"Message LedgerMate AI"});
+    await waitFor(()=>expect(input).not.toBeDisabled());
+    fireEvent.change(input,{target:{value:"add sale Rs 1,250.00 stamp paper cash today"}});
+    fireEvent.keyDown(input,{key:"Enter",shiftKey:false});
+    expect(await screen.findByText(/LedgerMate is in read-only mode/)).toBeTruthy();
+    expect(mockLedger.createTransactionDraft).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
   it("does not write any ledger record when the user cancels a preview", async () => {
     mountPanel();
     await openCreatePreview();
