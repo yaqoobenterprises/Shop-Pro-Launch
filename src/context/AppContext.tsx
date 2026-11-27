@@ -4,11 +4,14 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { useAuth } from "./AuthContext";
 import { EntryMode, getUserPreferences } from "../services/userPreferencesService";
 import { isFeatureEnabled } from "../config/features";
 import { canNavigateWorkspace, readWorkspaceView, workspacePath, type WorkspaceView } from "../lib/workspaceNavigation";
+
+import { emptyTransactionView, type TransactionViewState } from "../lib/transactionViewState";
 
 export type AppView = WorkspaceView;
 
@@ -41,6 +44,8 @@ interface AppContextType {
   setIsShortcutsHelpOpen: (open: boolean) => void;
   newEntryRequestId: number;
   startNewEntry: () => void;
+  readTransactionView: () => TransactionViewState;
+  saveTransactionView: (state: TransactionViewState) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -48,7 +53,16 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { user } = useAuth();
+  const { user, organization } = useAuth();
+  const scope = user?.id ? `${organization?.id ?? ""}:${user.id}` : "";
+  const transactionView = useRef<{ scope: string; state: TransactionViewState }>({ scope, state: emptyTransactionView() });
+  useEffect(() => {
+    if (transactionView.current.scope !== scope) transactionView.current = { scope, state: emptyTransactionView() };
+  }, [scope]);
+  const readTransactionView = useCallback(() => transactionView.current.scope === scope && scope ? transactionView.current.state : emptyTransactionView(), [scope]);
+  const saveTransactionView = useCallback((state: TransactionViewState) => {
+    if (scope) transactionView.current = { scope, state };
+  }, [scope]);
   const entryModesEnabled = isFeatureEnabled("entryModes");
   const [currentView, setView] = useState<AppView>(() => readWorkspaceView(window.location.pathname) ?? "dashboard");
   const setCurrentView = useCallback((view: AppView) => {
@@ -202,6 +216,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({
         setIsShortcutsHelpOpen,
         newEntryRequestId,
         startNewEntry,
+        readTransactionView,
+        saveTransactionView,
       }}
     >
       {children}
