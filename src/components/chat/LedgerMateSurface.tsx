@@ -69,20 +69,20 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
         
       </div>
       <div className="lm-header-actions">
-        <button type="button" className="lm-action-button" onClick={onCreateThread} disabled={sending || actionBusy || Boolean(pendingAction?.submitted)}>
+        <button type="button" className="lm-action-button" aria-label="New chat" onClick={onCreateThread} disabled={sending || actionBusy || Boolean(pendingAction?.submitted)}>
           <MessageSquarePlus aria-hidden="true" /><span>New chat</span>
         </button>
         <div className="lm-history-anchor">
-          <button type="button" id="lm-history-trigger" className={`lm-action-button ${historyOpen ? "is-selected" : ""}`} disabled={sending || actionBusy || Boolean(pendingAction?.submitted)} onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen}>
+          <button type="button" id="lm-history-trigger" aria-label="History" aria-controls={historyOpen ? "lm-chat-history" : undefined} className={`lm-action-button ${historyOpen ? "is-selected" : ""}`} disabled={sending || actionBusy || Boolean(pendingAction?.submitted)} onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen}>
             <History aria-hidden="true" /><span>History</span><ChevronDown className="lm-chevron" aria-hidden="true" />
           </button>
           {historyOpen && <>
-            <button type="button" className="lm-popover-scrim" aria-label="Close chat history" onClick={() => setHistoryOpen(false)} />
-            <div className="lm-history-popover" role="region" aria-label="Chat history" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); setHistoryOpen(false); document.getElementById("lm-history-trigger")?.focus(); } }}>
-              <div className="lm-popover-heading"><span>Recent conversations</span><button type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X aria-hidden="true" /></button></div>
+            <button type="button" className="lm-popover-scrim" aria-label="Close chat history" onClick={() => { setHistoryOpen(false); document.getElementById("lm-history-trigger")?.focus(); }} />
+            <div id="lm-chat-history" className="lm-history-popover" role="region" aria-label="Chat history" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); setHistoryOpen(false); document.getElementById("lm-history-trigger")?.focus(); } }}>
+              <div className="lm-popover-heading"><span>Recent conversations</span><button type="button" onClick={() => { setHistoryOpen(false); document.getElementById("lm-history-trigger")?.focus(); }} aria-label="Close history"><X aria-hidden="true" /></button></div>
               <div className="lm-history-list">
                 {threads.length === 0 && <p className="lm-history-empty">No conversations</p>}
-                {threads.map((thread) => <button key={thread.id} type="button" aria-current={thread.id === activeThread?.id ? "true" : undefined} className={`lm-history-item ${thread.id === activeThread?.id ? "is-active" : ""}`} onClick={() => onChooseThread(thread)}>
+                {threads.map((thread) => <button key={thread.id} type="button" aria-current={thread.id === activeThread?.id ? "true" : undefined} className={`lm-history-item ${thread.id === activeThread?.id ? "is-active" : ""}`} onClick={() => { onChooseThread(thread); document.getElementById("lm-history-trigger")?.focus(); }}>
                   <span className="lm-history-icon"><Bot aria-hidden="true" /></span>
                   <span className="lm-history-copy"><strong>{thread.title}</strong><small>{thread.localOnly ? "Saved on this device" : Number.isNaN(Date.parse(thread.updated_at)) ? "Date unavailable" : new Intl.DateTimeFormat("en-PK", { dateStyle: "medium" }).format(new Date(thread.updated_at))}</small></span>
                 </button>)}
@@ -102,7 +102,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
     </div>
 
     <div className="lm-access-note"><span>Financial answers use retrieved ledger data. AI explanations may be inaccurate.</span>{canPrepareActions && <button type="button" aria-pressed={actionsEnabled} disabled={sending || actionBusy || Boolean(pendingAction)} onClick={onToggleActions}>{actionsEnabled ? "Turn off ledger actions" : "Enable reviewed ledger actions"}</button>}</div>
-    <div className="lm-messages" role="log" aria-live={sending ? "off" : "polite"} aria-relevant="additions">
+    <div className="lm-messages" role="log" aria-label="Conversation messages" aria-live={sending ? "off" : "polite"} aria-relevant="additions">
       {messages.length === 0 && <div className="lm-empty-state">
         <div className="lm-empty-icon"><MessageCircle aria-hidden="true" /></div>
         <h2>What would you like to understand?</h2>
@@ -117,7 +117,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
           </div>
           <div className="lm-message-footer">
             <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
-            {message.role === "assistant" && message.content && <div className="lm-message-tools">
+            {message.role === "assistant" && message.content && !message.transient && <div className="lm-message-tools">
               <button type="button" onClick={() => onCopy(message.content)} aria-label="Copy response" title="Copy response"><Copy aria-hidden="true" /></button>
               <button type="button" onClick={() => onRegenerate(index)} disabled={sending || !online || Boolean(pendingAction)} aria-label="Regenerate response" title="Regenerate response"><RefreshCw aria-hidden="true" /></button>
             </div>}
