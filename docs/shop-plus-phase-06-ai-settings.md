@@ -18,3 +18,7 @@
 - Previous phase: 395 passing tests across 63 files and both browser themes passed at eight widths (CI 45957650331, browser 45957650324).
 - Added regression coverage for greeting/unrelated context, record-ID and note redaction, exact direct answer and large integer formatting, cancelled/incomplete streaming, read-only default and opt-in confirmation. Browser audit adds isolated demo assistant history, theme toggling, category/recovery guard and Settings navigation. No real financial operations or AI provider calls in browser audit.
 - Current Phase 06 full CI and browser results pending. No new dependency, database migration, production deployment, historical data modification or actual backup restore. Keep draft until verified.
+
+## Phase 06 verification follow-up
+
+[CI 45958538748](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45958538748) passed 404 tests in 63 files, both type checks, lint, dependency audit, size guards and production build. [Browser run 45958496132](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45958496132) failed the phone History interaction in both themes: CSS hid the only accessible label on icon controls. Phase 07 adds explicit accessible names, viewport-contained history positioning and focus restoration; fresh verification is required. Do not mark the original browser run passing.
