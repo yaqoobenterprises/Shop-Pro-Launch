@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { LedgerReportsView } from "../src/components/reports/LedgerReportsView";
 import { ledgerService } from "../src/services/ledgerService";
 import { getKarachiBusinessDate } from "../src/lib/dates";
+import { assertReportAmounts } from "../src/lib/reportAnalytics";
 import type { Transaction } from "../src/types/ledger";
 
 afterEach(() => vi.restoreAllMocks());
@@ -47,5 +48,15 @@ describe("AQVORA report register usability", () => {
     fireEvent.click(screen.getByRole("button",{name:"Retry"}));
     await waitFor(() => expect(screen.getByRole("button",{name:"Export to Excel"})).toBeEnabled());
     expect(screen.getByText("No matching transactions to display.")).toBeTruthy();
+  });
+  it("rejects unsafe and fractional ledger minor units rather than rendering zero or rounded totals", async () => {
+    const records=[{amount_paisa:Number.MAX_SAFE_INTEGER},{amount_paisa:1}] as Transaction[];
+    expect(()=>assertReportAmounts(records)).toThrow(/safe monetary precision/);
+    expect(()=>assertReportAmounts([{amount_paisa:1.5}] as Transaction[])).toThrow(/invalid monetary amount/);
+    vi.spyOn(ledgerService,"getCategories").mockResolvedValue([]);
+    vi.spyOn(ledgerService,"getAllFilteredTransactions").mockResolvedValue(records);
+    render(<LedgerReportsView cloudOnly/>);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Report exceeds safe monetary precision");
+    expect(screen.getByRole("button",{name:"Export to Excel"})).toBeDisabled();
   });
 });
