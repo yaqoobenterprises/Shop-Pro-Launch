@@ -96,6 +96,9 @@ export async function buildLedgerMateContext(
   currentDate: string,
   currency = "PKR",
 ): Promise<string> {
+  // A greeting or non-financial message must never retrieve financial context.
+  const financial = /\b(income|expense|expenses|sale|sales|profit|result|balance|cash|bank|wallet|transaction|transactions|entry|entries|record|records|earning|kamai|kharcha|kharch|category|service|total|compare|comparison|farq|stamp|print|printing|capital|withdrawal|adjustment|amount|kitn[aiye]|details?|report|business)\b/i.test(question);
+  if (!financial) return "No financial data requested. Respond naturally to the current message; do not repeat earlier financial figures unless explicitly requested.";
   const resolution = resolveLedgerMatePeriods(question, previousMessages, currentDate);
   const asksTransactions = /\b(transaction|transactions|entry|entries|details|records|record|payment|sale|sales|income|expense|earning|kamai|kharcha|stamp|print|photocopy|service|category|business|kis service|sab se zyada)\b/i.test(question);
   const asksBalances = /\b(balance|cash|bank|wallet|cashbook|ra[ss]?id|account)\b/i.test(question);
@@ -151,7 +154,7 @@ export async function buildLedgerMateContext(
       lines.push(summarizePeriod(period, transactions));
       if (asksTopService || (serviceTerms.length > 0 && /income|earning|kamai/i.test(question))) {
         const grouped = groupIncomeByCategory(transactions);
-        lines.push(`Income by Shop Plus transaction category for ${period.label}: ${grouped.slice(0, 20).map((item) => `${item.name} ${item.amount} paisa (${item.count} entries)`).join("; ") || "no income entries"}.`);
+        lines.push(`Income by Shop Plus transaction category for ${period.label}: ${grouped.slice(0, 20).map((item) => `${item.name.replace(/[\r\n]/g, " ").slice(0,120)} ${item.amount} paisa (${item.count} entries)`).join("; ") || "no income entries"}.`);
       }
       if (serviceTerms.length) {
         const matches = transactions.filter((transaction) => matchesService(transaction, serviceTerms));
