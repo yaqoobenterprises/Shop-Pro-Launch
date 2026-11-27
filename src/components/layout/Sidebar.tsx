@@ -3,13 +3,10 @@ import { useApp, AppView } from "../../context/AppContext";
 import { useAuth } from "../../context/AuthContext";
 import { useI18n } from "../../i18n";
 import { APP_NAME } from "../../config/app";
-import { getProfileDisplayName } from "../../lib/profileDisplay";
-import { UserAvatar } from "../common/UserAvatar";
 import "./Sidebar.css";
 import {
   BarChart3,
   LayoutDashboard,
-  Lock,
   MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
@@ -24,7 +21,7 @@ const SIDEBAR_WIDTH_KEY = "shop-pro.sidebar-width";
 const SIDEBAR_COLLAPSED_KEY = "shop-pro.sidebar-collapsed";
 const MIN_SIDEBAR_WIDTH = 208;
 const MAX_SIDEBAR_WIDTH = 360;
-const DEFAULT_SIDEBAR_WIDTH = 244;
+const DEFAULT_SIDEBAR_WIDTH = 224;
 const COLLAPSED_SIDEBAR_WIDTH = 64;
 const COLLAPSE_SIDEBAR_AT = 176;
 const EXPAND_SIDEBAR_AT = 220;
@@ -54,8 +51,8 @@ const readSidebarCollapsed = () => {
 };
 
 export const Sidebar: React.FC = () => {
-  const { currentView, setCurrentView } = useApp();
-  const { lock, hasPinSetup, isDemoMode, organization, user } = useAuth();
+  const { currentView, setCurrentView, startNewEntry } = useApp();
+  const { organization, isDemoMode } = useAuth();
   const { t } = useI18n();
   const [sidebarWidth, setSidebarWidth] = React.useState(readSidebarWidth);
   const [isCollapsed, setIsCollapsed] = React.useState(readSidebarCollapsed);
@@ -70,14 +67,13 @@ export const Sidebar: React.FC = () => {
 
   const navItems: { id: AppView; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: "dashboard", label: t("nav.overview"), icon: LayoutDashboard },
-    { id: "sales", label: t("nav.entries"), icon: Receipt },
-    { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
     { id: "chat", label: t("nav.ledger"), icon: MessageSquare },
-    { id: "reports", label: t("nav.reports"), icon: BarChart3 },
+    { id: "sales", label: t("nav.entries"), icon: Receipt },
     { id: "accounts", label: t("nav.accounts"), icon: Wallet },
+    { id: "reports", label: t("nav.reports"), icon: BarChart3 },
+    { id: "ai", label: "LedgerMate AI", icon: MessageCircle },
   ];
 
-  const displayName = getProfileDisplayName(user, organization.owner_name);
   const toggleLabel = isCollapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar");
 
   const saveSidebarWidth = (width: number) => {
@@ -177,6 +173,7 @@ export const Sidebar: React.FC = () => {
           </div>
           <div className="brand-copy min-w-0" data-sidebar-label>
             <strong className="truncate">{APP_NAME}</strong>
+            <span className="truncate">{isDemoMode ? "Demo workspace" : organization.name || "Workspace"}</span>
           </div>
         </div>
         <button
@@ -194,16 +191,17 @@ export const Sidebar: React.FC = () => {
       </div>
 
       <nav id="primary-navigation" aria-label="Main navigation">
-        <button type="button" aria-label="New entry" title="New entry" onClick={() => setCurrentView("chat")} className="sidebar-new-entry">
+        <button type="button" aria-label="New entry" title="New entry" onClick={startNewEntry} className="sidebar-new-entry">
           <Plus className="h-4 w-4" aria-hidden="true" />
           <span data-sidebar-label>New entry</span>
         </button>
-        {navItems.map((item) => {
+        {navItems.map((item, index) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           return (
+            <React.Fragment key={item.id}>
+            {(index === 0 || index === 4) && <span className="sidebar-section-label" data-sidebar-label>{index === 0 ? "Workspace" : "Insights"}</span>}
             <button
-              key={item.id}
               type="button"
               className={isActive ? "active" : ""}
               aria-current={isActive ? "page" : undefined}
@@ -214,6 +212,7 @@ export const Sidebar: React.FC = () => {
               <Icon className="h-4 w-4" aria-hidden="true" />
               <span data-sidebar-label>{item.label}</span>
             </button>
+            </React.Fragment>
           );
         })}
       </nav>
@@ -231,36 +230,6 @@ export const Sidebar: React.FC = () => {
           <span data-sidebar-label>{t("nav.settings")}</span>
         </button>
 
-        {hasPinSetup && !isDemoMode && (
-          <button
-            type="button"
-            onClick={lock}
-            aria-label={t("nav.lockRegister")}
-            title={isCollapsed ? t("nav.lockRegister") : undefined}
-          >
-            <Lock className="h-4 w-4" aria-hidden="true" />
-            <span data-sidebar-label>{t("nav.lockRegister")}</span>
-          </button>
-        )}
-
-        <button
-          type="button"
-          className={`user-card${isDemoMode ? " user-card--demo" : ""}`}
-          onClick={() => setCurrentView("settings")}
-          aria-label={`${t("nav.profileSettings")}: ${displayName}`}
-          title={isCollapsed ? t("nav.profileSettings") : undefined}
-        >
-          <UserAvatar
-            src={user?.avatar_url}
-            name={displayName}
-            size="md"
-            showBorder
-          />
-          <span className="user-card-copy" data-sidebar-label>
-            <strong>{displayName}</strong>
-            <span>{isDemoMode ? "DEMO WORKSPACE" : user?.email || "SHOP ACCOUNT"}</span>
-          </span>
-        </button>
       </div>
 
       {(!isCollapsed || isResizing) && (
