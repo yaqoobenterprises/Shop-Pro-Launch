@@ -205,7 +205,8 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
     } finally { endMutation(); }
   };
 
-  const totalBalancePaisa = activeAccounts.every(account => Number.isSafeInteger(account.balance_paisa)) ? activeAccounts.reduce((sum, account) => sum + account.balance_paisa, 0) : NaN;
+  const exactBalance = activeAccounts.every(account => Number.isSafeInteger(account.balance_paisa)) ? activeAccounts.reduce((sum, account) => sum + BigInt(account.balance_paisa), 0n) : null;
+  const totalBalancePaisa = exactBalance !== null && exactBalance <= BigInt(Number.MAX_SAFE_INTEGER) && exactBalance >= BigInt(Number.MIN_SAFE_INTEGER) ? Number(exactBalance) : NaN;
 
   return (
     <div className="page-content accounts-page">
@@ -241,7 +242,6 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
       )}
 
       <p className="account-scope-note">Available recorded balances may include local account changes; these are not verified bank statements. Transfers are internal movements, not income or expenses.</p>
-      <button type="button" className="button button-secondary account-refresh" onClick={() => void loadAccounts()} disabled={isLoading || busy}>Refresh balances</button>
       <div className="accounts-quick-actions" role="group" aria-label="Account management">
         <button type="button" disabled={!canManage || busy} aria-expanded={activeTool === "add"} aria-controls={activeTool === "add" ? "aq-account-create" : undefined}
           onClick={() => setActiveTool((current) => current === "add" ? null : "add")}>
@@ -251,6 +251,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
           onClick={() => setActiveTool((current) => current === "transfer" ? null : "transfer")}>
           <ArrowLeftRight className="h-4 w-4" aria-hidden="true"/> Move money
         </button>
+        <button type="button" onClick={() => void loadAccounts()} disabled={isLoading || busy}>Refresh balances</button>
       </div>
       {activeTool && <div className="account-tools accounts-tools--focused">
         {activeTool === "add" && <section id="aq-account-create" className="panel account-tool-panel">
