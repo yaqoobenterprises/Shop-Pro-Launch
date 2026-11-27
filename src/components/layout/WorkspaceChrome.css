@@ -530,7 +530,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   background: var(--surface-card);
-  box-shadow: 0 1px 2px rgba(23, 38, 56, 0.035), 0 8px 24px rgba(23, 38, 56, 0.035);
+  box-shadow: none;
 }
 
 .app-shell .entries-page .filter-panel .search-field {
@@ -590,7 +590,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
   background: var(--surface-card);
-  box-shadow: 0 1px 2px rgba(23, 38, 56, 0.035), 0 8px 24px rgba(23, 38, 56, 0.035);
+  box-shadow: none;
 }
 
 .app-shell .entries-page .transaction-table .table-head {
@@ -741,28 +741,27 @@
 
 .app-shell .accounts-page .account-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 14.5rem), 1fr));
-  gap: 0.9rem;
-  margin-bottom: 1.15rem;
+  gap: var(--workspace-gap);
+  margin-bottom: var(--workspace-gap);
 }
 
 .app-shell .accounts-page .account-card {
   min-width: 0;
-  padding: 1.1rem;
+  padding: var(--card-padding);
   border: 1px solid var(--line);
-  border-radius: var(--radius-panel);
+  border-radius: var(--card-radius);
   background: var(--surface-card);
-  box-shadow: 0 1px 2px rgba(23, 38, 56, 0.035), 0 8px 24px rgba(23, 38, 56, 0.035);
+  box-shadow: none;
   transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .app-shell .accounts-page .account-card:hover {
   border-color: var(--accent-line);
-  box-shadow: 0 8px 24px rgba(23, 38, 56, 0.07);
-  transform: translateY(-2px);
+  box-shadow: none;
 }
 
 .app-shell .accounts-page .account-top {
-  margin-bottom: 1rem;
+  margin-bottom: .75rem;
 }
 
 .app-shell .accounts-page .account-brand {
@@ -804,9 +803,11 @@
   display: block;
   margin: 0;
   color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 1.2rem;
-  font-weight: 800;
+  font-family: var(--font-sans);
+  font-size: clamp(18px, 1.8vw, 24px);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
@@ -847,7 +848,7 @@
 .app-shell .accounts-page .account-tool-panel {
   border: 1px solid var(--line);
   border-radius: var(--radius-panel);
-  box-shadow: 0 1px 2px rgba(23, 38, 56, 0.035), 0 8px 24px rgba(23, 38, 56, 0.035);
+  box-shadow: none;
 }
 
 .app-shell .accounts-page .account-tool-heading h2 {
@@ -958,7 +959,7 @@
   border-color: var(--line);
   border-radius: var(--radius-panel);
   background: var(--surface-card);
-  box-shadow: 0 1px 2px rgba(23, 38, 56, 0.03), 0 7px 20px rgba(23, 38, 56, 0.03);
+  box-shadow: none;
 }
 
 .app-shell .settings-page .settings-nav-label {
@@ -996,7 +997,7 @@
   border-color: var(--line);
   border-radius: var(--radius-panel);
   background: var(--surface-card);
-  box-shadow: 0 1px 2px rgba(23, 38, 56, 0.03), 0 8px 24px rgba(23, 38, 56, 0.035);
+  box-shadow: none;
 }
 
 @media (max-width: 760px) {

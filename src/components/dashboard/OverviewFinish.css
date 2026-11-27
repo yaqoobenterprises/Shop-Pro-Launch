@@ -23,17 +23,17 @@ html .app-shell .overview-page .overview-page-heading p {
   margin-top: .26rem;
 }
 html .app-shell .overview-page .metrics {
-  gap: clamp(.85rem, 1.04vw, 1.15rem);
-  margin-bottom: clamp(1.25rem, 1.8vw, 1.65rem);
+  gap: var(--workspace-gap);
+  margin-bottom: var(--workspace-gap);
 }
 html .app-shell .overview-page .aq-metric {
   min-height: clamp(9rem, 10.8vw, 9.85rem);
-  padding: clamp(1.05rem, 1.45vw, 1.45rem);
+  padding: var(--card-padding);
   border: 1px solid var(--line);
   border-radius: .78rem;
   box-shadow: none;
 }
-html .app-shell .overview-page .aq-metric:first-child { border-color: transparent; }
+html .app-shell .overview-page .aq-metric:first-child { border-color: var(--line); }
 html .app-shell .overview-page .aq-metric .metric-top {
   gap: .6rem;
   align-items: center;
@@ -54,23 +54,25 @@ html .app-shell .overview-page .aq-metric--negative .metric-amount {
   font-size: clamp(1.42rem, 2.18vw, 2rem);
   font-weight: 700;
   letter-spacing: -.045em;
-  margin-top: .85rem;
+  margin-top: .5rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 html .app-shell .overview-page .aq-metric .aq-metric__scope {
   color: inherit;
   opacity: 1;
   font-size: .75rem;
   line-height: 1.5;
-  margin-top: .7rem;
+  margin-top: .35rem;
 }
 html .app-shell .overview-page .aq-overview__visuals {
   grid-template-columns: minmax(0, 1.95fr) minmax(255px, .95fr);
-  gap: clamp(.9rem, 1.15vw, 1.2rem);
-  margin-bottom: clamp(1.3rem, 1.8vw, 1.7rem);
+  gap: var(--workspace-gap);
+  margin-bottom: var(--workspace-gap);
 }
 html .app-shell .overview-page .aq-overview__details {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr);
-  gap: clamp(.9rem, 1.15vw, 1.2rem);
+  gap: var(--workspace-gap);
   align-items: stretch;
 }
 html .app-shell .overview-page .panel {

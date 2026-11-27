@@ -1,11 +1,15 @@
 /* Shared signed-in workspace palette. */
 .app-shell {
-  --soft: #f5f7f6;
-  --paper: #f5f7f6;
-  --surface: #f5f7f6;
+  --soft: #f0f2f1;
+  --paper: #f0f2f1;
+  --surface: #f0f2f1;
+  --workspace-gap: 16px;
+  --workspace-padding: clamp(16px, 2vw, 28px);
+  --card-padding: 20px;
+  --card-radius: 12px;
   --surface-card: #ffffff;
   --surface-bright: #ffffff;
-  --surface-2: #eaf0ed;
+  --surface-2: #f4f5f4;
   --surface-dim: #eaf0ed;
   --surface-container-low: #eaf0ed;
   --surface-container-lowest: #ffffff;
@@ -15,7 +19,7 @@
   --ink-2: #385348;
   --muted: #52665d;
   --faint: #65796f;
-  --line: #dce5df;
+  --line: #dce2df;
   --line-strong: #baccc1;
   --forest: #17654e;
   --forest-hover: #0f5744;
@@ -59,22 +63,22 @@
   color: var(--ink);
 }
 html.dark .app-shell {
-  --soft: #151e1a;
-  --paper: #151e1a;
-  --surface: #151e1a;
-  --surface-card: #202e27;
-  --surface-bright: #202e27;
-  --surface-2: #2a3931;
-  --surface-dim: #2a3931;
-  --surface-container-low: #2a3931;
-  --surface-container-lowest: #202e27;
-  --surface-variant: #303540;
-  --input-bg: #27372e;
+  --soft: #141817;
+  --paper: #141817;
+  --surface: #141817;
+  --surface-card: #212725;
+  --surface-bright: #212725;
+  --surface-2: #2b3230;
+  --surface-dim: #2b3230;
+  --surface-container-low: #2b3230;
+  --surface-container-lowest: #212725;
+  --surface-variant: #2b3230;
+  --input-bg: #252d29;
   --ink: #edf5ef;
   --ink-2: #d2e3d8;
   --muted: #b5c9bc;
   --faint: #a8bbae;
-  --line: #405348;
+  --line: #3a4540;
   --line-strong: #587263;
   --forest: #79dbc0;
   --forest-hover: #96e7d0;
@@ -243,20 +247,23 @@ html .app-shell .header-icon-button:hover {
 html .app-shell .connection-pill { background: var(--surface-2); border-color: var(--line); color: var(--ink-2); }
 html .app-shell .connection-pill--online { background: var(--good-bg); color: var(--forest); border-color: var(--good-line); }
 html .app-shell .connection-pill--offline { background: var(--warn-bg); color: var(--orange); }
-html .app-shell .page-content { color: var(--ink); }
+html .app-shell .page-content { color: var(--ink); padding: var(--workspace-padding); padding-bottom: var(--workspace-padding); }
+@media (max-width: 767px) {
+  .app-shell { --workspace-gap: 12px; --workspace-padding: 12px; --card-padding: 14px; }
+}
 html .app-shell .page-title {
   background: transparent;
   border: 0;
   min-height: 0;
   box-shadow: none;
-  padding: 0 0 1.2rem;
-  margin-bottom: .15rem;
+  padding: 0;
+  margin-bottom: var(--workspace-gap);
 }
 html .app-shell .panel,
 html .app-shell .report-cards > *,
 html .app-shell .account-grid > * {
   border-color: var(--line);
-  border-radius: .78rem;
+  border-radius: var(--card-radius);
   background: var(--surface-card);
   box-shadow: none;
 }

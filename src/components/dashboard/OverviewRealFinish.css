@@ -4,7 +4,8 @@ html .app-shell .overview-page .page-title {
   border: 0;
   box-shadow: none;
   border-radius: 0;
-  padding: 4px 0 19px;
+  padding: 0;
+  margin-bottom: var(--workspace-gap);
   align-items: center;
 }
 html .app-shell .overview-page .overview-page-heading h1 {
@@ -19,16 +20,16 @@ html .app-shell .overview-page .overview-page-heading p {
   font-size: 12px;
   color: var(--muted);
 }
-html .app-shell .overview-page .aq-metric { min-height: 128px; }
+html .app-shell .overview-page .aq-metric { min-height: 112px; padding: var(--card-padding); border-radius: var(--card-radius); }
 html .app-shell .overview-page .aq-overview__visuals {
   align-items: start;
-  gap: 16px;
+  gap: var(--workspace-gap);
 }
 html .app-shell .overview-page .panel {
   background: var(--surface-card);
   border: 1px solid var(--line);
-  padding: clamp(18px, 1.8vw, 26px);
-  border-radius: 15px;
+  padding: var(--card-padding);
+  border-radius: var(--card-radius);
   box-shadow: none;
 }
 html .app-shell .overview-page .aq-overview__visuals > .panel.cash-panel--empty,
@@ -98,7 +99,7 @@ html .app-shell .overview-page .aq-day-no-activity button:focus-visible {
   outline-offset: 3px;
 }
 html .app-shell .overview-page .aq-overview__distribution--empty > .aq-overview__empty {
-  margin: 25px 0 0;
+  margin: 12px 0 0;
   min-height: 0;
   padding: 8px 0 16px;
   border: 0;
@@ -180,11 +181,11 @@ html .app-shell .overview-page .aq-overview__details .health-panel { min-height:
 }
 @media (max-width: 700px) {
   html .app-shell .overview-page .page-title { align-items: start; }
-  html .app-shell .overview-page .aq-metric { min-height: 112px; }
-  html .app-shell .overview-page .aq-metric:first-child { grid-column: 1 / -1; }
-  html .app-shell .overview-page .aq-metric:last-child { grid-column: 1 / -1; }
-  html .app-shell .overview-page .aq-metric:first-child .metric-amount { font-size: clamp(1.75rem, 7vw, 2.25rem); }
-  html .app-shell .overview-page .aq-metric .metric-amount { overflow-wrap: anywhere; }
+  html .app-shell .overview-page .metrics { grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--workspace-gap); }
+  html .app-shell .overview-page .aq-metric { min-height: 104px; }
+  html .app-shell .overview-page .aq-metric .metric-amount { font-size: clamp(16px,4.5vw,22px); }
+  html .app-shell .overview-page .aq-overview__details { gap: var(--workspace-gap); }
+  html .app-shell .overview-page .aq-metric .metric-amount { white-space: normal; overflow-wrap: anywhere; }
   html .app-shell .overview-page .aq-day-no-activity button { width: 100%; }
   html .app-shell .overview-page .cash-panel--day:not(.cash-panel--empty) { min-height: 0; }
   html .app-shell .overview-page .aq-day-insights { gap: 8px; }

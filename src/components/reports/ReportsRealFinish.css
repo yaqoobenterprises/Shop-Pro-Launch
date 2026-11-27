@@ -1,6 +1,6 @@
 /* Actual Reports route: four calm KPI surfaces instead of bordered gradients. */
 .app-shell .reports-modern {
-  gap: 17px;
+  gap: var(--workspace-gap);
 }
 .app-shell .reports-modern__hero h1 {
   font-size: clamp(22px, 1.8vw, 29px);
@@ -13,12 +13,12 @@
 .app-shell .reports-modern__chart-panel,
 .app-shell .reports-modern__table-panel {
   background: var(--surface-card, #fff);
-  border: 0;
-  border-radius: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
   box-shadow: none;
 }
 .app-shell .reports-modern__filters {
-  padding: clamp(15px, 1.6vw, 20px);
+  padding: var(--card-padding);
 }
 .app-shell .reports-modern__filter-heading {
   margin-bottom: 11px;
@@ -30,22 +30,22 @@
   gap: 10px 13px;
 }
 .app-shell .reports-modern__kpis {
-  gap: clamp(10px, 1.15vw, 17px);
+  gap: var(--workspace-gap);
 }
 .app-shell .reports-modern__kpi {
-  min-height: 142px;
-  border: 0;
-  border-radius: 12px;
-  padding: 19px 21px;
+  min-height: 112px;
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
   background: var(--surface-card, #fff);
   box-shadow: none;
   color: var(--ink, #35383e);
 }
 .app-shell .reports-modern__kpi::before { display: none; }
-.app-shell .reports-modern__kpi:nth-child(1) { background: #17654e; color: #fff; }
+.app-shell .reports-modern__kpi:nth-child(1) { background: var(--surface-card); color: var(--ink); }
 .app-shell .reports-modern__kpi:nth-child(2) { background: var(--surface-card); color: var(--ink); }
 .app-shell .reports-modern__kpi:nth-child(3) { background: var(--surface-card); color: var(--ink); }
-.app-shell .reports-modern__kpi:nth-child(4) { background: #fff; color: var(--ink); }
+.app-shell .reports-modern__kpi:nth-child(4) { background: var(--surface-card); color: var(--ink); }
 .app-shell .reports-modern__kpi > span,
 .app-shell .reports-modern__kpi > strong,
 .app-shell .reports-modern__kpi > small {
@@ -59,6 +59,10 @@
 .app-shell .reports-modern__kpi > strong {
   font-size: clamp(21px, 2vw, 31px);
   font-weight: 710;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
 }
 .app-shell .reports-modern__kpi > small {
   font-size: 11px;
@@ -84,7 +88,7 @@
   box-shadow: none;
   transform: none;
 }
-html.dark .app-shell .reports-modern__kpi:nth-child(1) { background: #245441; color: #fff; }
+html.dark .app-shell .reports-modern__kpi:nth-child(1) { background: var(--surface-card); color: var(--ink); }
 html.dark .app-shell .reports-modern__kpi:nth-child(2) { background: var(--surface-card); color: var(--ink); }
 html.dark .app-shell .reports-modern__kpi:nth-child(3) { background: var(--surface-card); color: var(--ink); }
 html.dark .app-shell .reports-modern__kpi:nth-child(4) { background: var(--surface-card, #252834); color: var(--ink, #f1f1f5); }
@@ -92,12 +96,12 @@ html.dark .app-shell .reports-modern__kpi:nth-child(4) { background: var(--surfa
   .app-shell .reports-modern__kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
 }
 @media (max-width: 620px) {
-  .app-shell .reports-modern__kpi { min-height: 119px; padding: 14px; }
+  .app-shell .reports-modern__kpi { min-height: 104px; padding: var(--card-padding); }
   .app-shell .reports-modern__kpi > strong { font-size: clamp(16px, 4.5vw, 22px); }
   .app-shell .reports-modern__filter-note { display: none; }
 }
 @media (max-width: 355px) {
-  .app-shell .reports-modern__kpis { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .reports-modern__kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 
