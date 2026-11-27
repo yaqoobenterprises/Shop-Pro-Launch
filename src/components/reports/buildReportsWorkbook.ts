@@ -13,6 +13,7 @@ export interface ReportsWorkbookInput {
   categoryId: string;
   trend: ReportTrendBucket[];
   grouping: TrendGrouping;
+  sourceScope?: string;
 }
 
 const rupees = (paisa: number) => paisa / 100;
@@ -38,6 +39,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
     `Type: ${typeLabel(type)}`,
     `Category: ${categoryLabel}`,
     "Active transactions only",
+    input.sourceScope || "Available records; completeness not verified",
   ].join(" · ");
   const transactionRows = [...transactions]
     .sort((left, right) => right.business_date.localeCompare(left.business_date) || right.device_entry_time.localeCompare(left.device_entry_time))
@@ -47,7 +49,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
         formatKarachiTime(transaction.device_entry_time),
         transaction.type.replace("_", " "),
         transaction.category_name || "Uncategorised",
-        transaction.account_name || "Cash In Hand",
+        transaction.account_name || "Account unavailable",
         rupees(transaction.amount_paisa),
         transaction.raw_text || "",
         transaction.note || "",
@@ -57,17 +59,17 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
   const summaryRows = [
     { values: ["Income", rupees(totals.income_paisa), null, "Matched active entries"], kind: "data" as const },
     { values: ["Expenses", rupees(totals.expense_paisa), null, "Matched active entries"], kind: "data" as const },
-    { values: ["Net profit", rupees(totals.net_profit_paisa), null, "Income less operating expenses"], kind: "total" as const },
+    { values: ["Operating result", rupees(totals.net_profit_paisa), null, "Income less recorded expenses (cashbook basis)"], kind: "total" as const },
     { values: ["Capital introduced", rupees(totals.capital_in_paisa), null, "Non-operating inflow"], kind: "data" as const },
     { values: ["Owner drawings", rupees(totals.withdrawal_paisa), null, "Non-operating outflow"], kind: "data" as const },
-    { values: ["Cash adjustments in", rupees(totals.adjustment_in_paisa), null, "Separate from operating profit"], kind: "data" as const },
-    { values: ["Cash adjustments out", rupees(totals.adjustment_out_paisa), null, "Separate from operating profit"], kind: "data" as const },
+    { values: ["Cash adjustments in", rupees(totals.adjustment_in_paisa), null, "Separate from operating result"], kind: "data" as const },
+    { values: ["Cash adjustments out", rupees(totals.adjustment_out_paisa), null, "Separate from operating result"], kind: "data" as const },
     { values: ["Active transactions", null, totals.transaction_count, "Count of filtered active entries"], kind: "total" as const },
   ];
   const sheets: WorkbookSheet[] = [
     {
       name: "Executive Summary",
-      title: "SHOP PRO | FINANCIAL REPORT",
+      title: "SHOP PLUS | FINANCIAL REPORT",
       subtitle: `Reporting period: ${rangeLabel}`,
       metadata: `${metadata} · Generated ${getKarachiBusinessDate()}`,
       columns: [{ header: "Metric", width: 29 }, { header: "Amount (Rs)", width: 20, kind: "money" }, { header: "Entries", width: 13, kind: "number" }, { header: "Context", width: 42 }],
@@ -115,12 +117,12 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       name: "Trend",
       title: "CASH FLOW TREND",
       subtitle: `${grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} totals · ${rangeLabel}`,
-      metadata: "Net profit is income minus operating expenses; capital and drawings are shown separately.",
+      metadata: `${metadata} · Operating result is cashbook income less recorded expenses; not accrual profit.`,
       columns: [
         { header: "Period", width: 22 },
         { header: "Income (Rs)", width: 18, kind: "money" },
         { header: "Expenses (Rs)", width: 18, kind: "money" },
-        { header: "Net profit (Rs)", width: 18, kind: "money" },
+        { header: "Operating result (Rs)", width: 18, kind: "money" },
         { header: "Transactions", width: 16, kind: "number" },
       ],
       rows: trend.map((bucket) => ({
@@ -130,5 +132,5 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       freezeRows: 5,
     },
   ];
-  return { sheets, fileName: `Shop-Pro-Report-${fromDate}-to-${toDate}` };
+  return { sheets, fileName: `Shop-Plus-Report-${fromDate}-to-${toDate}` };
 };
