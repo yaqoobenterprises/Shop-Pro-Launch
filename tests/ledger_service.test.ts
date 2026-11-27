@@ -868,4 +868,35 @@ describe('ledger mutation concurrency', () => {
     expect((await getCachedAccounts(organizationId)).find((item) => item.id === account.id)?.balance_paisa)
       .toBe(9000);
   });
+  it('applies account scope before local pagination and to the complete export', async () => {
+    Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
+    setSecurityPrincipal({ id: creatorId, organizationId, role: 'OWNER', fullName: 'Test Owner' });
+    await enqueueForTest(makeQueuedTransaction({ id: 'account-filter-a', idempotencyKey: 'account-filter-key-a', accountId: 'account-1' }));
+    await enqueueForTest(makeQueuedTransaction({ id: 'account-filter-b', idempotencyKey: 'account-filter-key-b', accountId: 'account-2' }));
+    const filter = { accountId: 'account-2', startDate: '2026-10-04', endDate: '2026-10-04', status: 'active' as const };
+    const result = await ledgerService.getFilteredTransactions({ ...filter, limit: 1, offset: 0 });
+    expect(result.count).toBe(1);
+    expect(result.transactions.map(tx => tx.account_id)).toEqual(['account-2']);
+    const all = await ledgerService.getAllFilteredTransactions(filter);
+    expect(all.map(tx => tx.id)).toEqual(result.transactions.map(tx => tx.id));
+  });
+
+  it('applies account scope in the primary and fallback cloud transaction queries', async () => {
+    setSecurityPrincipal({ id: creatorId, organizationId, role: 'OWNER', fullName: 'Test Owner' });
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    vi.spyOn(supabaseLib, 'isSupabaseConfigured').mockReturnValue(true);
+    vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
+    const query = () => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(), range: vi.fn() });
+    const first = query(); const second = query();
+    first.range.mockResolvedValue({ data: null, error: new Error('relationship unavailable'), count: null });
+    second.range.mockResolvedValue({ data: [], error: null, count: 0 });
+    vi.spyOn(supabaseLib, 'getSupabaseClient').mockReturnValue({
+      from: vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second),
+    } as never);
+    await ledgerService.getFilteredTransactions({ accountId: 'account-1', limit: 25 }, { requireCloudSource: true });
+    expect(first.eq).toHaveBeenCalledWith('account_id', 'account-1');
+    expect(second.eq).toHaveBeenCalledWith('account_id', 'account-1');
+  });
+
 });
