@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { FinancialDonut } from "../common/FinancialDonut";
 import { useRegion } from "../../regional/region";
 import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 import type { ReportCategoryBucket, ReportTrendBucket } from "../../lib/reportAnalytics";
@@ -8,7 +9,7 @@ interface ReportInsightChartsProps {
   expenseCategories: ReportCategoryBucket[];
 }
 
-const EXPENSE_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
+
 
 export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
   trend,
@@ -66,14 +67,15 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
           <>
             <p className="reports-source-note">Scale: {formatPaisa(profitChart.min)} to {formatPaisa(profitChart.max)} · zero reference shown</p>
             <div className="reports-modern__profit-chart" role="img" aria-label="Operating result trend chart">
-              <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+              <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 <line x1="3" y1="16" x2="97" y2="16" className="reports-modern__profit-gridline" />
                 <line x1="3" y1="50" x2="97" y2="50" className="reports-modern__profit-gridline" />
                 <line x1="3" y1={profitChart.zeroY} x2="97" y2={profitChart.zeroY} className="reports-modern__profit-zero" />
                 <line x1="3" y1="84" x2="97" y2="84" className="reports-modern__profit-gridline" />
+                <polygon points={`${profitChart.points[0].x},${profitChart.zeroY} ${profitChart.pointString} ${profitChart.points[profitChart.points.length-1].x},${profitChart.zeroY}`} fill="var(--chart-lavender)" opacity=".12"/>
                 <polyline points={profitChart.pointString} className="reports-modern__profit-line" />
                 {profitChart.points.map((point) => (
-                  <circle key={point.title} cx={point.x} cy={point.y} r="1" vectorEffect="non-scaling-stroke" className="reports-modern__profit-point">
+                  <circle key={point.title} cx={point.x} cy={point.y} r=".55" vectorEffect="non-scaling-stroke" className="reports-modern__profit-point">
                     <title>{point.title}: {formatPaisa(point.value)}</title>
                   </circle>
                 ))}
@@ -97,30 +99,7 @@ export const ReportInsightCharts: React.FC<ReportInsightChartsProps> = ({
         {visibleExpenseCategories.length === 0 ? (
           <div className="reports-modern__empty">No expense categories in this reporting range.</div>
         ) : (
-          <div className="reports-modern__expense-layout">
-            <div
-              className="reports-modern__expense-donut expense-stack"
-              role="img"
-              aria-label={`Expense distribution, total ${formatPaisa(expenseCategoryTotal)}`}
-            >
-              <div className="expense-stack__bar" aria-hidden="true">{visibleExpenseCategories.map((item,index)=><span key={item.key} style={{flexGrow:item.total_paisa/expenseCategoryTotal,background:EXPENSE_PALETTE[index%EXPENSE_PALETTE.length]}}/>)}</div>
-              <div>
-                <strong>{formatPaisa(expenseCategoryTotal)}</strong>
-                <span>Total spend</span>
-              </div>
-            </div>
-            <ul className="reports-modern__expense-legend" aria-label="Expense amounts by category">
-              {visibleExpenseCategories.map((item, index) => (
-                <li key={item.key}>
-                  <span>
-                    <i style={{ background: EXPENSE_PALETTE[index % EXPENSE_PALETTE.length] }} />
-                    {item.category_name}
-                  </span>
-                  <strong>{formatPaisa(item.total_paisa)}</strong>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <FinancialDonut label="Expense distribution" centerLabel="Expenses" items={visibleExpenseCategories.map(item=>({key:item.key,label:item.category_name,amount:item.total_paisa}))}/>
         )}
       </section>
     </div>

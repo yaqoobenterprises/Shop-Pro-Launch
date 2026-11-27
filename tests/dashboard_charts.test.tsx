@@ -63,7 +63,7 @@ describe('real-data dashboard charts', () => {
     render(<LedgerDashboardView />);
 
     const expenses = await screen.findByRole('list', {
-      name: 'Expense totals by category',
+      name: 'Expense totals by category values',
     });
     expect(expenses.textContent).toContain('Store Supplies');
     expect(expenses.textContent).not.toContain('Service Income');
@@ -92,7 +92,7 @@ describe('real-data dashboard charts', () => {
     await waitFor(() => expect(
       screen.getByText(/No expenses for this period/),
     ).toBeTruthy());
-    expect(screen.queryByRole('list', { name: 'Expense totals by category' })).toBeNull();
+    expect(screen.queryByRole('list', { name: 'Expense totals by category values' })).toBeNull();
     expect(screen.getByText(/No active accounts/)).toBeTruthy();
   });
 

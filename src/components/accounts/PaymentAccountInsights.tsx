@@ -1,7 +1,8 @@
 import React from "react";
 import { ArrowUpRight, RefreshCw, ShieldCheck } from "lucide-react";
 import type { LedgerAccount } from "../../types/ledger";
-import { formatPaisa } from "../../lib/money";
+import { FinancialDonut } from "../common/FinancialDonut";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 
 interface Props {
   accounts: readonly LedgerAccount[];
@@ -34,6 +35,7 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
           <RefreshCw size={16} aria-hidden="true"/> Refresh
         </button>
       </div>
+      {sorted.length>0 && <FinancialDonut label="Positive balances" centerLabel="Positive balances" items={sorted.map(account=>({key:account.id,label:account.name,amount:account.balance_paisa}))}/>}
       {sorted.length ? <ul className="aq-accounts-insights__bars" aria-label="Positive balance allocation">
         {sorted.map((account) => <li key={account.id}>
           <div className="aq-accounts-insights__row">
@@ -58,10 +60,10 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
         <h2>Account status</h2>
       </div>
       <dl>
-        <div><dt>Active accounts</dt><dd>{active.length}</dd></div>
-        <div><dt>Loaded inactive accounts</dt><dd>{accounts.length - active.length}</dd></div>
-        <div><dt>Active accounts below zero</dt><dd>{active.filter(a => a.balance_paisa < 0).length}</dd></div>
-        <div><dt>Primary account</dt><dd>{active.find((a) => a.is_default)?.name || "Not selected"}</dd></div>
+        <div><dt>Active</dt><dd>{active.length}</dd></div>
+        <div><dt>Inactive</dt><dd>{accounts.length - active.length}</dd></div>
+        <div><dt>Negative</dt><dd>{active.filter(a => a.balance_paisa < 0).length}</dd></div>
+        <div><dt>Primary</dt><dd>{active.find((a) => a.is_default)?.name || "Not selected"}</dd></div>
       </dl>
       <div className="aq-accounts-insights__scope">
         <ArrowUpRight size={17} aria-hidden="true"/>

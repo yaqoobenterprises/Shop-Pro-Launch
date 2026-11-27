@@ -10,6 +10,7 @@ import "./OverviewReference.css";
 import "./OverviewFinish.css";
 import "./OverviewRealFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
+import { FinancialDonut } from "../common/FinancialDonut";
 import { OverviewActivity } from "./OverviewActivity";
 import { OverviewAreaChart } from "./OverviewAreaChart";
 import { assertReportAmounts } from "../../lib/reportAmountValidation";
@@ -27,7 +28,7 @@ import {
   ArrowDownLeft,
 } from "lucide-react";
 
-const EXPENSE_CHART_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
+
 
 export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (start: string,end: string) => void }> = ({ cloudOnly = false, onExplore }) => {
   const [period, setPeriod] = useState<OverviewPeriod>("day");
@@ -168,7 +169,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
     <div className="page-content overview-page aq-overview">
       <div className="page-title">
         <div className="overview-page-heading">
-          <h1>Business overview</h1>
+          <h1 aria-label="Business overview">Overview</h1>
         </div>
         <OverviewPeriodControls
           period={period}
@@ -191,16 +192,16 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
         </div>
       )}
 
-      <div className="overview-metric-scope"><span>Account position</span><span>{selectedRangeLabel}</span></div>
+      
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Balances" scope={cloudOnly ? "Current cloud balance" : "Current available balance"} icon={Wallet}
+        <OverviewMetricCard label="Total balance" scope={cloudOnly ? "Current cloud balance" : "Current available balance"} icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp}
-          amountPaisa={activeIncome}
+        <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={ArrowDownLeft}
+          amountPaisa={activeIncome} tone="positive"
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
-        <OverviewMetricCard label="Expenses" scope={selectedRangeLabel} icon={ArrowDownLeft}
-          amountPaisa={activeExpense}
+        <OverviewMetricCard label="Expenses" scope={selectedRangeLabel} icon={ArrowUpRight}
+          amountPaisa={activeExpense} tone="negative"
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Operating result" scope={`${selectedRangeLabel} · cashbook basis`} icon={ArrowUpRight}
           amountPaisa={activeProfit} tone={activeProfit < 0 ? "negative" : "positive"}
@@ -212,8 +213,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
         <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""} ${period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense ? "cash-panel--empty" : ""}`}>
           <div className="panel-heading">
             <div>
-              <h2>Income & expenses</h2>
-              <p className="overview-chart-range">{selectedRangeLabel}</p>
+              <h2>Cash flow</h2>
             </div>
           </div>
           {period !== "day" ? (
@@ -250,12 +250,11 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
                       </div>
                       <div className="aq-day-insights" aria-label="Selected day summary">
                         <div className="aq-day-insights__metric">
-                          <span>Day operating result</span>
+                          <span>Result</span>
                           <strong>{formatPaisa(activeProfit)}</strong>
-                          <small>Income less expenses</small>
                         </div>
                         <div className="aq-day-insights__metric">
-                          <span>Recorded entries</span>
+                          <span>Entries</span>
                           <strong>{dailyData?.transaction_count ?? 0}</strong>
                         </div>
                       </div>
@@ -270,7 +269,6 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
           <div className="panel-heading">
             <div>
               <h2>Expense mix</h2>
-              <p className="overview-chart-range">{selectedRangeLabel}</p>
             </div>
           </div>
           {isLoading ? <p className="aq-overview__empty" role="status">Loading categories…</p>
@@ -279,30 +277,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
                 <p className="aq-overview__empty">No expenses for this period</p>
               ) : (
                 <>
-                  <div className="aq-overview__donut-wrap">
-                    <div className="expense-donut expense-stack" role="img"
-                      aria-label={`Expense category distribution. Total ${formatPaisa(expenseBreakdownTotal)}`}>
-                      <div className="expense-stack__bar" aria-hidden="true">{expenseBreakdowns.map((item,index)=><span key={item.category_id} style={{flexGrow:item.total_paisa/expenseBreakdownTotal,background:EXPENSE_CHART_PALETTE[index%EXPENSE_CHART_PALETTE.length]}} />)}</div>
-                      <div className="expense-donut__center">
-                        <strong>{formatPaisa(expenseBreakdownTotal)}</strong>
-                        <span>Total recorded</span>
-                      </div>
-                    </div>
-                  </div>
-                  <ul className="expense-category-list" aria-label="Expense totals by category">
-                    {expenseBreakdowns.map((b, index) => (
-                      <li key={b.category_id || b.category_name}>
-                        <span className="expense-category-label">
-                          <i style={{ background: EXPENSE_CHART_PALETTE[index % EXPENSE_CHART_PALETTE.length] }} aria-hidden="true" />
-                          <span>{b.category_name}</span>
-                        </span>
-                        <span className="expense-category-amount">
-                          <small>{Math.round((b.total_paisa / expenseBreakdownTotal) * 100)}%</small>
-                          <strong>{formatPaisa(b.total_paisa)}</strong>
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                  <FinancialDonut label="Expense totals by category" centerLabel="Expenses" items={expenseBreakdowns.map(b=>({key:b.category_id,label:b.category_name,amount:b.total_paisa}))}/>
                   {activeSummary && activeExpense !== expenseBreakdownTotal && (
                     <p className="aq-overview__coverage">Category totals do not match the period expense total. Review the source entries.</p>
                   )}
@@ -311,14 +286,14 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
         </section>
       </div>
 
-      <section className="panel overview-revenue"><div className="panel-heading"><div><h2>Income mix</h2><p className="overview-chart-range">{selectedRangeLabel}</p></div></div>
-        {isLoading ? <p role="status">Loading categories…</p> : loadError ? <p>Categories unavailable.</p> : revenueCategories.length === 0 ? <p>No income categories in the available records.</p> : <ul className="overview-revenue-list" aria-label="Income totals by category">{revenueCategories.slice(0,5).map((item) => <li key={item.category_id}><span>{item.category_name}</span><strong className="num">{formatPaisa(item.total_paisa)}</strong></li>)}</ul>}
+      <section className="panel overview-revenue"><div className="panel-heading"><div><h2>Income mix</h2></div></div>
+        {isLoading ? <p role="status">Loading categories…</p> : loadError ? <p>Categories unavailable.</p> : revenueCategories.length === 0 ? <p>No income categories in the available records.</p> : <ul className="overview-revenue-list" aria-label="Income totals by category">{revenueCategories.slice(0,5).map((item) => <li key={item.category_id}><span>{item.category_name}</span><span className="income-mix-track" aria-hidden="true"><i style={{width:`${100*item.total_paisa/Math.max(1,...revenueCategories.map(row=>row.total_paisa))}%`}}/></span><strong className="num">{formatPaisa(item.total_paisa)}</strong></li>)}</ul>}
         {!isLoading && !loadError && activeSummary && revenueCategories.reduce((total,item) => total + item.total_paisa,0) !== activeIncome && <p className="aq-overview__coverage">Category totals differ from the income summary. Review the source entries.</p>}
       </section>
       {cloudOnly && !isLoading && !loadError && activeSummary && selectedStart <= selectedEnd && <OverviewActivity key={`${selectedStart}:${selectedEnd}`} start={selectedStart} end={selectedEnd} current={activeSummary} onExplore={onExplore} />}
       <div className="aq-overview__details">
         <section className="panel transactions-panel">
-          <div className="panel-heading"><h2>Accounts</h2><span className="aq-overview__basis">Current balances</span></div>
+          <div className="panel-heading"><h2>Accounts</h2></div>
           {isLoading ? <p role="status" className="aq-overview__empty">Loading accounts…</p>
             : loadError ? <p className="aq-overview__empty">Accounts unavailable.</p>
               : activeAccounts.length === 0 ? <p className="aq-overview__empty">No active accounts.</p>
@@ -331,6 +306,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
                       </li>
                     ))}
                   </ul>}
+          {!isLoading&&!loadError&&activeAccounts.some(a=>a.balance_paisa>0)&&<FinancialDonut label="Positive balance allocation" centerLabel="Positive balances" items={activeAccounts.map(a=>({key:a.id,label:a.name,amount:a.balance_paisa}))}/>}
         </section>
         <section className="panel health-panel">
           <div className="panel-heading"><h2>Cash movements</h2></div>

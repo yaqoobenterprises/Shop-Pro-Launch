@@ -13,7 +13,7 @@ export const AnimatedAmount: React.FC<AnimatedAmountProps> = ({
   loading = false,
   error = false,
 }) => {
-  if (loading) return <>Loading…</>;
+  if (loading) return <span className="finance-skeleton finance-skeleton--amount" role="status"><span className="sr-only">Loading…</span></span>;
   if (error || !Number.isSafeInteger(amountPaisa)) {
     return <span aria-label="Amount unavailable">—</span>;
   }
