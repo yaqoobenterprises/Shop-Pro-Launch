@@ -1,4 +1,4 @@
-import React, { useId, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { formatPaisa } from "../../lib/money";
 import type { ReportTrendBucket } from "../../lib/reportAnalytics";
 
@@ -14,21 +14,9 @@ const TOP = 14;
 const PLOT_W = W - LEFT - 16;
 const PLOT_H = H - TOP - 36;
 
-const smoothPath = (points: Array<[number, number]>): string => {
-  if (!points.length) return "";
-  if (points.length === 1) return `M ${points[0][0]} ${points[0][1]}`;
-  const pieces = [`M ${points[0][0]} ${points[0][1]}`];
-  for (let i = 1; i < points.length; i += 1) {
-    const prev = points[i - 1];
-    const point = points[i];
-    const dx = (point[0] - prev[0]) / 2;
-    pieces.push(`C ${prev[0] + dx} ${prev[1]}, ${point[0] - dx} ${point[1]}, ${point[0]} ${point[1]}`);
-  }
-  return pieces.join(" ");
-};
+const linePath = (points: Array<[number, number]>): string => points.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x} ${y}`).join(" ");
 
 export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
-  const id = useId().replace(/:/g, "");
   const [active, setActive] = useState<number | null>(null);
   const model = useMemo(() => {
     const upper = Math.max(1, ...rows.map((r) => Math.max(0, r.income_paisa, r.expense_paisa)));
@@ -39,16 +27,13 @@ export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
       const yExpense = TOP + PLOT_H * (1 - row.expense_paisa / max);
       return { x, yIncome, yExpense };
     });
-    const income = smoothPath(positions.map((p) => [p.x, p.yIncome]));
-    const expense = smoothPath(positions.map((p) => [p.x, p.yExpense]));
-    const base = TOP + PLOT_H;
+    const income = linePath(positions.map((p) => [p.x, p.yIncome]));
+    const expense = linePath(positions.map((p) => [p.x, p.yExpense]));
     return {
       max,
       positions,
       income,
       expense,
-      incomeArea: income ? `${income} L ${positions[positions.length - 1].x} ${base} L ${positions[0].x} ${base} Z` : "",
-      expenseArea: expense ? `${expense} L ${positions[positions.length - 1].x} ${base} L ${positions[0].x} ${base} Z` : "",
     };
   }, [rows]);
 
@@ -62,16 +47,6 @@ export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
         <span><i className="aq-chart__key aq-chart__key--expense" />Expenses</span>
       </div>
       <svg className="aq-chart__canvas" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Income and expenses trend for ${range}`} preserveAspectRatio="xMidYMid meet">
-        <defs>
-          <linearGradient id={`income-${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--chart-lavender)" stopOpacity=".22" />
-            <stop offset="100%" stopColor="var(--chart-lavender)" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id={`expense-${id}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--chart-teal)" stopOpacity=".20" />
-            <stop offset="100%" stopColor="var(--chart-teal)" stopOpacity="0" />
-          </linearGradient>
-        </defs>
         {[0, 1, 2, 3, 4].map((tick) => {
           const value = Math.round(model.max * (4 - tick) / 4);
           const y = TOP + tick * PLOT_H / 4;
@@ -82,10 +57,8 @@ export const OverviewAreaChart: React.FC<Props> = ({ rows, range }) => {
             </g>
           );
         })}
-        {model.incomeArea && <path d={model.incomeArea} fill={`url(#income-${id})`} />}
-        {model.expenseArea && <path d={model.expenseArea} fill={`url(#expense-${id})`} />}
         <path d={model.income} stroke="var(--chart-lavender)" fill="none" strokeWidth="2.6" strokeLinecap="round" />
-        <path d={model.expense} stroke="var(--chart-teal)" fill="none" strokeWidth="2.6" strokeLinecap="round" />
+        <path d={model.expense} stroke="var(--chart-teal)" strokeDasharray="6 4" fill="none" strokeWidth="2.6" strokeLinecap="round" />
         {model.positions.map((point, i) => (
           <g key={rows[i].key}>
             <circle cx={point.x} cy={point.yIncome} r={active === i ? 5 : 2} fill="var(--chart-lavender)" tabIndex={0}
