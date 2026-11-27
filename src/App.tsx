@@ -120,7 +120,7 @@ const MainShell: React.FC = () => {
       case "dashboard":
         return <LedgerDashboardView cloudOnly={isCloudAccount && !isDemoMode} />;
       case "sales":
-        return <TransactionsExplorerView />;
+        return <TransactionsExplorerView key={`${organization.id}:${user?.id || "demo"}`} />;
       case "reports":
         return <LedgerReportsView />;
       case "accounts":
