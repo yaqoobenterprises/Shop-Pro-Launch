@@ -176,7 +176,6 @@ export function isThisYear(dateStr: string): boolean {
   const now = new Date();
   return date.getFullYear() === now.getFullYear();
 }
-
 /**
  * Export tabular data directly to CSV download
  */
@@ -194,7 +193,6 @@ export function serializeCSV(headers: string[], rows: (string | number)[][]): st
     ...rows.map((row) => row.map(encodeCell).join(',')),
   ].join('\r\n');
 }
-
 export function exportToCSV(
   filename: string,
   headers: string[],
@@ -202,7 +200,6 @@ export function exportToCSV(
   dateSuffix = new Date().toISOString().slice(0, 10)
 ) {
   const csvContent = `\uFEFF${serializeCSV(headers, rows)}`;
-
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
