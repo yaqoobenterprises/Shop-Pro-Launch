@@ -3,9 +3,11 @@ export const WORKSPACE_VIEWS = ["dashboard", "chat", "sales", "accounts", "repor
 export type WorkspaceView = (typeof WORKSPACE_VIEWS)[number];
 
 export const readWorkspaceView = (pathname: string): WorkspaceView | null => {
-  const match = /^\\/workspace\\/([a-z]+)\\/?$/.exec(pathname);
-  return match && WORKSPACE_VIEWS.includes(match[1] as WorkspaceView)
-    ? match[1] as WorkspaceView
+  const segments = pathname.split("/");
+  const view = segments[2] as WorkspaceView;
+  const validLength = segments.length === 3 || (segments.length === 4 && segments[3] === "");
+  return validLength && segments[0] === "" && segments[1] === "workspace" && WORKSPACE_VIEWS.includes(view)
+    ? view
     : null;
 };
 
