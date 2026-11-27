@@ -6,11 +6,13 @@ import {
   LayoutDashboard,
   Moon,
   ShieldCheck,
+  PanelsTopLeft,
   Sun,
 } from "lucide-react";
 import { useTheme } from "../../design-system/useTheme";
 import type { ThemePreference } from "../../lib/theme";
 import { useI18n } from "../../i18n";
+import { APP_NAME } from "../../config/app";
 import { LandingPreview } from "./LandingPreview";
 
 export interface LandingPageProps {
@@ -72,9 +74,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
 
       <header className="aq-landing__header">
         <div className="aq-landing__nav aq-landing__container">
-          <a href="#top" className="aq-landing__brand" aria-label="AQVORA home">
-            <img className="aq-landing__brandmark" src="/assets/aqvora-symbol.svg" alt="" aria-hidden="true" />
-            <span>AQVORA</span>
+          <a href="#top" className="aq-landing__brand" aria-label={`${APP_NAME} home`}>
+            <PanelsTopLeft size={28} className="aq-landing__brandmark" aria-hidden="true" />
+            <span>{APP_NAME}</span>
           </a>
 
           <nav className="aq-landing__navlinks" aria-label="Page navigation">
@@ -106,7 +108,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
         <section className="aq-landing__hero" aria-labelledby="landing-title">
           <div className="aq-landing__container aq-landing__hero-grid">
             <div className="aq-landing__hero-content">
-              <p className="aq-landing__eyebrow"><span aria-hidden="true" /> THE BUSINESS WORKSPACE</p>
               <h1 id="landing-title">Your business.<span>In clear view.</span></h1>
               <p className="aq-landing__intro">
                 Your cashbook, accounts and reports. One clear view.
@@ -132,7 +133,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
           <div className="aq-landing__container">
             <div className="aq-landing__section-head">
               <div>
-                <p className="aq-landing__overline">A BETTER DAILY ROUTINE</p>
                 <h2 id="platform-title">Everything for your working day.</h2>
               </div>
               <p>Built to stay simple as your business grows.</p>
@@ -154,7 +154,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
           <div className="aq-landing__container">
             <div className="aq-landing__section-head">
               <div>
-                <p className="aq-landing__overline">GETTING STARTED</p>
                 <h2 id="steps-title">Start with a clear view.</h2>
               </div>
             </div>
@@ -184,7 +183,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
 
       <footer className="aq-landing__footer">
         <div className="aq-landing__container aq-landing__footer-inner">
-          <span>© {new Date().getFullYear()} AQVORA · Private product preview</span>
+          <span>© {new Date().getFullYear()} {APP_NAME}</span>
           <button type="button" onClick={() => onOpenAuth("signIn")}>Sign in</button>
         </div>
       </footer>

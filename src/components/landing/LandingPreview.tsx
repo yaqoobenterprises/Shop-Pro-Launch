@@ -38,8 +38,7 @@ export const LandingPreview: React.FC = () => (
     <div className="aq-preview__body">
       <div className="aq-preview__section-title">
         <div>
-          <span className="aq-preview__eyebrow">BUSINESS OVERVIEW</span>
-          <h2>At a glance</h2>
+          <h2>Overview</h2>
         </div>
         <span className="aq-preview__more" aria-hidden="true"><MoreHorizontal size={18} /></span>
       </div>

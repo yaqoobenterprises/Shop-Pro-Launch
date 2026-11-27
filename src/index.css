@@ -1,4 +1,5 @@
-@layer legacy, theme, base, components, utilities;
+/* Reset first; existing layout rules must survive Tailwind Preflight. */
+@layer theme, base, legacy, components, utilities;
 @import "./design-system/legacy-layout.css" layer(legacy);
 @import "./components/auth/AuthPremium.css" layer(legacy);
 @import "./components/layout/Sidebar.css" layer(legacy);

@@ -15,7 +15,7 @@ The application uses the user-approved Clarity design system. The live React app
 
 Desktop uses a shared identity/utility header and horizontal navigation. Mobile retains all routes through the bottom dock and More menu. Overview uses a single metric strip, cash-flow panel, category distribution, account balances and other cash movements. Account tools, register filters, reports and settings share the same control hierarchy.
 
-`src/design-system/foundation.css` and `workspace.css` are the current component and screen styling. Existing screen layout contracts are isolated in the lower-priority `legacy` CSS cascade layer; lazy screen chunks no longer inject competing global skins. New work should use the current system files rather than adding another finishing stylesheet.
+`src/design-system/foundation.css` and `workspace.css` are the current component and screen styling. Existing screen layout contracts are isolated in the `legacy` CSS cascade layer (after Tailwind's `base` reset and before component/utility layers); lazy screen chunks no longer inject competing global skins. New work should use the current system files rather than adding another finishing stylesheet.
 
 ## Charts
 
