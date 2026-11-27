@@ -84,6 +84,7 @@ jobs:
                   return url.origin === 'http://127.0.0.1:4173' ? route.continue() : route.abort();
                 });
                 const page = await context.newPage();
+                page.setDefaultTimeout(12000);
                 const errors = [];
                 page.on('pageerror', e => errors.push(e.message));
                 try {
@@ -102,10 +103,14 @@ jobs:
                   const chrome = width >= 768 ? page.locator('#app-sidebar') : navigation;
                   for (const [label,surface,view] of [['Cashbook','cashbook','chat'],['Transactions','transactions','sales'],['Reports','reports','reports'],['LedgerMate AI','ai','ai'],['Accounts','accounts','accounts'],['Settings','settings','settings']]) {
                     try {
-                      const target = chrome.getByRole('button',{name:label,exact:true}).filter({visible:true}).first();
+                      let target = chrome.getByRole('button',{name:label,exact:true}).filter({visible:true}).first();
                       if (!(await target.isVisible())) {
                         const more = navigation.getByRole('button',{name:'More navigation options'});
-                        if (await more.isVisible()) await more.click();
+                        if (await more.isVisible()) {
+                          await more.click();
+                          target = page.getByRole('dialog',{name:'More navigation'}).getByRole('button',{name:label,exact:true});
+                          await target.waitFor({timeout:10000});
+                        }
                       }
                       if (!(await target.isVisible())) {
                         records.push({width,surface,skipped:'Navigation label not visible'});
@@ -124,7 +129,7 @@ jobs:
                     await newEntry.click();
                     await page.waitForURL('**/workspace/chat');
                     await page.locator('#ledger-entry').waitFor();
-                    await page.waitForFunction(() => document.activeElement?.id === 'ledger-entry');
+                    await page.waitForFunction(() => document.activeElement?.id === 'ledger-entry', null, {timeout:10000});
                     await page.goBack();
                     await page.waitForURL('**/workspace/settings');
                     await page.goForward();
