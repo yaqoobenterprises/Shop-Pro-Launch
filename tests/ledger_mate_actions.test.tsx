@@ -64,12 +64,14 @@ function mountPanel() {
     userId="current-user"
     organizationId="current-org"
     isCloudAccount={false}
+    canPrepareActions
   />);
 }
 
 async function openCreatePreview() {
   const input = await screen.findByRole("textbox", { name: "Message LedgerMate AI" });
   await waitFor(() => expect(input).not.toBeDisabled());
+  fireEvent.click(screen.getByRole("button", { name: "Enable reviewed ledger actions" }));
   fireEvent.change(input, { target: { value: "add sale Rs 1,250.00 stamp paper cash today" } });
   fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
   await screen.findByText("Review ledger action");
