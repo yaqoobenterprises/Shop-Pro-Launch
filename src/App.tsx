@@ -1,6 +1,7 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppProvider, useApp } from "./context/AppContext";
+import { WorkspaceErrorBoundary } from "./components/common/WorkspaceErrorBoundary";
 import { hasPermission } from "./lib/permissions";
 import { emptyTransactionView } from "./lib/transactionViewState";
 import { I18nProvider, useI18n } from "./i18n";
@@ -120,7 +121,7 @@ const MainShell: React.FC = () => {
       case "ai":
         return <LedgerMateView />;
       case "dashboard":
-        return <LedgerDashboardView cloudOnly={isCloudAccount && !isDemoMode} />;
+        return <LedgerDashboardView key={`${organization.id}:${user?.id || "demo"}`} cloudOnly={isCloudAccount && !isDemoMode} />;
       case "sales":
         return <TransactionsExplorerView key={`${organization.id}:${user?.id || "demo"}`} />;
       case "reports":
@@ -128,7 +129,7 @@ const MainShell: React.FC = () => {
       case "accounts":
         return <AccountsView key={`${organization.id}:${user?.id || "demo"}`} demo={isDemoMode} canManage={isDemoMode || hasPermission(user?.role, "MANAGE_BUSINESS_CONFIG")} canTransfer={isDemoMode || hasPermission(user?.role, "ACCOUNT_TRANSFER")} onExplore={accountId => { saveTransactionView({ ...emptyTransactionView(), account: accountId }); setCurrentView("sales"); }} />;
       case "settings":
-        return <LedgerSettingsView />;
+        return <LedgerSettingsView key={`${organization.id}:${user?.id || "demo"}`} />;
       default:
         return <ChatView />;
     }
@@ -170,6 +171,7 @@ const MainShell: React.FC = () => {
             tabIndex={-1}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-0"
           >
+            <WorkspaceErrorBoundary key={`${organization.id}:${user?.id || "demo"}:${currentView}`} onOverview={() => setCurrentView("dashboard")}>
             <Suspense
               fallback={
                 <div role="status" className="flex min-h-32 items-center justify-center text-sm text-text-muted">
@@ -179,6 +181,7 @@ const MainShell: React.FC = () => {
             >
               {renderActiveView()}
             </Suspense>
+            </WorkspaceErrorBoundary>
           </main>
         </div>
 
