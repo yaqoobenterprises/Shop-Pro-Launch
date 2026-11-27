@@ -15,6 +15,7 @@ import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
 import "./ReportsAnalytics.css";
 import "./ReportsRealFinish.css";
+import { buildReportAccountBreakdown } from "../../lib/reportAccountBreakdown";
 import { useRegion } from "../../regional/region";
 import { ReportInsightCharts } from "./ReportInsightCharts";
 
@@ -91,6 +92,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
     () => buildReportCategoryBreakdown(transactions),
     [transactions],
   );
+  const accountBreakdown = useMemo(() => buildReportAccountBreakdown(transactions), [transactions]);
   const chartMax = Math.max(1, ...trend.map((bucket) => Math.max(bucket.income_paisa, bucket.expense_paisa)));
   const grouping = getTrendGrouping(filters.fromDate, filters.toDate);
 
@@ -99,7 +101,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
     [categoryBreakdown],
   );
   const handleExport = () => {
-    if (!ready || isExporting || region.currency !== "PKR") return;
+    if (!ready || isExporting) return;
     setExportError(null);
     setIsExporting(true);
     try {
@@ -112,9 +114,10 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
         categoryId: filters.categoryId,
         trend,
         grouping,
+        currency: region.currency,
         sourceScope: cloudOnly ? "Posted cloud records only" : "Available local or demo records; completeness not verified",
       });
-      downloadPremiumXlsx(workbook.sheets, workbook.fileName);
+      downloadPremiumXlsx(workbook.sheets, workbook.fileName, region.currency);
     } catch (error) {
       setExportError(error instanceof Error ? error.message : "Could not create the Excel workbook.");
     } finally {
@@ -148,13 +151,12 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
       />
 
       <p className="reports-source-note">{cloudOnly ? "Posted cloud records only; queued entries excluded." : "Available local or demo records only; completeness not verified."} Internal transfers are excluded from this transaction report.</p>
-      {region.currency !== "PKR" && <p className="reports-source-note">Excel export is disabled because the existing workbook supports PKR only.</p>}
       {exportError && <div role="alert" className="reports-modern__error">{exportError}</div>}
       {loadError && <div role="alert" className="reports-modern__error reports-modern__load-error">{loadError} <button type="button" className="button button-secondary" onClick={() => void loadReport()}>Retry</button></div>}
 
       <section className="reports-modern__kpis" aria-label="Filtered report totals" aria-busy={isLoading}>
         <article className={`reports-modern__kpi reports-modern__kpi--profit ${totals.net_profit_paisa < 0 ? "is-negative" : ""}`}>
-          <span>Operating result</span><TrendingUp size={18} aria-hidden="true" />
+          <span>Filtered operating result</span><TrendingUp size={18} aria-hidden="true" />
           <strong>{amount(totals.net_profit_paisa)}</strong>
           <small>Cashbook basis · not accrual P&L</small>
         </article>
@@ -181,6 +183,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
           <div><h2>Recorded income and expenses</h2><p>{grouping === "day" ? "Daily" : grouping === "week" ? "Weekly" : "Monthly"} income versus expenses</p></div>
           <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
+        {trend.length > 0 && <p className="reports-source-note">Scale: {formatPaisa(0)} to {formatPaisa(chartMax)}</p>}
         {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
           <div className="reports-modern__trend-scroll">
             <div className="reports-modern__trend" style={{ gridTemplateColumns: `repeat(${trend.length}, minmax(36px, 1fr))` }}>
@@ -220,6 +223,10 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
         </section>
       </div>
 
+      <section className="reports-modern__table-panel">
+        <div className="reports-modern__section-heading"><div><h2>Activity by account</h2><p>Filtered recorded entries, excluding transfers; not closing balances.</p></div></div>
+        {accountBreakdown.length ? <div className="reports-modern__table-scroll"><table><thead><tr><th scope="col">Account</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th><th scope="col">Entries</th></tr></thead><tbody>{accountBreakdown.map(row => <tr key={row.accountId}><th scope="row">{row.name}</th><td>{formatPaisa(row.income_paisa)}</td><td>{formatPaisa(row.expense_paisa)}</td><td>{formatPaisa(row.net_profit_paisa)}</td><td>{row.transaction_count}</td></tr>)}</tbody></table></div> : <p className="reports-modern__empty">No account activity for these filters.</p>}
+      </section>
       <section className="reports-modern__table-panel reports-modern__transactions">
         <div className="reports-modern__section-heading"><div><h2>Transaction register</h2></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
         {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
