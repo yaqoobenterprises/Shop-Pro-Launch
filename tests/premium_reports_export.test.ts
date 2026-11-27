@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { buildReportsWorkbook } from "../src/components/reports/buildReportsWorkbook";
+import { buildReportAccountBreakdown } from "../src/lib/reportAccountBreakdown";
 import { buildPremiumXlsx } from "../src/lib/premiumXlsx";
 import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals } from "../src/lib/reportAnalytics";
 import type { Transaction } from "../src/types/ledger";
@@ -90,5 +92,24 @@ describe("premium Excel workbook", () => {
     expect(payload).toContain("&quot;Rs &quot;");
     expect(payload).toContain("=1+1 is text, not a formula");
     expect(payload).not.toContain("<f>");
+  });
+  it("uses the same filtered rows for account activity and workbook totals, with the configured currency", () => {
+    const rows = [
+      transaction("a","2026-10-05","income",13000,"print","Print"),
+      {...transaction("b","2026-10-05","expense",2000,"paper","Paper"),account_id:"bank",account_name:"Bank"},
+      transaction("c","2026-10-05","capital_in",50000,null,"Capital"),
+    ];
+    const grouped=buildReportAccountBreakdown(rows);
+    expect(grouped.reduce((n,row)=>n+row.net_profit_paisa,0)).toBe(11000);
+    expect(grouped.reduce((n,row)=>n+row.transaction_count,0)).toBe(3);
+    const workbook=buildReportsWorkbook({transactions:rows,categories:[],fromDate:"2026-10-05",toDate:"2026-10-05",type:"all",categoryId:"all",trend:buildReportTrend(rows,"2026-10-05","2026-10-05"),grouping:"day",currency:"USD",sourceScope:"Posted cloud records only"});
+    expect(workbook.fileName).toContain("Shop-Plus");
+    const accounts=workbook.sheets.find(sheet=>sheet.name==="Account activity")!;
+    expect(accounts.rows).toHaveLength(2);
+    expect(accounts.metadata).toContain("Posted cloud records only");
+    const payload=new TextDecoder().decode(buildPremiumXlsx(workbook.sheets,"USD"));
+    expect(payload).toContain("&quot;USD &quot;");
+    expect(payload).not.toContain("&quot;Rs &quot;");
+    expect(payload).toContain("Operating result");
   });
 });
