@@ -64,10 +64,10 @@ function generatePng(size) {
       const dist = Math.sqrt(dx * dx + dy * dy);
 
       if (dist <= cornerR) {
-        // Solid evergreen brand mark (#17654E)
-        const r = 23;
-        const g = 101;
-        const b = 78;
+        // Approved Clarity brand mark (#315AC8)
+        const r = 49;
+        const g = 90;
+        const b = 200;
 
         const page = x >= size * 0.29 && x <= size * 0.71 && y >= size * 0.2 && y <= size * 0.8;
         const rule = [0.38, 0.5, 0.62].some((position) => Math.abs(y - size * position) < size * 0.018) && x >= size * 0.38 && x <= size * 0.63;

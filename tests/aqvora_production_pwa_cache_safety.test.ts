@@ -17,7 +17,7 @@ function makeWorker() {
   const browserCaches = {
     open: vi.fn().mockResolvedValue(cache),
     match: vi.fn().mockResolvedValue(undefined),
-    keys: vi.fn().mockResolvedValue(['shop-pro-v4', 'aqvora-pwa-v1', 'other-site-cache']),
+    keys: vi.fn().mockResolvedValue(['shop-pro-v4', 'aqvora-pwa-v1', 'aqvora-shell-v2', 'other-site-cache']),
     delete: vi.fn().mockResolvedValue(true),
   };
   const response = {
@@ -55,7 +55,7 @@ describe('AQVORA PWA production service worker: public-only caching', () => {
     expect(code).not.toContain('self.skipWaiting()');
     expect(code).not.toContain('self.clients.claim()');
     expect(code).toContain('OLD_AQVORA_PREFIXES.some');
-    expect(code).toContain("const CACHE_NAME = 'aqvora-shell-v2'");
+    expect(code).toContain("const CACHE_NAME = 'shop-pro-shell-v1'");
   });
 
   it('never intercepts financial, auth, report or API GET requests', async () => {
@@ -77,7 +77,7 @@ describe('AQVORA PWA production service worker: public-only caching', () => {
   it('caches only same-origin static public assets without private cache headers', async () => {
     const worker = makeWorker();
     await runFetch(worker, request(origin + '/assets/app-abc.js'));
-    expect(worker.browserCaches.open).toHaveBeenCalledWith('aqvora-shell-v2');
+    expect(worker.browserCaches.open).toHaveBeenCalledWith('shop-pro-shell-v1');
     expect(worker.fetcher).toHaveBeenCalledTimes(1);
     expect(worker.cache.put).toHaveBeenCalledTimes(1);
 
@@ -113,6 +113,7 @@ describe('AQVORA PWA production service worker: public-only caching', () => {
     const cleared = worker.browserCaches.delete.mock.calls.map(x => x[0]);
     expect(cleared).toContain('shop-pro-v4');
     expect(cleared).toContain('aqvora-pwa-v1');
+    expect(cleared).toContain('aqvora-shell-v2');
     expect(cleared).not.toContain('other-site-cache');
   });
 
