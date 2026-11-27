@@ -162,6 +162,10 @@ export const Header: React.FC = () => {
               </div>
 
               <div className="py-1">
+                <button type="button" className="profile-menu-action md:hidden" onClick={toggleTheme}>
+                  <Monitor className="h-4 w-4" aria-hidden="true" />
+                  <span>Appearance: {theme}</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
