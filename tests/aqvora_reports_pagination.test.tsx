@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { LedgerReportsView } from "../src/components/reports/LedgerReportsView";
 import { ledgerService } from "../src/services/ledgerService";
 import { getKarachiBusinessDate } from "../src/lib/dates";
-import { assertReportAmounts } from "../src/lib/reportAnalytics";
+import { assertReportAmounts } from "../src/lib/reportAmountValidation";
 import type { Transaction } from "../src/types/ledger";
 
 afterEach(() => vi.restoreAllMocks());
