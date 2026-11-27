@@ -28,3 +28,5 @@ html .app-shell .shop-plus-transactions .table-footer button { min-width: 44px; 
   html .app-shell .shop-plus-transactions .table-row > :nth-child(4) { grid-column: 2; grid-row: 1; align-self: start; }
   html .app-shell .shop-plus-transactions .table-row > :last-child { grid-column: 2; grid-row: 2 / span 2; flex-wrap: wrap; justify-content: flex-end; gap: 4px !important; }
 }
+
+html .app-shell .shop-plus-transactions .button.button-primary { background:var(--primary); color:var(--on-primary); border-color:var(--primary); }
