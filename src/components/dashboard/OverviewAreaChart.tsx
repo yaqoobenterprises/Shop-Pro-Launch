@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { formatPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 import type { ReportTrendBucket } from "../../lib/reportAnalytics";
 
 interface Props {
