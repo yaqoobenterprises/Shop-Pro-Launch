@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../../lib/utils";
@@ -51,6 +51,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   disabled = false,
   className,
 }) => {
+  const instanceId = useId();
+  const popupId = `${id || instanceId}-calendar`;
+  const errorId = `${id || instanceId}-error`;
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -67,9 +70,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
     const width = Math.min(292, window.innerWidth - 24);
     const estimatedHeight = 330;
     const below = window.innerHeight - rect.bottom;
-    const top = below >= estimatedHeight || rect.top < estimatedHeight
-      ? rect.bottom + 8
-      : rect.top - estimatedHeight - 8;
+    const preferredTop = below >= estimatedHeight || rect.top < estimatedHeight ? rect.bottom + 8 : rect.top - estimatedHeight - 8;
+    const top = Math.max(8, Math.min(preferredTop, window.innerHeight - Math.min(estimatedHeight, window.innerHeight - 16) - 8));
     const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12));
     setPosition({ top, left, width });
   };
@@ -77,10 +79,12 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   useLayoutEffect(() => {
     if (!isOpen) return;
     updatePosition();
+    const frame = requestAnimationFrame(() => (popoverRef.current?.querySelector<HTMLButtonElement>('button[aria-pressed="true"]:not(:disabled)') ?? popoverRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)"))?.focus());
     const handleScrollOrResize = () => updatePosition();
     window.addEventListener("resize", handleScrollOrResize);
     window.addEventListener("scroll", handleScrollOrResize, true);
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener("resize", handleScrollOrResize);
       window.removeEventListener("scroll", handleScrollOrResize, true);
     };
@@ -167,10 +171,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           placeholder={copy.choose}
           aria-label={ariaLabel}
           aria-invalid={isInvalid || undefined}
-          aria-describedby={isInvalid ? `${id || "date-picker"}-error` : undefined}
-          aria-haspopup="dialog"
-          aria-expanded={isOpen}
-          aria-controls={isOpen ? `${id || "date-picker"}-calendar` : undefined}
+          aria-describedby={isInvalid ? errorId : undefined}
           onClick={openCalendar}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " " || event.key === "ArrowDown") {
@@ -185,21 +186,24 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           onClick={openCalendar}
           disabled={disabled}
           aria-label={`${copy.open}: ${ariaLabel}`}
+          aria-haspopup="dialog"
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? popupId : undefined}
           className="absolute inset-y-0 end-0 grid w-10 place-items-center rounded-e-lg text-text-muted transition-colors hover:text-primary disabled:cursor-not-allowed"
         >
           <CalendarDays className="h-4 w-4" />
         </button>
       </div>
-      {isInvalid && <span id={`${id || "date-picker"}-error`} role="alert" className="mt-1 block text-[11px] text-danger">{copy.invalid}</span>}
+      {isInvalid && <span id={errorId} role="alert" className="mt-1 block text-[11px] text-danger">{copy.invalid}</span>}
       {isOpen && createPortal(
         <div
-          id={`${id || "date-picker"}-calendar`}
+          id={popupId}
           ref={popoverRef}
           data-shop-plus-popover
           role="dialog"
           aria-label={`${ariaLabel} calendar`}
           className="date-picker-popover fixed z-[90] w-[292px] rounded-xl border border-border-standard bg-surface-bright p-3 text-on-surface shadow-level-3"
-          style={{ top: position.top, left: position.left, width: position.width }}
+          style={{ top: position.top, left: position.left, width: position.width, maxHeight:"calc(100dvh - 16px)", overflowY:"auto" }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <button type="button" onClick={() => changeMonth(-1)} className="date-picker-nav" aria-label={copy.previous}>
@@ -253,7 +257,9 @@ export const DatePicker: React.FC<DatePickerProps> = ({
                 const today = isoDate(new Date());
                 if ((min && today < min) || (max && today > max)) return;
                 onChange(today);
+                setIsInvalid(false);
                 setIsOpen(false);
+                inputRef.current?.focus();
               }}
               disabled={Boolean((min && isoDate(new Date()) < min) || (max && isoDate(new Date()) > max))}
               className="text-xs font-semibold text-primary hover:text-primary-hover disabled:opacity-50"
