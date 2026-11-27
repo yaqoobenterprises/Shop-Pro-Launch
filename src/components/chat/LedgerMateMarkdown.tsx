@@ -34,7 +34,7 @@ export function MarkdownMessage({ content }: { content: string }) {
       const rows: string[][] = [];
       index += 2;
       while (index < lines.length && lines[index].includes("|") && lines[index].trim()) rows.push(parseCells(lines[index++]));
-      blocks.push(<div className="lm-table-wrap" key={`table-${index}`}><table><thead><tr>{headers.map((cell, i) => <th key={i}>{safeInlineMarkdown(cell)}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={i}>{headers.map((_, j) => <td key={j}>{safeInlineMarkdown(row[j] || "")}</td>)}</tr>)}</tbody></table></div>);
+      blocks.push(<div className="lm-table-wrap" key={`table-${index}`}><table><thead><tr>{headers.map((cell, i) => <th scope="col" key={i}>{safeInlineMarkdown(cell)}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={i}>{headers.map((_, j) => <td key={j}>{safeInlineMarkdown(row[j] || "")}</td>)}</tr>)}</tbody></table></div>);
       continue;
     }
     if (/^\s*[-*+]\s+/.test(line)) {
