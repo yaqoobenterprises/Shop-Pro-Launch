@@ -10,6 +10,7 @@ import {
   Moon,
   Monitor,
   Search,
+  Plus,
 } from "lucide-react";
 import { nextThemePreference, setThemePreference } from "../../lib/theme";
 import { useThemePreference } from "../../lib/useThemePreference";
@@ -21,7 +22,7 @@ import "./WorkspacePastel.css";
 
 export const Header: React.FC = () => {
   const { organization, user, lock, signOut, hasPinSetup, isDemoMode, exitDemoMode } = useAuth();
-  const { currentView, setCurrentView, setIsCommandPaletteOpen } = useApp();
+  const { currentView, setCurrentView, setIsCommandPaletteOpen, startNewEntry } = useApp();
   const { t, dir } = useI18n();
 
   const theme = useThemePreference();
@@ -52,7 +53,8 @@ export const Header: React.FC = () => {
       }
     };
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isMenuOpen) {
+      if (event.key === "Escape" && isMenuOpen && !event.defaultPrevented) {
+        event.preventDefault();
         setIsMenuOpen(false);
         profileButtonRef.current?.focus();
       }
@@ -63,6 +65,12 @@ export const Header: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
     };
+  }, [isMenuOpen]);
+
+  useEffect(() => { setIsMenuOpen(false); }, [currentView]);
+
+  useEffect(() => {
+    if (isMenuOpen) menuRef.current?.querySelector<HTMLButtonElement>("#profile-menu button")?.focus();
   }, [isMenuOpen]);
 
   useEffect(() => {
@@ -79,7 +87,8 @@ export const Header: React.FC = () => {
     <header className="app-header workspace-header" dir={dir}>
       <div className="workspace-context">
         <div className="workspace-context__copy">
-          <span className="workspace-context__title">{pageTitle}</span>
+          <span className="workspace-context__title">{organization.name || APP_NAME}</span>
+          <span className="sr-only">Current page: {pageTitle}</span>
         </div>
       </div>
 
@@ -87,23 +96,27 @@ export const Header: React.FC = () => {
         <div
           className={`connection-pill ${isOnline ? "connection-pill--online" : "connection-pill--offline"}`}
           role="status"
-          aria-label={isOnline ? "Online" : "Offline"}
-          title={isOnline ? "Internet connection available" : "Working offline"}
+          aria-label={isOnline ? "Network online; synchronization not verified" : "Network offline"}
+          title={isOnline ? "Network available; not a confirmation of ledger synchronization" : "Network offline"}
         >
           <span className={`network-status-dot ${isOnline ? "network-status-dot--online" : "network-status-dot--offline"}`} aria-hidden="true" />
-          <span>{isOnline ? "Online" : "Offline"}</span>
+          <span>{isOnline ? "Network online" : "Offline"}</span>
         </div>
 
         <button
           type="button"
           className="header-search-trigger"
           onClick={() => setIsCommandPaletteOpen(true)}
-          aria-label="Search workspace"
-          title="Search workspace (Ctrl+K)"
+          aria-label="Search workspace navigation"
+          title="Find screens and actions (Ctrl+K)"
         >
           <Search className="h-4 w-4" aria-hidden="true" />
-          <span>Search</span>
+          <span>Find a screen</span>
           <kbd>Ctrl K</kbd>
+        </button>
+
+        <button type="button" className="header-mobile-entry" aria-label="New entry" title="New entry" onClick={startNewEntry}>
+          <Plus className="h-5 w-5" aria-hidden="true" />
         </button>
 
         <button
@@ -124,7 +137,7 @@ export const Header: React.FC = () => {
             type="button"
             onClick={() => setIsMenuOpen((prev) => !prev)}
             aria-expanded={isMenuOpen}
-            aria-controls="profile-menu"
+            aria-controls={isMenuOpen ? "profile-menu" : undefined}
             aria-label={t("header.openAccountMenu")}
             className="profile-trigger workspace-profile-trigger"
           >
@@ -139,6 +152,8 @@ export const Header: React.FC = () => {
           {isMenuOpen && (
             <div
               id="profile-menu"
+              role="group"
+              aria-label="Account options"
               className="header-profile-menu absolute end-0 z-50 mt-2 w-56 rounded-xl border border-line bg-surface p-1.5 shadow-lg"
             >
               <div className="header-profile-menu__identity">
@@ -151,6 +166,7 @@ export const Header: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setIsMenuOpen(false);
+                    profileButtonRef.current?.focus();
                     setCurrentView("settings");
                   }}
                   className="profile-menu-action"
