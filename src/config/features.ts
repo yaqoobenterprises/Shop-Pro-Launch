@@ -8,6 +8,8 @@ export interface FeatureFlags {
   languageUr: boolean;
   entryModes: boolean;
   chatQueries: boolean;
+  /** Enable only after submitted-action recovery and authorization are verified. */
+  reviewedLedgerActions: boolean;
 }
 
 export const FEATURES: FeatureFlags = {
@@ -15,6 +17,7 @@ export const FEATURES: FeatureFlags = {
   languageUr: false,
   entryModes: false,
   chatQueries: true,
+  reviewedLedgerActions: false,
 };
 
 /**

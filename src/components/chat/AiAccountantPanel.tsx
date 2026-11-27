@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { DailySummary } from "../../types/ledger";
 import { useApp } from "../../context/AppContext";
 import { ledgerService } from "../../services/ledgerService";
-import { updateSyncedAiAccountantMessage } from "../../services/aiAccountantChatService";
 import { tryDirectLedgerAnswer } from "../../services/ledgerMateDirectAnswer";
 import { buildLedgerMateContext } from "../../services/ledgerMateContext";
 import { prepareLedgerMateAction, type PendingAction } from "../../services/ledgerMateActionService";
@@ -114,7 +113,7 @@ export const AiAccountantPanel: React.FC<{
     }
   };
 
-  const runAssistant = async (question: string, baseMessages: ChatMessage[], replaceIndex?: number, lockHeld = false) => {
+  const runAssistant = async (question: string, baseMessages: ChatMessage[], lockHeld = false) => {
     if ((workRef.current && !lockHeld) || (sending && !lockHeld) || !question.trim() || !online) return;
     if (!lockHeld) workRef.current = true;
     const controller = new AbortController();
@@ -124,10 +123,8 @@ export const AiAccountantPanel: React.FC<{
     setSending(true);
     chat.setError(null);
     const assistantId = makeLocalId();
-    const previousMessage = replaceIndex === undefined ? undefined : chat.messagesRef.current[replaceIndex];
     const draftMessage: ChatMessage = { id: assistantId, role: "assistant", content: "", createdAt: now(), transient: true };
-    if (replaceIndex === undefined) chat.setMessages(baseMessages);
-    // Retain the previous complete response during regeneration.
+    chat.setMessages(baseMessages);
 
     try {
       const direct = isCloudAccount ? await tryDirectLedgerAnswer(question,currency,summary.business_date) : null;
@@ -138,7 +135,6 @@ export const AiAccountantPanel: React.FC<{
         result = direct ? {reply:direct,model:"application"} : await sendLedgerMateMessage(baseMessages.filter(item => !item.transient && item.content.trim()), context, (delta) => {
           if (controller.signal.aborted || !mounted.current || activeThreadRef.current !== threadId) return;
           chat.setMessages((current) => {
-            if (replaceIndex !== undefined) return current;
             const exists = current.some((item) => item.id === assistantId);
             return exists ? current.map((item) => item.id === assistantId ? { ...item, content: item.content + delta } : item) : [...current, { ...draftMessage, content: delta }];
           });
@@ -151,28 +147,14 @@ export const AiAccountantPanel: React.FC<{
       if (!mounted.current || activeThreadRef.current !== threadId) return;
       abortRef.current = null;
       if (!direct) setHealth({ status: "ready", provider: "Groq", model: result.model });
-      const finalMessage: ChatMessage = replaceIndex === undefined
-        ? { ...draftMessage, content: result.reply, transient: false }
-        : { ...previousMessage!, content: result.reply, createdAt: now() };
-      if (replaceIndex !== undefined && finalMessage.id && !finalMessage.id.startsWith("local-")) {
-        try {
-          await updateSyncedAiAccountantMessage({ userId, organizationId }, threadId!, finalMessage.id, finalMessage.content);
-          chat.setSyncStatus("synced");
-        } catch (syncError) {
-          chat.setSyncStatus("error");
-          chat.setError(syncError instanceof Error ? `${syncError.message} The regenerated answer is saved on this device.` : "Regenerated answer could not sync.");
-        }
-      } else {
-        const saved = await chat.syncMessage(finalMessage);
-        finalMessage.id = saved.id || finalMessage.id;
-      }
-      chat.setMessages((current) => replaceIndex === undefined
-        ? (current.some(item => item.id === assistantId) ? current.map((item) => item.id === assistantId ? finalMessage : item) : [...current, finalMessage])
-        : current.map((item, index) => index === replaceIndex ? finalMessage : item));
+      const finalMessage: ChatMessage = { ...draftMessage, content: result.reply, transient: false };
+      const saved = await chat.syncMessage(finalMessage);
+      finalMessage.id = saved.id || finalMessage.id;
+      if (!mounted.current || activeThreadRef.current !== threadId) return;
+      chat.setMessages(current => current.some(item => item.id === assistantId) ? current.map(item => item.id === assistantId ? finalMessage : item) : [...current,finalMessage]);
     } catch (requestError) {
       if (mounted.current && activeThreadRef.current === threadId) {
-        if (replaceIndex === undefined) chat.setMessages((current) => current.filter((item) => item.id !== assistantId));
-        else if (previousMessage) chat.setMessages((current) => current.map((item, index) => index === replaceIndex ? previousMessage : item));
+        chat.setMessages((current) => current.filter((item) => item.id !== assistantId));
         setLastFailed(question);
         chat.setError(controller.signal.aborted ? "Response stopped. No incomplete answer was saved." : requestError instanceof Error ? requestError.message : "LedgerMate could not complete this request. Please try again.");
       }
@@ -183,7 +165,7 @@ export const AiAccountantPanel: React.FC<{
     }
   };
 
-  const handleSend = async (event?: React.FormEvent, suggested?: string) => {
+  const handleSend = async (event?: React.FormEvent, suggested?: string, readOnly = false) => {
     event?.preventDefault();
     const content = (suggested || input).trim();
     if (!content || workRef.current || sending || pendingAction || chat.syncStatus === "loading") return;
@@ -198,13 +180,14 @@ export const AiAccountantPanel: React.FC<{
     const nextMessages = [...chat.messages, userMessage];
     chat.setMessages(nextMessages);
     setInput("");
-    const syncedUser = await chat.syncMessage(userMessage);
-    if (syncedUser.id) {
-      nextMessages[nextMessages.length - 1] = syncedUser;
-      chat.setMessages(nextMessages.slice());
-    }
     try {
-      const action = actionsEnabled && canPrepareActions ? await prepareLedgerMateAction(content, chat.messages, summary) : null;
+      const syncedUser = await chat.syncMessage(userMessage);
+      if (!mounted.current) return;
+      if (syncedUser.id) {
+        nextMessages[nextMessages.length - 1] = syncedUser;
+        chat.setMessages(nextMessages.slice());
+      }
+      const action = !readOnly && actionsEnabled && canPrepareActions ? await prepareLedgerMateAction(content, chat.messages, summary) : null;
       if (action && "clarification" in action) {
         const synced = await chat.syncMessage({ role: "assistant", content: action.clarification, createdAt: now() });
         chat.setMessages((current) => [...current, synced]);
@@ -216,12 +199,12 @@ export const AiAccountantPanel: React.FC<{
         chat.setMessages((current) => [...current, synced]);
         return;
       }
-      if (!actionsEnabled && /^(?:please\s+)?(?:add|record|enter|save|edit|change|update|delete|remove|void)\s+(?:a\s+|the\s+)?(?:sale|income|expense|transaction|entry)\b/i.test(content)) {
+      if ((!actionsEnabled || readOnly) && /^(?:please\s+)?(?:add|record|enter|save|edit|change|update|delete|remove|void)\s+(?:a\s+|the\s+)?(?:sale|income|expense|transaction|entry)\b/i.test(content)) {
         const reply = await chat.syncMessage({role:"assistant",content:"LedgerMate is in read-only mode. No entry was created or changed. Use Cashbook or Transactions, or enable reviewed ledger actions if available.",createdAt:now()});
         chat.setMessages(current => [...current,reply]);
         return;
       }
-      await runAssistant(content, nextMessages, undefined, true);
+      await runAssistant(content, nextMessages, true);
     } catch (sendError) {
       setLastFailed(content);
       chat.setError(sendError instanceof Error ? sendError.message : "Could not prepare your request.");
@@ -236,7 +219,8 @@ export const AiAccountantPanel: React.FC<{
     let userIndex = index - 1;
     while (userIndex >= 0 && chat.messages[userIndex].role !== "user") userIndex -= 1;
     if (userIndex < 0) return;
-    await runAssistant(chat.messages[userIndex].content, [...chat.messages.slice(0, index)], index);
+    // Append a fresh question and response. The existing cloud schema is append-only.
+    await handleSend(undefined, chat.messages[userIndex].content, true);
   };
 
   const copyMessage = async (message: string) => {

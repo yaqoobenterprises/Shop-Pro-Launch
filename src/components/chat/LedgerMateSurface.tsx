@@ -119,7 +119,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
             <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
             {message.role === "assistant" && message.content && !message.transient && <div className="lm-message-tools">
               <button type="button" onClick={() => onCopy(message.content)} aria-label="Copy response" title="Copy response"><Copy aria-hidden="true" /></button>
-              <button type="button" onClick={() => onRegenerate(index)} disabled={sending || !online || Boolean(pendingAction)} aria-label="Regenerate response" title="Regenerate response"><RefreshCw aria-hidden="true" /></button>
+              <button type="button" onClick={() => onRegenerate(index)} disabled={sending || !online || Boolean(pendingAction)} aria-label="Ask question again" title="Ask question again — keep original answer"><RefreshCw aria-hidden="true" /></button>
             </div>}
           </div>
         </div>
