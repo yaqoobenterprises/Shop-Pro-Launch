@@ -6,6 +6,7 @@ import {
   SupabaseSessionRequiredError,
 } from "../../lib/supabase";
 import { Category } from "../../types/ledger";
+import { exportToCSV } from "../../lib/utils";
 import { getKarachiBusinessDate } from "../../lib/dates";
 import { getSecurityPrincipal } from "../../lib/security";
 import { ledgerService, isPermissionOrAuthError } from "../../services/ledgerService";
@@ -56,12 +57,6 @@ import { SecuritySettingsSection } from "./SecuritySettingsSection";
 import { useI18n } from "../../i18n";
 import "./SettingsWorkspace.css";
 import { isFeatureEnabled } from "../../config/features";
-
-export function csvCell(value: unknown): string {
-  const text = String(value ?? "");
-  const safe = /^[\s]*[=+\-@\t\r\n]/.test(text) ? "'" + text : text;
-  return '"' + safe.replace(/"/g, '""') + '"';
-}
 
 async function requireSettingsCloudSession(userId: string): Promise<void> {
   if (!(await hasConfiguredCloudSession(userId))) {
@@ -373,7 +368,7 @@ export const LedgerSettingsView: React.FC = () => {
           "Created By Name",
         ];
 
-        const rows = (txs || []).map((t: any) => [
+        const rows = txs.map(t => [
           t.id,
           t.business_date,
           t.device_entry_time,
@@ -386,20 +381,7 @@ export const LedgerSettingsView: React.FC = () => {
           t.created_by_name || "",
         ]);
 
-        const csvContent = [
-          headers.join(","),
-          ...rows.map((r: unknown[]) => r.map(csvCell).join(",")),
-        ].join("\n");
-        const blob = new Blob([csvContent], {
-          type: "text/csv;charset=utf-8;",
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", `shop_plus_cloud_transactions_${dateStr}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        exportToCSV("shop_plus_cloud_transactions", headers, rows, dateStr);
       }
     } catch (err) {
       console.error("Error exporting everything:", err);
