@@ -187,7 +187,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
         </div>
         {trend.length > 0 && <p className="reports-source-note">Scale: {formatPaisa(0)} to {formatPaisa(chartMax)}</p>}
         {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
-          <div className="reports-modern__trend-scroll">
+          <div className="reports-modern__trend-scroll" tabIndex={0} role="region" aria-label="Income and expense trend, scroll horizontally">
             <div className="reports-modern__trend" style={{ gridTemplateColumns: `repeat(${trend.length}, minmax(36px, 1fr))` }}>
               {trend.map((bucket) => {
                 const incomeHeight = bucket.income_paisa > 0 ? (bucket.income_paisa / chartMax) * 100 : 0;
@@ -200,7 +200,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
             </div>
           </div>
         )}
-        {trend.length > 0 && <details className="report-trend-data"><summary>View exact trend values</summary><div className="reports-modern__table-scroll"><table><caption className="sr-only">Filtered period totals</caption><thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th></tr></thead><tbody>{trend.map(bucket => <tr key={bucket.key}><th scope="row">{bucket.label}</th><td>{formatPaisa(bucket.income_paisa)}</td><td>{formatPaisa(bucket.expense_paisa)}</td><td>{formatPaisa(bucket.net_profit_paisa)}</td></tr>)}</tbody></table></div></details>}
+        {trend.length > 0 && <details className="report-trend-data"><summary>View exact trend values</summary><div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Exact trend values"><table><caption className="sr-only">Filtered period totals</caption><thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th></tr></thead><tbody>{trend.map(bucket => <tr key={bucket.key}><th scope="row">{bucket.label}</th><td>{formatPaisa(bucket.income_paisa)}</td><td>{formatPaisa(bucket.expense_paisa)}</td><td>{formatPaisa(bucket.net_profit_paisa)}</td></tr>)}</tbody></table></div></details>}
       </section>
 
       <ReportInsightCharts trend={trend} expenseCategories={expenseCategories} />
@@ -208,7 +208,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
       <div className="reports-modern__analysis-grid">
         <section className="reports-modern__table-panel">
           <div className="reports-modern__section-heading"><div><h2>Category performance</h2></div></div>
-          {categoryBreakdown.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
+          {categoryBreakdown.length === 0 ? <div className="reports-modern__empty">No category activity for these filters.</div> : <div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Category breakdown"><table><thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th></tr></thead><tbody>
             {categoryBreakdown.map((item) => <tr key={item.key}><td><strong>{item.category_name}</strong></td><td><span className={`reports-modern__type-badge type-${item.type}`}>{item.type.replace("_", " ")}</span></td><td>{item.entry_count}</td><td className={item.type === "expense" ? "amount-expense" : item.type === "income" ? "amount-income" : ""}>{formatPaisa(item.total_paisa)}</td></tr>)}
           </tbody></table></div>}
         </section>
@@ -227,11 +227,11 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
 
       <section className="reports-modern__table-panel">
         <div className="reports-modern__section-heading"><div><h2>Activity by account</h2><p>Filtered recorded entries, excluding transfers; not closing balances.</p></div></div>
-        {accountBreakdown.length ? <div className="reports-modern__table-scroll"><table><thead><tr><th scope="col">Account</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th><th scope="col">Entries</th></tr></thead><tbody>{accountBreakdown.map(row => <tr key={row.accountId}><th scope="row">{row.name}</th><td>{formatPaisa(row.income_paisa)}</td><td>{formatPaisa(row.expense_paisa)}</td><td>{formatPaisa(row.net_profit_paisa)}</td><td>{row.transaction_count}</td></tr>)}</tbody></table></div> : <p className="reports-modern__empty">No account activity for these filters.</p>}
+        {accountBreakdown.length ? <div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Account activity"><table><thead><tr><th scope="col">Account</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th><th scope="col">Entries</th></tr></thead><tbody>{accountBreakdown.map(row => <tr key={row.accountId}><th scope="row">{row.name}</th><td>{formatPaisa(row.income_paisa)}</td><td>{formatPaisa(row.expense_paisa)}</td><td>{formatPaisa(row.net_profit_paisa)}</td><td>{row.transaction_count}</td></tr>)}</tbody></table></div> : <p className="reports-modern__empty">No account activity for these filters.</p>}
       </section>
       <section className="reports-modern__table-panel reports-modern__transactions">
         <div className="reports-modern__section-heading"><div><h2>Transaction register</h2></div><span className="reports-modern__record-count">{transactions.length.toLocaleString()} records</span></div>
-        {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
+        {transactions.length === 0 ? <div className="reports-modern__empty">No matching transactions to display.</div> : <div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Transaction register"><table><thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Account</th><th>Amount</th></tr></thead><tbody>
           {visibleTransactions.map((tx) => <tr key={tx.id}><td>{formatDisplayDate(tx.business_date)}</td><td><span className={`reports-modern__type-badge type-${tx.type}`}>{tx.type.replace("_", " ")}</span></td><td>{tx.category_name || "Uncategorised"}</td><td className="reports-modern__description" title={tx.raw_text}>{tx.raw_text || "—"}</td><td>{tx.account_name || "Account unavailable"}</td><td className={tx.type === "expense" ? "amount-expense" : tx.type === "income" ? "amount-income" : ""}>{formatPaisa(tx.amount_paisa)}</td></tr>)}
         </tbody></table></div>}
         {transactions.length > rowsPerPage && <nav className="reports-modern__pager" aria-label="Transaction register pagination">
