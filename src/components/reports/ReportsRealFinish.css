@@ -171,3 +171,5 @@ html .app-shell .reports-modern .report-trend-data summary { padding:10px 0; cur
   .app-shell .reports-modern__table-scroll { overflow:visible !important; }
   .app-shell .reports-modern__table-scroll table { min-width:0 !important; width:100% !important; font-size:9pt; }
 }
+
+html .app-shell .reports-modern :is(.reports-modern__trend-scroll,.reports-modern__table-scroll):focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
