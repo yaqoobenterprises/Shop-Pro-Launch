@@ -1,5 +1,5 @@
 import React from "react";
-import { formatPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 
 interface AnimatedAmountProps {
   amountPaisa: number;
