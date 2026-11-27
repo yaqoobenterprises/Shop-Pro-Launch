@@ -164,7 +164,7 @@ html .app-shell .sidebar-bottom > button:hover:not(.active) { transform: none; }
 @media (max-width: 767px) {
   html .app-shell .app-header.workspace-header { min-height: 3.75rem; }
   html .app-shell .header-search-trigger,
-  html .app-shell .header-icon-button { min-height: 2.5rem; width: 2.5rem; }
+  html .app-shell .header-icon-button { min-height: 2.75rem; width: 2.75rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   html .app-shell #app-sidebar nav button,
@@ -199,7 +199,7 @@ html .app-shell #app-sidebar nav button.sidebar-new-entry {
 }
 html .app-shell #app-sidebar nav button.sidebar-new-entry svg { color: inherit; }
 html .app-shell #app-sidebar nav button.sidebar-new-entry:hover { background: var(--primary-hover); }
-html .app-shell #app-sidebar.is-collapsed .side-brand { min-height: 5rem; height: auto; gap: .35rem; }
+html .app-shell #app-sidebar.is-collapsed .side-brand { min-height: 5rem; height: auto; flex-basis: 5rem; gap: .35rem; padding: 0; }
 html .app-shell #app-sidebar.is-collapsed .brand-mark { visibility: visible; opacity: 1; }
 html .app-shell #app-sidebar.is-collapsed .sidebar-toggle { position: static; opacity: 1; pointer-events: auto; }
 html .app-shell #app-sidebar.is-collapsed .side-brand:hover .brand-mark,
