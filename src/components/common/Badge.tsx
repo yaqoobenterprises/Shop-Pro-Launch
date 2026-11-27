@@ -22,7 +22,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 
 export const Badge: React.FC<BadgeProps> = ({
   className,
-  variant = "teal",
+  variant = "neutral",
   size = "md",
   children,
   ...props
@@ -52,7 +52,7 @@ export const Badge: React.FC<BadgeProps> = ({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border tracking-normal whitespace-nowrap select-none",
+        "inline-flex items-center gap-1 rounded-[var(--radius-control-sm)] border tracking-normal whitespace-nowrap select-none",
         variants[variant],
         sizes[size],
         className,
