@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Check, KeyRound, QrCode, ShieldCheck, Smartphone, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { getSupabaseClient, isSupabaseConfigured } from "../../lib/supabase";
@@ -8,6 +8,8 @@ type PendingTotp = { id: string; qrCode: string; secret: string; uri: string };
 
 export const SecuritySettingsSection: React.FC = () => {
   const { user, hasPasswordAccount, isCloudAccount, changePassword, updatePassword } = useAuth();
+  const passwordLock = useRef(false);
+  const mfaLock = useRef(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -42,6 +44,7 @@ export const SecuritySettingsSection: React.FC = () => {
 
   const handlePasswordChange = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!user || !isCloudAccount || passwordLock.current) return;
     setPasswordMessage(null);
     setPasswordError(null);
     if (newPassword.length < 8) {
@@ -52,7 +55,7 @@ export const SecuritySettingsSection: React.FC = () => {
       setPasswordError("The new passwords do not match.");
       return;
     }
-    setIsChangingPassword(true);
+    passwordLock.current = true; setIsChangingPassword(true);
     try {
       const result = hasPasswordAccount
         ? await changePassword(currentPassword, newPassword)
@@ -65,11 +68,13 @@ export const SecuritySettingsSection: React.FC = () => {
     } catch (err) {
       setPasswordError(err instanceof Error ? err.message : "Could not update your password.");
     } finally {
-      setIsChangingPassword(false);
+      passwordLock.current = false; setIsChangingPassword(false);
     }
   };
 
   const startEnrollment = async () => {
+    if (!isCloudAccount || mfaLock.current) return;
+    mfaLock.current = true;
     setMfaError(null);
     setMfaMessage(null);
     setIsWorkingOnMfa(true);
@@ -87,13 +92,14 @@ export const SecuritySettingsSection: React.FC = () => {
     } catch (err) {
       setMfaError(err instanceof Error ? err.message : "Could not start authenticator setup.");
     } finally {
-      setIsWorkingOnMfa(false);
+      mfaLock.current = false; setIsWorkingOnMfa(false);
     }
   };
 
   const verifyEnrollment = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!pendingTotp) return;
+    if (!pendingTotp || !isCloudAccount || mfaLock.current) return;
+    mfaLock.current = true;
     setMfaError(null);
     setMfaMessage(null);
     setIsWorkingOnMfa(true);
@@ -110,7 +116,7 @@ export const SecuritySettingsSection: React.FC = () => {
     } catch (err) {
       setMfaError(err instanceof Error ? err.message : "That code could not be verified. Try the current code from your app.");
     } finally {
-      setIsWorkingOnMfa(false);
+      mfaLock.current = false; setIsWorkingOnMfa(false);
     }
   };
 
@@ -126,12 +132,13 @@ export const SecuritySettingsSection: React.FC = () => {
     } catch (err) {
       setMfaError(err instanceof Error ? err.message : "Could not cancel authenticator setup.");
     } finally {
-      setIsWorkingOnMfa(false);
+      mfaLock.current = false; setIsWorkingOnMfa(false);
     }
   };
 
   const removeFactor = async (factorId: string) => {
-    if (!window.confirm("Turn off authenticator sign-in for this account?")) return;
+    if (!isCloudAccount || mfaLock.current || !window.confirm("Turn off authenticator sign-in for this account?")) return;
+    mfaLock.current = true;
     setMfaError(null);
     setMfaMessage(null);
     setIsWorkingOnMfa(true);
@@ -143,7 +150,7 @@ export const SecuritySettingsSection: React.FC = () => {
     } catch (err) {
       setMfaError(err instanceof Error ? err.message : "Could not remove the authenticator app.");
     } finally {
-      setIsWorkingOnMfa(false);
+      mfaLock.current = false; setIsWorkingOnMfa(false);
     }
   };
 
