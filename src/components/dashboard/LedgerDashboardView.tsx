@@ -27,7 +27,7 @@ import {
 
 const EXPENSE_CHART_PALETTE = ["var(--chart-lavender)", "var(--chart-teal)", "var(--chart-pink)", "#8d96ad", "#7eaab4", "#a1a1b6"];
 
-export const LedgerDashboardView: React.FC = () => {
+export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly = false }) => {
   const [period, setPeriod] = useState<OverviewPeriod>("day");
   const [currentDate, setCurrentDate] = useState(getKarachiBusinessDate());
   const [rangeStart, setRangeStart] = useState(getKarachiBusinessDate());
@@ -52,11 +52,16 @@ export const LedgerDashboardView: React.FC = () => {
     setBreakdowns([]);
     setAccounts([]);
     try {
-      const availableAccounts = await ledgerService.getPaymentAccounts();
+      const availableAccounts = cloudOnly ? await ledgerService.getPaymentAccounts({ requireCloudSource: true }) : await ledgerService.getPaymentAccounts();
       if (currentRequestId !== requestId.current) return;
       setAccounts(availableAccounts);
 
-      if (period === "day") {
+      if (period === "day" && cloudOnly) {
+        const records = await ledgerService.getAllFilteredTransactions({ startDate: currentDate, endDate: currentDate, status: "active" }, { requireCloudSource: true });
+        if (currentRequestId !== requestId.current) return;
+        setDailyData({ business_date: currentDate, ...calculateReportTotals(records) });
+        setBreakdowns(buildReportCategoryBreakdown(records).map(item => ({ business_date: currentDate, type: item.type, category_id: item.category_id || "uncategorized", category_name: item.category_name, total_paisa: item.total_paisa, entry_count: item.entry_count })));
+      } else if (period === "day") {
         const [daySummary, bData] = await Promise.all([
           ledgerService.getDailySummary(currentDate),
           ledgerService.getCategoryBreakdown(currentDate),
@@ -71,11 +76,8 @@ export const LedgerDashboardView: React.FC = () => {
         const monthEnd = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
         const today = getKarachiBusinessDate();
         const endDate = monthEnd > today && startDate <= today ? today : monthEnd;
-        const records = await ledgerService.getAllFilteredTransactions({
-          startDate,
-          endDate,
-          status: "active",
-        });
+        const filters = { startDate, endDate, status: "active" as const };
+        const records = cloudOnly ? await ledgerService.getAllFilteredTransactions(filters, { requireCloudSource: true }) : await ledgerService.getAllFilteredTransactions(filters);
         if (currentRequestId !== requestId.current) return;
         setRangeSummary(calculateReportTotals(records));
         setRangeTrend(buildReportTrend(records, startDate, endDate));
@@ -92,11 +94,8 @@ export const LedgerDashboardView: React.FC = () => {
           ? getWeekRangeForDate(currentDate)
           : [rangeStart, rangeEnd];
         if (startDate > endDate) throw new Error("The start date must be on or before the end date.");
-        const records = await ledgerService.getAllFilteredTransactions({
-          startDate,
-          endDate,
-          status: "active",
-        });
+        const filters = { startDate, endDate, status: "active" as const };
+        const records = cloudOnly ? await ledgerService.getAllFilteredTransactions(filters, { requireCloudSource: true }) : await ledgerService.getAllFilteredTransactions(filters);
         if (currentRequestId !== requestId.current) return;
         setRangeSummary(calculateReportTotals(records));
         setRangeTrend(buildReportTrend(records, startDate, endDate));
@@ -121,7 +120,7 @@ export const LedgerDashboardView: React.FC = () => {
     } finally {
       if (currentRequestId === requestId.current) setIsLoading(false);
     }
-  }, [period, currentDate, rangeStart, rangeEnd]);
+  }, [period, currentDate, rangeStart, rangeEnd, cloudOnly]);
 
   useEffect(() => {
     void loadData();
@@ -198,7 +197,7 @@ export const LedgerDashboardView: React.FC = () => {
 
       <div className="overview-metric-scope"><span>Account position</span><span>Selected period · {selectedRangeLabel}</span></div>
       <div className="metrics" aria-label="Business overview">
-        <OverviewMetricCard label="Cash & bank" scope="Current recorded balance" icon={Wallet}
+        <OverviewMetricCard label="Cash & bank" scope={cloudOnly ? "Current cloud balance" : "Current available balance"} icon={Wallet}
           amountPaisa={totalBalancePaisa}
           state={isLoading ? "loading" : loadError || !activeAccounts.length ? "unavailable" : "ready"} />
         <OverviewMetricCard label="Income" scope={selectedRangeLabel} icon={TrendingUp}
@@ -212,7 +211,7 @@ export const LedgerDashboardView: React.FC = () => {
           state={isLoading ? "loading" : !activeSummary || loadError ? "unavailable" : "ready"} />
       </div>
 
-      <p className="overview-source-note">Cashbook figures may include queued entries or incomplete local data; they are not verified accrual profit or a bank statement.</p>
+      <p className="overview-source-note">{cloudOnly ? "Posted cloud records only. Pending entries are excluded. Operating result is on a cashbook basis, not accrual profit." : "Available local or demo records may include queued entries or incomplete data; these are not verified cloud balances or accrual profit."}</p>
       <div className="aq-overview__visuals">
         <section className={`panel cash-panel ${period === "day" ? "cash-panel--day" : ""} ${period === "day" && !isLoading && !loadError && dailyData && !activeIncome && !activeExpense ? "cash-panel--empty" : ""}`}>
           <div className="panel-heading">
@@ -236,7 +235,7 @@ export const LedgerDashboardView: React.FC = () => {
                           <TrendingUp size={21} strokeWidth={1.7} aria-hidden="true" />
                         </div>
                         <div>
-                          <h3>No income or expenses recorded for this date.</h3>
+                          <h3>No income or expenses in the available records for this date.</h3>
                           {Boolean(dailyData?.transaction_count) && <p>{dailyData?.transaction_count} other entries</p>}
                         </div>
                         <button type="button" onClick={() => setPeriod("week")}>
@@ -281,7 +280,7 @@ export const LedgerDashboardView: React.FC = () => {
           {isLoading ? <p className="aq-overview__empty" role="status">Loading categories…</p>
             : loadError ? <p className="aq-overview__empty">Category breakdown unavailable.</p>
               : expenseBreakdowns.length === 0 ? (
-                <p className="aq-overview__empty">No expenses for this period.</p>
+                <p className="aq-overview__empty">No expenses for this period in the available records.</p>
               ) : (
                 <>
                   <div className="aq-overview__donut-wrap">
