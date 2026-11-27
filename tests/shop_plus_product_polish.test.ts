@@ -1,5 +1,6 @@
 import { describe,it,expect } from "vitest";
 import { parseAmountBound,readAmountBounds,exactMajorUnits,transactionOrder } from "../src/lib/transactionFilters";
+import { workbookMoney } from "../src/components/reports/buildReportsWorkbook";
 import { precedingPeriod } from "../src/lib/overviewComparison";
 
 describe("read-only financial filters",()=>{
@@ -15,6 +16,11 @@ describe("read-only financial filters",()=>{
   it("selects explicit ordering for each supported mode",()=>{
     expect(transactionOrder("amount-high")).toEqual({column:"amount_paisa",ascending:false});
     expect(transactionOrder("oldest")).toEqual({column:"device_entry_time",ascending:true});
+  });
+  it("rejects amounts beyond Excel numeric precision without silently rounding",()=>{
+    expect(workbookMoney(1250)).toBe(12.5);
+    expect(()=>workbookMoney(1_000_000_000_000_001)).toThrow(/Excel monetary precision/);
+    expect(()=>workbookMoney(1.5)).toThrow();
   });
   it("uses equal inclusive business dates across calendar boundaries",()=>{
     expect(precedingPeriod("2024-03-01","2024-03-02")).toEqual(["2024-02-28","2024-02-29"]);

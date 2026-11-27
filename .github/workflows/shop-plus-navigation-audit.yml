@@ -219,6 +219,13 @@ jobs:
                     if (!(await page.getByRole('button',{name:'Export filtered CSV',exact:true}).isDisabled())) throw new Error('Export must be disabled for invalid range');
                     await filters.getByRole('button',{name:'Reset',exact:true}).click();
                     if ((await search.inputValue()) !== '') throw new Error('Reset did not clear search');
+                    step = 'reject reversed amount range';
+                    await filters.getByLabel('Minimum amount').fill('20');
+                    await filters.getByLabel('Maximum amount').fill('10');
+                    await page.getByRole('alert').filter({hasText:'Minimum amount must be on or below maximum amount.'}).waitFor();
+                    if (!(await page.getByRole('button',{name:'Export filtered CSV',exact:true}).isDisabled())) throw new Error('Export must be disabled for invalid amount bounds');
+                    await filters.getByRole('button',{name:'Reset',exact:true}).click();
+                    if ((await filters.getByLabel('Minimum amount').inputValue()) !== '') throw new Error('Reset did not clear amount bounds');
                     step = 'review without posting';
                     await (width >= 768 ? chrome : page.locator('header.app-header')).getByRole('button',{name:'New entry',exact:true}).click();
                     await page.waitForURL('**/workspace/chat');

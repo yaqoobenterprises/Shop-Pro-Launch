@@ -2,6 +2,7 @@ import type { Category, Transaction } from "../../types/ledger";
 import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
 import type { ReportTrendBucket, TrendGrouping } from "../../lib/reportAnalytics";
 import { calculateReportTotals, buildReportCategoryBreakdown } from "../../lib/reportAnalytics";
+import { assertReportAmounts } from "../../lib/reportAmountValidation";
 import { buildReportAccountBreakdown } from "../../lib/reportAccountBreakdown";
 import type { WorkbookSheet } from "../../lib/premiumXlsx";
 
@@ -18,7 +19,11 @@ export interface ReportsWorkbookInput {
   currency?: string;
 }
 
-const rupees = (paisa: number) => paisa / 100;
+/** Excel numeric cells retain at most 15 significant decimal digits. Reject unsafe exports rather than rounding. */
+export const workbookMoney = (paisa: number): number => {
+  if (!Number.isSafeInteger(paisa) || Math.abs(paisa) > 999_999_999_999_999) throw new Error("This amount exceeds safe Excel monetary precision. Narrow the report range or use an exact transaction CSV.");
+  return paisa / 100;
+};
 
 const typeLabel = (type: string): string => ({
   all: "All transaction types",
@@ -32,6 +37,7 @@ const typeLabel = (type: string): string => ({
 export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: WorkbookSheet[]; fileName: string } => {
   const { transactions, categories, fromDate, toDate, type, categoryId, trend, grouping } = input;
   const currency = input.currency || "PKR";
+  assertReportAmounts(transactions);
   const totals = calculateReportTotals(transactions);
   const categoryBreakdown = buildReportCategoryBreakdown(transactions);
   const rangeLabel = `${fromDate} – ${toDate}`;
@@ -53,20 +59,20 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
         transaction.type.replace("_", " "),
         transaction.category_name || "Uncategorised",
         transaction.account_name || "Account unavailable",
-        rupees(transaction.amount_paisa),
+        workbookMoney(transaction.amount_paisa),
         transaction.raw_text || "",
         transaction.note || "",
         transaction.id,
       ],
     }));
   const summaryRows = [
-    { values: ["Income", rupees(totals.income_paisa), null, "Matched active entries"], kind: "data" as const },
-    { values: ["Expenses", rupees(totals.expense_paisa), null, "Matched active entries"], kind: "data" as const },
-    { values: ["Operating result", rupees(totals.net_profit_paisa), null, "Income less recorded expenses (cashbook basis)"], kind: "total" as const },
-    { values: ["Capital introduced", rupees(totals.capital_in_paisa), null, "Non-operating inflow"], kind: "data" as const },
-    { values: ["Owner drawings", rupees(totals.withdrawal_paisa), null, "Non-operating outflow"], kind: "data" as const },
-    { values: ["Cash adjustments in", rupees(totals.adjustment_in_paisa), null, "Separate from operating result"], kind: "data" as const },
-    { values: ["Cash adjustments out", rupees(totals.adjustment_out_paisa), null, "Separate from operating result"], kind: "data" as const },
+    { values: ["Income", workbookMoney(totals.income_paisa), null, "Matched active entries"], kind: "data" as const },
+    { values: ["Expenses", workbookMoney(totals.expense_paisa), null, "Matched active entries"], kind: "data" as const },
+    { values: ["Operating result", workbookMoney(totals.net_profit_paisa), null, "Income less recorded expenses (cashbook basis)"], kind: "total" as const },
+    { values: ["Capital introduced", workbookMoney(totals.capital_in_paisa), null, "Non-operating inflow"], kind: "data" as const },
+    { values: ["Owner drawings", workbookMoney(totals.withdrawal_paisa), null, "Non-operating outflow"], kind: "data" as const },
+    { values: ["Cash adjustments in", workbookMoney(totals.adjustment_in_paisa), null, "Separate from operating result"], kind: "data" as const },
+    { values: ["Cash adjustments out", workbookMoney(totals.adjustment_out_paisa), null, "Separate from operating result"], kind: "data" as const },
     { values: ["Active transactions", null, totals.transaction_count, "Count of filtered active entries"], kind: "total" as const },
   ];
   const sheets: WorkbookSheet[] = [
@@ -111,7 +117,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
         { header: `Total (${currency})`, width: 18, kind: "money" },
       ],
       rows: categoryBreakdown.map((item) => ({
-        values: [item.category_name, item.type.replace("_", " "), item.entry_count, rupees(item.total_paisa)],
+        values: [item.category_name, item.type.replace("_", " "), item.entry_count, workbookMoney(item.total_paisa)],
       })),
       autoFilter: true,
       freezeRows: 5,
@@ -122,7 +128,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
       subtitle: `Recorded income and expenses · ${rangeLabel}`,
       metadata: `${metadata} · Not an account balance or transfer register`,
       columns: [{header:"Account",width:28},{header:"Account ID",width:38},{header:`Income (${currency})`,width:20,kind:"money"},{header:`Expenses (${currency})`,width:20,kind:"money"},{header:`Operating result (${currency})`,width:24,kind:"money"},{header:"Entries",width:12,kind:"number"}],
-      rows: buildReportAccountBreakdown(transactions).map(row => ({values:[row.name,row.accountId,rupees(row.income_paisa),rupees(row.expense_paisa),rupees(row.net_profit_paisa),row.transaction_count]})),
+      rows: buildReportAccountBreakdown(transactions).map(row => ({values:[row.name,row.accountId,workbookMoney(row.income_paisa),workbookMoney(row.expense_paisa),workbookMoney(row.net_profit_paisa),row.transaction_count]})),
       autoFilter:true, freezeRows:5,
     },
     {
@@ -138,7 +144,7 @@ export const buildReportsWorkbook = (input: ReportsWorkbookInput): { sheets: Wor
         { header: "Transactions", width: 16, kind: "number" },
       ],
       rows: trend.map((bucket) => ({
-        values: [bucket.title, rupees(bucket.income_paisa), rupees(bucket.expense_paisa), rupees(bucket.net_profit_paisa), bucket.transaction_count],
+        values: [bucket.title, workbookMoney(bucket.income_paisa), workbookMoney(bucket.expense_paisa), workbookMoney(bucket.net_profit_paisa), bucket.transaction_count],
       })),
       autoFilter: true,
       freezeRows: 5,
