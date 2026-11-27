@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import './motion.css';
 import './typography.css';
+import './styles/borderlessWorkspace.css';
 import { initializeTheme } from './lib/theme';
 
 // Handle OAuth popup window callback: notify parent window and auto-close
