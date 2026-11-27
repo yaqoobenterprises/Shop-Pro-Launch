@@ -18,6 +18,7 @@ import "./ReportsAnalytics.css";
 import "./ReportsRealFinish.css";
 import { buildReportAccountBreakdown } from "../../lib/reportAccountBreakdown";
 import { useRegion } from "../../regional/region";
+import { FinancialTrend } from "../common/FinancialTrend";
 import { ReportInsightCharts } from "./ReportInsightCharts";
 
 export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly = false }) => {
@@ -95,7 +96,6 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
     [transactions],
   );
   const accountBreakdown = useMemo(() => buildReportAccountBreakdown(transactions), [transactions]);
-  const chartMax = Math.max(1, ...trend.map((bucket) => Math.max(bucket.income_paisa, bucket.expense_paisa)));
   const grouping = getTrendGrouping(filters.fromDate, filters.toDate);
 
   const expenseCategories = useMemo(
@@ -184,21 +184,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
           <div><h2>Cash flow</h2></div>
           <div className="reports-modern__legend"><span><i className="is-income" />Income</span><span><i className="is-expense" />Expenses</span></div>
         </div>
-        {trend.length > 0 && <p className="reports-source-note">Scale: {formatPaisa(0)} to {formatPaisa(chartMax)}</p>}
-        {trend.length === 0 ? <div className="reports-modern__empty">No transactions match this reporting range.</div> : (
-          <div className="reports-modern__trend-scroll" tabIndex={0} role="region" aria-label="Income and expense trend, scroll horizontally">
-            <div className="reports-modern__trend" style={{ gridTemplateColumns: `repeat(${trend.length}, minmax(36px, 1fr))` }}>
-              {trend.map((bucket) => {
-                const incomeHeight = bucket.income_paisa > 0 ? (bucket.income_paisa / chartMax) * 100 : 0;
-                const expenseHeight = bucket.expense_paisa > 0 ? (bucket.expense_paisa / chartMax) * 100 : 0;
-                return <div className="reports-modern__trend-item" key={bucket.key} title={`${bucket.title}\nIncome: ${formatPaisa(bucket.income_paisa)}\nExpenses: ${formatPaisa(bucket.expense_paisa)}`}>
-                  <div className="reports-modern__bar-area"><span className="reports-modern__bar is-income" style={{ height: `${incomeHeight}%` }} /><span className="reports-modern__bar is-expense" style={{ height: `${expenseHeight}%` }} /></div>
-                  <span className="reports-modern__trend-label">{bucket.label}</span>
-                </div>;
-              })}
-            </div>
-          </div>
-        )}
+        <FinancialTrend rows={trend} mode="bars" label="Income and expense trend"/>
         {trend.length > 0 && <details className="report-trend-data"><summary>Exact values</summary><div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Exact trend values"><table><caption className="sr-only">Filtered period totals</caption><thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th></tr></thead><tbody>{trend.map(bucket => <tr key={bucket.key}><th scope="row">{bucket.label}</th><td>{formatPaisa(bucket.income_paisa)}</td><td>{formatPaisa(bucket.expense_paisa)}</td><td>{formatPaisa(bucket.net_profit_paisa)}</td></tr>)}</tbody></table></div></details>}
       </section>
 

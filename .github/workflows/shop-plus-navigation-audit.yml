@@ -264,7 +264,12 @@ jobs:
                     await page.getByRole('heading',{name:'Reports',exact:true}).waitFor();
                     await page.getByRole('button',{name:'Last 7 days',exact:true}).click();
                     await page.getByRole('heading',{name:'Activity by account',exact:true}).waitFor();
-                    await page.getByText('View exact trend values',{exact:true}).click();
+                    const chart = page.locator('.finance-trend').first();
+                    await chart.getByRole('button',{name:'Inspect chart values'}).focus();
+                    await page.keyboard.press('End');
+                    await chart.getByRole('button',{name:'Clear chart selection'}).waitFor();
+                    await page.keyboard.press('Escape');
+                    await page.getByText('Exact values',{exact:true}).click();
                     await page.getByRole('table',{name:'Filtered period totals'}).waitFor();
                     await page.getByRole('button',{name:'Export to Excel',exact:true}).waitFor();
                     if (!(await page.getByRole('button',{name:'Export to Excel',exact:true}).isEnabled())) throw new Error('Report export not ready after loading');

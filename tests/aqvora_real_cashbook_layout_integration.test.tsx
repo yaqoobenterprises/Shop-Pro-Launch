@@ -25,7 +25,7 @@ describe("AQVORA real Cashbook Poital.finish integration",()=>{
       status:"active",amount_paisa:1850000,
     } as Transaction;
     render(<ChatFeed {...emptyProps} transactions={[transaction]}/>);
-    expect(screen.getByRole("heading",{name:"Today's activity"})).toBeTruthy();
+    expect(screen.getByRole("heading",{name:"Activity"})).toBeTruthy();
     expect(screen.getByLabelText("1 recorded entry")).toBeTruthy();
     expect(screen.getByLabelText("Today's cashbook activity")).toBeTruthy();
     expect(screen.getByText("Sale")).toBeTruthy();
@@ -33,7 +33,7 @@ describe("AQVORA real Cashbook Poital.finish integration",()=>{
   it("keeps empty-day cashbook and real entry action usable",()=>{
     const startEntry=vi.fn();
     render(<ChatFeed {...emptyProps} transactions={[]} onStartEntry={startEntry}/>);
-    expect(screen.getByRole("heading",{name:"Today's activity"})).toBeTruthy();
+    expect(screen.getByRole("heading",{name:"Activity"})).toBeTruthy();
     expect(screen.getByRole("status",{name:"No cashbook entries today"})).toBeTruthy();
     expect(screen.getByText("No entries today")).toBeTruthy();
     fireEvent.click(screen.getByRole("button",{name:/Record an entry/}));
