@@ -28,3 +28,7 @@
 - Added tests for cloud-only Overview reads and errors, account filter in both cloud paths and offline pagination/export, Cashbook loading/unavailable state and explicit composer focus.
 - Browser workflow now also exercises matching description search, restoring filters after navigation, invalid date range and export disabling, resetting filters, and opening/canceling a cashbook review without posting. Both themes, eight widths, isolated demo only, external requests blocked.
 - Final CI and browser results pending at time of writing. Manual accessibility, screen-reader, visual comparison, performance and live authorization gates remain. No production deployment or financial data modification.
+
+## Phase 04 verification follow-up
+
+[Browser run 45956775193](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45956775193) built successfully in both themes and recorded eight passing navigation interactions per theme, including the repaired phone More dialog. The financial interaction check reached the review-dialog stage but timed out at all widths; the locator excluded the valid `Clarify transaction` heading. The test selector was expanded in Phase 05; a fresh passing result is required. CI 45956775655 passed both type checks and lint but failed existing file-size limits; Phase 05 extracted account-filter tests and reduced ConfirmationModal length without changing limits. CI 45957461664 subsequently passed type checks, lint and file-size checks. Full regression and current browser runs remain outstanding.
