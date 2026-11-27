@@ -10,6 +10,7 @@ import "./OverviewReference.css";
 import "./OverviewFinish.css";
 import "./OverviewRealFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
+import { FinancialTrend } from "../common/FinancialTrend";
 import { FinancialDonut } from "../common/FinancialDonut";
 import { OverviewActivity } from "./OverviewActivity";
 import { OverviewAreaChart } from "./OverviewAreaChart";
@@ -240,14 +241,7 @@ export const LedgerDashboardView: React.FC<{ cloudOnly?: boolean; onExplore?: (s
                       </div>
                     ) : (
                     <div className="aq-day-compare" role="group" aria-label="Income and expenses for selected date">
-                      <div className="aq-day-compare__row">
-                        <div><span>Income</span><strong>{formatPaisa(activeIncome)}</strong></div>
-                        <div className="aq-day-compare__track"><i style={{ width: `${activeIncome > 0 ? 100 * activeIncome / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
-                      </div>
-                      <div className="aq-day-compare__row aq-day-compare__row--expense">
-                        <div><span>Expenses</span><strong>{formatPaisa(activeExpense)}</strong></div>
-                        <div className="aq-day-compare__track"><i style={{ width: `${activeExpense > 0 ? 100 * activeExpense / Math.max(activeIncome, activeExpense, 1) : 0}%` }} /></div>
-                      </div>
+                      <FinancialTrend mode="bars" label="Income and expenses for selected day" rows={[{key:currentDate,label:formatDisplayDate(currentDate),title:formatDisplayDate(currentDate),income_paisa:activeIncome,expense_paisa:activeExpense,net_profit_paisa:activeProfit,transaction_count:dailyData?.transaction_count??0}]}/>
                       <div className="aq-day-insights" aria-label="Selected day summary">
                         <div className="aq-day-insights__metric">
                           <span>Result</span>

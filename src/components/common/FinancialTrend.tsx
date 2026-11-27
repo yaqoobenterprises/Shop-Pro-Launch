@@ -25,8 +25,8 @@ export function FinancialTrend({rows,mode="area",label}:{rows:ReportTrendBucket[
  const keyDown=(event:React.KeyboardEvent)=>{const i=activeIndex<0?0:activeIndex;let next:number|undefined;switch(event.key){case "ArrowLeft":next=Math.max(0,i-1);break;case "ArrowRight":next=Math.min(rows.length-1,i+1);break;case "Home":next=0;break;case "End":next=rows.length-1;break;case "Escape":setHover(null);setPinned(null);return;default:return;}event.preventDefault();setHover(null);setPinned(rows[next]?.key??null);};
  if(!rows.length)return <p className="finance-chart-empty">No activity</p>;
  const zero=y(0),labelCount=Math.max(2,Math.floor(plotW/72)),step=Math.max(1,Math.ceil((rows.length-1)/labelCount));
- const ticks=domain.high===domain.low?[0]:Array.from(new Set([low,(low+high)/2,high,0])).sort((a,b)=>b-a).filter((v,i,a)=>i===0||Math.abs(y(v)-y(a[i-1]))>=17||v===0);
- const barW=Math.max(1,Math.min(24,plotW/rows.length/2.8));
+ const ticks=domain.high===domain.low?[0]:Array.from(new Set([low,low+(high-low)*.25,(low+high)/2,low+(high-low)*.75,high,0])).sort((a,b)=>b-a).filter((v,i,a)=>i===0||Math.abs(y(v)-y(a[i-1]))>=17||v===0);
+ const barW=Math.max(1,Math.min(rows.length===1?62:24,plotW/rows.length/2.8));
  return <div className="finance-trend" ref={container} data-mode={mode}>
   <div className="finance-trend__summary" aria-live="off">
     <span className="finance-trend__period">{selected?.title??"Selected period"}</span>
@@ -45,7 +45,7 @@ export function FinancialTrend({rows,mode="area",label}:{rows:ReportTrendBucket[
     </>}
    </g>;})}
    {selected&&<line x1={x(activeIndex)} x2={x(activeIndex)} y1={top} y2={height-bottom} stroke="var(--muted)" opacity=".6" strokeDasharray="3 4" pointerEvents="none"/>}
-   {rows.map((row,i)=>i===0||i===rows.length-1||(i%step===0&&rows.length-1-i>=step*.65)?<text key={row.key} x={x(i)} y={height-9} textAnchor={i===0?"start":i===rows.length-1?"end":"middle"} fill="var(--muted)" fontSize="10">{row.label}</text>:null)}
+   {rows.map((row,i)=>i===0||i===rows.length-1||(i%step===0&&rows.length-1-i>=step*.65)?<text key={row.key} x={x(i)} y={height-9} textAnchor={rows.length===1?"middle":i===0?"start":i===rows.length-1?"end":"middle"} fill="var(--muted)" fontSize="10">{row.label}</text>:null)}
   </svg>
   <div className="finance-trend__navigation"><button type="button" aria-label="Inspect chart values" onFocus={()=>{if(!selected)setPinned(rows[0].key);}} onKeyDown={keyDown} onClick={()=>{setHover(null);setPinned(rows[activeIndex<0?0:activeIndex].key);}}>Inspect</button><button type="button" aria-label="Previous chart period" disabled={activeIndex===0} onClick={()=>{setHover(null);setPinned(rows[Math.max(0,activeIndex-1)].key);}}>‹</button><button type="button" aria-label="Next chart period" disabled={activeIndex===rows.length-1} onClick={()=>{setHover(null);setPinned(rows[Math.min(rows.length-1,activeIndex+1)].key);}}>›</button>{pinned&&<button type="button" aria-label="Clear chart selection" onClick={()=>{setHover(null);setPinned(null);}}>×</button>}<span className="sr-only" aria-live="polite">{pinned&&selected?selected.title+" "+series.map(s=>s.label+" "+money(selected[s.key])).join(", "):""}</span></div>
   <table className="sr-only" aria-label={label+" exact values"}><thead><tr><th scope="col">Period</th>{series.map(s=><th scope="col" key={s.key}>{s.label}</th>)}</tr></thead><tbody>{rows.map(row=><tr key={row.key}><th scope="row">{row.title}</th>{series.map(s=><td key={s.key}>{money(row[s.key])}</td>)}</tr>)}</tbody></table>
