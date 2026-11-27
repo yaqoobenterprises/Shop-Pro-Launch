@@ -35,16 +35,23 @@ describe('transaction account scope', () => {
     vi.spyOn(supabaseLib, 'isSupabaseConfigured').mockReturnValue(true);
     vi.spyOn(ledgerService, 'getPaymentAccounts').mockResolvedValue([]);
     const query = () => ({ select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(),
-      order: vi.fn().mockReturnThis(), range: vi.fn() });
+      order: vi.fn().mockReturnThis(), gte: vi.fn().mockReturnThis(), lte: vi.fn().mockReturnThis(), range: vi.fn() });
     const first = query(); const second = query();
     first.range.mockResolvedValue({ data: null, error: new Error('relationship unavailable'), count: null });
     second.range.mockResolvedValue({ data: [], error: null, count: 0 });
     vi.spyOn(supabaseLib, 'getSupabaseClient').mockReturnValue({
       from: vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second),
     } as never);
-    await ledgerService.getFilteredTransactions({ accountId: 'account-1', limit: 25 }, { requireCloudSource: true });
+    await ledgerService.getFilteredTransactions({ accountId: 'account-1', minAmountPaisa: 100, maxAmountPaisa: 500, sort:'amount-low', limit: 25 }, { requireCloudSource: true });
     expect(first.eq).toHaveBeenCalledWith('account_id', 'account-1');
     expect(second.eq).toHaveBeenCalledWith('account_id', 'account-1');
+    for (const q of [first,second]) {
+      expect(q.eq).toHaveBeenCalledWith('organization_id',organizationId);
+      expect(q.gte).toHaveBeenCalledWith('amount_paisa',100);
+      expect(q.lte).toHaveBeenCalledWith('amount_paisa',500);
+      expect(q.order).toHaveBeenCalledWith('amount_paisa',{ascending:true});
+      expect(q.order).toHaveBeenCalledWith('id',{ascending:true});
+    }
   });
 
   it("rejects account mutations and transfer attempts from a cashier before any database request", async () => {

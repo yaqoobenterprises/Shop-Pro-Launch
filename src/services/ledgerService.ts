@@ -1321,6 +1321,7 @@ export class LedgerService {
         let query = supabase
           .from('transactions')
           .select('*, categories(name)', { count: 'exact' });
+        if (principal) query = query.eq('organization_id', principal.organizationId);
 
         if (filter.startDate) {
           query = query.gte('business_date', filter.startDate);
@@ -1357,6 +1358,7 @@ export class LedgerService {
           let retryQuery = supabase
             .from('transactions')
             .select('*', { count: 'exact' });
+          if (principal) retryQuery = retryQuery.eq('organization_id', principal.organizationId);
 
           if (filter.startDate) retryQuery = retryQuery.gte('business_date', filter.startDate);
           if (filter.endDate) retryQuery = retryQuery.lte('business_date', filter.endDate);
@@ -1392,6 +1394,7 @@ export class LedgerService {
             account_name: accounts.find((account) => account.id === row.account_id)?.name,
           }));
 
+          if (options.requireCloudSource && count === null) throw new Error('Transaction count could not be verified.');
           return { transactions, count: count || 0 };
         }
       } catch (err) {
