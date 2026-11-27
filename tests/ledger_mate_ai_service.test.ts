@@ -40,4 +40,18 @@ describe("LedgerMate streaming client", () => {
     )).resolves.toEqual({ reply: "Rs 530.00", model: "openai/gpt-oss-20b" });
     expect(deltas).toEqual(["Rs 530.00"]);
   });
+  it("does not send an already cancelled request",async()=>{
+    const controller=new AbortController();
+    controller.abort();
+    const fetchMock=vi.fn();
+    vi.stubGlobal("fetch",fetchMock);
+    await expect(sendLedgerMateMessage([{role:"user",content:"Hello"}],"",( )=>{},controller.signal)).rejects.toMatchObject({name:"AbortError"});
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects an incomplete stream instead of accepting a partial answer",async()=>{
+    getSession.mockResolvedValue({data:{session:{access_token:"session-token"}},error:null});
+    vi.stubGlobal("fetch",vi.fn(async()=>new Response('event: delta\ndata: {"delta":"partial"}\n\n',{headers:{"Content-Type":"text/event-stream"}})));
+    await expect(sendLedgerMateMessage([{role:"user",content:"Hello"}],"",()=>{})).rejects.toThrow("ended before completion");
+  });
 });
