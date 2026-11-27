@@ -33,6 +33,20 @@ jobs:
           mkdir -p "$RUNNER_TEMP/shop-plus-local"
           cd "$RUNNER_TEMP/shop-plus-local"
           "$GITHUB_WORKSPACE/node_modules/.bin/supabase" init
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, tomllib
+          path = Path("supabase/config.toml")
+          config = path.read_text()
+          section = r"(?m)^\[auth\.mfa\.totp\][ \t]*\n[^\[]*"
+          replacement = "[auth.mfa.totp]\nenroll_enabled = true\nverify_enabled = true\n\n"
+          if re.search(section, config):
+              config = re.sub(section, lambda _: replacement, config, count=1)
+          else:
+              config += "\n" + replacement
+          assert tomllib.loads(config)["auth"]["mfa"]["totp"] == {"enroll_enabled": True, "verify_enabled": True}
+          path.write_text(config)
+          PY
           "$GITHUB_WORKSPACE/node_modules/.bin/supabase" start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,supavisor
           "$GITHUB_WORKSPACE/node_modules/.bin/supabase" status -o env > "$RUNNER_TEMP/shop-plus-local.env"
       - name: Auth, upgrade and concurrent financial integration
