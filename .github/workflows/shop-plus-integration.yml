@@ -6,6 +6,11 @@ on:
     paths:
       - .github/workflows/shop-plus-integration.yml
       - scripts/shop-plus-local-integration.mjs
+      - scripts/shop-plus-authenticated-browser.mjs
+      - src/components/**
+      - src/services/**
+      - src/App.tsx
+      - public/**
       - supabase/migrations/**
       - api/ai-chat.js
   workflow_dispatch:
@@ -49,9 +54,20 @@ jobs:
           PY
           "$GITHUB_WORKSPACE/node_modules/.bin/supabase" start -x studio,imgproxy,edge-runtime,logflare,vector,realtime,supavisor
           "$GITHUB_WORKSPACE/node_modules/.bin/supabase" status -o env > "$RUNNER_TEMP/shop-plus-local.env"
+      - name: Install browser tooling
+        run: |
+          npm install --prefix "$RUNNER_TEMP/shop-plus-integration-browser" --no-save playwright@1.56.1
+          "$RUNNER_TEMP/shop-plus-integration-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Build isolated browser candidate
+        run: |
+          set -a
+          source "$RUNNER_TEMP/shop-plus-local.env"
+          set +a
+          VITE_SUPABASE_URL=https://shop-plus-local.test VITE_SUPABASE_PUBLISHABLE_KEY="${PUBLISHABLE_KEY:-$ANON_KEY}" npm run build
       - name: Auth, upgrade and concurrent financial integration
         env:
           SHOP_PLUS_LOCAL_TEST: "1"
+          SHOP_PLUS_BROWSER_TEST: "1"
         run: |
           set -a
           source "$RUNNER_TEMP/shop-plus-local.env"

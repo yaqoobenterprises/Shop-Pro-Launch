@@ -181,6 +181,12 @@ try {
     assert.deepEqual(await aiHealth(lowUser),{status:403,providerCalls:0});
     assert.deepEqual(ok(await low.from("transactions").select("id").eq("id",existingReceipt)),[]);
   });
+  if(process.env.SHOP_PLUS_BROWSER_TEST==="1") {
+    const { runAuthenticatedBrowser }=await import("./shop-plus-authenticated-browser.mjs");
+    await check("signed-in browser overview, account history, filters, AI, logout and icon decoding",async()=>{
+      await runAuthenticatedBrowser({api:api.origin,key,owner,foreign,cash,bank});
+    });
+  }
 } catch(error) {
   evidence.push({name:"fixture setup",passed:false,error:String(error.message || error)});
   console.error("Fixture setup failed:",error.message);
