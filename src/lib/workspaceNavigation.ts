@@ -12,3 +12,8 @@ export const readWorkspaceView = (pathname: string): WorkspaceView | null => {
 };
 
 export const workspacePath = (view: WorkspaceView) => `/workspace/${view}`;
+
+/** Only clean application URLs (plus the accessible skip-link fragment) are rewritten. */
+export const canNavigateWorkspace = (location: Pick<Location, "pathname" | "search" | "hash">): boolean =>
+  !location.search && (!location.hash || location.hash === "#main-content") &&
+  (location.pathname === "/" || readWorkspaceView(location.pathname) !== null);
