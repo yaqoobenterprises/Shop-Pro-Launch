@@ -7,7 +7,7 @@ import { useApp } from "../../context/AppContext";
 import { hasPermission } from "../../lib/permissions";
 import "./TransactionsWorkspace.css";
 import { Transaction, Category, LedgerAccount } from "../../types/ledger";
-import { formatPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 import { useRegion } from "../../regional/region";
 import { useI18n } from "../../i18n";
 import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
