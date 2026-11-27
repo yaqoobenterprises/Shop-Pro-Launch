@@ -102,7 +102,7 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
     </div>
 
     <div className="lm-access-note"><span>Financial answers use retrieved ledger data. AI explanations may be inaccurate.</span>{canPrepareActions && <button type="button" aria-pressed={actionsEnabled} disabled={sending || actionBusy || Boolean(pendingAction)} onClick={onToggleActions}>{actionsEnabled ? "Turn off ledger actions" : "Enable reviewed ledger actions"}</button>}</div>
-    <div className="lm-messages" role="log" aria-label="Conversation messages" aria-live={sending ? "off" : "polite"} aria-relevant="additions">
+    <div className="lm-messages" tabIndex={0} role="log" aria-label="Conversation messages" aria-live={sending ? "off" : "polite"} aria-relevant="additions">
       {messages.length === 0 && <div className="lm-empty-state">
         <div className="lm-empty-icon"><MessageCircle aria-hidden="true" /></div>
         <h2>What would you like to understand?</h2>
