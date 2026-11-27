@@ -13,6 +13,12 @@ on:
       - src/lib/premiumXlsx.ts
       - src/lib/reportAccountBreakdown.ts
       - src/App.tsx
+      - src/components/chat/**
+      - src/components/settings/**
+      - src/components/auth/**
+      - src/services/ledgerMate*.ts
+      - src/services/useLedgerMateChatHistory.ts
+      - api/ai-chat.js
   workflow_dispatch:
 
 permissions:
@@ -64,6 +70,7 @@ jobs:
           const interactions = [];
           const financialChecks = [];
           const reportingChecks = [];
+          const assistantSettingsChecks = [];
           const theme = process.env.AUDIT_THEME;
           async function capture(page, width, surface, errors) {
             const metrics = await page.evaluate(() => ({
@@ -238,6 +245,49 @@ jobs:
                     if (!(await page.getByRole('button',{name:'Export to Excel',exact:true}).isEnabled())) throw new Error('Report export not ready after loading');
                     reportingChecks.push({width,passed:true});
                   } catch(e) { reportingChecks.push({width,step:reportStep,error:String(e)}); }
+                  let settingsStep = 'read-only assistant';
+                  try {
+                    const openSecondary = async (label,view) => {
+                      if (width < 768) {
+                        await navigation.getByRole('button',{name:'More navigation options'}).click();
+                        await page.getByRole('dialog',{name:'More navigation'}).getByRole('button',{name:label,exact:true}).click();
+                      } else await chrome.getByRole('button',{name:label,exact:true}).click();
+                      await page.waitForURL('**/workspace/'+view);
+                    };
+                    await openSecondary('LedgerMate AI','ai');
+                    await page.getByRole('heading',{name:'LedgerMate AI',exact:true}).waitFor();
+                    await page.getByText('Read-only analysis',{exact:true}).waitFor();
+                    if (await page.getByRole('button',{name:'Enable reviewed ledger actions'}).count()) throw new Error('Demo must not enable ledger actions');
+                    await page.getByRole('button',{name:'History',exact:true}).click();
+                    const history=page.getByRole('region',{name:'Chat history'});
+                    await history.waitFor();
+                    await history.getByRole('button',{name:'Close history'}).click();
+                    await history.waitFor({state:'hidden'});
+                    settingsStep='settings navigation';
+                    await openSecondary('Settings','settings');
+                    const settingsNav=page.getByRole('navigation',{name:'Settings sections'});
+                    await settingsNav.waitFor();
+                    await settingsNav.getByRole('button',{name:'Appearance',exact:true}).click();
+                    const appearance=page.locator('#settings-panel-appearance');
+                    await appearance.waitFor();
+                    const alternate=theme==='dark'?'Light':'Dark';
+                    await appearance.getByRole('button',{name:alternate,exact:true}).click();
+                    await page.waitForFunction(value=>document.documentElement.dataset.theme===value,alternate.toLowerCase());
+                    await appearance.getByRole('button',{name:theme==='dark'?'Dark':'Light',exact:true}).click();
+                    await page.waitForFunction(value=>document.documentElement.dataset.theme===value,theme);
+                    settingsStep='category and recovery guards';
+                    await settingsNav.getByRole('button',{name:'Categories',exact:true}).click();
+                    const category=page.locator('#settings-panel-categories');
+                    await category.waitFor();
+                    if (!(await category.getByRole('button',{name:'Add category'}).isDisabled())) throw new Error('Demo category mutation enabled');
+                    await settingsNav.locator('#settings-nav-data-tools').click();
+                    const data=page.locator('#settings-panel-data-tools');
+                    await data.waitFor();
+                    if (!(await data.getByRole('button',{name:'Restore device'}).isDisabled())) throw new Error('Demo recovery mutation enabled');
+                    await settingsNav.getByRole('button',{name:'Security',exact:true}).click();
+                    await page.locator('#settings-panel-security').waitFor();
+                    assistantSettingsChecks.push({width,passed:true});
+                  } catch(e) { assistantSettingsChecks.push({width,step:settingsStep,error:String(e)}); }
                 } catch (e) { records.push({width,error:String(e)}); }
                 finally { await context.close(); }
               }
@@ -247,11 +297,14 @@ jobs:
               fs.writeFileSync('browser-audit/interactions.json',JSON.stringify(interactions,null,2));
               fs.writeFileSync('browser-audit/financial-checks.json',JSON.stringify(financialChecks,null,2));
               fs.writeFileSync('browser-audit/reporting-checks.json',JSON.stringify(reportingChecks,null,2));
+              fs.writeFileSync('browser-audit/assistant-settings-checks.json',JSON.stringify(assistantSettingsChecks,null,2));
             }
             console.log(JSON.stringify(records,null,2));
             console.log(JSON.stringify(interactions,null,2));
             console.log(JSON.stringify(financialChecks,null,2));
             console.log(JSON.stringify(reportingChecks,null,2));
+            console.log(JSON.stringify(assistantSettingsChecks,null,2));
+            if (assistantSettingsChecks.length !== widths.length || assistantSettingsChecks.some(r => !r.passed)) process.exitCode = 1;
             if (reportingChecks.length !== widths.length || reportingChecks.some(r => !r.passed)) process.exitCode = 1;
             if (financialChecks.length !== widths.length || financialChecks.some(r => !r.passed)) process.exitCode = 1;
             if (interactions.length !== widths.length || interactions.some(r => !r.passed)) process.exitCode = 1;
