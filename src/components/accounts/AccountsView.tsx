@@ -2,14 +2,9 @@ import React, { useCallback, useEffect, useState, useRef } from "react";
 import { Select } from "../common/Select";
 import {
   ArrowLeftRight,
-  Banknote,
-  Landmark,
   Plus,
   RefreshCw,
   Check,
-  Pencil,
-  Power,
-  WalletCards,
 } from "lucide-react";
 import {
   ledgerService,
@@ -19,10 +14,10 @@ import { formatPaisa, parseInputToPaisa } from "../../lib/money";
 import { AnimatedAmount } from "../common/AnimatedAmount";
 import "./AccountsPoitalFinish.css";
 import "./AccountInsights.css";
+import { AccountCards } from "./AccountCards";
 import { PaymentAccountInsights } from "./PaymentAccountInsights";
 import { LedgerAccount } from "../../types/ledger";
 import {
-  findAccountProvider,
   PAKISTAN_ACCOUNT_PROVIDERS,
 } from "../../lib/accountProviders";
 
@@ -56,6 +51,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
     const id = ++requestId.current;
     setIsLoading(true);
     setLoadFailed(false);
+    setError(current => current === "Accounts could not be loaded. Please refresh and try again." ? "" : current);
     try {
       const result = await ledgerService.getPaymentAccounts();
       if (id !== requestId.current) return false;
@@ -137,6 +133,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
 
   const handleTransfer = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (mutationLock.current) return;
     setError("");
     setMessage("");
     if (!sourceAccountId || !destinationAccountId) {
@@ -208,7 +205,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
     } finally { endMutation(); }
   };
 
-  const totalBalancePaisa = accounts.reduce((sum, account) => sum + (account.is_active ? Number(account.balance_paisa) || 0 : 0), 0);
+  const totalBalancePaisa = activeAccounts.every(account => Number.isSafeInteger(account.balance_paisa)) ? activeAccounts.reduce((sum, account) => sum + account.balance_paisa, 0) : NaN;
 
   return (
     <div className="page-content accounts-page">
@@ -244,6 +241,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
       )}
 
       <p className="account-scope-note">Available recorded balances may include local account changes; these are not verified bank statements. Transfers are internal movements, not income or expenses.</p>
+      <button type="button" className="button button-secondary account-refresh" onClick={() => void loadAccounts()} disabled={isLoading || busy}>Refresh balances</button>
       <div className="accounts-quick-actions" role="group" aria-label="Account management">
         <button type="button" disabled={!canManage || busy} aria-expanded={activeTool === "add"} aria-controls={activeTool === "add" ? "aq-account-create" : undefined}
           onClick={() => setActiveTool((current) => current === "add" ? null : "add")}>
@@ -254,129 +252,6 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
           <ArrowLeftRight className="h-4 w-4" aria-hidden="true"/> Move money
         </button>
       </div>
-      {/* Account Grid */}
-      <div className="account-grid">
-        {isLoading && accounts.length === 0 && (
-          <div className="empty-state" role="status">
-            <RefreshCw className="h-6 w-6 animate-spin" />
-            <p>Loading accounts...</p>
-          </div>
-        )}
-        {!isLoading && accounts.length === 0 && (
-          <div className="empty-state">
-            <strong>{error ? "Accounts are unavailable" : "No accounts yet"}</strong>
-            <p>{error || "Add an account to start tracking money."}</p>
-          </div>
-        )}
-        {accounts.map((acc) => {
-          const brand = findAccountProvider(acc.name);
-          const accountMarkLabel = brand?.name
-            ? `${brand.name} ${brand.logo ? "logo" : "brand mark"}`
-            : acc.type === "CASH"
-              ? "Cash account"
-              : acc.type === "BANK"
-                ? "Bank account"
-                : "Digital wallet account";
-          const accountMarkClass = brand
-            ? brand.logo
-              ? `account-brand--${brand.key}`
-              : "account-brand--provider"
-            : `account-brand--${acc.type.toLowerCase().replace("_", "-")}`;
-          const isEditing = editingAccountId === acc.id;
-          const deactivateBlocked = acc.is_active && !canDeactivate(acc);
-          return (
-            <div
-              className="account-card"
-              key={acc.id}
-            >
-              <div className="account-top">
-                <div
-                  className={`account-brand ${accountMarkClass}`}
-                  role="img"
-                  aria-label={accountMarkLabel}
-                  style={brand && !brand.logo ? { "--account-brand-color": brand.color } as React.CSSProperties : undefined}
-                >
-                  {brand?.logo ? (
-                    <img src={brand.logo} alt="" />
-                  ) : brand ? (
-                    <span className="account-brand-wordmark" aria-hidden="true">{brand.mark}</span>
-                  ) : acc.type === "CASH" ? (
-                    <Banknote aria-hidden="true" />
-                  ) : acc.type === "BANK" ? (
-                    <Landmark aria-hidden="true" />
-                  ) : (
-                    <WalletCards aria-hidden="true" />
-                  )}
-                </div>
-                <div className="account-actions">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isEditing) {
-                        void handleSaveName(acc.id);
-                        return;
-                      }
-                      setEditingAccountId(acc.id);
-                      setEditingName(acc.name);
-                    }}
-                    disabled={!canManage || busy || isLoading || loadFailed}
-                    className="account-action-button account-edit-button"
-                    aria-label={isEditing ? `Save ${acc.name}` : `Edit ${acc.name}`}
-                    title={isEditing ? "Save account name" : "Edit account name"}
-                  >
-                    {isEditing ? <Check aria-hidden="true" /> : <Pencil aria-hidden="true" />}
-                  </button>
-                  <button
-                    type="button"
-                    className={`account-action-button account-status-button${acc.is_active ? " is-deactivate" : " is-reactivate"}`}
-                    onClick={() => void handleDeactivate(acc)}
-                    disabled={deactivateBlocked || !canManage || busy || loadFailed || isLoading}
-                    aria-label={`${acc.is_active ? "Deactivate" : "Reactivate"} ${acc.name}`}
-                    title={
-                      deactivateBlocked
-                        ? "Move the balance and keep at least one active account"
-                        : `${acc.is_active ? "Deactivate" : "Reactivate"} account`
-                    }
-                  >
-                    <Power aria-hidden="true" />
-                  </button>
-                </div>
-              </div>
-
-              {isEditing ? (
-                <input
-                  type="text"
-                  aria-label={`Account name for ${acc.name}`}
-                  disabled={busy}
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    margin: "4px 0 10px",
-                    width: "100%",
-                    padding: "4px 6px",
-                    border: "1px solid var(--accent-line)",
-                    borderRadius: 6,
-                  }}
-                />
-              ) : (
-                <h2>{acc.name}</h2>
-              )}
-
-              <span className="account-kind">{acc.type === "CASH" ? "Cash" : acc.type === "BANK" ? "Bank" : acc.type === "DIGITAL_WALLET" ? "Digital wallet" : "Other"}{acc.is_default ? " · Primary" : ""}{!acc.is_active ? " · Inactive" : ""}</span>
-              <strong className="metric-amount">
-                <AnimatedAmount amountPaisa={acc.balance_paisa} loading={isLoading} error={loadFailed} />
-              </strong>
-              {onExplore && <button type="button" className="account-history-link" onClick={() => onExplore(acc.id)}>View transactions</button>}
-            </div>
-          );
-        })}
-      </div>
-
-      {!loadFailed && !isLoading && accounts.length > 0 &&
-        <PaymentAccountInsights accounts={accounts} onRefresh={() => { void loadAccounts(); }} isRefreshing={isLoading} />}
-
       {activeTool && <div className="account-tools accounts-tools--focused">
         {activeTool === "add" && <section id="aq-account-create" className="panel account-tool-panel">
           <div className="panel-heading account-tool-heading">
@@ -387,7 +262,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
           </div>
 
           <form onSubmit={handleCreateAccount}>
-            <div className="form-grid">
+            <fieldset disabled={busy} className="form-grid">
               <label className="full">
                 Account name
                 <input
@@ -427,7 +302,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
                   placeholder="0.00"
                 />
               </label>
-            </div>
+            </fieldset>
 
             <div className="modal-actions">
               <button type="submit" className="button button-primary account-tool-submit" disabled={isLoading || busy || !canManage}>
@@ -447,7 +322,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
 
           <p className="account-scope-note">Move recorded money between accounts. This does not initiate a bank payment.</p>
           <form onSubmit={handleTransfer}>
-            <div className="form-grid">
+            <fieldset disabled={busy} className="form-grid">
               <label>
                 From
                 <Select
@@ -501,7 +376,7 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
                   placeholder="0.00"
                 />
               </label>
-            </div>
+            </fieldset>
 
             <div className="modal-actions">
               <button
@@ -516,6 +391,30 @@ export const AccountsView: React.FC<{ canManage?: boolean; canTransfer?: boolean
           </form>
         </section>}
       </div>}
+      {/* Account Grid */}
+      <div className="account-grid">
+        {isLoading && accounts.length === 0 && (
+          <div className="empty-state" role="status">
+            <RefreshCw className="h-6 w-6 animate-spin" />
+            <p>Loading accounts...</p>
+          </div>
+        )}
+        {!isLoading && accounts.length === 0 && (
+          <div className="empty-state">
+            <strong>{error ? "Accounts are unavailable" : "No accounts yet"}</strong>
+            <p>{error || "Add an account to start tracking money."}</p>
+          </div>
+        )}
+        <AccountCards accounts={accounts} editingAccountId={editingAccountId} editingName={editingName}
+          setEditingAccountId={setEditingAccountId} setEditingName={setEditingName}
+          handleSaveName={handleSaveName} handleDeactivate={handleDeactivate} canDeactivate={canDeactivate}
+          canManage={canManage} busy={busy} isLoading={isLoading} loadFailed={loadFailed} onExplore={onExplore} />
+      </div>
+
+      {!loadFailed && !isLoading && accounts.length > 0 &&
+        <PaymentAccountInsights accounts={accounts} onRefresh={() => { void loadAccounts(); }} isRefreshing={isLoading} />}
+
+
     </div>
   );
 };
