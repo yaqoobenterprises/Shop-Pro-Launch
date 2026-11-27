@@ -6,10 +6,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { ledgerService } from "../../services/ledgerService";
-import { formatPaisa } from "../../lib/money";
+import { formatRecordedPaisa as formatPaisa } from "../../lib/money";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
 import type { Category, Transaction } from "../../types/ledger";
-import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, getTrendGrouping } from "../../lib/reportAnalytics";
+import { assertReportAmounts, buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, getTrendGrouping } from "../../lib/reportAnalytics";
 import { downloadPremiumXlsx } from "../../lib/premiumXlsx";
 import { buildReportsWorkbook } from "./buildReportsWorkbook";
 import { ReportFiltersPanel, type ReportFilters } from "./ReportFiltersPanel";
@@ -67,6 +67,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
       };
       const rows = cloudOnly ? await ledgerService.getAllFilteredTransactions(query, { requireCloudSource: true }) : await ledgerService.getAllFilteredTransactions(query);
       if (id !== requestId.current) return;
+      assertReportAmounts(rows);
       setTransactions(rows);
       setLoadedFilters(filters);
       setTransactionPage(0);
