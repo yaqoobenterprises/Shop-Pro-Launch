@@ -244,7 +244,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
         </nav>}
       </section>
       </>}
-      <p className="reports-modern__footer-note">Active entries · Shop business dates</p>
+      <p className="reports-modern__footer-note">Active entries · Shop business dates · Printed register includes the displayed page; Excel contains every matched record.</p>
     </div>
   );
 };
