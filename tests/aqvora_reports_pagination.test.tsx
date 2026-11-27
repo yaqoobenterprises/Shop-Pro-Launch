@@ -34,4 +34,18 @@ describe("AQVORA report register usability", () => {
     fireEvent.click(screen.getByRole("button", { name: "Previous transaction page" }));
     expect(register?.querySelectorAll("tbody tr")).toHaveLength(15);
   });
+  it("refuses to show fabricated zero totals or enable export on a failed authoritative read", async () => {
+    vi.spyOn(ledgerService,"getCategories").mockResolvedValue([]);
+    const fetch=vi.spyOn(ledgerService,"getAllFilteredTransactions").mockRejectedValue(new Error("Cloud read failed"));
+    render(<LedgerReportsView cloudOnly/>);
+    expect(await screen.findByRole("alert")).toHaveTextContent("Cloud read failed");
+    expect(screen.getAllByText("Unavailable")).toHaveLength(4);
+    expect(screen.getByRole("button",{name:"Export to Excel"})).toBeDisabled();
+    expect(screen.queryByRole("heading",{name:"Transaction register"})).toBeNull();
+    expect(fetch).toHaveBeenCalledWith(expect.objectContaining({status:"active"}),{requireCloudSource:true});
+    fetch.mockResolvedValue([]);
+    fireEvent.click(screen.getByRole("button",{name:"Retry"}));
+    await waitFor(() => expect(screen.getByRole("button",{name:"Export to Excel"})).toBeEnabled());
+    expect(screen.getByText("No matching transactions to display.")).toBeTruthy();
+  });
 });
