@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Select } from "../common/Select";
 import { LedgerAccount, Transaction, TransactionDraft } from "../../types/ledger";
 import { formatPaisa } from "../../lib/money";
@@ -25,6 +25,8 @@ interface ChatFeedProps {
   onRestore: (tx: Transaction) => void;
   onAssignDraft: (draft: TransactionDraft, accountId: string) => Promise<void>;
   onStartEntry?: () => void;
+  loading?: boolean;
+  unavailable?: boolean;
 }
 
 export const ChatFeed: React.FC<ChatFeedProps> = ({
@@ -37,19 +39,24 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
   onRestore,
   onAssignDraft,
   onStartEntry,
+  loading = false,
+  unavailable = false,
 }) => {
   const { t } = useI18n();
   const [selectedAccounts, setSelectedAccounts] = useState<Record<string, string>>({});
+  const savingIdsRef = useRef(new Set<string>());
   const [savingDraftIds, setSavingDraftIds] = useState<Set<string>>(new Set());
   const [selectedDetailTx, setSelectedDetailTx] = useState<Transaction | null>(null);
 
   const assignDraft = async (draft: TransactionDraft) => {
     const accountId = selectedAccounts[draft.id] || draft.pending_account_id || "";
-    if (!accountId || savingDraftIds.has(draft.id)) return;
+    if (!accountId || savingIdsRef.current.has(draft.id)) return;
+    savingIdsRef.current.add(draft.id);
     setSavingDraftIds((current) => new Set(current).add(draft.id));
     try {
       await onAssignDraft(draft, accountId);
     } finally {
+      savingIdsRef.current.delete(draft.id);
       setSavingDraftIds((current) => {
         const next = new Set(current);
         next.delete(draft.id);
@@ -69,10 +76,10 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
             <p>Select an entry to view its details</p>
           </div>
           <span aria-label={`${transactions.length} recorded ${transactions.length === 1 ? "entry" : "entries"}`}>
-            {transactions.length} {transactions.length === 1 ? "entry" : "entries"}
+            {loading || unavailable ? "—" : `${transactions.length} ${transactions.length === 1 ? "entry" : "entries"}`}
           </span>
         </div>
-        {isEmpty && <ChatFeedEmptyState onStartEntry={onStartEntry} />}
+        {isEmpty && (loading ? <p role="status" className="p-4 text-sm text-text-muted">Loading activity…</p> : unavailable ? <p className="p-4 text-sm text-text-muted">Activity unavailable. Retry before relying on today’s records.</p> : <ChatFeedEmptyState onStartEntry={onStartEntry} />)}
         {drafts.length > 0 && (
           <section className="space-y-2 py-4" aria-labelledby="drafts-heading">
             <div className="flex items-center justify-between gap-3">
