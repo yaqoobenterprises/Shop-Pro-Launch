@@ -11,7 +11,8 @@ import "./OverviewFinish.css";
 import "./OverviewRealFinish.css";
 import { OverviewMetricCard } from "./OverviewMetricCard";
 import { OverviewAreaChart } from "./OverviewAreaChart";
-import { assertReportAmounts, buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
+import { assertReportAmounts } from "../../lib/reportAmountValidation";
+import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import {
   DailySummary,
