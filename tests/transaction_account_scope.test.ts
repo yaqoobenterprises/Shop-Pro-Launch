@@ -47,4 +47,12 @@ describe('transaction account scope', () => {
     expect(second.eq).toHaveBeenCalledWith('account_id', 'account-1');
   });
 
+  it("rejects account mutations and transfer attempts from a cashier before any database request", async () => {
+    setSecurityPrincipal({ id: creatorId, organizationId, role: "CASHIER", fullName: "Cashier" });
+    const client = vi.spyOn(supabaseLib, "getSupabaseClient");
+    await expect(ledgerService.createPaymentAccount({name:"New cash",type:"CASH",openingBalancePaisa:0})).rejects.toThrow(/permission denied/i);
+    await expect(ledgerService.updatePaymentAccount("account-1",{name:"Renamed"})).rejects.toThrow(/permission denied/i);
+    await expect(ledgerService.transferBetweenAccounts({fromAccountId:"account-1",toAccountId:"account-2",amountPaisa:100})).rejects.toThrow(/permission denied/i);
+    expect(client).not.toHaveBeenCalled();
+  });
 });
