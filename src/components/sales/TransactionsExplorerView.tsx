@@ -16,7 +16,6 @@ import { formatKarachiTime, getKarachiBusinessDate } from "../../lib/dates";
 import { exportToCSV as downloadCSV } from "../../lib/utils";
 import {
   Download,
-  RefreshCw,
   Eye,
   ArrowUpRight, ArrowDownLeft,
   Ban,
@@ -47,7 +46,7 @@ const getTransactionDisplayDetails = (transaction: Transaction) => {
 export const TransactionsExplorerView: React.FC = () => {
   const { region } = useRegion();
   const { user, isDemoMode, isCloudAccount } = useAuth();
-  const { startNewEntry, readTransactionView, saveTransactionView } = useApp();
+  const { readTransactionView, saveTransactionView } = useApp();
   const [initial] = useState(readTransactionView);
   const canManage = !isDemoMode && hasPermission(user?.role, "VOID_EXPENSE");
   const requestId = useRef(0);
@@ -215,7 +214,6 @@ export const TransactionsExplorerView: React.FC = () => {
         </div>
 
         <div className="title-actions">
-          <button type="button" className="button button-primary" onClick={startNewEntry}>New entry</button>
           <button
             type="button"
             className="button button-secondary"
@@ -248,7 +246,7 @@ export const TransactionsExplorerView: React.FC = () => {
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search recorded description..."
+            placeholder="Search transactions"
             aria-label="Search transactions"
           />
           <button type="submit" className="button button-secondary">Search</button>
@@ -305,10 +303,10 @@ export const TransactionsExplorerView: React.FC = () => {
           <option value="voided">Voided Only</option>
         </Select>
 
-        <label className="transaction-date-filter">Minimum amount<input inputMode="decimal" value={minimum} onChange={e => {setMinimum(e.target.value); setPage(0);}} placeholder="0.00" /></label>
-        <label className="transaction-date-filter">Maximum amount<input inputMode="decimal" value={maximum} onChange={e => {setMaximum(e.target.value); setPage(0);}} placeholder="No limit" /></label>
+        <label className="transaction-date-filter">Min amount<input aria-label="Minimum amount" inputMode="decimal" value={minimum} onChange={e => {setMinimum(e.target.value); setPage(0);}} placeholder="0.00" /></label>
+        <label className="transaction-date-filter">Max amount<input aria-label="Maximum amount" inputMode="decimal" value={maximum} onChange={e => {setMaximum(e.target.value); setPage(0);}} placeholder="No limit" /></label>
         <Select value={sort} aria-label="Sort transactions" onChange={e => {setSort(e.target.value as TransactionSort);setPage(0);}}>
-          <option value="newest">Newest recorded first</option><option value="oldest">Oldest recorded first</option><option value="amount-high">Highest amount first</option><option value="amount-low">Lowest amount first</option>
+          <option value="newest">Newest</option><option value="oldest">Oldest</option><option value="amount-high">Highest</option><option value="amount-low">Lowest</option>
         </Select>
         <button
           type="button"
@@ -338,11 +336,11 @@ export const TransactionsExplorerView: React.FC = () => {
       {/* Transactions Table */}
       <section className="panel transaction-table" aria-label="Transaction results">
         <div className="table-head" aria-hidden="true">
-          <span>Transaction / Description</span>
+          <span>Transaction</span>
           <span>{t("transactions.account")}</span>
-          <span>Date & Time</span>
+          <span>Date</span>
           <span style={{ textAlign: "right" }}>Amount</span>
-          <span>Status & Action</span>
+          <span>Status</span>
         </div>
 
         {transactions.map((tx) => {
@@ -369,7 +367,7 @@ export const TransactionsExplorerView: React.FC = () => {
               <span className="transaction-account"><span className="sr-only">Account: </span>{tx.account_name || "Account unavailable"}</span>
 
               <span>
-                <span className="sr-only">Business date: </span>{tx.business_date} · <small>{formatKarachiTime(tx.created_at)}</small>
+                <span className="sr-only">Business date: </span>{tx.business_date}{formatKarachiTime(tx.created_at)!=="-" && formatKarachiTime(tx.created_at)!=="—" && <small> · {formatKarachiTime(tx.created_at)}</small>}
               </span>
 
               <strong className={`transaction-amount num ${isIncome && !isVoid ? "positive" : ""}`}>
@@ -413,14 +411,13 @@ export const TransactionsExplorerView: React.FC = () => {
         {transactions.length === 0 && !isLoading && !loadError && !invalidFilters && (
           <div className="empty-state">
             <strong>No transactions found</strong>
-            <p>Try adjusting your search criteria or filters.</p>
+
           </div>
         )}
 
         {isLoading && (
           <div className="empty-state" role="status">
-            <RefreshCw className="h-6 w-6 animate-spin" />
-            <p>Loading transactions...</p>
+            <span className="finance-skeleton finance-skeleton--row"/><span className="finance-skeleton finance-skeleton--row"/><span className="finance-skeleton finance-skeleton--row"/><span className="sr-only">Loading transactions...</span>
           </div>
         )}
 

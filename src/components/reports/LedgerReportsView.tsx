@@ -199,7 +199,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
             </div>
           </div>
         )}
-        {trend.length > 0 && <details className="report-trend-data"><summary>View exact trend values</summary><div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Exact trend values"><table><caption className="sr-only">Filtered period totals</caption><thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th></tr></thead><tbody>{trend.map(bucket => <tr key={bucket.key}><th scope="row">{bucket.label}</th><td>{formatPaisa(bucket.income_paisa)}</td><td>{formatPaisa(bucket.expense_paisa)}</td><td>{formatPaisa(bucket.net_profit_paisa)}</td></tr>)}</tbody></table></div></details>}
+        {trend.length > 0 && <details className="report-trend-data"><summary>Exact values</summary><div className="reports-modern__table-scroll" tabIndex={0} role="region" aria-label="Exact trend values"><table><caption className="sr-only">Filtered period totals</caption><thead><tr><th scope="col">Period</th><th scope="col">Income</th><th scope="col">Expenses</th><th scope="col">Operating result</th></tr></thead><tbody>{trend.map(bucket => <tr key={bucket.key}><th scope="row">{bucket.label}</th><td>{formatPaisa(bucket.income_paisa)}</td><td>{formatPaisa(bucket.expense_paisa)}</td><td>{formatPaisa(bucket.net_profit_paisa)}</td></tr>)}</tbody></table></div></details>}
       </section>
 
       <ReportInsightCharts trend={trend} expenseCategories={expenseCategories} />
@@ -220,7 +220,7 @@ export const LedgerReportsView: React.FC<{ cloudOnly?: boolean }> = ({ cloudOnly
             <div><span>Cash adjustments in</span><strong>{formatPaisa(totals.adjustment_in_paisa)}</strong></div>
             <div><span>Cash adjustments out</span><strong>{formatPaisa(totals.adjustment_out_paisa)}</strong></div>
           </div>
-          <p className="reports-modern__footnote">Operating result = income − operating expenses (cashbook basis, not accrual P&L).</p>
+          <span className="visual-scope" title="Income minus operating expenses, cashbook basis">Cash basis</span>
         </section>
       </div>
 

@@ -113,11 +113,10 @@ export const Header: React.FC = () => {
           title={isOnline ? "Network available; not a confirmation of ledger synchronization" : "Network offline"}
         >
           <span className={`network-status-dot ${isOnline ? "network-status-dot--online" : "network-status-dot--offline"}`} aria-hidden="true" />
-          <span>{isOnline ? "Online" : "Offline"}</span>
+          <span className={isOnline?"sr-only":""}>{isOnline ? "Online" : "Offline"}</span>
         </div>
 
         <form className="workspace-inline-search" role="search" aria-label="Workspace search" onSubmit={submitSearch}>
-          <Search size={17} aria-hidden="true"/>
           <input id="workspace-search" type="search" aria-label="Search workspace" placeholder="Search" value={search} onChange={event=>setSearch(event.target.value)} onKeyDown={event=>{if(event.key==="Escape"){setSearch("");event.stopPropagation();}}}/>
           <button type="submit" aria-label="Submit search" disabled={!search.trim()}><Search size={16} aria-hidden="true"/></button>
         </form>

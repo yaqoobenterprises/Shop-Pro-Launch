@@ -72,8 +72,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
       <div className="cashbook-feed__surface mx-auto w-full max-w-4xl divide-y divide-border-standard">
         <div className="cashbook-feed__heading">
           <div>
-            <h2>Today's activity</h2>
-            <p>Select an entry to view its details</p>
+            <h2>Activity</h2>
           </div>
           <span aria-label={loading || unavailable ? "Activity count unavailable" : `${transactions.length} recorded ${transactions.length === 1 ? "entry" : "entries"}`}>
             {loading || unavailable ? "—" : `${transactions.length} ${transactions.length === 1 ? "entry" : "entries"}`}

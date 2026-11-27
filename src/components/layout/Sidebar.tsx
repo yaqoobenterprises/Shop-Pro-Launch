@@ -202,12 +202,11 @@ export const Sidebar: React.FC = () => {
           <Plus className="h-4 w-4" aria-hidden="true" />
           <span data-sidebar-label>New entry</span>
         </button>
-        {navItems.map((item, index) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentView === item.id;
           return (
             <React.Fragment key={item.id}>
-            {(index === 0 || index === 4) && <span className="sidebar-section-label" data-sidebar-label>{index === 0 ? "Workspace" : "Insights"}</span>}
             <button
               type="button"
               className={isActive ? "active" : ""}

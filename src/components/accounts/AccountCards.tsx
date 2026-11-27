@@ -93,8 +93,8 @@ export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editi
                 <input
                   type="text"
                   aria-label={`Account name for ${acc.name}`}
-                  disabled={busy}
-                  onKeyDown={e => { if (e.key === "Escape") setEditingAccountId(""); if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); void handleSaveName(acc.id); } }}
+                  disabled={busy || loadFailed || isLoading || !canManage}
+                  onKeyDown={e => { if (e.key === "Escape") setEditingAccountId(""); if (e.key === "Enter" && !e.nativeEvent.isComposing && !busy && !loadFailed && !isLoading && canManage) { e.preventDefault(); void handleSaveName(acc.id); } }}
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   style={{
@@ -115,7 +115,7 @@ export const AccountCards: React.FC<Props> = ({accounts, editingAccountId, editi
               <strong className={`metric-amount${acc.balance_paisa < 0 ? " account-negative" : ""}`}>
                 <AnimatedAmount amountPaisa={acc.balance_paisa} loading={isLoading} error={loadFailed} />
               </strong>
-              {onExplore && <button type="button" className="account-history-link" onClick={() => onExplore(acc.id)} aria-label={`View transactions for ${acc.name}`}>View transactions</button>}
+              {onExplore && <button type="button" className="account-history-link" onClick={() => onExplore(acc.id)} aria-label={`View transactions for ${acc.name}`}>Activity</button>}
             </div>
           );
         })}
