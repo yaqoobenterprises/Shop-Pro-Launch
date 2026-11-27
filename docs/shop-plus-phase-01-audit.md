@@ -25,7 +25,12 @@ Status: **source inventory and automated baseline recorded; browser and live-sec
 | [Microsoft HAX](https://www.microsoft.com/en-us/haxtoolkit/ai-guidelines/) | Make capabilities and uncertainty clear, allow correction and recovery, show verified data separately |
 | [Playwright](https://playwright.dev/docs/best-practices) | Isolated demo contexts, role-based locators, resilient assertions and browser artifacts |
 
-Apple HIG and Material 3 landing pages require JavaScript; Carbon dashboard reference did not load. Those specific design guidance reviews remain incomplete. No visual competitor cloning.
+Additional first-party guidance recovered on follow-up:
+- [Apple HIG accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility.md): use familiar interactions, non-color cues, adaptable text, contrast in both themes and practical touch targets. Shop Plus target: 44 CSS px touch controls where feasible, 200% zoom checks, no color-only financial status.
+- [Material 3 adaptive layout guidance](https://developer.android.com/codelabs/adaptive-material-guidance): choose adaptive layouts at size classes and keep fluid behavior between breakpoints. Use phone-first bottom navigation, tablet rail and desktop sidebar where space supports them.
+- [Carbon dashboards](https://carbondesignsystem.com/data-visualization/dashboards/): separate presentation overview from exploration reports, limit headline metrics, apply filters consistently across linked charts and keep units and legends consistent.
+- [ARIA modal pattern](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/): focus inside on open, constrain Tab and Shift+Tab, close on Escape, return focus and prefer the least destructive initial action for financial confirmations.
+No visual competitor cloning.
 
 ## Inventory and contracts
 
@@ -58,3 +63,7 @@ In tests/reports_sample_month.test.ts: monthly active income 260000 paisa, expen
 
 ## Release gates still outstanding
 Fresh baseline screenshots at 320/375/390/768/1024/1280/1440/1920, browser interaction and zoom, contrast/manual keyboard/screen reader, performance lab and field measurements, production schema parity and authenticated AI. Source inspection is bounded: not every file, dependency or feature was fully exercised. Do not mark comprehensive audit or release complete. 
+
+## Browser audit execution follow-up
+
+[First run](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45953931063) failed during Playwright dependency installation, before app launch. The runner default was Ubuntu 26.04, unsupported by Playwright 1.56.1. The workflow now pins Ubuntu 24.04 and matches the actual Cashbook label and desktop Settings control. [Second run](https://github.com/yaqoobenterprises/Shop-Pro-Launch/actions/runs/45954045248) was in progress at the time of this update. No responsive pass is claimed yet.
