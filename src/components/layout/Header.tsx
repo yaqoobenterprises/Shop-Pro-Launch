@@ -131,7 +131,9 @@ export const Header: React.FC = () => {
              : theme === "system" ? <Monitor className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
         </button>
 
-        <div className="relative" ref={menuRef}>
+        <div className="relative" ref={menuRef} onBlur={event => {
+          if (event.relatedTarget instanceof Node && !event.currentTarget.contains(event.relatedTarget)) setIsMenuOpen(false);
+        }}>
           <button
             ref={profileButtonRef}
             type="button"
