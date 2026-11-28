@@ -39,8 +39,8 @@ Design references: [Tremor blocks](https://blocks.tremor.so/blocks), [Tweakcn](h
 
 ## Verification
 
-The local regression suite passes 64 files / 385 tests, including ledger math, scoped reads, permissions, offline replay, concurrency, exports, transaction review and the new table/comparison checks. Production build, lint, strict TypeScript, file-size checks, token consistency and dependency audit pass. GitHub CI also passed the initial overhaul commit.
+The local regression suite passes 64 files / 385 tests, including ledger math, scoped reads, permissions, offline replay, concurrency, exports, transaction review and the new table/comparison checks. Production build, lint, strict TypeScript, file-size checks, token consistency and dependency audit pass. GitHub CI also passed the implementation and browser-fix commits.
 
 Browser review now uses a user-approved temporary Vercel preview link. Desktop light/dark views, live ECharts rendering, period comparison, entry search/detail, account dialogs, reports, command search, cashbook review/cancel, settings and assistant history have been exercised with isolated demo fixtures. At 400% browser zoom the CSS viewport is 340px wide, with no document overflow and working mobile navigation; this is reflow coverage, not a physical-device touch test. Authentication forms are reviewed without entering credentials. No live financial writes, security changes or authenticated AI responses were exercised.
 
-Browser findings prompted corrections to auth control styling, portal form controls, filter grids, report actions, review dialog naming, focus rings and short-viewport menu scrolling. Those corrections require a final preview pass before release.
+Browser findings prompted corrections to auth control styling, portal form controls, filter grids, report actions, review dialog naming, focus rings and short-viewport menu scrolling. The updated preview passed the final desktop light/dark, auth/signup, filter/table, account form, report, named transaction review, settings and short-viewport scrollable menu checks before release.
