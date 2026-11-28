@@ -9,9 +9,8 @@ import { WorkspaceSkeleton } from "./components/common/WorkspaceSkeleton";
 import { MobileNav } from "./components/layout/MobileNav";
 import { Header } from "./components/layout/Header";
 import { ToastContainer } from "./components/common/ToastContainer";
-import { CommandPalette } from "./components/layout/CommandPalette";
-import { ShortcutsHelpModal } from "./components/layout/ShortcutsHelpModal";
-import { QuickExpenseModal } from "./components/expenses/QuickExpenseModal";
+const ShortcutsHelpModal = lazy(() => import("./components/layout/ShortcutsHelpModal").then(module => ({ default: module.ShortcutsHelpModal })));
+const QuickExpenseModal = lazy(() => import("./components/expenses/QuickExpenseModal").then(module => ({ default: module.QuickExpenseModal })));
 import { AuthScreen, LockScreen } from "./components/auth/LockScreen";
 import { MfaChallengeScreen } from "./components/auth/MfaChallengeScreen";
 import { RegionProvider } from "./regional/region";
@@ -23,7 +22,7 @@ import {
 } from "./services/ledgerService";
 
 import { LandingPage } from "./components/landing/LandingPage";
-import { FirstRunRegionalModal } from "./components/settings/FirstRunRegionalModal";
+const FirstRunRegionalModal = lazy(() => import("./components/settings/FirstRunRegionalModal").then(module => ({ default: module.FirstRunRegionalModal })));
 import { isFeatureEnabled } from "./config/features";
 import { getUserPreferences } from "./services/userPreferencesService";
 
@@ -69,7 +68,7 @@ const I18nPreferenceSync: React.FC = () => {
 };
 
 const MainShell: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, isQuickExpenseOpen, isShortcutsHelpOpen } = useApp();
   const { isDemoMode, exitDemoMode, organization, user } = useAuth();
   const { t } = useI18n();
   const regionSettingsEnabled = isFeatureEnabled("regionSettings");
@@ -183,14 +182,12 @@ const MainShell: React.FC = () => {
       </div>
 
       {/* Global Modals & Overlays */}
-      <QuickExpenseModal />
-      <CommandPalette />
-      <ShortcutsHelpModal />
+      <Suspense fallback={null}>{isQuickExpenseOpen && <QuickExpenseModal />}{isShortcutsHelpOpen && <ShortcutsHelpModal />}</Suspense>
       <ToastContainer />
-      <FirstRunRegionalModal
+      {showRegionalSetup && <Suspense fallback={null}><FirstRunRegionalModal
         isOpen={showRegionalSetup}
         onClose={() => setShowRegionalSetup(false)}
-      />
+      /></Suspense>}
     </div></TooltipProvider>
   );
 };

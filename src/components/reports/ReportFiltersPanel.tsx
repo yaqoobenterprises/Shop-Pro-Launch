@@ -49,6 +49,7 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
   const [toDate, setToDate] = useState(filters.toDate);
   const [typeFilter, setTypeFilter] = useState<ReportTypeFilter>(filters.type);
   const [categoryFilter, setCategoryFilter] = useState(filters.categoryId);
+  const [advanced, setAdvanced] = useState(false);
   const [filterError, setFilterError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,17 +89,13 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
 
   return (
     <section className="reports-modern__filters" aria-label="Report filters">
-      <div className="reports-modern__filter-heading">
-        <div className="reports-modern__filter-title"><Filter size={17} aria-hidden="true" /><h2>Build your report</h2></div>
-        <span className="reports-modern__filter-note">Every chart and total uses the selected filters</span>
-      </div>
       <div className="reports-modern__presets" role="group" aria-label="Quick date ranges">
         <button type="button" onClick={() => applyRange(dateDaysAgo(today, 6), today)}>Last 7 days</button>
         <button type="button" onClick={() => applyRange(dateDaysAgo(today, 29), today)}>Last 30 days</button>
         <button type="button" onClick={() => applyRange(`${today.slice(0, 7)}-01`, today)}>This month</button>
         <button type="button" onClick={() => applyRange(yearStart, today)}>Year to date</button>
       </div>
-      <div className="reports-modern__filter-grid">
+      <div className="reports-modern__filter-grid" data-advanced={advanced}>
         <label className="reports-modern__field">
           <span>From date</span>
           <DatePicker value={fromDate} onChange={setFromDate} ariaLabel="Report start date" max={toDate || today} className="w-full" />
@@ -107,7 +104,7 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
           <span>To date</span>
           <DatePicker value={toDate} onChange={setToDate} ariaLabel="Report end date" min={fromDate} max={today} className="w-full" />
         </label>
-        <label className="reports-modern__field">
+        <label hidden={!advanced} className="reports-modern__field">
           <span>Transaction type</span>
           <select value={typeFilter} onChange={(event) => {
             setTypeFilter(event.target.value as ReportTypeFilter);
@@ -116,7 +113,7 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
             {types.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}
           </select>
         </label>
-        <label className="reports-modern__field">
+        <label hidden={!advanced} className="reports-modern__field">
           <span>Category</span>
           <select
             value={categoryFilter}
@@ -129,8 +126,9 @@ export const ReportFiltersPanel: React.FC<ReportFiltersPanelProps> = ({
           </select>
         </label>
         <div className="reports-modern__filter-actions">
+          <button type="button" className="reports-modern__more" aria-expanded={advanced} onClick={() => setAdvanced(value => !value)}><Filter size={16} />{advanced ? "Fewer filters" : "More filters"}</button>
           <button type="button" className="reports-modern__apply" onClick={applyFilters} disabled={isLoading}>
-            <Filter size={15} aria-hidden="true" /> Apply filters
+            <Filter size={15} aria-hidden="true" /> Update report
           </button>
           <button type="button" className="reports-modern__reset" onClick={() => {
             setFromDate(yearStart);

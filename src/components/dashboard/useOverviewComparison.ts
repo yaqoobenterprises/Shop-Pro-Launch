@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ledgerService } from "../../services/ledgerService";
+import { loadPeriodAnalytics } from "../../services/periodAnalyticsService";
 import { calculateReportTotals } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import { getKarachiBusinessDate } from "../../lib/dates";
@@ -24,8 +24,8 @@ export function useOverviewComparison(enabled: boolean, start: string, end: stri
     if (!enabled || !start || !end || start > end) return;
     let active = true;
     const [from, to] = previousRange(start, end);
-    void ledgerService.getAllFilteredTransactions({ startDate: from, endDate: to, status: "active" }).then(rows => {
-      if (active) setState({ key, totals: calculateReportTotals(rows) });
+    void loadPeriodAnalytics({ startDate: from, endDate: to }).then(result => {
+      if (active) setState({ key, totals: result.totals });
     }).catch(() => { if (active) setState({ key, error: "Comparison unavailable. Try switching comparison off and on." }); });
     return () => { active = false; };
   }, [enabled, start, end, key]);

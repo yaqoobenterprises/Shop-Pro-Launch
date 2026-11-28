@@ -6,12 +6,12 @@ import {
   LayoutDashboard,
   Moon,
   ShieldCheck,
-  PanelsTopLeft,
   Sun,
 } from "lucide-react";
 import { useTheme } from "../../design-system/useTheme";
 import type { ThemePreference } from "../../lib/theme";
 import { useI18n } from "../../i18n";
+import { Wordmark } from "../common/Wordmark";
 import { APP_NAME } from "../../config/app";
 import { LandingPreview } from "./LandingPreview";
 
@@ -75,8 +75,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onOpenAuth, onTryDemo 
       <header className="aq-landing__header">
         <div className="aq-landing__nav aq-landing__container">
           <a href="#top" className="aq-landing__brand" aria-label={`${APP_NAME} home`}>
-            <PanelsTopLeft size={28} className="aq-landing__brandmark" aria-hidden="true" />
-            <span>{APP_NAME}</span>
+            <Wordmark />
           </a>
 
           <nav className="aq-landing__navlinks" aria-label="Page navigation">

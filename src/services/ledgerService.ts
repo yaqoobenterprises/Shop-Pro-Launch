@@ -1,3 +1,5 @@
+import { coalesceLedgerRead } from "./ledgerReadCoalescer";
+import { transactionSearchFilter, matchesTransactionSearch } from "./ledgerSearch";
 /**
  * Ledger Service
  * High-performance data client for modern Yaqoob Enterprises Ledger.
@@ -894,7 +896,13 @@ export class LedgerService {
     ).length;
   }
 
-  async getPaymentAccounts(options: LedgerReadOptions = {}): Promise<LedgerAccount[]> {
+  getPaymentAccounts(options: LedgerReadOptions = {}): Promise<LedgerAccount[]> {
+    const principal = getSecurityPrincipal();
+    const key = `accounts:${principal?.organizationId}:${principal?.id}:${principal?.role}:${isOnline()}:${Boolean(options.requireCloudSource)}`;
+    return coalesceLedgerRead(key, () => this.loadPaymentAccounts(options));
+  }
+
+  private async loadPaymentAccounts(options: LedgerReadOptions): Promise<LedgerAccount[]> {
     const principal = getSecurityPrincipal();
     if (options.requireCloudSource) await requireAuthoritativeCloudRead(principal, 'payment account balances');
     if (!principal) return [];
@@ -1173,6 +1181,7 @@ export class LedgerService {
     const principal = getSecurityPrincipal();
     const supabase = getSupabaseClient();
     let data: any = null;
+    let verified = false;
 
     if (!isDemoOrganization(principal?.organizationId) && principal && await hasConfiguredCloudSession(principal.id)) {
       try {
@@ -1183,20 +1192,17 @@ export class LedgerService {
           .maybeSingle();
 
         if (res.error) {
-          if (!isUnavailableOrUnauthorized(res.error)) {
-            console.error('Error fetching daily summary:', res.error);
-          }
+          throw new Error('Daily totals could not be verified. Please retry before relying on these figures.', { cause: res.error });
         } else {
-          data = res.data;
+          data = res.data; verified = true;
         }
       } catch (err) {
-        if (!isUnavailableOrUnauthorized(err)) {
-          console.error('Error fetching daily summary:', err);
-        }
+        throw new Error('Daily totals could not be verified. Please reconnect and retry.', { cause: err });
       }
     }
 
     const summary: DailySummary = {
+      ...(!verified && !isDemoOrganization(principal?.organizationId) ? { is_partial: true } : {}),
       business_date: data?.business_date || dateStr,
       income_paisa: Number(data?.income_paisa || 0),
       expense_paisa: Number(data?.expense_paisa || 0),
@@ -1296,7 +1302,7 @@ export class LedgerService {
     const isDemo = isDemoOrganization(principal?.organizationId);
     let accounts: LedgerAccount[] = [];
     try {
-      accounts = await this.getPaymentAccounts(options);
+      accounts = options.supportingAccounts ? [...options.supportingAccounts] : await this.getPaymentAccounts(options);
     } catch (err) {
       if (options.requireCloudSource) throw err;
       console.warn('Could not load account names for filtered transactions:', err);
@@ -1310,7 +1316,7 @@ export class LedgerService {
         const supabase = getSupabaseClient();
         let query = supabase
           .from('transactions')
-          .select('*, categories(name)', { count: 'exact' });
+          .select('*, categories(name)', options.totalCount === undefined ? { count: 'exact' } : undefined);
 
         if (filter.startDate) {
           query = query.gte('business_date', filter.startDate);
@@ -1328,7 +1334,7 @@ export class LedgerService {
           query = query.eq('status', filter.status);
         }
         if (filter.searchQuery) {
-          query = query.ilike('raw_text', `%${filter.searchQuery}%`);
+          query = query.or(transactionSearchFilter(filter.searchQuery));
         }
 
         const limit = filter.limit || 50;
@@ -1336,23 +1342,25 @@ export class LedgerService {
 
         query = query
           .order('device_entry_time', { ascending: false })
+          .order('id', { ascending: false })
           .range(offset, offset + limit - 1);
 
         let { data, error, count } = await query;
         if (error) {
           let retryQuery = supabase
             .from('transactions')
-            .select('*', { count: 'exact' });
+            .select('*', options.totalCount === undefined ? { count: 'exact' } : undefined);
 
           if (filter.startDate) retryQuery = retryQuery.gte('business_date', filter.startDate);
           if (filter.endDate) retryQuery = retryQuery.lte('business_date', filter.endDate);
           if (filter.type && filter.type !== 'all') retryQuery = retryQuery.eq('type', filter.type);
           if (filter.categoryId && filter.categoryId !== 'all') retryQuery = retryQuery.eq('category_id', filter.categoryId);
           if (filter.status && filter.status !== 'all') retryQuery = retryQuery.eq('status', filter.status);
-          if (filter.searchQuery) retryQuery = retryQuery.ilike('raw_text', `%${filter.searchQuery}%`);
+          if (filter.searchQuery) retryQuery = retryQuery.or(transactionSearchFilter(filter.searchQuery));
 
           const retryResult = await retryQuery
             .order('device_entry_time', { ascending: false })
+            .order('id', { ascending: false })
             .range(offset, offset + limit - 1);
           if (!retryResult.error && retryResult.data) {
             data = retryResult.data;
@@ -1374,7 +1382,7 @@ export class LedgerService {
             account_name: accounts.find((account) => account.id === row.account_id)?.name,
           }));
 
-          return { transactions, count: count || 0 };
+          return { transactions, count: count ?? options.totalCount ?? 0 };
         }
       } catch (err) {
         if (options.requireCloudSource) {
@@ -1406,7 +1414,7 @@ export class LedgerService {
     if (filter.status && filter.status !== 'all') localItems = localItems.filter((tx) => tx.status === filter.status);
     if (filter.searchQuery) {
       const q = filter.searchQuery.toLowerCase();
-      localItems = localItems.filter((tx) => tx.raw_text.toLowerCase().includes(q));
+      localItems = localItems.filter((tx) => matchesTransactionSearch(tx, q));
     }
 
     const limit = filter.limit || 50;
@@ -1422,13 +1430,12 @@ export class LedgerService {
     const pageSize = 1000;
     const transactions: Transaction[] = [];
     let offset = 0;
-    let count: number;
+    let count: number | undefined;
+    const supportingAccounts = await this.getPaymentAccounts(options);
 
     do {
       const pageFilter = { ...filter, limit: pageSize, offset };
-      const page = options
-        ? await this.getFilteredTransactions(pageFilter, options)
-        : await this.getFilteredTransactions(pageFilter);
+      const page = await this.getFilteredTransactions(pageFilter, { ...options, supportingAccounts, totalCount: count });
       count = page.count;
       if (page.transactions.length === 0 && offset < count) {
         throw new Error('The export stopped before all matching records were retrieved.');

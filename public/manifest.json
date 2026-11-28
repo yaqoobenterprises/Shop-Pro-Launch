@@ -5,26 +5,33 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#315ac8",
-  "background_color": "#f5f6f8",
+  "theme_color": "#f1f3f6",
+  "background_color": "#f1f3f6",
   "icons": [
     {
-      "src": "/assets/icon-192.png",
+      "src": "/assets/shop-pro-v2-192.png",
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any"
     },
     {
-      "src": "/assets/icon-512.png",
+      "src": "/assets/shop-pro-v2-512.png",
       "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/assets/logo.svg",
+      "src": "/assets/shop-pro-v2-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/assets/shop-pro-mark-v2.svg",
       "type": "image/svg+xml",
       "sizes": "any",
       "purpose": "any"
     }
-  ]
+  ],
+  "id": "/"
 }

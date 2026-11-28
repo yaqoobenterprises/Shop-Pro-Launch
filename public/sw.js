@@ -1,16 +1,18 @@
 // Shop Pro public app shell ONLY. Never persist customer data or API responses.
 // Keep workers waiting until existing tabs close to avoid interrupting offline work.
-const CACHE_NAME = 'shop-pro-shell-v1';
+const CACHE_NAME = 'shop-pro-shell-v2';
 const OLD_AQVORA_PREFIXES = ['shop-pro-', 'aqvora-pwa-', 'aqvora-shell-'];
 const SHELL_ASSETS = [
   '/index.html',
   '/manifest.json',
-  '/assets/logo.svg',
+  '/assets/shop-pro-mark-v2.svg',
   '/fonts/manrope-400.woff',
   '/fonts/manrope-600.woff',
   '/fonts/manrope-700.woff',
-  '/assets/icon-192.png',
-  '/assets/icon-512.png'
+  '/assets/shop-pro-v2-192.png',
+  '/assets/shop-pro-v2-512.png',
+  '/assets/shop-pro-v2-180.png',
+  '/assets/shop-pro-v2-maskable.png'
 ];
 
 function publicAsset(url) {

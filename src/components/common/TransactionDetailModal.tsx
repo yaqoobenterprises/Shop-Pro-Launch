@@ -19,7 +19,6 @@ import {
   ShieldCheck,
   Ban,
   Edit2,
-  Trash2,
   Printer,
   RotateCcw,
 } from "lucide-react";
@@ -186,11 +185,11 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
         <TransactionReceiptDetails transaction={transaction} />
 
         {/* Audit & System Metadata */}
-        <div className="rounded-xl border border-border-standard bg-surface-container-low/20 p-4 text-xs space-y-2.5">
-          <div className="flex items-center gap-1.5 font-semibold text-secondary text-[11px] uppercase tracking-wider">
+        <details className="sp-receipt-audit rounded-xl bg-surface-container-low/20 p-4 text-xs space-y-2.5">
+          <summary className="flex items-center gap-2 font-semibold text-secondary">
             <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            Audit & System Metadata
-          </div>
+            Audit details
+          </summary>
 
           <div className="flex items-center justify-between py-1 border-b border-border-standard/50">
             <span className="text-text-muted">{t("transaction.id")}</span>
@@ -249,7 +248,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
               </span>
             </div>
           )}
-        </div>
+        </details>
 
         {/* Receipt actions */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border-standard pt-3">
@@ -287,8 +286,8 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                 }}
                 className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-danger-border bg-danger-bg px-3 text-xs font-semibold text-danger transition-colors hover:bg-danger-bg/80"
               >
-                <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                Delete
+                <Ban className="h-3.5 w-3.5" aria-hidden="true" />
+                Void entry
               </button>
             )}
 

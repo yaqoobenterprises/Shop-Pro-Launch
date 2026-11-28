@@ -7,7 +7,6 @@ import { UndoToast } from "./UndoToast";
 import { VoidModal } from "./VoidModal";
 import { EditModal } from "./EditModal";
 import { StandardEntryForm } from "./StandardEntryForm";
-import { InstallHelpModal } from "./InstallHelpModal";
 import { useEntryInputMode } from "./useEntryInputMode";
 import {
   ledgerService,
@@ -74,7 +73,6 @@ export const ChatView: React.FC = () => {
     useState<Transaction | null>(null);
   const [voidingTransaction, setVoidingTransaction] =
     useState<Transaction | null>(null);
-  const [showInstallHelp, setShowInstallHelp] = useState(false);
   const { activeEntryInput, setActiveEntryInput } = useEntryInputMode(
     entryMode,
     newEntryRequestId,
@@ -383,11 +381,10 @@ export const ChatView: React.FC = () => {
   };
 
   return (
-    <div className="ledger-page ledger-page--workspace relative flex h-full min-h-0 flex-col overflow-y-auto bg-surface">
+    <div className="ledger-page ledger-page--workspace">
       {/* 1. Today Strip with Income, Expense, Net */}
       <TodayStrip
-        summary={summary}
-        onOpenInstallHelp={() => setShowInstallHelp(true)}
+        summary={summary} unavailable={Boolean(dayLoadError)}
       />
 
       <>
@@ -409,19 +406,8 @@ export const ChatView: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Chat Feed (Bubbles) */}
-      <ChatFeed
-        transactions={transactions}
-        drafts={drafts}
-        accounts={accounts}
-        canManageTransactions={canManageTransactions}
-        onEdit={(tx) => setEditingTransaction(tx)}
-        onVoid={(tx) => setVoidingTransaction(tx)}
-        onRestore={handleRestore}
-        onAssignDraft={handleAssignDraft}
-        onStartEntry={activeEntryInput === "chat" ? () => document.getElementById("ledger-entry")?.focus() : undefined}
-      />
-
+      <div className="cashbook-workbench">
+        <section className="cashbook-entry-panel" aria-label="Transaction entry">
       {entryMode === "both" && (
         <div role="group" aria-label={t("entry.switchMode")} className="mx-auto mt-2 flex w-full max-w-4xl gap-2 px-3 sm:px-5">
           {(["chat", "standard"] as const).map((method) => (
@@ -457,6 +443,24 @@ export const ChatView: React.FC = () => {
           focusRequestId={newEntryRequestId}
         />
       )}
+
+        </section>
+        <section className="cashbook-activity-panel">
+      {/* 2. Chat Feed (Bubbles) */}
+      <ChatFeed
+        transactions={transactions}
+        drafts={drafts}
+        accounts={accounts}
+        canManageTransactions={canManageTransactions}
+        onEdit={(tx) => setEditingTransaction(tx)}
+        onVoid={(tx) => setVoidingTransaction(tx)}
+        onRestore={handleRestore}
+        onAssignDraft={handleAssignDraft}
+        onStartEntry={activeEntryInput === "chat" ? () => document.getElementById("ledger-entry")?.focus() : undefined}
+      />
+
+        </section>
+      </div>
 
       {/* 4. Undo Toast (6-Second countdown) */}
       {undoState && (
@@ -506,10 +510,7 @@ export const ChatView: React.FC = () => {
         />
       )}
 
-      {/* 8. Install Help Modal */}
-      {showInstallHelp && (
-        <InstallHelpModal onClose={() => setShowInstallHelp(false)} />
-      )}
+
       </>
     </div>
   );

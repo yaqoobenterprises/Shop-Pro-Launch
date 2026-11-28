@@ -11,6 +11,8 @@ const migration = readFileSync(
   "utf8",
 );
 
+const reassertion = readFileSync(path.join(root, "supabase/migrations/20261128045540_reassert_active_shop_draft_boundaries.sql"), "utf8");
+
 const ownerId = "11111111-1111-1111-1111-111111111111";
 const managerId = "22222222-2222-2222-2222-222222222222";
 const inactiveMemberId = "33333333-3333-3333-3333-333333333333";
@@ -28,6 +30,7 @@ describe("launch authorization hardening migration", () => {
       CREATE ROLE authenticated;
       CREATE SCHEMA auth;
       CREATE SCHEMA private;
+      CREATE FUNCTION private.current_user_meets_mfa_requirement() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT true; $$;
       GRANT USAGE ON SCHEMA auth, private TO authenticated;
 
       CREATE TABLE auth.users (
@@ -151,6 +154,7 @@ describe("launch authorization hardening migration", () => {
     `);
 
     await db.exec(migration);
+    await db.exec(reassertion);
   });
 
   afterAll(async () => db.close());

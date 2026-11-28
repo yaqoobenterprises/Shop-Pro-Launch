@@ -123,6 +123,7 @@ export interface ReviewQueueItem {
 }
 
 export interface DailySummary {
+  is_partial?: boolean;
   business_date: string;
   income_paisa: number;
   expense_paisa: number;

@@ -93,8 +93,8 @@ export const ProfileSettingsSection: React.FC = () => {
       {error && <p role="alert" className="mb-4 rounded-lg border border-danger-border bg-danger-bg p-3 text-xs text-danger">{error}</p>}
       {saved && <p role="status" className="mb-4 flex items-center gap-2 rounded-lg border border-success-border bg-success-bg p-3 text-xs text-success"><Check className="h-4 w-4" />Profile updated.</p>}
 
-      <form onSubmit={handleSave} className="grid gap-5 sm:max-w-xl sm:grid-cols-[auto_1fr] sm:items-center">
-        <div className="flex items-center gap-3 sm:block">
+      <form onSubmit={handleSave} className="sp-profile-form">
+        <div className="sp-profile-photo">
           <UserAvatar src={avatarUrl || undefined} name={fullName || "Shop Owner"} size="2xl" />
           <div className="flex flex-wrap gap-2 sm:mt-3">
             <button type="button" onClick={() => inputRef.current?.click()} disabled={isPreparingPhoto} className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-border-standard bg-surface-bright px-3 text-xs font-semibold text-on-surface hover:bg-surface-container-low disabled:opacity-60">
@@ -105,7 +105,7 @@ export const ProfileSettingsSection: React.FC = () => {
           <input ref={inputRef} type="file" accept="image/*" className="sr-only" onChange={(event) => void handlePhoto(event)} />
         </div>
 
-        <div className="space-y-4">
+        <div className="sp-profile-fields">
           <label className="settings-field block">
             <span>Full name</span>
             <input required maxLength={80} autoComplete="name" value={fullName} onChange={(event) => { setFullName(event.target.value); setSaved(false); }} placeholder="Your name" />

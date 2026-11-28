@@ -1,3 +1,4 @@
+import type { LedgerAccount } from "../types/ledger";
 import { getSecurityPrincipal } from '../lib/security';
 import { hasConfiguredCloudSession, isSupabaseConfigured, SupabaseSessionRequiredError } from '../lib/supabase';
 import { DEMO_ORGANIZATION_ID, isDemoSessionActive } from './demoModeService';
@@ -5,6 +6,9 @@ import { DEMO_ORGANIZATION_ID, isDemoSessionActive } from './demoModeService';
 export interface LedgerReadOptions {
   /** Fail instead of silently returning cached/offline data for exact financial answers. */
   requireCloudSource?: boolean;
+  /** Supporting labels and the first exact count reused during one complete paginated read. */
+  supportingAccounts?: readonly LedgerAccount[];
+  totalCount?: number;
 }
 
 export function isOnline(): boolean {

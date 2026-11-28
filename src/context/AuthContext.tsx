@@ -3,7 +3,6 @@ import { Organization, UserProfile } from "../types";
 import { getSupabaseClient, hasActiveSupabaseSession, isSupabaseConfigured } from "../lib/supabase";
 import { activateProfileAfterPinUnlock } from "../lib/authSession";
 import { sqliteRepository } from "../services/sqliteRepository";
-import { StorageEngine } from "../services/storageEngine";
 import { syncEngine } from "../services/syncEngine";
 import { setSecurityPrincipal } from "../lib/security";
 import { setupDemoWorkspace, cleanupDemoWorkspace } from "../services/demoModeService";
@@ -12,8 +11,8 @@ import { hashPassword, hashPin, MIN_PIN_LENGTH, verifyPassword, verifyPin } from
 import { getErrorMessage } from "../lib/authErrors";
 import { saveProfileUpdates } from "../services/profileService";
 
+import { isExpectedOAuthMessage } from "../lib/oauthMessages";
 const ACTIVE_PROFILE_KEY = "yaqoob_active_profile";
-
 const EMPTY_ORGANIZATION: Organization = {
   id: "",
   name: "",
@@ -127,6 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return typeof window !== "undefined" && localStorage.getItem("yaqoob_demo_mode") === "true";
   });
   const isSupabaseReady = isSupabaseConfigured();
+  const oauthPopupRef = useRef<Window | null>(null);
   const activateSupabaseSessionRef = useRef<
     ((profileId: string) => Promise<"ready" | "mfa_required" | "failed">) | null
   >(null);
@@ -136,7 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const activateSession = (profileId: string) =>
       activateSupabaseSessionRef.current?.(profileId) ?? Promise.resolve("failed" as const);
 
-    // Check if URL contains password recovery hash or parameter
     if (typeof window !== "undefined") {
       const hash = window.location.hash || "";
       const search = window.location.search || "";
@@ -250,8 +249,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       authSubscription = data.subscription;
     }
 
-    // Cross-window communication listener for Google OAuth popup
     const handleAuthMessage = async (event: MessageEvent) => {
+      if (!isExpectedOAuthMessage(event, window.location.origin, oauthPopupRef.current)) return;
+      oauthPopupRef.current = null;
       if (event.data?.type === "OAUTH_AUTH_SUCCESS") {
         if (isSupabaseConfigured()) {
           try {
@@ -419,7 +419,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    // Pull metadata (Google name + avatar) from auth.users if available
     try {
       const meta = authUser?.user_metadata || {};
       const googleAvatar = meta.avatar_url || meta.picture;
@@ -527,7 +526,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           profileData as UserProfile,
         );
       }
-      StorageEngine.ensureOrganizationDefaults(organizationData.id);
+      (await import("../services/storageEngine")).StorageEngine.ensureOrganizationDefaults(organizationData.id);
 
       const localAcc = await sqliteRepository.getLocalAuthAccount(profileData.id);
       await sqliteRepository.upsertLocalAuthAccount(
@@ -625,7 +624,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         credential.salt,
         true,
       );
-      StorageEngine.createLocalOwnerAccount(org, profile);
+      (await import("../services/storageEngine")).StorageEngine.createLocalOwnerAccount(org, profile);
       const account = await sqliteRepository.getLocalAuthAccount();
       setLocalAccount(account);
       setHasLocalAccount(true);
@@ -885,7 +884,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               await sqliteRepository.findLocalProfileByEmail(normalizedEmail);
             if (!localProf) {
               const storageProf =
-                StorageEngine.findLocalProfileByEmail(normalizedEmail);
+                (await import("../services/storageEngine")).StorageEngine.findLocalProfileByEmail(normalizedEmail);
               if (storageProf && storageProf.password_hash) {
                 localProf = storageProf;
               }
@@ -897,7 +896,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             ) {
               const localOrg =
                 (await sqliteRepository.getOrganization(localProf.organization_id)) ||
-                StorageEngine.getOrganization(localProf.organization_id);
+                (await import("../services/storageEngine")).StorageEngine.getOrganization(localProf.organization_id);
               if (localOrg) {
                 if (typeof window !== "undefined") {
                   localStorage.removeItem("yaqoob_signed_out");
@@ -949,7 +948,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await sqliteRepository.findLocalProfileByEmail(normalizedEmail);
     if (!profile) {
       const storageProfile =
-        StorageEngine.findLocalProfileByEmail(normalizedEmail);
+        (await import("../services/storageEngine")).StorageEngine.findLocalProfileByEmail(normalizedEmail);
       if (storageProfile && storageProfile.password_hash) {
         profile = storageProfile;
       }
@@ -980,7 +979,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
     const org =
       (await sqliteRepository.getOrganization(profile.organization_id)) ||
-      StorageEngine.getOrganization(profile.organization_id);
+      (await import("../services/storageEngine")).StorageEngine.getOrganization(profile.organization_id);
     if (!org || !profile.is_active)
       return { error: "This account is no longer active." };
 
@@ -1087,7 +1086,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 created_at: now,
               };
               await sqliteRepository.createLocalAuthAccount(org, profile, "", "", true);
-              StorageEngine.createLocalOwnerAccount(org, profile);
+              (await import("../services/storageEngine")).StorageEngine.createLocalOwnerAccount(org, profile);
             } catch (cacheErr) {
               console.warn("Could not pre-cache local profile during signUp:", cacheErr);
             }
@@ -1113,7 +1112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const existingSqliteProfile =
       await sqliteRepository.findLocalProfileByEmail(normalizedEmail);
     const existingStorageProfile =
-      StorageEngine.findLocalProfileByEmail(normalizedEmail);
+      (await import("../services/storageEngine")).StorageEngine.findLocalProfileByEmail(normalizedEmail);
     if (
       existingSqliteProfile ||
       (existingStorageProfile && existingStorageProfile.id !== "usr-owner-1")
@@ -1146,7 +1145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       await sqliteRepository.createLocalAuthAccount(org, profile, "", "", true);
-      StorageEngine.createLocalOwnerAccount(org, profile);
+      (await import("../services/storageEngine")).StorageEngine.createLocalOwnerAccount(org, profile);
       const account = await sqliteRepository.getLocalAuthAccount(profile.id);
       if (typeof window !== "undefined") {
         localStorage.removeItem("yaqoob_signed_out");
@@ -1222,6 +1221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           "google_oauth_popup",
           "width=520,height=650,left=200,top=100,menubar=no,toolbar=no,location=no,status=no",
         );
+        oauthPopupRef.current = popup;
         if (!popup || popup.closed || typeof popup.closed === "undefined") {
           return {
             error:

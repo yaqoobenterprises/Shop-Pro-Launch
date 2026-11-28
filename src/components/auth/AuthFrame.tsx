@@ -1,6 +1,7 @@
 import React from "react";
-import { ArrowLeft, BookOpenText, ShieldCheck, PanelsTopLeft } from "lucide-react";
+import { ArrowLeft, BookOpenText, ShieldCheck } from "lucide-react";
 
+import { Wordmark } from "../common/Wordmark";
 import { APP_NAME } from "../../config/app";
 
 interface AuthFrameProps {
@@ -13,8 +14,7 @@ export const AuthFrame: React.FC<AuthFrameProps> = ({ children, onBack }) => (
     <aside className="aq-auth__story" aria-label={APP_NAME}>
       <div className="aq-auth__story-inner">
         <div className="aq-auth__brand">
-          <PanelsTopLeft size={28} aria-hidden="true" />
-          <strong>{APP_NAME}</strong>
+          <Wordmark />
         </div>
         <div className="aq-auth__story-copy">
           <span className="aq-auth__eyebrow">YOUR BUSINESS WORKSPACE</span>
@@ -30,8 +30,7 @@ export const AuthFrame: React.FC<AuthFrameProps> = ({ children, onBack }) => (
     </aside>
     <div className="aq-auth__main">
       <div className="aq-auth__mobile-brand">
-        <PanelsTopLeft size={28} aria-hidden="true" />
-        <strong>{APP_NAME}</strong>
+        <Wordmark />
       </div>
       <div className="aq-auth__main-inner">
         {onBack && (

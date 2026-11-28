@@ -1,3 +1,4 @@
+import { useLedgerRefresh } from "../../hooks/useLedgerRefresh";
 import React, { useCallback, useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { hasPermission } from "../../lib/permissions";
@@ -56,14 +57,17 @@ export const TransactionsExplorerView: React.FC = () => {
     status: selectedStatus,
   }), [searchQuery, startDate, endDate, selectedType, selectedCategory, selectedStatus]);
 
+  useEffect(() => {
+    let active = true;
+    void ledgerService.getCategories().then(items => { if (active) setCategories(items); }).catch(() => { if (active) setLoadError("Category filters could not load. Entries remain available."); });
+    return () => { active = false; };
+  }, []);
+
   const loadData = useCallback(async (requestedPage = page) => {
     const request = ++requestId.current;
     setIsLoading(true);
     setLoadError("");
     try {
-      const cats = await ledgerService.getCategories();
-      setCategories(cats);
-
       const res = await ledgerService.getFilteredTransactions({
         ...getCurrentFilter(),
         limit: pageSize,
@@ -144,6 +148,8 @@ export const TransactionsExplorerView: React.FC = () => {
     }
   };
 
+  useLedgerRefresh(loadData);
+
   const columns = useMemo(() => transactionColumns(setSelectedDetailTx, canManage ? setVoidingTx : undefined, t("transactions.account")), [t, canManage]);
 
   return (
@@ -186,7 +192,7 @@ export const TransactionsExplorerView: React.FC = () => {
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search description, payee, or note..."
+            placeholder="Search description or note…"
             aria-label="Search entries"
           />
         </form>

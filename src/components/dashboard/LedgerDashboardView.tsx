@@ -1,3 +1,5 @@
+import { loadPeriodAnalytics } from "../../services/periodAnalyticsService";
+import { useLedgerRefresh } from "../../hooks/useLedgerRefresh";
 import React, { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { ledgerService } from "../../services/ledgerService";
 import { formatDisplayDate, getKarachiBusinessDate } from "../../lib/dates";
@@ -6,7 +8,7 @@ import { AnimatedAmount } from "../common/AnimatedAmount";
 import { OverviewPeriodControls, type OverviewPeriod } from "./OverviewPeriodControls";
 import { OverviewMetricCard } from "./OverviewMetricCard";
 import { OverviewAreaChart } from "./OverviewAreaChart";
-import { buildReportCategoryBreakdown, buildReportTrend, calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
+import { calculateReportTotals, type ReportTrendBucket } from "../../lib/reportAnalytics";
 import { getWeekRangeForDate } from "../../lib/reportDateRanges";
 import {
   DailySummary,
@@ -71,15 +73,14 @@ export const LedgerDashboardView: React.FC = () => {
         const monthEnd = new Date(Date.UTC(year, month, 0)).toISOString().slice(0, 10);
         const today = getKarachiBusinessDate();
         const endDate = monthEnd > today && startDate <= today ? today : monthEnd;
-        const records = await ledgerService.getAllFilteredTransactions({
+        const analytics = await loadPeriodAnalytics({
           startDate,
           endDate,
-          status: "active",
         });
         if (currentRequestId !== requestId.current) return;
-        setRangeSummary(calculateReportTotals(records));
-        setRangeTrend(buildReportTrend(records, startDate, endDate));
-        setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
+        setRangeSummary(analytics.totals);
+        setRangeTrend(analytics.trend);
+        setBreakdowns(analytics.categories.map((item) => ({
           business_date: startDate,
           type: item.type,
           category_id: item.category_id || "uncategorized",
@@ -92,15 +93,14 @@ export const LedgerDashboardView: React.FC = () => {
           ? getWeekRangeForDate(currentDate)
           : [rangeStart, rangeEnd];
         if (startDate > endDate) throw new Error("The start date must be on or before the end date.");
-        const records = await ledgerService.getAllFilteredTransactions({
+        const analytics = await loadPeriodAnalytics({
           startDate,
           endDate,
-          status: "active",
         });
         if (currentRequestId !== requestId.current) return;
-        setRangeSummary(calculateReportTotals(records));
-        setRangeTrend(buildReportTrend(records, startDate, endDate));
-        setBreakdowns(buildReportCategoryBreakdown(records).map((item) => ({
+        setRangeSummary(analytics.totals);
+        setRangeTrend(analytics.trend);
+        setBreakdowns(analytics.categories.map((item) => ({
           business_date: startDate,
           type: item.type,
           category_id: item.category_id || "uncategorized",
@@ -126,6 +126,8 @@ export const LedgerDashboardView: React.FC = () => {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  useLedgerRefresh(loadData);
 
   const [fromDate, toDate] = overviewRange(period, currentDate, rangeStart, rangeEnd);
   const comparison = useOverviewComparison(compare, fromDate, toDate);
@@ -173,12 +175,14 @@ export const LedgerDashboardView: React.FC = () => {
           setRangeStart={setRangeStart}
           rangeEnd={rangeEnd}
           setRangeEnd={setRangeEnd}
+          comparison={compare} onComparisonChange={setCompare}
           today={getKarachiBusinessDate()}
         />
       </div>
 
-      <div className="sp-overview-toolbar"><span>{selectedRangeLabel}</span><button type="button" aria-pressed={compare} onClick={() => setCompare(!compare)}><span className="sp-toggle-dot" />Compare previous period</button></div>
+      <div className="sp-overview-toolbar"><span>{selectedRangeLabel}</span></div>
       {compare && <p className="sp-comparison-note" role="status">{comparison.error || (comparison.totals ? "Compared with the previous period of the same length" : "Loading comparison…")}</p>}
+      {dailyData?.is_partial && <p role="status" className="sp-comparison-note">Device totals · Daily figures include pending entries on this device only.</p>}
       {loadError && (
         <div role="alert" className="aq-overview__error">
           <strong>Overview unavailable</strong>

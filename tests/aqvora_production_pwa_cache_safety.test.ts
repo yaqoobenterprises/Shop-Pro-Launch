@@ -55,7 +55,7 @@ describe('AQVORA PWA production service worker: public-only caching', () => {
     expect(code).not.toContain('self.skipWaiting()');
     expect(code).not.toContain('self.clients.claim()');
     expect(code).toContain('OLD_AQVORA_PREFIXES.some');
-    expect(code).toContain("const CACHE_NAME = 'shop-pro-shell-v1'");
+    expect(code).toContain("const CACHE_NAME = 'shop-pro-shell-v2'");
   });
 
   it('never intercepts financial, auth, report or API GET requests', async () => {
@@ -77,7 +77,7 @@ describe('AQVORA PWA production service worker: public-only caching', () => {
   it('caches only same-origin static public assets without private cache headers', async () => {
     const worker = makeWorker();
     await runFetch(worker, request(origin + '/assets/app-abc.js'));
-    expect(worker.browserCaches.open).toHaveBeenCalledWith('shop-pro-shell-v1');
+    expect(worker.browserCaches.open).toHaveBeenCalledWith('shop-pro-shell-v2');
     expect(worker.fetcher).toHaveBeenCalledTimes(1);
     expect(worker.cache.put).toHaveBeenCalledTimes(1);
 

@@ -1,142 +1,94 @@
-import { Popover, PopoverTrigger, PopoverContent } from "../ui/popover";
-import React, { type Dispatch, type MutableRefObject, type SetStateAction } from "react";
-import {
-  ArrowUp, Bot, Check, ChevronDown, CircleHelp, Copy, History, LoaderCircle,
-  MessageSquarePlus, RefreshCw, Send, MessageCircle, Trash2, WalletCards, X,
-} from "lucide-react";
+import React, { useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from "react";
+import { ArrowUp, Check, ChevronDown, Copy, History, LoaderCircle, MessageSquarePlus, RefreshCw, Trash2, X } from "lucide-react";
 import { MarkdownMessage } from "./LedgerMateMarkdown";
 import type { PendingAction } from "../../services/ledgerMateActionService";
 import { formatTime, type ChatMessage, type LocalThread } from "../../services/ledgerMateChatUtils";
-
 interface LedgerMateSurfaceProps {
-  activeThread: LocalThread | null;
-  threads: LocalThread[];
-  messages: ChatMessage[];
-  error: string | null;
-  online: boolean;
-  checking: boolean;
-  sending: boolean;
-  actionBusy: boolean;
-  syncStatus: "loading" | "synced" | "local" | "error";
-  healthModel: string;
-  input: string;
-  pendingAction: PendingAction | null;
-  historyOpen: boolean;
-  showActionDetails: boolean;
-  endRef: MutableRefObject<HTMLDivElement | null>;
-  textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
-  setInput: Dispatch<SetStateAction<string>>;
-  setError: Dispatch<SetStateAction<string | null>>;
-  setHistoryOpen: Dispatch<SetStateAction<boolean>>;
-  setShowActionDetails: Dispatch<SetStateAction<boolean>>;
-  onCreateThread: () => void;
-  onChooseThread: (thread: LocalThread) => void;
-  onClearHistory: () => void;
-  onSend: (event?: React.FormEvent, suggested?: string) => void;
-  onCopy: (content: string) => void;
-  onRegenerate: (index: number) => void;
-  onConfirmAction: () => void;
-  onCancelAction: () => void;
-  onRefresh: () => void;
+  activeThread: LocalThread | null; threads: LocalThread[]; messages: ChatMessage[]; error: string | null;
+  online: boolean; checking: boolean; sending: boolean; actionBusy: boolean;
+  syncStatus: "loading" | "synced" | "local" | "error"; healthModel: string; input: string;
+  pendingAction: PendingAction | null; historyOpen: boolean; showActionDetails: boolean;
+  endRef: MutableRefObject<HTMLDivElement | null>; textareaRef: MutableRefObject<HTMLTextAreaElement | null>;
+  setInput: Dispatch<SetStateAction<string>>; setError: Dispatch<SetStateAction<string | null>>;
+  setHistoryOpen: Dispatch<SetStateAction<boolean>>; setShowActionDetails: Dispatch<SetStateAction<boolean>>;
+  onCreateThread: () => void; onChooseThread: (thread: LocalThread) => void; onClearHistory: () => void;
+  onSend: (event?: React.FormEvent, suggested?: string) => void; onCopy: (content: string) => void;
+  onRegenerate: (index: number) => void; onConfirmAction: () => void; onCancelAction: () => void; onRefresh: () => void;
+  onConversationScroll?: React.UIEventHandler<HTMLDivElement>;
 }
-
-const promptSuggestions = [
-  "Aaj ki total sale kitni hai?",
-  "Is month ka profit aur expense batao",
-  "Cash aur bank balance kitna hai?",
-  "Sab se zyada income kis service se hui?",
+const suggestions = [
+  { label: "Today's activity", question: "Summarize today's income and expenses." },
+  { label: "Where money went", question: "Show my largest expense categories this month." },
+  { label: "Account balances", question: "What are my current cash and bank balances?" },
+  { label: "This month's result", question: "Summarize this month's income, expenses and net result." },
 ];
-
 export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
   activeThread, threads, messages, error, online, checking, sending, actionBusy, syncStatus,
   input, pendingAction, historyOpen, showActionDetails, endRef, textareaRef,
   setInput, setError, setHistoryOpen, setShowActionDetails, onCreateThread, onChooseThread,
-  onClearHistory, onSend, onCopy, onRegenerate, onConfirmAction, onCancelAction, onRefresh,
-}) => (
-  <section className="ledgermate" aria-label="LedgerMate AI">
+  onClearHistory, onSend, onCopy, onRegenerate, onConfirmAction, onCancelAction, onRefresh, onConversationScroll,
+}) => {
+  const closeHistory = useRef<HTMLButtonElement>(null);
+  const historyTrigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (historyOpen) closeHistory.current?.focus(); }, [historyOpen]);
+  const dismissHistory = () => { setHistoryOpen(false); requestAnimationFrame(() => historyTrigger.current?.focus()); };
+  return <section className="ledgermate" aria-label="LedgerMate AI" data-history-open={historyOpen}>
+  {historyOpen && <aside className="lm-history-panel" aria-label="Conversation history" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); dismissHistory(); } }}>
+    <div className="lm-history-heading"><h2>Conversations</h2><button className="icon-button" type="button" ref={closeHistory} aria-label="Close history" onClick={dismissHistory}><X size={17} /></button></div>
+    <button className="lm-history-new" type="button" onClick={onCreateThread} disabled={sending || actionBusy}><MessageSquarePlus size={17} />New conversation</button>
+    <div className="lm-history-list">
+      {!threads.length && <p className="lm-history-empty">Your conversations will appear here.</p>}
+      {threads.map(thread => <button key={thread.id} type="button" className={`lm-history-item ${thread.id === activeThread?.id ? "is-active" : ""}`} onClick={() => onChooseThread(thread)} disabled={sending || actionBusy}>
+        <strong>{thread.title}</strong><small>{thread.localOnly ? "On this device" : new Intl.DateTimeFormat("en-PK", { month: "short", day: "numeric" }).format(new Date(thread.updated_at))}</small>
+      </button>)}
+    </div>
+  </aside>}
+  <div className="lm-main">
     <header className="lm-header">
-      <div className="lm-brand-row">
-        <div className="lm-mark"><MessageCircle aria-hidden="true" /></div>
-        <div className="lm-title-group">
-          <h1>LedgerMate AI</h1>
-          <p><span className={`lm-status-dot ${online ? "is-online" : ""}`} />{checking ? "Connecting" : online ? "Online" : "Offline"}</p>
-        </div>
-      </div>
+      <div className="lm-title-group"><h1>LedgerMate<span>AI</span></h1>{activeThread && <p title={activeThread.title}>{activeThread.title}</p>}</div>
       <div className="lm-header-actions">
-        <button type="button" className="lm-action-button" onClick={onCreateThread} disabled={sending || actionBusy}>
-          <MessageSquarePlus aria-hidden="true" /><span>New chat</span>
-        </button>
-        <Popover open={historyOpen} onOpenChange={setHistoryOpen}><PopoverTrigger asChild>
-          <button type="button" className={`lm-action-button ${historyOpen ? "is-selected" : ""}`} onClick={() => setHistoryOpen((open) => !open)} aria-expanded={historyOpen}>
-            <History aria-hidden="true" /><span>History</span><ChevronDown className="lm-chevron" aria-hidden="true" />
-          </button></PopoverTrigger>
-            <PopoverContent align="end" className="lm-history-popover" aria-label="Chat history">
-              <div className="lm-popover-heading"><span>Recent conversations</span><button type="button" onClick={() => setHistoryOpen(false)} aria-label="Close history"><X aria-hidden="true" /></button></div>
-              <div className="lm-history-list">
-                {threads.length === 0 && <p className="lm-history-empty">No conversations</p>}
-                {threads.map((thread) => <button key={thread.id} type="button" className={`lm-history-item ${thread.id === activeThread?.id ? "is-active" : ""}`} onClick={() => onChooseThread(thread)}>
-                  <span className="lm-history-icon"><Bot aria-hidden="true" /></span>
-                  <span className="lm-history-copy"><strong>{thread.title}</strong><small>{thread.localOnly ? "Saved on this device" : new Intl.DateTimeFormat("en-PK", { dateStyle: "medium" }).format(new Date(thread.updated_at))}</small></span>
-                </button>)}
-              </div>
-            </PopoverContent>
-        </Popover>
-        <button type="button" className="lm-icon-button" onClick={onClearHistory} disabled={!messages.length || sending || actionBusy} aria-label="Clear current chat" title="Clear chat">
-          <Trash2 aria-hidden="true" /><span>Clear chat</span>
-        </button>
+        <button type="button" className={`lm-action-button ${historyOpen ? "is-selected" : ""}`} ref={historyTrigger} aria-label="Conversation history" aria-expanded={historyOpen} onClick={() => setHistoryOpen(open => !open)}><History size={18} /><span>History</span></button>
+        <button type="button" className="lm-action-button" aria-label="New chat" onClick={onCreateThread} disabled={sending || actionBusy}><MessageSquarePlus size={18} /><span>New chat</span></button>
+        {messages.length > 0 && <button type="button" className="icon-button" onClick={onClearHistory} disabled={sending || actionBusy || syncStatus === "loading"} aria-label="Clear current chat" title="Clear conversation"><Trash2 size={17} /></button>}
       </div>
     </header>
-
-    <div className="lm-conversation-meta">
-      <span className="lm-thread-title"><span>{activeThread?.title || "New chat"}</span><span className={`lm-sync ${syncStatus}`}>{syncStatus === "loading" ? "Syncing" : syncStatus === "synced" ? "Synced" : syncStatus === "error" ? "Sync issue" : "On this device"}</span></span>
-      <span className="lm-privacy-note"><WalletCards aria-hidden="true" /> Uses your Shop Pro ledger</span>
-    </div>
-
-    <div className="lm-messages" aria-live="polite" aria-relevant="additions text">
-      {messages.length === 0 && <div className="lm-empty-state">
-        <div className="lm-empty-icon"><MessageCircle aria-hidden="true" /></div>
-        <h2>New conversation</h2>
-        <div className="lm-suggestions">{promptSuggestions.map((suggestion) => <button key={suggestion} type="button" onClick={() => onSend(undefined, suggestion)} disabled={!online || checking || syncStatus === "loading"}><span>{suggestion}</span><ArrowUp aria-hidden="true" /></button>)}</div>
+    <div className="lm-messages" onScroll={onConversationScroll} aria-label="Conversation" aria-busy={syncStatus === "loading"}>
+      {syncStatus === "loading" && <div className="lm-history-loading" role="status"><LoaderCircle className="lm-spin" size={18} />Opening conversation…</div>}
+      {!messages.length && syncStatus !== "loading" && <div className="lm-empty-state">
+        <span className="lm-eyebrow">YOUR SHOP. CLEAR ANSWERS.</span><h2>What would you like<br />to understand?</h2>
+        <p>Ask about your recorded activity.</p>
+        <div className="lm-suggestions">{suggestions.map(({ label, question }) => <button key={label} type="button" onClick={() => onSend(undefined, question)} disabled={!online || checking}><span>{label}</span><ArrowUp size={16} aria-hidden="true" /></button>)}</div>
       </div>}
       {messages.map((message, index) => <article key={message.id || `${message.createdAt}-${index}`} className={`lm-message-row ${message.role}`}>
-        {message.role === "assistant" && <div className="lm-avatar"><MessageCircle aria-hidden="true" /></div>}
         <div className="lm-message-main">
           <div className={`lm-bubble ${message.role}`}>
-            {message.role === "assistant" ? message.content ? <MarkdownMessage content={message.content} /> : <span className="lm-streaming-caret" aria-label="LedgerMate is responding" /> : <p>{message.content}</p>}
+            {message.role === "assistant" ? message.content ? <MarkdownMessage content={message.content} /> : <span className="lm-streaming-caret" role="status" aria-label="LedgerMate is responding" /> : <p>{message.content}</p>}
           </div>
-          <div className="lm-message-footer">
-            <time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
-            {message.role === "assistant" && message.content && <div className="lm-message-tools">
-              <button type="button" onClick={() => onCopy(message.content)} aria-label="Copy response" title="Copy response"><Copy aria-hidden="true" /></button>
-              <button type="button" onClick={() => onRegenerate(index)} disabled={sending || !online} aria-label="Regenerate response" title="Regenerate response"><RefreshCw aria-hidden="true" /></button>
-            </div>}
+          <div className="lm-message-footer"><time dateTime={message.createdAt}>{formatTime(message.createdAt)}</time>
+            {message.role === "assistant" && message.content && <div className="lm-message-tools"><button type="button" onClick={() => onCopy(message.content)} aria-label="Copy response"><Copy size={15} /></button><button type="button" onClick={() => onRegenerate(index)} disabled={sending || !online} aria-label="Regenerate response"><RefreshCw size={15} /></button></div>}
           </div>
         </div>
-        {message.role === "user" && <div className="lm-user-avatar" aria-hidden="true">You</div>}
       </article>)}
-      {sending && !messages.some((message) => message.role === "assistant" && !message.content) && <div className="lm-thinking"><span /><span /><span /><small>LedgerMate is thinking</small></div>}
-
+      {sending && !messages.some(message => message.role === "assistant" && !message.content) && <div className="lm-thinking" role="status"><span /><span /><span /><small>Working on your question</small></div>}
       {pendingAction && <div className="lm-confirm-card">
-        <div className="lm-confirm-heading"><span className="lm-confirm-icon"><CircleHelp aria-hidden="true" /></span><div><strong>Review ledger action</strong><small>Nothing will be written until you confirm.</small></div></div>
-        <div className="lm-confirm-details">{pendingAction.preview.split("\n").map((item) => { const [label, ...rest] = item.split(":"); return <div key={label}><span>{label}</span><strong>{rest.join(":").trim()}</strong></div>; })}</div>
-        <button type="button" className="lm-details-toggle" onClick={() => setShowActionDetails((show) => !show)}>{showActionDetails ? "Hide details" : "What happens next?"}<ChevronDown aria-hidden="true" /></button>
-        {showActionDetails && <p className="lm-confirm-note">Shop Pro will use its existing ledger service, permission checks, and audit history. Cancel closes this preview without making any ledger change.{pendingAction.submitted && " This action was already submitted; its result may still be pending, so retry it to resolve the result."}</p>}
-        <div className="lm-confirm-actions"><button type="button" className="lm-cancel-button" disabled={actionBusy || Boolean(pendingAction.submitted)} onClick={onCancelAction}>Cancel</button><button type="button" className="lm-confirm-button" disabled={actionBusy} onClick={onConfirmAction}>{actionBusy ? <LoaderCircle className="lm-spin" aria-hidden="true" /> : <Check aria-hidden="true" />}{actionBusy ? "Saving" : pendingAction.submitted ? "Retry action" : "Confirm action"}</button></div>
+        <h2>Review entry</h2><p>Check the details before confirming.</p>
+        <div className="lm-confirm-details">{pendingAction.preview.split("\n").map(item => { const [label, ...value] = item.split(":"); return <div key={label}><span>{label}</span><strong>{value.join(":").trim()}</strong></div>; })}</div>
+        <button className="lm-details-toggle" type="button" aria-expanded={showActionDetails} onClick={() => setShowActionDetails(value => !value)}>What happens next?<ChevronDown size={15} /></button>
+        {showActionDetails && <p className="lm-confirm-note">Confirm saves this action to your cashbook. Cancel leaves your records as they are.{pendingAction.submitted && " A submitted action may still be pending; use Retry to check its result."}</p>}
+        <div className="lm-confirm-actions"><button type="button" className="button button-secondary" disabled={actionBusy || Boolean(pendingAction.submitted)} onClick={onCancelAction}>Cancel</button><button type="button" className="button button-primary" disabled={actionBusy} onClick={onConfirmAction}>{actionBusy ? <LoaderCircle className="lm-spin" size={16} /> : <Check size={16} />}{actionBusy ? "Saving…" : pendingAction.submitted ? "Retry action" : "Confirm action"}</button></div>
       </div>}
       <div ref={endRef} />
     </div>
-
-    {error && <div className="lm-error" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError(null)}><X aria-hidden="true" /></button></div>}
-    {!online && !checking && <div className="lm-offline-banner"><span>LedgerMate is offline. Your chat remains saved; reconnect to send a question.</span><button type="button" onClick={onRefresh}><RefreshCw aria-hidden="true" /> Retry</button></div>}
-
-    <form className="lm-composer-wrap" onSubmit={(event) => onSend(event)}>
-      <div className="lm-composer">
-        <textarea ref={textareaRef} value={input} onChange={(event) => setInput(event.target.value)} onKeyDown={(event) => {
-          if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); }
-        }} placeholder="Ask about your finances…" rows={1} maxLength={12000} disabled={sending || syncStatus === "loading" || Boolean(pendingAction)} aria-label="Message LedgerMate AI" />
-        <button className="lm-send-button" type="submit" aria-label="Send message" disabled={!input.trim() || !online || checking || sending || syncStatus === "loading" || Boolean(pendingAction)}>{sending ? <LoaderCircle className="lm-spin" aria-hidden="true" /> : <Send aria-hidden="true" />}</button>
-      </div>
-      <div className="lm-composer-hint"><span>Enter to send <kbd>↵</kbd><span className="lm-hint-divider">·</span>Shift + Enter for a new line</span><span>AI can make mistakes. Verify important records.</span></div>
-    </form>
-  </section>
-);
+    <div className="lm-composer-area">
+      {error && <div className="lm-error" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError(null)}><X size={16} /></button></div>}
+      {!online && !checking && <div className="lm-offline-banner"><span>Assistant unavailable</span><button type="button" onClick={onRefresh}><RefreshCw size={14} />Retry connection</button></div>}
+      <form className="lm-composer-wrap" onSubmit={event => onSend(event)}>
+        <div className="lm-composer"><textarea ref={textareaRef} value={input} onChange={event => { setInput(event.target.value); event.currentTarget.style.height = "auto"; event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 160)}px`; }} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); event.currentTarget.form?.requestSubmit(); } }} placeholder="Ask LedgerMate…" rows={1} maxLength={12000} disabled={sending || syncStatus === "loading" || Boolean(pendingAction)} aria-label="Message LedgerMate AI" />
+          <button className="lm-send-button" type="submit" aria-label="Send message" disabled={!input.trim() || !online || checking || sending || syncStatus === "loading" || Boolean(pendingAction)}>{sending ? <LoaderCircle className="lm-spin" size={19} /> : <ArrowUp size={20} />}</button>
+        </div>
+        <div className="lm-composer-hint"><span>{checking ? "Connecting to assistant…" : syncStatus === "error" ? "Saved on this device · sync pending" : "Check important figures against your records."}</span></div>
+      </form>
+    </div>
+  </div>
+</section>;
+};

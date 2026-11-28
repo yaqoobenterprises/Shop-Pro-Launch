@@ -28,7 +28,7 @@ if (typeof window !== 'undefined' && window.opener && window.opener !== window) 
         error: error || 'oauth_error',
         errorCode: errorCode || '',
         errorDescription: errorDesc ? decodeURIComponent(errorDesc.replace(/\+/g, ' ')) : 'OAuth error during Google authentication'
-      }, '*');
+      }, window.location.origin);
     } catch {
       // Ignored if cross-origin opener restriction
     }
@@ -50,7 +50,7 @@ if (typeof window !== 'undefined' && window.opener && window.opener !== window) 
         refreshToken,
         hash,
         search
-      }, '*');
+      }, window.location.origin);
     } catch {
       // Ignored if cross-origin opener restriction
     }
