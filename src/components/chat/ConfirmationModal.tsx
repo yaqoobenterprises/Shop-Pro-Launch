@@ -454,9 +454,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <header className="flex items-center justify-between border-b border-border-standard bg-surface-container-low px-5 py-4">
             <div className="flex items-center gap-2">
               <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-              <DialogTitle asChild><h2 id="transaction-entry-title" className="text-base font-bold text-on-surface">
+              <DialogTitle className="text-base font-bold text-on-surface">
                 {heading}
-              </h2></DialogTitle>
+              </DialogTitle>
             </div>
             <button
               type="button"
@@ -555,9 +555,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           <header className="flex items-center justify-between border-b border-border-standard bg-surface-container-low px-5 py-4">
             <div className="flex items-center gap-2">
               <Layers className="h-5 w-5 text-primary" aria-hidden="true" />
-              <DialogTitle asChild><h2 id="batch-entry-title" className="text-base font-bold text-on-surface">
+              <DialogTitle className="text-base font-bold text-on-surface">
                 Review {batchEntries.length} entries together
-              </h2></DialogTitle>
+              </DialogTitle>
             </div>
             <button
               type="button"

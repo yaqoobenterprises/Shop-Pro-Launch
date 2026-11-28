@@ -191,8 +191,8 @@ export const TransactionsExplorerView: React.FC = () => {
           />
         </form>
 
-        <DatePicker value={startDate} onChange={v => { setStartDate(v); setPage(0); }} ariaLabel="Entries start date" max={endDate || undefined} />
-        <DatePicker value={endDate} onChange={v => { setEndDate(v); setPage(0); }} ariaLabel="Entries end date" min={startDate || undefined} />
+        <DatePicker value={startDate} onChange={v => { setStartDate(v); setPage(0); }} ariaLabel="Entries start date" placeholder="From date" max={endDate || undefined} />
+        <DatePicker value={endDate} onChange={v => { setEndDate(v); setPage(0); }} ariaLabel="Entries end date" placeholder="To date" min={startDate || undefined} />
         <Select
           value={selectedType}
           onChange={(e) => {

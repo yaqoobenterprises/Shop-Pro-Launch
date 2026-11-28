@@ -39,7 +39,7 @@ export const TransactionReceiptDetails: React.FC<TransactionReceiptDetailsProps>
       <Calendar className="mt-0.5 h-4 w-4 text-secondary shrink-0" />
       <div>
         <p className="text-[11px] font-medium text-text-muted">{t("transaction.businessDateLabel")}</p>
-        <p className="text-sm font-semibold text-on-surface font-mono">
+        <p className="text-sm font-semibold text-on-surface tabular-nums">
           {transaction.business_date}
         </p>
       </div>

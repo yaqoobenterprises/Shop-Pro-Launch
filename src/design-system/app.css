@@ -106,3 +106,30 @@ input[aria-invalid=true],textarea[aria-invalid=true] { border-color:var(--sp-exp
 .sp-dialog-close { display:grid;place-items:center;width:44px;min-height:44px;top:8px;right:8px; }
 @keyframes sp-dialog-appear { from { opacity:.6; } to { opacity:1; } }
 .sp-dialog[data-state=open],.sp-review-dialog[data-state=open] { animation:sp-dialog-appear .12s ease-out; }
+
+/* Portaled forms use the same controls as the workspace. */
+:is(.sp-dialog,.sp-review-dialog) input:not([type=checkbox]):not([type=radio]):not([type=file]):not([cmdk-input]),
+:is(.sp-dialog,.sp-review-dialog) select {
+  width:100%;min-width:0;min-height:44px;padding:10px 12px;
+  border:1px solid var(--sp-border-strong);border-radius:6px;
+  background:var(--sp-surface);color:var(--sp-text);font-size:0.875rem;
+}
+.settings-field,.sp-review-dialog label { display:flex;flex-direction:column;gap:8px;font-size:0.875rem; }
+.settings-field input { width:100%; }
+.sp-demo-exit { font-weight:600;flex-shrink:0; }
+.entries-page .filter-panel { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px; }
+.entries-page .search-field { grid-column:span 2;min-width:0; }
+.entries-page .filter-panel>.relative { min-width:0; }
+.sp-data-table .sp-table-cell { min-width:0; }
+.reports-modern__filter-actions { grid-column:1/-1;margin-top:0;flex-wrap:wrap; }
+.reports-modern__filter-actions button { display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px; }
+.reports-modern__apply { background:var(--sp-primary);color:var(--sp-on-primary); }
+.reports-modern__active-range { display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--sp-border);font-size:0.75rem;color:var(--sp-text-secondary); }
+.reports-modern__active-range strong { color:var(--sp-text);font-weight:600; }
+.reports-modern__active-range span { padding:4px 8px;border-radius:4px;background:var(--sp-surface-subtle); }
+.ledger-composer__textarea:focus,.ledger-composer__textarea:focus-visible { outline:none;box-shadow:none; }
+.ledger-composer__input:focus-within { outline:2px solid var(--sp-focus);outline-offset:2px;box-shadow:none; }
+@media(max-width:767px) {
+  .entries-page .filter-panel { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .entries-page .search-field { grid-column:1/-1; }
+}

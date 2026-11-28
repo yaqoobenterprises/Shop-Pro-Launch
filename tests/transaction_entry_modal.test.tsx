@@ -57,7 +57,7 @@ describe('Unified transaction entry review', () => {
       />,
     );
 
-    expect(screen.getByRole('dialog')).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: 'Review transaction' })).toBeTruthy();
     expect(screen.getByText('PRINT 300')).toBeTruthy();
     expect(screen.getByRole('combobox', { name: 'Transaction type' }).textContent)
       .toContain('Income');

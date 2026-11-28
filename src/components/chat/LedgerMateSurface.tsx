@@ -49,7 +49,7 @@ const promptSuggestions = [
 
 export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
   activeThread, threads, messages, error, online, checking, sending, actionBusy, syncStatus,
-  healthModel, input, pendingAction, historyOpen, showActionDetails, endRef, textareaRef,
+  input, pendingAction, historyOpen, showActionDetails, endRef, textareaRef,
   setInput, setError, setHistoryOpen, setShowActionDetails, onCreateThread, onChooseThread,
   onClearHistory, onSend, onCopy, onRegenerate, onConfirmAction, onCancelAction, onRefresh,
 }) => (
@@ -61,7 +61,6 @@ export const LedgerMateSurface: React.FC<LedgerMateSurfaceProps> = ({
           <h1>LedgerMate AI</h1>
           <p><span className={`lm-status-dot ${online ? "is-online" : ""}`} />{checking ? "Connecting" : online ? "Online" : "Offline"}</p>
         </div>
-        <span className="lm-model">{healthModel}</span>
       </div>
       <div className="lm-header-actions">
         <button type="button" className="lm-action-button" onClick={onCreateThread} disabled={sending || actionBusy}>

@@ -13,6 +13,7 @@ interface DatePickerProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  placeholder?: string;
 }
 
 const isoDate = (date: Date) => {
@@ -50,6 +51,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   required = false,
   disabled = false,
   className,
+  placeholder,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -162,7 +164,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           readOnly
           disabled={disabled}
           value={formatDate(value)}
-          placeholder={copy.choose}
+          placeholder={placeholder || copy.choose}
           aria-label={ariaLabel}
           aria-invalid={isInvalid || undefined}
           aria-describedby={isInvalid ? `${id || "date-picker"}-error` : undefined}

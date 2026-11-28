@@ -121,10 +121,9 @@
   textarea:focus-visible,
   select:focus,
   select:focus-visible {
-    outline: none !important;
-    outline-offset: 0 !important;
-    border-color: var(--forest) !important;
-    box-shadow: 0 0 0 3px var(--focus-ring) !important;
+    outline: 2px solid var(--sp-focus);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 
   button,

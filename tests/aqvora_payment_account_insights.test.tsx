@@ -22,7 +22,7 @@ describe("AQVORA actual payment account balance distribution", () => {
     expect(list.querySelectorAll("li")).toHaveLength(2);
     expect(screen.getByText("Rs 137,005")).toBeTruthy();
     expect(screen.getByText("92.5%")).toBeTruthy();
-    expect(screen.getByText(/not reconciled bank statements/)).toBeTruthy();
+    expect(screen.getByText(/Balances reflect recorded cashbook activity/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Refresh payment-account balances" }));
     expect(refresh).toHaveBeenCalledOnce();
   });

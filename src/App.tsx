@@ -144,7 +144,7 @@ const MainShell: React.FC = () => {
           <button
             type="button"
             onClick={() => void exitDemoMode()}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="sp-demo-exit"
           >
             {t("app.exitDemo")}
           </button>

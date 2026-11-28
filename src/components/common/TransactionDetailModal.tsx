@@ -145,7 +145,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
           <div className="text-right">
             <p
-              className={`font-mono text-xl font-bold tabular-nums ${
+              className={`font-sans text-xl font-bold tabular-nums ${
                 isVoided
                   ? "line-through text-text-muted"
                   : isIncome
