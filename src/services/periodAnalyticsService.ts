@@ -6,7 +6,7 @@ import { ledgerService } from "./ledgerService";
 import { isDemoOrganization, requireAuthoritativeCloudRead } from "./ledgerReadPolicy";
 interface Filter { startDate: string; endDate: string; type?: Transaction["type"] | "all"; categoryId?: string }
 export interface PeriodAnalytics { totals: ReturnType<typeof calculateReportTotals>; trend: ReportTrendBucket[]; categories: ReportCategoryBucket[]; records?: Transaction[] }
-/** Opt-in after the reviewed database migration; the preview uses existing services. */
+/** Enabled after database parity checks; demo reads remain isolated and the flag can disable RPC reads. */
 export async function loadPeriodAnalytics(filter: Filter): Promise<PeriodAnalytics> {
   const principal = getSecurityPrincipal();
   const rpcEnabled = import.meta.env.VITE_PERIOD_ANALYTICS_RPC === "true" && !isDemoOrganization(principal?.organizationId);

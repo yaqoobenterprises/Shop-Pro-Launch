@@ -1,85 +1,8 @@
--- Preview only: reassert reviewed authorization definitions where production has drifted.
--- No business rows are rewritten. Requires the existing private MFA helper.
-
-CREATE OR REPLACE FUNCTION private.get_auth_user_org_ids()
-RETURNS TABLE (org_id UUID)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT membership.organization_id
-  FROM public.organization_members AS membership
-  WHERE membership.user_id = (SELECT auth.uid())
-    AND membership.is_active = TRUE;
-$$;
-
-CREATE OR REPLACE FUNCTION private.get_org_role(target_org UUID)
-RETURNS TEXT
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT membership.role::TEXT
-  FROM public.organization_members AS membership
-  WHERE membership.organization_id = target_org
-    AND membership.user_id = (SELECT auth.uid())
-    AND membership.is_active = TRUE;
-$$;
-
-CREATE OR REPLACE FUNCTION private.is_org_member(target_org UUID)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.organization_members AS membership
-    WHERE membership.organization_id = target_org
-      AND membership.user_id = (SELECT auth.uid())
-      AND membership.is_active = TRUE
-  );
-$$;
-
-CREATE OR REPLACE FUNCTION private.is_org_owner(target_org UUID)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT private.get_org_role(target_org) = 'OWNER';
-$$;
-
-CREATE OR REPLACE FUNCTION public.get_auth_org_id()
-RETURNS UUID
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT membership.org_id
-  FROM private.get_auth_user_org_ids() AS membership
-  ORDER BY membership.org_id
-  LIMIT 1;
-$$;
-
-CREATE OR REPLACE FUNCTION public.is_active_shop_member()
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM private.get_auth_user_org_ids()
-  );
-$$;
-
-CREATE OR REPLACE FUNCTION public.ensure_my_profile()
+-- Public RPC names stay compatible; privileged implementations live outside the API schema.
+-- Every callable private implementation retains its own identity, membership and MFA guards.
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+CREATE OR REPLACE FUNCTION private.ensure_my_profile()
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -166,30 +89,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.get_auth_org_id() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.get_auth_org_id() TO authenticated;
-REVOKE ALL ON FUNCTION public.is_active_shop_member() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.is_active_shop_member() TO authenticated;
-REVOKE ALL ON FUNCTION public.ensure_my_profile() FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.ensure_my_profile() TO authenticated;
-
-DROP POLICY IF EXISTS org_member_select ON public.organizations;
-DROP POLICY IF EXISTS organizations_select ON public.organizations;
-DROP POLICY IF EXISTS "Members can view their organization" ON public.organizations;
-CREATE POLICY "Members can view their organization" ON public.organizations
-  FOR SELECT TO authenticated
-  USING (private.is_org_member(id));
-
-DROP POLICY IF EXISTS org_member_update ON public.organizations;
-DROP POLICY IF EXISTS organizations_update ON public.organizations;
-CREATE POLICY organizations_update ON public.organizations
-  FOR UPDATE TO authenticated
-  USING (private.is_org_owner(id))
-  WITH CHECK (private.is_org_owner(id));
-
-REVOKE ALL ON TABLE public.transaction_drafts FROM anon, PUBLIC;
-
-CREATE OR REPLACE FUNCTION public.post_transaction_draft(
+CREATE OR REPLACE FUNCTION private.post_transaction_draft_scoped(
   draft_id UUID,
   selected_account_id UUID
 )
@@ -287,5 +187,22 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.post_transaction_draft(UUID, UUID) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.post_transaction_draft(UUID, UUID) TO authenticated;
+REVOKE ALL ON FUNCTION private.ensure_my_profile() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION private.post_transaction_draft_scoped(UUID,UUID) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION private.ensure_my_profile() TO authenticated,service_role;
+GRANT EXECUTE ON FUNCTION private.post_transaction_draft_scoped(UUID,UUID) TO authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION public.ensure_my_profile()
+RETURNS VOID LANGUAGE sql SECURITY INVOKER SET search_path = ''
+AS $$ SELECT private.ensure_my_profile(); $$;
+
+CREATE OR REPLACE FUNCTION public.post_transaction_draft(draft_id UUID, selected_account_id UUID)
+RETURNS public.transactions LANGUAGE sql SECURITY INVOKER SET search_path = ''
+AS $$ SELECT * FROM private.post_transaction_draft_scoped(draft_id,selected_account_id); $$;
+
+ALTER FUNCTION public.get_auth_org_id() SECURITY INVOKER;
+ALTER FUNCTION public.is_active_shop_member() SECURITY INVOKER;
+REVOKE ALL ON FUNCTION public.ensure_my_profile() FROM PUBLIC,anon;
+REVOKE ALL ON FUNCTION public.post_transaction_draft(UUID,UUID) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.ensure_my_profile() TO authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.post_transaction_draft(UUID,UUID) TO authenticated,service_role;

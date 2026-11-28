@@ -2,7 +2,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-const sql = readFileSync(new URL("../supabase/migrations/20261128045430_cashbook_analytics_read_api.sql", import.meta.url), "utf8");
+const sql = readFileSync(new URL("../supabase/migrations/20261128073506_cashbook_analytics_read_api.sql", import.meta.url), "utf8");
 const org = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa", foreign = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", user = "11111111-1111-1111-1111-111111111111";
 describe("cashbook analytics aggregate boundary", () => {
   const db = new PGlite();

@@ -1,3 +1,5 @@
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
 -- Preview preparation only. Apply after owner review and authorization regression checks.
 -- Reads existing cashbook fields only; no new accounting records or changed calculations.
 CREATE OR REPLACE FUNCTION public.cashbook_period_analytics(
