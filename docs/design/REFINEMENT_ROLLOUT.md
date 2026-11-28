@@ -12,6 +12,7 @@ The following migrations were applied individually after deployed schema inspect
 | 20261128073506 | cashbook_analytics_read_api |
 | 20261128073648 | isolate_privileged_rpc_implementations |
 | 20261128073704 | preserve_policy_access_and_tune_reads |
+| 20261128074259 | preserve_server_rpc_compatibility |
 
 Membership checks now use active organization membership. Draft posting verifies identity, membership and enrolled MFA before looking up a draft or returning an idempotent result. Public RPC names are unchanged, use invoker rights, and delegate privileged work to guarded private-schema implementations. Anonymous invocation is denied.
 
