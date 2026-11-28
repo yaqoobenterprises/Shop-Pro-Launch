@@ -61,7 +61,7 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
   const isEmpty = transactions.length === 0 && drafts.length === 0;
 
   return (
-    <div className="cashbook-feed flex-1 overflow-y-auto px-4 sm:px-6" aria-label="Today's cashbook activity">
+    <div className="cashbook-feed" aria-label="Today's cashbook activity">
       <div className="cashbook-feed__surface mx-auto w-full max-w-4xl divide-y divide-border-standard">
         <div className="cashbook-feed__heading">
           <div>
@@ -202,10 +202,11 @@ export const ChatFeed: React.FC<ChatFeedProps> = ({
                       <Scale className="h-4 w-4" />
                     )}
                   </span>
-                  <span className="flex min-w-0 items-center gap-2">
+                  <span className="cashbook-entry-copy">
                     <span className="truncate text-sm font-semibold text-on-surface">
-                      {categoryName}
+                      {tx.note || categoryName}
                     </span>
+                    <small>{categoryName} · {tx.account_name || "Cash"} · {formatKarachiTime(tx.device_entry_time)}</small>
                     {isVoided && (
                       <span className="shrink-0 rounded-sm bg-danger-bg px-1.5 py-0.5 text-[10px] font-semibold text-danger">
                         Voided

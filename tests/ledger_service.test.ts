@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as supabaseLib from '../src/lib/supabase';
 import { ledgerService } from '../src/services/ledgerService';
-import { LedgerAccount, Transaction } from '../src/types/ledger';
+import { LedgerAccount } from '../src/types/ledger';
 import { SeedCategory } from '../src/parser';
 import { setSecurityPrincipal } from '../src/lib/security';
 import {
@@ -288,30 +288,6 @@ describe('ledger mutation concurrency', () => {
       'active-category',
       'default-category',
     ]);
-  });
-
-  it('loads all filtered transaction pages for export', async () => {
-    const firstPage = Array.from({ length: 1000 }, (_, index) => ({ id: `tx-${index}` }) as Transaction);
-    const finalPage = [{ id: 'tx-1000' }, { id: 'tx-1001' }] as Transaction[];
-    const getPage = vi
-      .spyOn(ledgerService, 'getFilteredTransactions')
-      .mockResolvedValueOnce({ transactions: firstPage, count: 1002 })
-      .mockResolvedValueOnce({ transactions: finalPage, count: 1002 });
-
-    const transactions = await ledgerService.getAllFilteredTransactions({ type: 'income' });
-
-    expect(transactions).toHaveLength(1002);
-    expect(getPage).toHaveBeenNthCalledWith(1, { type: 'income', limit: 1000, offset: 0 });
-    expect(getPage).toHaveBeenNthCalledWith(2, { type: 'income', limit: 1000, offset: 1000 });
-  });
-
-  it('rejects incomplete exports instead of returning partial results', async () => {
-    vi.spyOn(ledgerService, 'getFilteredTransactions').mockResolvedValue({
-      transactions: [],
-      count: 1001,
-    });
-
-    await expect(ledgerService.getAllFilteredTransactions()).rejects.toThrow(/export stopped/i);
   });
 
   it('writes chat transactions with the authenticated organization and creator', async () => {

@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { ChartPie } from "lucide-react";
 import { useChartTheme } from "./useChartTheme";
 import { EChart } from "./EChart";
-import { categoryOptions, exactMoney, type ChartItem } from "./echartsOptions";
+import { categoryColorIndex, categoryOptions, exactMoney, type ChartItem } from "./echartsOptions";
 interface Props { items: ChartItem[]; label?: string; listLabel?: string }
 export const CategoryDonut: React.FC<Props> = ({ items, label = "Expenses", listLabel = "Expense totals by category" }) => {
   const colors = useChartTheme();
@@ -18,6 +18,6 @@ export const CategoryDonut: React.FC<Props> = ({ items, label = "Expenses", list
       <EChart option={option} label={`${label} category distribution. Total ${exactMoney(total)}. Exact amounts and shares in the legend.`} height={ranked ? Math.min(420, positive.length * 32 + 32) : 224} onSelect={i => setSelected(current => current === positive[i]?.key ? null : positive[i]?.key ?? null)} />
       {!ranked && <div className="clarity-donut-center"><span>{active?.label || label}</span><strong aria-label={exactMoney(active?.amountPaisa ?? total)}>{exactMoney(active?.amountPaisa ?? total)}</strong><small>{active ? `${(active.amountPaisa / total * 100).toFixed(1)}% of total` : `${positive.length} categories`}</small></div>}
     </div>
-    <ul className="clarity-donut-legend" aria-label={listLabel}>{positive.map((item, i) => <li key={item.key}><button type="button" aria-pressed={selected === item.key} onClick={() => setSelected(selected === item.key ? null : item.key)}><i style={{ background: `var(--sp-chart-${i % 6 + 1})` }} aria-hidden="true" /><span>{item.label}<small>{(item.amountPaisa / total * 100).toFixed(1)}%</small></span><strong>{exactMoney(item.amountPaisa)}</strong></button></li>)}</ul>
+    <ul className="clarity-donut-legend" aria-label={listLabel}>{positive.map(item => <li key={item.key}><button type="button" aria-pressed={selected === item.key} onClick={() => setSelected(selected === item.key ? null : item.key)}><i style={{ background: `var(--sp-chart-${categoryColorIndex(item.key) + 1})` }} aria-hidden="true" /><span>{item.label}<small>{(item.amountPaisa / total * 100).toFixed(1)}%</small></span><strong>{exactMoney(item.amountPaisa)}</strong></button></li>)}</ul>
   </div>;
 };

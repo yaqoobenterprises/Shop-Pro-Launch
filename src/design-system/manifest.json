@@ -1,9 +1,9 @@
 {
   "system": "Shop Pro",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "sourceHashes": {
-    "src/design-system/tokens.json": "314d637211e28c7bb71dc45c4d399652c7b9a556b70729f4d20b90c458e408dd",
-    "src/design-system/tokens.css": "6129b074d454829a3f6beb4ffb8d6654bc60565c9952ae2ecae75988424c8866",
+    "src/design-system/tokens.json": "b7fa10b09a95119d189d6de78c82f5fc4c933f3c1934ff5ec827e20a5369b3aa",
+    "src/design-system/tokens.css": "191113d9ab7c3a055f2329cdb73b8365db5925f13259c38fecc8e24f82458b65",
     "public/fonts/manrope-400.woff": "456a1d0ff17f0a3e2a95dffecf48ef362fe2bb963bd8be0ee3141d06748dbcb9",
     "public/fonts/manrope-600.woff": "fc5929d9f1397f580ff1d4aa8510a7d844c4d244f564a60ed14017a18daee3dd",
     "public/fonts/manrope-700.woff": "813884bfbee644daf8e2f4f1a54506edbd48c3e32a6c2d2f7dc86445d0f1f0e6"

@@ -24,6 +24,9 @@ describe("AQVORA report register usability", () => {
     vi.spyOn(ledgerService, "getCategories").mockResolvedValue([]);
     vi.spyOn(ledgerService, "getAllFilteredTransactions").mockResolvedValue(transactions);
     render(<LedgerReportsView />);
+    await waitFor(() => expect(screen.getByText("17 matching entries")).toBeTruthy());
+    expect(screen.queryByText(/Showing 1–15 of 17 records/)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "View entries" }));
     await waitFor(() => expect(screen.getByText(/Showing 1–15 of 17 records/)).toBeTruthy());
     const register = screen.getByRole("heading", { name: "Transaction register" }).closest("section");
     expect(register?.querySelectorAll("tbody tr")).toHaveLength(15);

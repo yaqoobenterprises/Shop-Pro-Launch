@@ -160,10 +160,6 @@ export async function appendSyncedAiAccountantMessage(
   if (!inserted || typeof inserted.id !== "string") throw new Error("Chat message could not be verified after saving.");
 
   const update: { updated_at: string; title?: string } = { updated_at: new Date().toISOString() };
-  if (message.role === "user") {
-    const title = message.content.replace(/\s+/g, " ").trim().slice(0, 80);
-    if (title) update.title = title;
-  }
   const { data, error: updateError } = await client
     .from("ai_accountant_conversations")
     .update(update)

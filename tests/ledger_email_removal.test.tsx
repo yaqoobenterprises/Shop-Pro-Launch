@@ -1,7 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { TransactionDetailModal } from "../src/components/common/TransactionDetailModal";
+import { ChatFeed } from "../src/components/chat/ChatFeed";
 import { Transaction } from "../src/types/ledger";
 
 describe("Cashbook rows and transaction receipt", () => {
@@ -59,16 +60,12 @@ describe("Cashbook rows and transaction receipt", () => {
     expect(screen.getAllByText("Cash In Hand").length).toBeGreaterThanOrEqual(2);
   });
 
-  it("keeps the Today feed compact and opens a receipt when a transaction is clicked", async () => {
-    const chatFeedSource = await import("../src/components/chat/ChatFeed?raw");
-
-    expect(chatFeedSource.default).toContain("onClick={() => setSelectedDetailTx(tx)}");
-    expect(chatFeedSource.default).toContain("{categoryName}");
-    expect(chatFeedSource.default).toContain("formatPaisa(tx.amount_paisa)");
-    expect(chatFeedSource.default).not.toContain("tx.account_name");
-    expect(chatFeedSource.default).not.toContain("tx.raw_text");
-    expect(chatFeedSource.default).not.toContain("tx.note");
-    expect(chatFeedSource.default).not.toContain("tx.created_by_name");
+  it("distinguishes activity by note and account and opens the selected receipt", () => {
+    render(<ChatFeed transactions={[{ ...sampleTx, note: "Printer repair" }]} drafts={[]} accounts={[]} canManageTransactions={false} onEdit={vi.fn()} onVoid={vi.fn()} onRestore={vi.fn()} onAssignDraft={vi.fn()} />);
+    expect(screen.getByText("Printer repair")).toBeTruthy();
+    expect(screen.getByText(/Repairs · Meezan Bank Account/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Open receipt for Repairs transaction" }));
+    expect(screen.getByRole("dialog", { name: "Transaction Receipt" })).toBeTruthy();
   });
 
   it("TransactionsExplorerView localizes the 'Account' header and keeps transaction details accessible", async () => {

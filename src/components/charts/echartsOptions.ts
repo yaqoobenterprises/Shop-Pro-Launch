@@ -24,6 +24,15 @@ export function cashFlowOptions(rows: ReportTrendBucket[], mode: ChartMode, them
   };
 }
 export interface ChartItem { key: string; label: string; amountPaisa: number }
+const categoryPalette = new Map<string, number>();
+/** One session-wide registry keeps category colors stable across sorting, views and periods. */
+export function categoryColorIndex(key: string): number {
+  const existing = categoryPalette.get(key);
+  if (existing !== undefined) return existing;
+  const index = categoryPalette.size % 6;
+  categoryPalette.set(key, index);
+  return index;
+}
 export function categoryOptions(items: ChartItem[], theme: ChartTheme, selectedKey: string | null = null): EChartsCoreOption {
   const ranked = items.length > 6;
   return {
@@ -31,6 +40,6 @@ export function categoryOptions(items: ChartItem[], theme: ChartTheme, selectedK
     textStyle: { fontFamily: theme.font, color: theme.muted },
     tooltip: { trigger: "item", renderMode: "richText", confine: true, backgroundColor: theme.surface, borderColor: theme.border, textStyle: { color: theme.text, fontFamily: theme.font }, valueFormatter: (v: unknown) => exactMoney(Number(v)) },
     ...(ranked ? { grid: { top: 8, left: 4, right: 12, bottom: 8, containLabel: true }, xAxis: { type: "value", axisLabel: { formatter: axisAmount, color: theme.muted }, splitLine: { lineStyle: { color: theme.grid } } }, yAxis: { type: "category", inverse: true, data: items.map(i => i.label), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { width: 100, overflow: "truncate", color: theme.muted } } } : {}),
-    series: ranked ? [{ type: "bar", data: items.map((i, index) => ({ value: i.amountPaisa, name: i.label, itemStyle: { color: theme.palette[index % 6], borderRadius: [0, 3, 3, 0] } })), barMaxWidth: 12 }] : [{ type: "pie", radius: ["69%", "87%"], center: ["50%", "50%"], startAngle: 90, padAngle: 0, avoidLabelOverlap: true, label: { show: false }, labelLine: { show: false }, selectedMode: "single", selectedOffset: 4, emphasis: { scale: true, scaleSize: 3 }, data: items.map(i => ({ id: i.key, name: i.label, value: i.amountPaisa, selected: i.key === selectedKey })) }],
+    series: ranked ? [{ type: "bar", data: items.map(i => ({ value: i.amountPaisa, name: i.label, itemStyle: { color: theme.palette[categoryColorIndex(i.key)], borderRadius: [0, 3, 3, 0] } })), barMaxWidth: 12 }] : [{ type: "pie", radius: ["69%", "87%"], center: ["50%", "50%"], startAngle: 90, padAngle: 0, avoidLabelOverlap: true, label: { show: false }, labelLine: { show: false }, selectedMode: "single", selectedOffset: 4, emphasis: { scale: true, scaleSize: 3 }, data: items.map(i => ({ id: i.key, name: i.label, value: i.amountPaisa, itemStyle: { color: theme.palette[categoryColorIndex(i.key)] }, selected: i.key === selectedKey })) }],
   };
 }

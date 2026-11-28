@@ -21,7 +21,7 @@ export function EChart({ option, label, height = 280, onSelect, onKeyDown, descr
       if (!instance.current) {
         instance.current = init(element, undefined, { renderer: "svg" });
         instance.current.on("click", params => { if (typeof params.dataIndex === "number") selectRef.current?.(params.dataIndex); });
-        instance.current.setOption({ ...optionRef.current, animation: !reduced, animationDuration: 180, animationDurationUpdate: 150, aria: { enabled: false } });
+        instance.current.setOption({ ...optionRef.current, animation: !reduced, animationDuration: 320, animationDurationUpdate: 260, aria: { enabled: false } });
       } else instance.current.resize();
     };
     resize();
@@ -30,6 +30,6 @@ export function EChart({ option, label, height = 280, onSelect, onKeyDown, descr
     window.addEventListener("resize", resize);
     return () => { observer?.disconnect(); window.removeEventListener("resize", resize); instance.current?.dispose(); instance.current = null; };
   }, [reduced]);
-  useEffect(() => { instance.current?.setOption({ ...option, animation: !reduced, animationDuration: 180, animationDurationUpdate: 150 }, { notMerge: true }); }, [option, reduced]);
+  useEffect(() => { instance.current?.setOption({ ...option, animation: !reduced, animationDuration: 320, animationDurationUpdate: 260 }, { notMerge: true }); }, [option, reduced]);
   return <div role="img" aria-label={label} aria-describedby={descriptionId} tabIndex={onKeyDown ? 0 : undefined} onKeyDown={onKeyDown} className="sp-echart" style={{ height }}><div ref={host} aria-hidden="true" style={{ width: "100%", height: "100%" }} /></div>;
 }

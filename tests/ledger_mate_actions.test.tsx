@@ -72,7 +72,7 @@ async function openCreatePreview() {
   await waitFor(() => expect(input).not.toBeDisabled());
   fireEvent.change(input, { target: { value: "add sale Rs 1,250.00 stamp paper cash today" } });
   fireEvent.keyDown(input, { key: "Enter", shiftKey: false });
-  await screen.findByText("Review ledger action");
+  await screen.findByText("Review entry");
 }
 
 describe("LedgerMate transaction confirmation gate", () => {
@@ -97,7 +97,7 @@ describe("LedgerMate transaction confirmation gate", () => {
     expect(screen.getByText("Stamp Paper")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 
-    await waitFor(() => expect(screen.queryByText("Review ledger action")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByText("Review entry")).not.toBeInTheDocument());
     expect(mockLedger.createTransactionDraft).not.toHaveBeenCalled();
     expect(mockLedger.postTransactionDraft).not.toHaveBeenCalled();
     expect(mockLedger.editTransaction).not.toHaveBeenCalled();

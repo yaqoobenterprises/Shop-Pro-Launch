@@ -8,6 +8,8 @@ import { prepareLedgerMateAction, type PendingAction } from "../../services/ledg
 import { useLedgerMateChatHistory } from "../../services/useLedgerMateChatHistory";
 import { makeLocalId, now, type ChatMessage, type LocalThread } from "../../services/ledgerMateChatUtils";
 import { checkLedgerMateHealth, sendLedgerMateMessage, type LedgerMateAiHealth } from "../../services/ledgerMateAiService";
+import { useReducedMotion } from "motion/react";
+import { useConfirmation } from "../common/useConfirmation";
 import { LedgerMateSurface } from "./LedgerMateSurface";
 
 export const AiAccountantPanel: React.FC<{
@@ -17,6 +19,9 @@ export const AiAccountantPanel: React.FC<{
   isCloudAccount: boolean;
 }> = ({ summary, userId, organizationId, isCloudAccount }) => {
   const { showToast } = useApp();
+  const { confirm, confirmationDialog } = useConfirmation();
+  const reduced = useReducedMotion();
+  const followLatest = useRef(true);
   const chat = useLedgerMateChatHistory({ userId, organizationId, isCloudAccount });
   const [input, setInput] = useState("");
   const [health, setHealth] = useState<LedgerMateAiHealth | null>(null);
@@ -40,12 +45,14 @@ export const AiAccountantPanel: React.FC<{
   }, []);
 
   useEffect(() => { void refreshHealth(); }, [refreshHealth]);
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [chat.messages]);
+  useEffect(() => { const scroller = endRef.current?.parentElement; if (scroller && followLatest.current && typeof scroller.scrollTo === "function") scroller.scrollTo({ top: scroller.scrollHeight, behavior: reduced || sending ? "auto" : "smooth" }); }, [chat.messages, reduced, sending]);
 
   const createThread = async () => {
     if (workRef.current || sending || actionBusy) return;
     workRef.current = true;
+    followLatest.current = true;
     setPendingAction(null);
+    setHistoryOpen(false);
     setInput("");
     try {
       await chat.createThread();
@@ -57,7 +64,8 @@ export const AiAccountantPanel: React.FC<{
 
   const chooseThread = async (thread: LocalThread) => {
     if (thread.id === chat.activeThreadId) { setHistoryOpen(false); return; }
-    if (sending || actionBusy) return;
+    if (workRef.current || sending || actionBusy) return;
+    followLatest.current = true;
     setPendingAction(null);
     setHistoryOpen(false);
     await chat.activateThread(thread);
@@ -169,18 +177,19 @@ export const AiAccountantPanel: React.FC<{
       return;
     }
     workRef.current = true;
+    followLatest.current = true;
     setSending(true);
     chat.setError(null);
     const userMessage: ChatMessage = { role: "user", content, createdAt: now() };
     const nextMessages = [...chat.messages, userMessage];
     chat.setMessages(nextMessages);
     setInput("");
-    const syncedUser = await chat.syncMessage(userMessage);
-    if (syncedUser.id) {
-      nextMessages[nextMessages.length - 1] = syncedUser;
-      chat.setMessages(nextMessages.slice());
-    }
     try {
+      const syncedUser = await chat.syncMessage(userMessage);
+      if (syncedUser.id) {
+        nextMessages[nextMessages.length - 1] = syncedUser;
+        chat.setMessages(nextMessages.slice());
+      }
       const action = await prepareLedgerMateAction(content, chat.messages, summary);
       if (action && "clarification" in action) {
         const synced = await chat.syncMessage({ role: "assistant", content: action.clarification, createdAt: now() });
@@ -219,7 +228,7 @@ export const AiAccountantPanel: React.FC<{
     }
   };
 
-  return <LedgerMateSurface
+  return <>{confirmationDialog}<LedgerMateSurface
     activeThread={chat.activeThread}
     threads={chat.threads}
     messages={chat.messages}
@@ -234,6 +243,7 @@ export const AiAccountantPanel: React.FC<{
     pendingAction={pendingAction}
     historyOpen={historyOpen}
     showActionDetails={showActionDetails}
+    onConversationScroll={event => { const element = event.currentTarget; followLatest.current = element.scrollHeight - element.scrollTop - element.clientHeight < 96; }}
     endRef={endRef}
     textareaRef={textareaRef}
     setInput={setInput}
@@ -242,12 +252,12 @@ export const AiAccountantPanel: React.FC<{
     setShowActionDetails={setShowActionDetails}
     onCreateThread={() => { void createThread(); }}
     onChooseThread={(thread) => { void chooseThread(thread); }}
-    onClearHistory={() => { void chat.clearHistory(sending, actionBusy); }}
+    onClearHistory={() => { void confirm({ title: "Clear this conversation?", description: "This removes its messages from your saved chat history. Your cashbook records are kept.", action: "Clear conversation" }).then(approved => { if (approved) void chat.clearHistory(sending, actionBusy); }); }}
     onSend={(event, suggestion) => { void handleSend(event, suggestion); }}
     onCopy={(content) => { void copyMessage(content); }}
     onRegenerate={(index) => { void regenerate(index); }}
     onConfirmAction={() => { void confirmPendingAction(); }}
     onCancelAction={() => setPendingAction(null)}
     onRefresh={() => { void refreshHealth(); }}
-  />;
+  /></>;
 };

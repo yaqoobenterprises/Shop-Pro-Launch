@@ -1,5 +1,7 @@
 import React from "react";
 import { DatePicker } from "../common/DatePicker";
+import { MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from "../ui/dropdown-menu";
 import { MonthPicker } from "../common/MonthPicker";
 
 export type OverviewPeriod = "day" | "week" | "month" | "custom";
@@ -14,6 +16,8 @@ interface OverviewPeriodControlsProps {
   rangeEnd: string;
   setRangeEnd: (value: string) => void;
   today: string;
+  comparison?: boolean;
+  onComparisonChange?: (value: boolean) => void;
 }
 
 export const OverviewPeriodControls: React.FC<OverviewPeriodControlsProps> = ({
@@ -25,7 +29,7 @@ export const OverviewPeriodControls: React.FC<OverviewPeriodControlsProps> = ({
   setRangeStart,
   rangeEnd,
   setRangeEnd,
-  today,
+  today, comparison, onComparisonChange,
 }) => (
   <div className="title-actions overview-filter-controls">
     <div className="overview-period-toggle" role="group" aria-label="Overview period">
@@ -76,5 +80,6 @@ export const OverviewPeriodControls: React.FC<OverviewPeriodControlsProps> = ({
         />
       )}
     </div>
+    {onComparisonChange && <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="icon-button" aria-label="Period options"><MoreHorizontal size={18} /></button></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuCheckboxItem checked={comparison} onCheckedChange={onComparisonChange}>Earlier period comparison</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>}
   </div>
 );

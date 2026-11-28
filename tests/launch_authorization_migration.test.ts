@@ -11,6 +11,12 @@ const migration = readFileSync(
   "utf8",
 );
 
+const reassertion = readFileSync(path.join(root, "supabase/migrations/20261128073445_reassert_active_shop_draft_boundaries.sql"), "utf8");
+
+const rpcIsolation = readFileSync(path.join(root, "supabase/migrations/20261128073648_isolate_privileged_rpc_implementations.sql"), "utf8");
+
+const serverCompatibility = readFileSync(path.join(root, "supabase/migrations/20261128074259_preserve_server_rpc_compatibility.sql"), "utf8");
+
 const ownerId = "11111111-1111-1111-1111-111111111111";
 const managerId = "22222222-2222-2222-2222-222222222222";
 const inactiveMemberId = "33333333-3333-3333-3333-333333333333";
@@ -25,9 +31,10 @@ describe("launch authorization hardening migration", () => {
   beforeAll(async () => {
     await db.exec(`
       CREATE ROLE anon;
-      CREATE ROLE authenticated;
+      CREATE ROLE authenticated; CREATE ROLE service_role;
       CREATE SCHEMA auth;
       CREATE SCHEMA private;
+      CREATE FUNCTION private.current_user_meets_mfa_requirement() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('test.mfa_allowed',true),''),'true')::boolean; $$;
       GRANT USAGE ON SCHEMA auth, private TO authenticated;
 
       CREATE TABLE auth.users (
@@ -151,6 +158,11 @@ describe("launch authorization hardening migration", () => {
     `);
 
     await db.exec(migration);
+    // Match the pre-existing production grants before converting these RPCs to invokers.
+    await db.exec("GRANT EXECUTE ON FUNCTION public.get_auth_org_id(),public.is_active_shop_member() TO service_role");
+    await db.exec(reassertion);
+    await db.exec(rpcIsolation);
+    await db.exec(serverCompatibility);
   });
 
   afterAll(async () => db.close());
@@ -212,4 +224,34 @@ describe("launch authorization hardening migration", () => {
     `);
     expect(privileges.rows[0].anon_can_write).toBe(false);
   });
+
+  it("checks MFA before any draft lookup or idempotent retry", async () => {
+    await db.exec(`SELECT set_config('request.jwt.claim.sub','${ownerId}',false); SELECT set_config('test.mfa_allowed','false',false); SET ROLE authenticated;`);
+    await expect(db.query("SELECT public.post_transaction_draft($1,$2)", [foreignDraftId, organizationId])).rejects.toThrow("authenticator verification");
+    await db.exec("RESET ROLE; SELECT set_config('test.mfa_allowed','true',false)");
+  });
+
+  it("rejects inactive members before looking up an existing transaction", async () => {
+    await db.exec(`SELECT set_config('request.jwt.claim.sub','${inactiveMemberId}',false); SET ROLE authenticated;`);
+    await expect(db.query("SELECT public.post_transaction_draft($1,$2)", [foreignDraftId, organizationId])).rejects.toThrow("active shop membership");
+    await db.exec("RESET ROLE");
+  });
+
+  it("keeps public RPCs as invokers and private implementations unavailable anonymously", async () => {
+    const publicFunctions = await db.query<{prosecdef: boolean}>("SELECT prosecdef FROM pg_proc WHERE pronamespace='public'::regnamespace AND proname IN ('ensure_my_profile','get_auth_org_id','is_active_shop_member','post_transaction_draft')");
+    expect(publicFunctions.rows).toHaveLength(4);
+    expect(publicFunctions.rows.every(row => !row.prosecdef)).toBe(true);
+    const functions = await db.query<{allowed: boolean}>("SELECT has_function_privilege('anon',oid,'execute') AS allowed FROM pg_proc WHERE pronamespace='private'::regnamespace AND proname IN ('ensure_my_profile','post_transaction_draft_scoped')");
+    expect(functions.rows).toHaveLength(2);
+    expect(functions.rows.every(row => !row.allowed)).toBe(true);
+  });
+
+
+  it("preserves server-role invocation of existing membership RPCs", async () => {
+    await db.exec(`SELECT set_config('request.jwt.claim.sub','${ownerId}',false); SET ROLE service_role;`);
+    const result = await db.query<{org: string; active: boolean}>("SELECT public.get_auth_org_id() AS org, public.is_active_shop_member() AS active");
+    expect(result.rows[0]).toEqual({ org: organizationId, active: true });
+    await db.exec("RESET ROLE");
+  });
+
 });
