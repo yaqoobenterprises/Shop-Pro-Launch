@@ -2,11 +2,11 @@ import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import './motion.css';
-import './typography.css';
 import './design-system/tokens.css';
 import './design-system/foundation.css';
-import './design-system/workspace.css';
+import './design-system/app.css';
+import './design-system/public.css';
+import './design-system/assistant.css';
 import './design-system/charts.css';
 import { applyTheme, getSavedTheme } from './lib/theme';
 

@@ -7,6 +7,7 @@ import { CashFlowChart } from '../src/components/charts/CashFlowChart';
 import { CategoryDonut } from '../src/components/charts/CategoryDonut';
 import { formatPaisa } from '../src/lib/money';
 import { monotoneSegments, niceScale } from '../src/design-system/chartGeometry';
+import { cashFlowOptions, categoryOptions, axisAmount } from "../src/components/charts/echartsOptions";
 import manifest from '../src/design-system/manifest.json';
 
 const rows = [
@@ -14,9 +15,9 @@ const rows = [
   { key: 'two', label: 'Tue', title: 'Tuesday', income_paisa: 40000, expense_paisa: 10000, net_profit_paisa: 30000, transaction_count: 2 },
 ];
 
-describe('approved Clarity adoption and real chart interaction', () => {
-  it('pins the approved font and token bytes used by the live app', () => {
-    for (const [file, hash] of Object.entries(manifest.approvedSources)) {
+describe('versioned Shop Pro design tokens and chart interaction', () => {
+  it('pins the versioned font and token bytes used by the live app', () => {
+    for (const [file, hash] of Object.entries(manifest.sourceHashes)) {
       expect(createHash('sha256').update(readFileSync(file)).digest('hex')).toBe(hash);
     }
   });
@@ -53,16 +54,22 @@ describe('approved Clarity adoption and real chart interaction', () => {
   it('shows single-cent observations accurately in both axes and exact tables', () => {
     render(<CashFlowChart rows={[{ ...rows[0], income_paisa: 1, expense_paisa: 0, net_profit_paisa: 1 }]} range="single-cent activity" />);
     expect(screen.getByTitle('Income: Rs 0.01')).toBeTruthy();
-    expect(screen.getByRole('img').textContent).toContain('0.01');
+    expect(axisAmount(1)).toBe('0.01');
   });
   it('uses complete donut shares with full amounts and selectable legends', () => {
-    const { container } = render(<CategoryDonut items={[{ key: 'a', label: 'Stock', amountPaisa: 9000 }, { key: 'b', label: 'Utilities', amountPaisa: 1000 }]} />);
-    const arcs = [...container.querySelectorAll('circle[pathLength]')];
-    expect(arcs.map(x => x.getAttribute('stroke-dasharray'))).toEqual(['90 10', '10 90']);
+    render(<CategoryDonut items={[{ key: 'a', label: 'Stock', amountPaisa: 9000 }, { key: 'b', label: 'Utilities', amountPaisa: 1000 }]} />);
+    const theme = { text: '', muted: '', grid: '', zero: '', surface: '', border: '', income: '', expense: '', result: '', palette: [], font: '' };
+    const option = categoryOptions([{ key: 'a', label: 'Stock', amountPaisa: 9000 }, { key: 'b', label: 'Utilities', amountPaisa: 1000 }], theme);
+    expect(option.series[0].padAngle).toBe(0);
+    expect(option.series[0].data.map(item => item.value)).toEqual([9000, 1000]);
+    const signed = cashFlowOptions(rows, 'result', theme);
+    expect(signed.series[0].data).toEqual([-20000, 30000]);
+    expect(signed.yAxis.scale).toBe(false);
+    expect(signed.series[0].markLine.data).toEqual([{ yAxis: 0 }]);
     const utilities = screen.getByRole('button', { name: /Utilities/ });
     fireEvent.click(utilities);
     expect(utilities.getAttribute('aria-pressed')).toBe('true');
-    expect(screen.getByLabelText('Rs 100')).toBeTruthy();
+    expect(screen.getByLabelText('Rs 10')).toBeTruthy();
   });
   it('keeps all crowded categories visible as ranked bars and never fabricates an empty donut', () => {
     const { rerender, container } = render(<CategoryDonut items={Array.from({ length: 8 }, (_, i) => ({ key: String(i), label: `Category ${i}`, amountPaisa: (i + 1) * 100 }))} />);

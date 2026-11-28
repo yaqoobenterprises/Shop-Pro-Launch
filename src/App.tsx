@@ -2,7 +2,10 @@ import React, { Suspense, lazy, useEffect } from "react";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { AppProvider, useApp } from "./context/AppContext";
 import { I18nProvider, useI18n } from "./i18n";
-import { WorkspaceNav } from "./components/layout/WorkspaceNav";
+import { AppSidebar } from "./components/layout/AppSidebar";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { WorkspaceErrorBoundary } from "./components/common/WorkspaceErrorBoundary";
+import { WorkspaceSkeleton } from "./components/common/WorkspaceSkeleton";
 import { MobileNav } from "./components/layout/MobileNav";
 import { Header } from "./components/layout/Header";
 import { ToastContainer } from "./components/common/ToastContainer";
@@ -131,7 +134,7 @@ const MainShell: React.FC = () => {
   };
 
   return (
-    <div className="app-shell clarity-app flex h-dvh w-full min-w-0 flex-col overflow-hidden font-sans text-on-surface">
+    <TooltipProvider delayDuration={350}><div className="app-shell clarity-app flex h-dvh w-full min-w-0 flex-col overflow-hidden font-sans text-on-surface">
       {isDemoMode && (
         <div
           role="status"
@@ -141,7 +144,7 @@ const MainShell: React.FC = () => {
           <button
             type="button"
             onClick={() => void exitDemoMode()}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-xs font-semibold text-white transition-colors hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="sp-demo-exit"
           >
             {t("app.exitDemo")}
           </button>
@@ -154,27 +157,25 @@ const MainShell: React.FC = () => {
         >
           Skip to main content
         </a>
-        {/* Sidebar Navigation */}
+        <AppSidebar />
 
 
         {/* Main Content Area */}
         <div className="workspace flex flex-1 flex-col overflow-hidden min-w-0">
           <Header />
-          <WorkspaceNav />
+
           <main
             id="main-content"
             tabIndex={-1}
             className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0"
           >
-            <Suspense
+            <WorkspaceErrorBoundary key={currentView}><Suspense
               fallback={
-                <div role="status" className="flex min-h-32 items-center justify-center text-sm text-text-muted">
-                  {t("app.loadingWorkspace")}
-                </div>
+                <WorkspaceSkeleton />
               }
             >
               {renderActiveView()}
-            </Suspense>
+            </Suspense></WorkspaceErrorBoundary>
           </main>
         </div>
 
@@ -190,7 +191,7 @@ const MainShell: React.FC = () => {
         isOpen={showRegionalSetup}
         onClose={() => setShowRegionalSetup(false)}
       />
-    </div>
+    </div></TooltipProvider>
   );
 };
 

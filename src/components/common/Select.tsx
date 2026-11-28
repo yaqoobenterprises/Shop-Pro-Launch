@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { createPortal } from "react-dom";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { readSelectOptions, SelectOption } from "./selectOptions";
@@ -185,8 +185,8 @@ export const Select: React.FC<SelectProps> = ({
   };
 
   return (
-    <>
-      <button
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild><button
         ref={triggerRef}
         id={id}
         type="button"
@@ -214,13 +214,12 @@ export const Select: React.FC<SelectProps> = ({
           {selectedOption?.label ?? <span className="text-text-muted">Select an option</span>}
         </span>
         <ChevronDown className={cn("h-4 w-4 shrink-0 text-text-muted transition-transform", isOpen && "rotate-180")} aria-hidden="true" />
-      </button>
+      </button></PopoverTrigger>
       {isInvalid && <span id={errorId} role="alert" className="mt-1 block text-[11px] text-danger">{isUrdu ? "ایک اختیار منتخب کریں" : "Choose an option."}</span>}
-      {isOpen && createPortal(
-        <div
+      <PopoverContent align="start" sideOffset={6} onOpenAutoFocus={event => event.preventDefault()}
           ref={popupRef}
-          className="custom-select-popover fixed z-[120] overflow-hidden rounded-xl border border-border-standard bg-surface-bright text-on-surface shadow-level-3"
-          style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }}
+          className="custom-select-popover z-[120] overflow-hidden rounded-md border border-border-standard bg-surface-bright p-0 text-on-surface shadow-md"
+          style={{ width: position.width, maxHeight: position.maxHeight }}
           onKeyDown={handlePopupKeyDown}
         >
           {searchable && (
@@ -282,9 +281,7 @@ export const Select: React.FC<SelectProps> = ({
               );
             })}
           </div>
-        </div>,
-        document.body,
-      )}
-    </>
+        </PopoverContent>
+    </Popover>
   );
 };

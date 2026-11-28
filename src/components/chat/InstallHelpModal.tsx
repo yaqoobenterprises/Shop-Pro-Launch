@@ -1,5 +1,6 @@
+import { Modal } from "../common/Modal";
 import React from "react";
-import { Smartphone, Monitor, Apple, X } from "lucide-react";
+import { Smartphone, Monitor, Apple, AlertTriangle } from "lucide-react";
 import { useI18n } from "../../i18n";
 
 interface InstallHelpModalProps {
@@ -11,24 +12,7 @@ export const InstallHelpModal: React.FC<InstallHelpModalProps> = ({
 }) => {
   const { t } = useI18n();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="workspace-panel max-w-md w-full rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-5 py-4 bg-success-bg border-b border-success-border flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Smartphone className="w-5 h-5 text-success" />
-            <h3 className="font-semibold text-on-surface text-base">
-              {t("install.title")}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-text-muted hover:text-on-surface"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
+    <Modal isOpen onClose={onClose} title={t("install.title")} maxWidth="md">
         {/* Content */}
         <div className="p-5 overflow-y-auto space-y-4 text-sm text-on-surface">
           <p className="text-secondary text-xs leading-relaxed">
@@ -58,7 +42,7 @@ export const InstallHelpModal: React.FC<InstallHelpModalProps> = ({
               <span>{t("install.iphone")}</span>
             </div>
             <div className="text-[11px] font-semibold text-warning bg-warning-bg p-2 rounded-lg border border-warning-border">
-              ⚠️ {t("install.iphoneWarning")}
+              <AlertTriangle className="mr-1 inline h-4 w-4" aria-hidden="true" />{t("install.iphoneWarning")}
             </div>
             <ol className="list-decimal list-inside text-xs text-secondary space-y-1 pl-1">
               <li>
@@ -101,7 +85,6 @@ export const InstallHelpModal: React.FC<InstallHelpModalProps> = ({
             {t("install.gotIt")}
           </button>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

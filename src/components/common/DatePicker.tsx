@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { Popover, PopoverAnchor, PopoverContent } from "../ui/popover";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../../lib/utils";
 
@@ -13,6 +13,7 @@ interface DatePickerProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  placeholder?: string;
 }
 
 const isoDate = (date: Date) => {
@@ -50,6 +51,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   required = false,
   disabled = false,
   className,
+  placeholder,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -153,8 +155,8 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   };
 
   return (
-    <>
-      <div className="relative w-full">
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverAnchor asChild><div className="relative w-full">
         <input
           ref={inputRef}
           id={id}
@@ -162,7 +164,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           readOnly
           disabled={disabled}
           value={formatDate(value)}
-          placeholder={copy.choose}
+          placeholder={placeholder || copy.choose}
           aria-label={ariaLabel}
           aria-invalid={isInvalid || undefined}
           aria-describedby={isInvalid ? `${id || "date-picker"}-error` : undefined}
@@ -187,16 +189,15 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         >
           <CalendarDays className="h-4 w-4" />
         </button>
-      </div>
+      </div></PopoverAnchor>
       {isInvalid && <span id={`${id || "date-picker"}-error`} role="alert" className="mt-1 block text-[11px] text-danger">{copy.invalid}</span>}
-      {isOpen && createPortal(
-        <div
+      <PopoverContent align="start" sideOffset={6}
           id={`${id || "date-picker"}-calendar`}
           ref={popoverRef}
           role="dialog"
           aria-label={`${ariaLabel} calendar`}
-          className="date-picker-popover fixed z-[90] w-[292px] rounded-xl border border-border-standard bg-surface-bright p-3 text-on-surface shadow-level-3"
-          style={{ top: position.top, left: position.left, width: position.width }}
+          className="date-picker-popover z-[120] w-[292px] rounded-xl border border-border-standard bg-surface-bright p-3 text-on-surface shadow-level-3"
+          style={{ width: position.width }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <button type="button" onClick={() => changeMonth(-1)} className="date-picker-nav" aria-label={copy.previous}>
@@ -258,9 +259,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               {copy.today}
             </button>
           </div>
-        </div>,
-        document.body,
-      )}
-    </>
+        </PopoverContent>
+    </Popover>
   );
 };

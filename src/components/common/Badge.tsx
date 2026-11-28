@@ -1,3 +1,4 @@
+import { Badge as BaseBadge } from "../ui/badge";
 import React from "react";
 import { cn } from "../../lib/utils";
 
@@ -50,9 +51,9 @@ export const Badge: React.FC<BadgeProps> = ({
   };
 
   return (
-    <span
+    <BaseBadge variant="outline"
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border tracking-normal whitespace-nowrap select-none",
+        "inline-flex items-center gap-1 rounded-md border tracking-normal whitespace-nowrap select-none",
         variants[variant],
         sizes[size],
         className,
@@ -60,6 +61,6 @@ export const Badge: React.FC<BadgeProps> = ({
       {...props}
     >
       {children}
-    </span>
+    </BaseBadge>
   );
 };

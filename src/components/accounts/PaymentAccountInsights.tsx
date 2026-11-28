@@ -28,7 +28,7 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
         <div>
           <span>YOUR MONEY / ACCOUNT ALLOCATION</span>
           <h2>Balance distribution</h2>
-          <p>Positive, active account balances currently loaded.</p>
+          <p>Active accounts with a positive balance.</p>
         </div>
         <button type="button" onClick={onRefresh} disabled={isRefreshing}
           aria-label="Refresh payment-account balances">
@@ -49,7 +49,7 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
         </li>)}
       </ul> :
         <p className="aq-accounts-insights__empty">
-          No positive active balances available. The chart does not infer or invent money.
+          No positive active balances available.
         </p>}
     </section>
 
@@ -66,7 +66,7 @@ export const PaymentAccountInsights: React.FC<Props> = ({ accounts, onRefresh, i
       </dl>
       <div className="aq-accounts-insights__scope">
         <ArrowUpRight size={17} aria-hidden="true"/>
-        <p>These are operational cash/bank/wallet balances, not reconciled bank statements or a V2 Chart of Accounts.</p>
+        <p>Balances reflect recorded cashbook activity.</p>
       </div>
     </section>
   </div>;

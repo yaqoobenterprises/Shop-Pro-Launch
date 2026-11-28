@@ -1,3 +1,4 @@
+import { useConfirmation } from "../common/useConfirmation";
 import React, { useEffect, useState } from "react";
 import { Check, KeyRound, QrCode, ShieldCheck, Smartphone, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -7,6 +8,7 @@ type TotpFactor = { id: string; friendly_name?: string | null; status: string };
 type PendingTotp = { id: string; qrCode: string; secret: string; uri: string };
 
 export const SecuritySettingsSection: React.FC = () => {
+  const { confirm, confirmationDialog } = useConfirmation();
   const { user, hasPasswordAccount, isCloudAccount, changePassword, updatePassword } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -131,7 +133,7 @@ export const SecuritySettingsSection: React.FC = () => {
   };
 
   const removeFactor = async (factorId: string) => {
-    if (!window.confirm("Turn off authenticator sign-in for this account?")) return;
+    if (!await confirm({ title: "Turn off authenticator sign-in?", description: "Future sign-ins will no longer require an authenticator code.", action: "Turn off authenticator" })) return;
     setMfaError(null);
     setMfaMessage(null);
     setIsWorkingOnMfa(true);
@@ -152,6 +154,7 @@ export const SecuritySettingsSection: React.FC = () => {
 
   return (
     <section id="security" className="workspace-panel settings-section space-y-7 p-5">
+      {confirmationDialog}
       <div className="flex items-start gap-3">
         <div className="settings-icon"><ShieldCheck className="h-4 w-4" /></div>
         <div>

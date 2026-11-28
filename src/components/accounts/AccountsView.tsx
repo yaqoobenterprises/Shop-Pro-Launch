@@ -1,4 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { Modal } from "../common/Modal";
+import { useConfirmation } from "../common/useConfirmation";
+import { useSubmissionGuard } from "../../hooks/useSubmissionGuard";
 import { Select } from "../common/Select";
 import {
   ArrowLeftRight,
@@ -27,6 +30,8 @@ import {
 type AccountKind = LedgerAccount["type"];
 
 export const AccountsView: React.FC = () => {
+  const { confirm, confirmationDialog } = useConfirmation();
+  const { busy, run } = useSubmissionGuard();
   const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingAccountId, setEditingAccountId] = useState("");
@@ -111,11 +116,12 @@ export const AccountsView: React.FC = () => {
       setError("Enter a valid opening balance.");
       return;
     }
-    try {
-      await ledgerService.createPaymentAccount({
-        name: accountName.trim(),
-        type: accountType,
-        openingBalancePaisa: parsed.paisa,
+    await run(async () => {
+      try {
+        await ledgerService.createPaymentAccount({
+          name: accountName.trim(),
+          type: accountType,
+          openingBalancePaisa: parsed.paisa,
       });
       setAccountName("");
       setOpeningAmount("");
@@ -124,6 +130,7 @@ export const AccountsView: React.FC = () => {
     } catch (createErr) {
       setError(createErr instanceof Error ? createErr.message : "Could not create account.");
     }
+    });
   };
 
   const handleTransfer = async (e: React.FormEvent) => {
@@ -144,12 +151,13 @@ export const AccountsView: React.FC = () => {
       return;
     }
 
-    try {
-      await ledgerService.transferBetweenAccounts({
-        fromAccountId: sourceAccountId,
-        toAccountId: destinationAccountId,
-        amountPaisa: parsed.paisa,
-        notes: "Treasury transfer",
+    await run(async () => {
+      try {
+        await ledgerService.transferBetweenAccounts({
+          fromAccountId: sourceAccountId,
+          toAccountId: destinationAccountId,
+          amountPaisa: parsed.paisa,
+          notes: "Treasury transfer",
       });
       setTransferAmount("");
       setMessage("Funds transferred successfully.");
@@ -157,13 +165,15 @@ export const AccountsView: React.FC = () => {
     } catch (transferErr) {
       setError(transferErr instanceof Error ? transferErr.message : "Transfer failed.");
     }
+    });
   };
 
   const handleSaveName = async (accountId: string) => {
     if (!editingName.trim()) return;
-    try {
-      const isQueuedOffline = await ledgerService.updatePaymentAccount(accountId, {
-        name: editingName.trim(),
+    await run(async () => {
+      try {
+        const isQueuedOffline = await ledgerService.updatePaymentAccount(accountId, {
+          name: editingName.trim(),
       });
       setEditingAccountId("");
       setEditingName("");
@@ -173,6 +183,7 @@ export const AccountsView: React.FC = () => {
       console.error("Could not update account name:", updateError);
       setError("Could not update account name.");
     }
+    });
   };
 
   const activeAccounts = accounts.filter((account) => account.is_active);
@@ -181,11 +192,13 @@ export const AccountsView: React.FC = () => {
 
   const handleDeactivate = async (account: LedgerAccount) => {
     if (account.is_active && !canDeactivate(account)) return setError("Move the balance and keep at least one active account.");
+    if (account.is_active && !await confirm({ title: `Deactivate ${account.name}?`, description: "This account will no longer be available for new entries. Its existing transactions are kept.", action: "Deactivate account" })) return;
     setError("");
     setMessage("");
-    try {
-      const isQueuedOffline = await ledgerService.updatePaymentAccount(account.id, {
-        is_active: !account.is_active,
+    await run(async () => {
+      try {
+        const isQueuedOffline = await ledgerService.updatePaymentAccount(account.id, {
+          is_active: !account.is_active,
       });
       setMessage(isQueuedOffline ? "Account change saved offline. It will sync when you reconnect." : account.is_active ? "Account deactivated." : "Account reactivated.");
       await loadAccounts();
@@ -193,16 +206,17 @@ export const AccountsView: React.FC = () => {
       console.error("Could not change account status:", updateError);
       setError("Account status could not be changed. Please try again.");
     }
+    });
   };
 
   const totalBalancePaisa = accounts.reduce((sum, account) => sum + (account.is_active ? Number(account.balance_paisa) || 0 : 0), 0);
 
   return (
-    <main className="page-content accounts-page">
-      {/* Page Title */}
+    <div className="page-content accounts-page">
+      {confirmationDialog}
       <div className="page-title">
         <div className="accounts-page-heading">
-          <h1>Accounts</h1>
+          <h1>Accounts</h1><p className="sp-page-subtitle">Cash, bank and wallets. All in view.</p>
         </div>
 
         <div className="title-actions">
@@ -217,14 +231,14 @@ export const AccountsView: React.FC = () => {
       </div>
 
       {message && (
-        <div className="toast-note">
+        <div className="toast-note" role="status">
           <Check className="h-4 w-4" />
           <span>{message}</span>
         </div>
       )}
 
       {error && (
-        <div className="toast-note" style={{ background: "var(--danger-bg)", borderColor: "var(--danger)", color: "var(--danger)" }}>
+        <div className="toast-note" role="alert" style={{ background: "var(--danger-bg)", borderColor: "var(--danger)", color: "var(--danger)" }}>
           <span>{error}</span>
         </div>
       )}
@@ -304,6 +318,7 @@ export const AccountsView: React.FC = () => {
                       setEditingAccountId(acc.id);
                       setEditingName(acc.name);
                     }}
+                    disabled={busy}
                     className="account-action-button account-edit-button"
                     aria-label={isEditing ? `Save ${acc.name}` : `Edit ${acc.name}`}
                     title={isEditing ? "Save account name" : "Edit account name"}
@@ -314,7 +329,7 @@ export const AccountsView: React.FC = () => {
                     type="button"
                     className={`account-action-button account-status-button${acc.is_active ? " is-deactivate" : " is-reactivate"}`}
                     onClick={() => void handleDeactivate(acc)}
-                    disabled={deactivateBlocked}
+                    disabled={deactivateBlocked || busy}
                     aria-label={`${acc.is_active ? "Deactivate" : "Reactivate"} ${acc.name}`}
                     title={
                       deactivateBlocked
@@ -330,6 +345,7 @@ export const AccountsView: React.FC = () => {
               {isEditing ? (
                 <input
                   type="text"
+                  aria-label={`${acc.name} account name`}
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   style={{
@@ -357,14 +373,8 @@ export const AccountsView: React.FC = () => {
       {!error && !isLoading && accounts.length > 0 &&
         <PaymentAccountInsights accounts={accounts} onRefresh={() => { void loadAccounts(); }} isRefreshing={isLoading} />}
 
-      {activeTool && <div className="account-tools accounts-tools--focused">
-        {activeTool === "add" && <section id="aq-account-create" className="panel account-tool-panel">
-          <div className="panel-heading account-tool-heading">
-            <span className="account-tool-icon" aria-hidden="true">
-              <Plus className="h-4 w-4" />
-            </span>
-            <h2>Add an account</h2>
-          </div>
+      {activeTool && <Modal isOpen isBusy={busy} onClose={() => { if (!busy) setActiveTool(null); }} title={activeTool === "add" ? "Add an account" : "Transfer funds"} maxWidth="lg">
+        {activeTool === "add" && <section id="aq-account-create" className="account-tool-panel">
 
           <form onSubmit={handleCreateAccount}>
             <div className="form-grid">
@@ -409,20 +419,14 @@ export const AccountsView: React.FC = () => {
             </div>
 
             <div className="modal-actions">
-              <button type="submit" className="button button-primary account-tool-submit" disabled={isLoading}>
+              <button type="submit" className="button button-primary account-tool-submit" disabled={isLoading || busy}>
                 Add account
               </button>
             </div>
           </form>
         </section>}
 
-        {activeTool === "transfer" && <section id="aq-account-transfer" className="panel account-tool-panel">
-          <div className="panel-heading account-tool-heading">
-            <span className="account-tool-icon" aria-hidden="true">
-              <ArrowLeftRight className="h-4 w-4" />
-            </span>
-            <h2>Transfer funds</h2>
-          </div>
+        {activeTool === "transfer" && <section id="aq-account-transfer" className="account-tool-panel">
 
           <form onSubmit={handleTransfer}>
             <div className="form-grid">
@@ -484,7 +488,7 @@ export const AccountsView: React.FC = () => {
               <button
                 type="submit"
                 className="button button-primary account-tool-submit"
-                disabled={isLoading || activeAccounts.length < 2}
+                disabled={isLoading || busy || activeAccounts.length < 2}
               >
                 <ArrowLeftRight className="h-4 w-4" />
                 Transfer funds
@@ -492,7 +496,7 @@ export const AccountsView: React.FC = () => {
             </div>
           </form>
         </section>}
-      </div>}
-    </main>
+      </Modal>}
+    </div>
   );
 };
